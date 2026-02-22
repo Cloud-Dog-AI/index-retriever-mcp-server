@@ -1,0 +1,74 @@
+# defaults.yaml (conceptual starter)
+server:
+  http:
+    host: "0.0.0.0"
+    port: 8686
+  mcp:
+    enabled: true
+    port: 8687
+
+auth:
+  mode: "apikey+jwt"
+  jwt:
+    issuer: "${JWT_ISSUER}"
+    audience: "${JWT_AUDIENCE}"
+    public_keys_url: "${JWT_JWKS_URL}"
+
+storage:
+  db:
+    url: "${DB_URL}"   # e.g. postgresql+asyncpg://...
+  audit:
+    path: "${AUDIT_LOG_PATH}"
+
+queue:
+  max_concurrency: 8
+  per_profile_concurrency: 2
+  default_timeout_seconds: 1800
+  retry:
+    max_attempts: 3
+    backoff_seconds: 5
+  redis:
+    enabled: false
+    url: "${REDIS_URL}"
+
+profiles:
+  default:
+    enabled: true
+    vdb:
+      type: "chroma"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH}"
+        collection: "default"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_BASE_URL}"
+        api_key: "${EMBED_API_KEY}"
+        model: "nomic-embed-text"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"  # skip|replace|version
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0
+
+rbac:
+  enabled: true
+  default_deny: true
+  roles:
+    admin: ["*"]
+    maintainer: ["profiles_*", "collections_*", "ingest_*", "search", "retrieve", "delete_*", "retention_*", "reindex_*", "job_*", "queue_status", "backend_health_check", "embedding_health_check"]
+    writer: ["ingest_*", "search", "retrieve", "job_list", "job_get", "job_wait", "job_stream", "queue_status"]
+    reader: ["profiles_list", "profile_get", "collections_list", "collection_get", "search", "retrieve", "search_explain", "job_get", "queue_status"]

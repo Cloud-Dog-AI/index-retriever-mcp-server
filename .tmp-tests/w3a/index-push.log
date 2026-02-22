@@ -1,0 +1,36 @@
+The push refers to repository [registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server]
+1261a99f0bd1: Preparing
+b356d083fec9: Preparing
+3cb5e34f6e50: Preparing
+56fd9dd0572e: Preparing
+4dfac4efa064: Preparing
+53fe6b34647d: Preparing
+b0c3773c611c: Preparing
+985927f41a75: Preparing
+5b6cca5a4888: Preparing
+235e81929876: Preparing
+9ba402f61141: Preparing
+15eb6aec49b3: Preparing
+d7c97cb6f1fe: Preparing
+985927f41a75: Waiting
+5b6cca5a4888: Waiting
+235e81929876: Waiting
+d7c97cb6f1fe: Waiting
+9ba402f61141: Waiting
+53fe6b34647d: Waiting
+15eb6aec49b3: Waiting
+b0c3773c611c: Waiting
+56fd9dd0572e: Layer already exists
+b356d083fec9: Layer already exists
+3cb5e34f6e50: Layer already exists
+1261a99f0bd1: Layer already exists
+4dfac4efa064: Layer already exists
+53fe6b34647d: Layer already exists
+b0c3773c611c: Layer already exists
+5b6cca5a4888: Layer already exists
+235e81929876: Layer already exists
+985927f41a75: Layer already exists
+9ba402f61141: Layer already exists
+d7c97cb6f1fe: Layer already exists
+15eb6aec49b3: Layer already exists
+0.1.0: digest: sha256:f1a3317548c22f8f2b3ff556f5e548fe44013caf4a0f9a94309b89ba8233b4d4 size: 3037

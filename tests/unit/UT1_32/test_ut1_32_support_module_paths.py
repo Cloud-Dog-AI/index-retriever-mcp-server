@@ -1,0 +1,177 @@
+# index-retriever-mcp-server — UT1.32
+# Licence: Proprietary — Cloud-Dog AI Platform
+# Owner: Cloud-Dog AI
+# Description: Support module path coverage for connectors, conversion, lifecycle, and utility helpers.
+
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import pytest
+
+from index_tools.audit import logger as audit_logger_module
+from index_tools.audit.events import IngestAuditEvent
+from index_tools.audit.logger import AuditLogger
+from index_tools.collections.manager import CollectionManager
+from index_tools.collections.schema import CollectionSchema
+from index_tools.config.loader import bind_model, get_config
+from index_tools.connectors import ftp, gdrive, http, s3, webdav
+from index_tools.connectors.filesystem import resolve as filesystem_resolve
+from index_tools.connectors.models import FetchPlan
+from index_tools.convert import deepdoc, mineru, pandoc
+from index_tools.lifecycle.retention import older_than_days
+from index_tools.pipeline.chunking import paragraph_chunks, token_chunks
+from index_tools.queue import engine as queue_engine_module
+from index_tools.queue.engine import QueueEngine
+from index_tools.queue.models import JobRecord, JobStatus
+from index_tools.queue.redis_bridge import RedisBridge
+from index_tools.search.reranker import rerank_by_score
+from index_tools.security import rbac as rbac_module
+from index_tools.security.rbac import RbacAuthoriser, Subject
+from index_tools.security.scope import ScopeError, validate_uri
+from index_tools.tools.definitions import SearchInput
+from index_tools.tools.handlers import handle_ingest_text, handle_search
+from tests.unit.helpers import minimal_config
+
+
+def test_collection_schema_and_fetch_plan_defaults() -> None:
+    schema = CollectionSchema(name="alpha", dimension=4)
+    assert schema.distance_metric == "cosine"
+    plan = FetchPlan(source_type="x", location="y")
+    assert plan.metadata == {}
+
+
+def test_connectors_and_converters_paths(tmp_path: Path) -> None:
+    file_path = tmp_path / "a.txt"
+    file_path.write_text("alpha", encoding="utf-8")
+
+    fs = filesystem_resolve([str(tmp_path)], str(file_path))
+    assert fs.source_type == "filesystem"
+
+    assert ftp.resolve("ftp://example.com/doc.txt").metadata["host"] == "example.com"
+    assert http.resolve("https://example.com/doc.txt").metadata["host"] == "example.com"
+    assert gdrive.resolve("file123").metadata["file_id"] == "file123"
+    assert s3.resolve("s3://bucket/key").metadata["bucket"] == "bucket"
+    assert webdav.resolve("https://dav.example.com/file").metadata["host"] == "dav.example.com"
+
+    with pytest.raises(ValueError):
+        ftp.resolve("http://bad")
+    with pytest.raises(ValueError):
+        http.resolve("ftp://bad")
+    with pytest.raises(ValueError):
+        gdrive.resolve(" ")
+
+    assert deepdoc.available() is False
+    assert mineru.available() is False
+    assert pandoc.convert(b"\xff") == "\ufffd"
+
+
+def test_lifecycle_chunking_scope_and_rerank() -> None:
+    old = datetime.now(timezone.utc) - timedelta(days=20)  # noqa: UP017
+    new = datetime.now(timezone.utc)  # noqa: UP017
+    assert older_than_days(old, 10) is True
+    assert older_than_days(new, 10) is False
+
+    assert paragraph_chunks("a\n\nb\n\n\nc") == ["a", "b", "c"]
+    assert token_chunks("a b c d", chunk_size=2, chunk_overlap=1) == ["a b", "b c", "c d"]
+    with pytest.raises(ValueError):
+        token_chunks("a", chunk_size=0, chunk_overlap=0)
+    with pytest.raises(ValueError):
+        token_chunks("a", chunk_size=2, chunk_overlap=2)
+
+    validate_uri("https://example.com/a", {"https"}, {"example.com"})
+    with pytest.raises(ScopeError):
+        validate_uri("ftp://example.com/a", {"https"})
+    with pytest.raises(ScopeError):
+        validate_uri("https://blocked.example/a", {"https"}, {"example.com"})
+
+    ranked = rerank_by_score([{"score": "1.0"}, {"score": 5}, {"score": object()}])
+    assert [row["score"] for row in ranked[:2]] == [5, "1.0"]
+
+
+def test_queue_engine_and_redis_bridge_paths(monkeypatch: pytest.MonkeyPatch) -> None:
+    engine = QueueEngine()
+    job = JobRecord(job_id="j1", profile="default", collection="c", job_type="ingest_text", idempotency_key="k")
+    engine.enqueue(job)
+
+    assert engine.generate_idempotency_key("p", "c", "s")
+    assert engine.get("j1").job_id == "j1"
+    assert len(engine.list_jobs()) == 1
+
+    run_job = engine.run("j1", lambda _: None)
+    assert run_job.status is JobStatus.succeeded
+
+    failing = JobRecord(job_id="j2", profile="default", collection="c", job_type="ingest_text", idempotency_key="k2")
+    engine.enqueue(failing)
+    with pytest.raises(RuntimeError):
+        engine.run("j2", lambda _: (_ for _ in ()).throw(RuntimeError("boom")))
+    assert engine.get("j2").status is JobStatus.failed
+
+    monkeypatch.setattr(queue_engine_module, "cloud_dog_jobs", None)
+    assert engine.backend_name() == "fallback"
+    monkeypatch.setattr(queue_engine_module, "cloud_dog_jobs", object())
+    assert engine.backend_name() == "cloud_dog_jobs"
+
+    assert RedisBridge(enabled=False).status() == "disabled"
+    assert RedisBridge(enabled=True, url="redis://local").status() == "enabled"
+
+
+def test_audit_logger_backend_name_and_write(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    out = tmp_path / "audit.jsonl"
+    logger = AuditLogger(path=out)
+    event = IngestAuditEvent(
+        actor="tester",
+        profile="default",
+        collection="c",
+        job_id="job1",
+        params={"api_key": "secret", "nested": {"password": "x"}},
+        counts={"docs": 1, "chunks": 1},
+    )
+    logger.write_event(event)
+    content = out.read_text(encoding="utf-8")
+    assert "[REDACTED]" in content
+
+    monkeypatch.setattr(audit_logger_module, "cloud_dog_logging", None)
+    assert logger.get_backend_name() == "jsonl-fallback"
+    monkeypatch.setattr(audit_logger_module, "cloud_dog_logging", object())
+    assert logger.get_backend_name() == "cloud_dog_logging"
+
+
+def test_rbac_backend_name_and_matching(monkeypatch: pytest.MonkeyPatch) -> None:
+    auth = RbacAuthoriser(role_actions={"writer": ["ingest_*"]}, default_deny=True)
+    subject = Subject(user_id="u1", roles={"writer"})
+    assert auth.is_allowed(subject, "ingest_text") is True
+    assert auth.is_allowed(subject, "delete_by_id") is False
+
+    permissive = RbacAuthoriser(role_actions={}, default_deny=False)
+    assert permissive.is_allowed(Subject(user_id="u2", roles={"x"}), "anything") is True
+
+    monkeypatch.setattr(rbac_module, "cloud_dog_idam", None)
+    assert auth.backend_name() == "fallback"
+    monkeypatch.setattr(rbac_module, "cloud_dog_idam", object())
+    assert auth.backend_name() == "cloud_dog_idam"
+
+
+def test_handlers_and_config_paths() -> None:
+    payload = SearchInput(profile="default", collection="c", query="q", top_k=3)
+    out = handle_search(
+        payload,
+        search_fn=lambda **_: [
+            {"doc_id": "d1", "chunk_id": "c1", "text": "x", "score": 0.5, "metadata": {}},
+        ],
+    )
+    assert out.results[0].doc_id == "d1"
+    assert handle_ingest_text().status == "queued"
+
+    cfg = minimal_config()
+    model = bind_model(cfg)
+    assert model.server.http.port == 8686
+    merged = get_config(defaults_layer=minimal_config(), config_layer={"server": {"http": {"port": 2}}})
+    assert merged.server.http.port == 2
+
+    manager = CollectionManager()
+    manager.create("alpha")
+    assert manager.list() == ["alpha"]
+    manager.delete("alpha")
+    assert manager.list() == []

@@ -1,0 +1,108 @@
+# index-retriever-mcp-server — VDB Adapters
+# Licence: Proprietary — Cloud-Dog AI Platform
+# Owner: Cloud-Dog AI
+# Description: Adapter layer delegating VDB operations to cloud_dog_vdb.
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any
+
+try:
+    import cloud_dog_vdb  # type: ignore
+except ImportError:  # pragma: no cover
+    cloud_dog_vdb = None
+
+
+@dataclass(slots=True)
+class StoredDocument:
+    chunks: list[str]
+    vectors: list[list[float]]
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+class InMemoryVdbAdapter:
+    """Fallback adapter for unit testing without external VDB services."""
+
+    def __init__(self) -> None:
+        self.collections: dict[str, dict[str, StoredDocument]] = {}
+
+    def create_collection(self, name: str) -> None:
+        self.collections.setdefault(name, {})
+
+    def list_collections(self) -> list[str]:
+        return sorted(self.collections.keys())
+
+    def delete_collection(self, name: str) -> None:
+        self.collections.pop(name, None)
+
+    def upsert(
+        self,
+        collection: str,
+        doc_id: str,
+        chunks: list[str],
+        vectors: list[list[float]],
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        self.collections.setdefault(collection, {})[doc_id] = StoredDocument(
+            chunks=chunks,
+            vectors=vectors,
+            metadata=metadata or {},
+        )
+
+    def delete_by_doc_id(self, collection: str, doc_id: str) -> bool:
+        docs = self.collections.get(collection, {})
+        return docs.pop(doc_id, None) is not None
+
+    def delete_by_filter(self, collection: str, filters: dict[str, Any]) -> int:
+        docs = self.collections.get(collection, {})
+        to_delete = [doc_id for doc_id, payload in docs.items() if _matches_filters(payload.metadata, filters)]
+        for doc_id in to_delete:
+            docs.pop(doc_id, None)
+        return len(to_delete)
+
+    def query(
+        self,
+        collection: str,
+        query_text: str,
+        top_k: int = 10,
+        filters: dict[str, Any] | None = None,
+        score_threshold: float = 0.0,
+    ) -> list[dict[str, Any]]:
+        docs = self.collections.get(collection, {})
+        results: list[dict[str, Any]] = []
+        for doc_id, payload in docs.items():
+            if filters and not _matches_filters(payload.metadata, filters):
+                continue
+            for idx, chunk in enumerate(payload.chunks):
+                score = _score_chunk(query_text, chunk)
+                if score < score_threshold:
+                    continue
+                if query_text.lower() in chunk.lower() or score > 0.0:
+                    results.append(
+                        {
+                            "doc_id": doc_id,
+                            "chunk_id": f"{doc_id}:{idx}",
+                            "text": chunk,
+                            "score": score,
+                            "metadata": payload.metadata,
+                        }
+                    )
+        ordered = sorted(results, key=lambda item: float(item["score"]), reverse=True)
+        return ordered[:top_k]
+
+    def health_check(self) -> dict[str, str]:
+        return {"status": "ok", "backend": "in-memory"}
+
+
+def _score_chunk(query_text: str, chunk: str) -> float:
+    query = set(query_text.lower().split())
+    target = set(chunk.lower().split())
+    if not query or not target:
+        return 0.0
+    overlap = len(query.intersection(target))
+    return overlap / len(query)
+
+
+def _matches_filters(metadata: dict[str, Any], filters: dict[str, Any]) -> bool:
+    return all(metadata.get(key) == expected for key, expected in filters.items())

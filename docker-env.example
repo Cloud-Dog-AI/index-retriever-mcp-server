@@ -1,0 +1,44 @@
+# index-retriever-mcp-server — Docker Environment (PS-91)
+# Copy to .env and fill in secrets before running.
+
+# ── Server Ports ─────────────────────────────────────────────────
+CLOUD_DOG__INDEX__API_SERVER__PORT=8686
+CLOUD_DOG__INDEX__API_SERVER__HOST=0.0.0.0
+CLOUD_DOG__INDEX__MCP_SERVER__PORT=8687
+CLOUD_DOG__INDEX__MCP_SERVER__HOST=0.0.0.0
+
+# ── Authentication ───────────────────────────────────────────────
+# API key for tool execution (from Vault: vault.dev.keys.api_key)
+CLOUD_DOG__INDEX__API_KEY=
+
+# ── VDB Configuration ────────────────────────────────────────────
+# From Vault: vault.dev.vdbs.*
+CLOUD_DOG__INDEX__VDB__PROVIDER=qdrant
+CLOUD_DOG__INDEX__VDB__HOST=
+CLOUD_DOG__INDEX__VDB__PORT=6333
+CLOUD_DOG__INDEX__VDB__COLLECTION=
+
+# ── Embedding Configuration ─────────────────────────────────────
+# From Vault: vault.dev.models.*
+CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=ollama
+CLOUD_DOG__INDEX__EMBEDDING__MODEL=bge-m3:567m
+CLOUD_DOG__INDEX__EMBEDDING__BASE_URL=http://host.docker.internal:11434
+CLOUD_DOG__INDEX__EMBEDDING__DIMENSIONS=1024
+
+# ── LLM Configuration ───────────────────────────────────────────
+CLOUD_DOG__INDEX__LLM__PROVIDER=ollama
+CLOUD_DOG__INDEX__LLM__MODEL=qwen3:14b
+CLOUD_DOG__INDEX__LLM__BASE_URL=http://host.docker.internal:11434
+
+# ── Vault (optional — for credential resolution) ────────────────
+VAULT_ADDR=https://vault0.cloud-dog.net
+VAULT_TOKEN=
+CLOUD_DOG__VAULT__MOUNT_POINT=cloud_dog_ai
+CLOUD_DOG__VAULT__CONFIG_PATH=config
+
+# ── Logging ──────────────────────────────────────────────────────
+CLOUD_DOG__INDEX__LOG__LEVEL=INFO
+CLOUD_DOG__INDEX__AUDIT__ENABLED=true
+
+# ── TLS (optional) ──────────────────────────────────────────────
+# CLOUD_DOG_TLS_CA_BUNDLE=/app/certs/ca.crt

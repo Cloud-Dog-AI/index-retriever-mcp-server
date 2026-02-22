@@ -1,0 +1,295 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.91kB done
+#1 DONE 0.1s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.4s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:b6afd42430b15f2d2a4c5a02b919e98a525b785b1aaff16747d2f623364e39b6
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/python:3.11-slim
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 312B done
+#5 DONE 0.0s
+
+#6 [builder 1/7] FROM docker.io/library/python:3.11-slim
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 38.10kB 0.1s done
+#7 DONE 0.1s
+
+#8 [builder 2/7] RUN if [ -n "./custom-ca.crt" ] && [ -f "./custom-ca.crt" ]; then       cp "./custom-ca.crt" /usr/local/share/ca-certificates/custom-ca.crt &&       update-ca-certificates;     fi
+#8 CACHED
+
+#9 [builder 3/7] WORKDIR /app
+#9 CACHED
+
+#10 [builder 4/7] RUN apt-get update && apt-get install -y --no-install-recommends     gcc     && rm -rf /var/lib/apt/lists/*
+#10 CACHED
+
+#11 [builder 5/7] COPY pyproject.toml README.md ./
+#11 CACHED
+
+#12 [builder 6/7] COPY src/ ./src/
+#12 DONE 0.2s
+
+#13 [builder 7/7] RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf     pip install --no-cache-dir       --trusted-host pypi.cloud-dog.net       --trusted-host pypi.org       --trusted-host files.pythonhosted.org       .
+#13 1.886 Looking in indexes: https://pypi.org/simple, https://admin:****@pypi.cloud-dog.net/simple/
+#13 1.893 Processing /app
+#13 1.896   Installing build dependencies: started
+#13 4.293   Installing build dependencies: finished with status 'done'
+#13 4.294   Getting requirements to build wheel: started
+#13 4.429   Getting requirements to build wheel: finished with status 'done'
+#13 4.431   Preparing metadata (pyproject.toml): started
+#13 4.653   Preparing metadata (pyproject.toml): finished with status 'done'
+#13 4.912 Collecting aiosqlite<1.0,>=0.20 (from index-retriever-mcp-server==0.1.0)
+#13 4.945   Downloading aiosqlite-0.22.1-py3-none-any.whl.metadata (4.3 kB)
+#13 5.156 Collecting alembic<2.0,>=1.13 (from index-retriever-mcp-server==0.1.0)
+#13 5.163   Downloading alembic-1.18.4-py3-none-any.whl.metadata (7.2 kB)
+#13 5.311 Collecting beautifulsoup4<5.0,>=4.12 (from index-retriever-mcp-server==0.1.0)
+#13 5.318   Downloading beautifulsoup4-4.14.3-py3-none-any.whl.metadata (3.8 kB)
+#13 5.438 Collecting chardet<6.0,>=5.2 (from index-retriever-mcp-server==0.1.0)
+#13 5.445   Downloading chardet-5.2.0-py3-none-any.whl.metadata (3.4 kB)
+#13 5.548 Collecting cloud-dog-api-kit>=0.1.0 (from index-retriever-mcp-server==0.1.0)
+#13 5.628   Downloading https://pypi.cloud-dog.net/packages/cloud_dog_api_kit-0.1.1-py3-none-any.whl (52 kB)
+#13 5.635      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 52.8/52.8 kB 67.0 MB/s eta 0:00:00
+#13 5.887 Collecting cloud-dog-config>=0.1.0 (from index-retriever-mcp-server==0.1.0)
+#13 5.970   Downloading https://pypi.cloud-dog.net/packages/cloud_dog_config-0.1.1-py3-none-any.whl (31 kB)
+#13 6.218 Collecting cloud-dog-idam>=0.1.0 (from index-retriever-mcp-server==0.1.0)
+#13 6.304   Downloading https://pypi.cloud-dog.net/packages/cloud_dog_idam-0.1.0-py3-none-any.whl (43 kB)
+#13 6.307      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 43.8/43.8 kB 93.6 MB/s eta 0:00:00
+#13 6.556 Collecting cloud-dog-jobs>=0.1.0 (from index-retriever-mcp-server==0.1.0)
+#13 6.643   Downloading https://pypi.cloud-dog.net/packages/cloud_dog_jobs-0.1.1-py3-none-any.whl (37 kB)
+#13 6.889 Collecting cloud-dog-llm>=0.1.0 (from index-retriever-mcp-server==0.1.0)
+#13 6.969   Downloading https://pypi.cloud-dog.net/packages/cloud_dog_llm-0.1.1-py3-none-any.whl (50 kB)
+#13 6.973      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50.7/50.7 kB 96.6 MB/s eta 0:00:00
+#13 7.223 Collecting cloud-dog-logging>=0.1.0 (from index-retriever-mcp-server==0.1.0)
+#13 7.302   Downloading https://pypi.cloud-dog.net/packages/cloud_dog_logging-0.1.2-py3-none-any.whl (25 kB)
+#13 7.548 Collecting cloud-dog-vdb>=0.1.0 (from index-retriever-mcp-server==0.1.0)
+#13 7.633   Downloading https://pypi.cloud-dog.net/packages/cloud_dog_vdb-0.1.2-py3-none-any.whl (42 kB)
+#13 7.638      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 42.9/42.9 kB 79.9 MB/s eta 0:00:00
+#13 7.819 Collecting filelock<4.0,>=3.15 (from index-retriever-mcp-server==0.1.0)
+#13 7.825   Downloading filelock-3.24.3-py3-none-any.whl.metadata (2.0 kB)
+#13 7.989 Collecting httpx<1.0,>=0.27 (from index-retriever-mcp-server==0.1.0)
+#13 7.995   Downloading httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+#13 8.709 Collecting lxml<6.0,>=5.2 (from index-retriever-mcp-server==0.1.0)
+#13 8.715   Downloading lxml-5.4.0-cp311-cp311-manylinux_2_28_x86_64.whl.metadata (3.5 kB)
+#13 8.853 Collecting markdown-it-py<4.0,>=3.0 (from index-retriever-mcp-server==0.1.0)
+#13 8.859   Downloading markdown_it_py-3.0.0-py3-none-any.whl.metadata (6.9 kB)
+#13 8.995 Collecting pydantic-settings<3.0,>=2.2 (from index-retriever-mcp-server==0.1.0)
+#13 9.002   Downloading pydantic_settings-2.13.1-py3-none-any.whl.metadata (3.4 kB)
+#13 9.499 Collecting pydantic<3.0,>=2.7 (from index-retriever-mcp-server==0.1.0)
+#13 9.504   Downloading pydantic-2.12.5-py3-none-any.whl.metadata (90 kB)
+#13 9.509      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 90.6/90.6 kB 31.1 MB/s eta 0:00:00
+#13 9.644 Collecting python-dotenv<2.0,>=1.0 (from index-retriever-mcp-server==0.1.0)
+#13 9.650   Downloading python_dotenv-1.2.1-py3-none-any.whl.metadata (25 kB)
+#13 9.773 Collecting python-multipart<1.0,>=0.0.9 (from index-retriever-mcp-server==0.1.0)
+#13 9.778   Downloading python_multipart-0.0.22-py3-none-any.whl.metadata (1.8 kB)
+#13 9.979 Collecting pyyaml<7.0,>=6.0.1 (from index-retriever-mcp-server==0.1.0)
+#13 9.986   Downloading pyyaml-6.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+#13 10.52 Collecting ruamel-yaml<1.0,>=0.18.6 (from index-retriever-mcp-server==0.1.0)
+#13 10.53   Downloading ruamel_yaml-0.19.1-py3-none-any.whl.metadata (16 kB)
+#13 11.64 Collecting sqlalchemy<3.0,>=2.0.30 (from index-retriever-mcp-server==0.1.0)
+#13 11.64   Downloading sqlalchemy-2.0.46-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (9.5 kB)
+#13 11.80 Collecting sse-starlette<3.0,>=2.1 (from index-retriever-mcp-server==0.1.0)
+#13 11.80   Downloading sse_starlette-2.4.1-py3-none-any.whl.metadata (10 kB)
+#13 11.94 Collecting tenacity<9.0,>=8.2 (from index-retriever-mcp-server==0.1.0)
+#13 11.95   Downloading tenacity-8.5.0-py3-none-any.whl.metadata (1.2 kB)
+#13 12.09 Collecting typing-extensions<5.0,>=4.10 (from index-retriever-mcp-server==0.1.0)
+#13 12.09   Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+#13 12.27 Collecting uvicorn<1.0,>=0.30 (from uvicorn[standard]<1.0,>=0.30->index-retriever-mcp-server==0.1.0)
+#13 12.28   Downloading uvicorn-0.41.0-py3-none-any.whl.metadata (6.7 kB)
+#13 12.66 Collecting websockets<13.0,>=12.0 (from index-retriever-mcp-server==0.1.0)
+#13 12.66   Downloading websockets-12.0-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.6 kB)
+#13 13.00 Collecting xxhash<4.0,>=3.4 (from index-retriever-mcp-server==0.1.0)
+#13 13.01   Downloading xxhash-3.6.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (13 kB)
+#13 13.28 Collecting Mako (from alembic<2.0,>=1.13->index-retriever-mcp-server==0.1.0)
+#13 13.29   Downloading mako-1.3.10-py3-none-any.whl.metadata (2.9 kB)
+#13 13.44 Collecting soupsieve>=1.6.1 (from beautifulsoup4<5.0,>=4.12->index-retriever-mcp-server==0.1.0)
+#13 13.45   Downloading soupsieve-2.8.3-py3-none-any.whl.metadata (4.6 kB)
+#13 13.80 Collecting fastapi>=0.110 (from cloud-dog-api-kit>=0.1.0->index-retriever-mcp-server==0.1.0)
+#13 13.80   Downloading fastapi-0.129.2-py3-none-any.whl.metadata (30 kB)
+#13 14.06 Collecting starlette>=0.36 (from cloud-dog-api-kit>=0.1.0->index-retriever-mcp-server==0.1.0)
+#13 14.07   Downloading starlette-0.52.1-py3-none-any.whl.metadata (6.3 kB)
+#13 14.24 Collecting argon2-cffi>=23.0 (from cloud-dog-idam>=0.1.0->index-retriever-mcp-server==0.1.0)
+#13 14.25   Downloading argon2_cffi-25.1.0-py3-none-any.whl.metadata (4.1 kB)
+#13 15.12 Collecting cryptography>=42.0 (from cloud-dog-idam>=0.1.0->index-retriever-mcp-server==0.1.0)
+#13 15.12   Downloading cryptography-46.0.5-cp311-abi3-manylinux_2_34_x86_64.whl.metadata (5.7 kB)
+#13 15.26 Collecting pyjwt>=2.8 (from pyjwt[crypto]>=2.8->cloud-dog-idam>=0.1.0->index-retriever-mcp-server==0.1.0)
+#13 15.27   Downloading pyjwt-2.11.0-py3-none-any.whl.metadata (4.0 kB)
+#13 15.56 Collecting redis>=5.0 (from cloud-dog-jobs>=0.1.0->index-retriever-mcp-server==0.1.0)
+#13 15.57   Downloading redis-7.2.0-py3-none-any.whl.metadata (12 kB)
+#13 15.73 Collecting jinja2>=3.1 (from cloud-dog-llm>=0.1.0->index-retriever-mcp-server==0.1.0)
+#13 15.74   Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+#13 15.93 Collecting anyio (from httpx<1.0,>=0.27->index-retriever-mcp-server==0.1.0)
+#13 15.94   Downloading anyio-4.12.1-py3-none-any.whl.metadata (4.3 kB)
+#13 16.08 Collecting certifi (from httpx<1.0,>=0.27->index-retriever-mcp-server==0.1.0)
+#13 16.08   Downloading certifi-2026.1.4-py3-none-any.whl.metadata (2.5 kB)
+#13 16.24 Collecting httpcore==1.* (from httpx<1.0,>=0.27->index-retriever-mcp-server==0.1.0)
+#13 16.25   Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+#13 16.37 Collecting idna (from httpx<1.0,>=0.27->index-retriever-mcp-server==0.1.0)
+#13 16.38   Downloading idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+#13 16.50 Collecting h11>=0.16 (from httpcore==1.*->httpx<1.0,>=0.27->index-retriever-mcp-server==0.1.0)
+#13 16.51   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+#13 16.65 Collecting mdurl~=0.1 (from markdown-it-py<4.0,>=3.0->index-retriever-mcp-server==0.1.0)
+#13 16.66   Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+#13 16.78 Collecting annotated-types>=0.6.0 (from pydantic<3.0,>=2.7->index-retriever-mcp-server==0.1.0)
+#13 16.78   Downloading annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+#13 19.05 Collecting pydantic-core==2.41.5 (from pydantic<3.0,>=2.7->index-retriever-mcp-server==0.1.0)
+#13 19.06   Downloading pydantic_core-2.41.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (7.3 kB)
+#13 19.18 Collecting typing-inspection>=0.4.2 (from pydantic<3.0,>=2.7->index-retriever-mcp-server==0.1.0)
+#13 19.18   Downloading typing_inspection-0.4.2-py3-none-any.whl.metadata (2.6 kB)
+#13 19.73 Collecting greenlet>=1 (from sqlalchemy<3.0,>=2.0.30->index-retriever-mcp-server==0.1.0)
+#13 19.73   Downloading greenlet-3.3.2-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (3.7 kB)
+#13 19.94 Collecting click>=7.0 (from uvicorn<1.0,>=0.30->uvicorn[standard]<1.0,>=0.30->index-retriever-mcp-server==0.1.0)
+#13 19.95   Downloading click-8.3.1-py3-none-any.whl.metadata (2.6 kB)
+#13 20.15 Collecting httptools>=0.6.3 (from uvicorn[standard]<1.0,>=0.30->index-retriever-mcp-server==0.1.0)
+#13 20.16   Downloading httptools-0.7.1-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
+#13 20.39 Collecting uvloop>=0.15.1 (from uvicorn[standard]<1.0,>=0.30->index-retriever-mcp-server==0.1.0)
+#13 20.40   Downloading uvloop-0.22.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (4.9 kB)
+#13 20.72 Collecting watchfiles>=0.20 (from uvicorn[standard]<1.0,>=0.30->index-retriever-mcp-server==0.1.0)
+#13 20.73   Downloading watchfiles-1.1.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+#13 20.91 Collecting argon2-cffi-bindings (from argon2-cffi>=23.0->cloud-dog-idam>=0.1.0->index-retriever-mcp-server==0.1.0)
+#13 20.92   Downloading argon2_cffi_bindings-25.1.0-cp39-abi3-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl.metadata (7.4 kB)
+#13 21.49 Collecting cffi>=2.0.0 (from cryptography>=42.0->cloud-dog-idam>=0.1.0->index-retriever-mcp-server==0.1.0)
+#13 21.49   Downloading cffi-2.0.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.6 kB)
+#13 21.67 Collecting annotated-doc>=0.0.2 (from fastapi>=0.110->cloud-dog-api-kit>=0.1.0->index-retriever-mcp-server==0.1.0)
+#13 21.68   Downloading annotated_doc-0.0.4-py3-none-any.whl.metadata (6.6 kB)
+#13 21.95 Collecting MarkupSafe>=2.0 (from jinja2>=3.1->cloud-dog-llm>=0.1.0->index-retriever-mcp-server==0.1.0)
+#13 21.96   Downloading markupsafe-3.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+#13 22.30 Collecting pycparser (from cffi>=2.0.0->cryptography>=42.0->cloud-dog-idam>=0.1.0->index-retriever-mcp-server==0.1.0)
+#13 22.31   Downloading pycparser-3.0-py3-none-any.whl.metadata (8.2 kB)
+#13 22.37 Downloading aiosqlite-0.22.1-py3-none-any.whl (17 kB)
+#13 22.38 Downloading alembic-1.18.4-py3-none-any.whl (263 kB)
+#13 22.38    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 263.9/263.9 kB 64.2 MB/s eta 0:00:00
+#13 22.39 Downloading beautifulsoup4-4.14.3-py3-none-any.whl (107 kB)
+#13 22.39    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 107.7/107.7 kB 106.6 MB/s eta 0:00:00
+#13 22.40 Downloading chardet-5.2.0-py3-none-any.whl (199 kB)
+#13 22.40    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 199.4/199.4 kB 102.0 MB/s eta 0:00:00
+#13 22.41 Downloading filelock-3.24.3-py3-none-any.whl (24 kB)
+#13 22.41 Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+#13 22.42    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.5/73.5 kB 121.9 MB/s eta 0:00:00
+#13 22.42 Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+#13 22.43    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.8/78.8 kB 83.2 MB/s eta 0:00:00
+#13 22.43 Downloading lxml-5.4.0-cp311-cp311-manylinux_2_28_x86_64.whl (4.9 MB)
+#13 22.50    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.9/4.9 MB 80.5 MB/s eta 0:00:00
+#13 22.51 Downloading markdown_it_py-3.0.0-py3-none-any.whl (87 kB)
+#13 22.51    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 87.5/87.5 kB 198.6 MB/s eta 0:00:00
+#13 22.51 Downloading pydantic-2.12.5-py3-none-any.whl (463 kB)
+#13 22.52    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 463.6/463.6 kB 121.7 MB/s eta 0:00:00
+#13 22.53 Downloading pydantic_core-2.41.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+#13 22.55    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 92.6 MB/s eta 0:00:00
+#13 22.56 Downloading pydantic_settings-2.13.1-py3-none-any.whl (58 kB)
+#13 22.56    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 58.9/58.9 kB 181.0 MB/s eta 0:00:00
+#13 22.57 Downloading python_dotenv-1.2.1-py3-none-any.whl (21 kB)
+#13 22.57 Downloading python_multipart-0.0.22-py3-none-any.whl (24 kB)
+#13 22.58 Downloading pyyaml-6.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (806 kB)
+#13 22.59    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 806.6/806.6 kB 116.9 MB/s eta 0:00:00
+#13 22.60 Downloading ruamel_yaml-0.19.1-py3-none-any.whl (118 kB)
+#13 22.60    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 118.1/118.1 kB 161.2 MB/s eta 0:00:00
+#13 22.61 Downloading sqlalchemy-2.0.46-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (3.3 MB)
+#13 22.65    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 90.3 MB/s eta 0:00:00
+#13 22.65 Downloading sse_starlette-2.4.1-py3-none-any.whl (10 kB)
+#13 22.66 Downloading tenacity-8.5.0-py3-none-any.whl (28 kB)
+#13 22.67 Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+#13 22.67    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.6/44.6 kB 181.1 MB/s eta 0:00:00
+#13 22.67 Downloading uvicorn-0.41.0-py3-none-any.whl (68 kB)
+#13 22.68    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 68.8/68.8 kB 187.2 MB/s eta 0:00:00
+#13 22.68 Downloading websockets-12.0-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (130 kB)
+#13 22.69    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 130.9/130.9 kB 152.4 MB/s eta 0:00:00
+#13 22.69 Downloading xxhash-3.6.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (193 kB)
+#13 22.70    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 193.9/193.9 kB 148.4 MB/s eta 0:00:00
+#13 22.70 Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+#13 22.71 Downloading anyio-4.12.1-py3-none-any.whl (113 kB)
+#13 22.71    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 113.6/113.6 kB 210.2 MB/s eta 0:00:00
+#13 22.72 Downloading argon2_cffi-25.1.0-py3-none-any.whl (14 kB)
+#13 22.72 Downloading click-8.3.1-py3-none-any.whl (108 kB)
+#13 22.73    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 108.3/108.3 kB 171.8 MB/s eta 0:00:00
+#13 22.73 Downloading cryptography-46.0.5-cp311-abi3-manylinux_2_34_x86_64.whl (4.5 MB)
+#13 22.79    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.5/4.5 MB 86.9 MB/s eta 0:00:00
+#13 22.79 Downloading fastapi-0.129.2-py3-none-any.whl (103 kB)
+#13 22.80    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 103.2/103.2 kB 196.6 MB/s eta 0:00:00
+#13 22.80 Downloading greenlet-3.3.2-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (594 kB)
+#13 22.81    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 594.2/594.2 kB 98.7 MB/s eta 0:00:00
+#13 22.82 Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+#13 22.82 Downloading httptools-0.7.1-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (456 kB)
+#13 22.83    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 456.6/456.6 kB 130.6 MB/s eta 0:00:00
+#13 22.84 Downloading idna-3.11-py3-none-any.whl (71 kB)
+#13 22.84    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 71.0/71.0 kB 197.4 MB/s eta 0:00:00
+#13 22.84 Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+#13 22.85    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 167.8 MB/s eta 0:00:00
+#13 22.85 Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+#13 22.86 Downloading pyjwt-2.11.0-py3-none-any.whl (28 kB)
+#13 22.86 Downloading redis-7.2.0-py3-none-any.whl (394 kB)
+#13 22.87    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 394.9/394.9 kB 128.1 MB/s eta 0:00:00
+#13 22.88 Downloading soupsieve-2.8.3-py3-none-any.whl (37 kB)
+#13 22.88 Downloading starlette-0.52.1-py3-none-any.whl (74 kB)
+#13 22.89    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 74.3/74.3 kB 190.7 MB/s eta 0:00:00
+#13 22.89 Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+#13 22.90 Downloading uvloop-0.22.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (3.8 MB)
+#13 23.18    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.8/3.8 MB 13.6 MB/s eta 0:00:00
+#13 23.19 Downloading watchfiles-1.1.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (456 kB)
+#13 23.20    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 456.1/456.1 kB 92.3 MB/s eta 0:00:00
+#13 23.20 Downloading certifi-2026.1.4-py3-none-any.whl (152 kB)
+#13 23.21    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 152.9/152.9 kB 198.9 MB/s eta 0:00:00
+#13 23.21 Downloading mako-1.3.10-py3-none-any.whl (78 kB)
+#13 23.22    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.5/78.5 kB 142.5 MB/s eta 0:00:00
+#13 23.22 Downloading annotated_doc-0.0.4-py3-none-any.whl (5.3 kB)
+#13 23.23 Downloading cffi-2.0.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (215 kB)
+#13 23.23    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 215.6/215.6 kB 156.4 MB/s eta 0:00:00
+#13 23.24 Downloading markupsafe-3.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+#13 23.25 Downloading argon2_cffi_bindings-25.1.0-cp39-abi3-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl (87 kB)
+#13 23.25    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 87.1/87.1 kB 175.6 MB/s eta 0:00:00
+#13 23.25 Downloading pycparser-3.0-py3-none-any.whl (48 kB)
+#13 23.26    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 48.2/48.2 kB 163.9 MB/s eta 0:00:00
+#13 23.41 Building wheels for collected packages: index-retriever-mcp-server
+#13 23.41   Building wheel for index-retriever-mcp-server (pyproject.toml): started
+#13 23.45   Building wheel for index-retriever-mcp-server (pyproject.toml): finished with status 'done'
+#13 23.46   Created wheel for index-retriever-mcp-server: filename=index_retriever_mcp_server-0.1.0-py3-none-any.whl size=41721 sha256=3f348ff7b8d82fe0b21b720077749564c609ce70bc13cdb17b45b2939c0392d3
+#13 23.46   Stored in directory: /tmp/pip-ephem-wheel-cache-6n2pgp94/wheels/57/0f/98/bb57b2b57b95807699b822a35c022f139d38a02c27922f27ce
+#13 23.46 Successfully built index-retriever-mcp-server
+#13 23.95 Installing collected packages: xxhash, websockets, uvloop, typing-extensions, tenacity, soupsieve, ruamel-yaml, redis, pyyaml, python-multipart, python-dotenv, pyjwt, pycparser, mdurl, MarkupSafe, lxml, idna, httptools, h11, greenlet, filelock, cloud-dog-logging, click, chardet, certifi, annotated-types, annotated-doc, aiosqlite, uvicorn, typing-inspection, sqlalchemy, pydantic-core, markdown-it-py, Mako, jinja2, httpcore, cloud-dog-config, cffi, beautifulsoup4, anyio, watchfiles, starlette, sse-starlette, pydantic, httpx, cryptography, cloud-dog-jobs, argon2-cffi-bindings, alembic, pydantic-settings, fastapi, cloud-dog-vdb, cloud-dog-llm, argon2-cffi, cloud-dog-idam, cloud-dog-api-kit, index-retriever-mcp-server
+#13 30.50 Successfully installed Mako-1.3.10 MarkupSafe-3.0.3 aiosqlite-0.22.1 alembic-1.18.4 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.12.1 argon2-cffi-25.1.0 argon2-cffi-bindings-25.1.0 beautifulsoup4-4.14.3 certifi-2026.1.4 cffi-2.0.0 chardet-5.2.0 click-8.3.1 cloud-dog-api-kit-0.1.1 cloud-dog-config-0.1.1 cloud-dog-idam-0.1.0 cloud-dog-jobs-0.1.1 cloud-dog-llm-0.1.1 cloud-dog-logging-0.1.2 cloud-dog-vdb-0.1.2 cryptography-46.0.5 fastapi-0.129.2 filelock-3.24.3 greenlet-3.3.2 h11-0.16.0 httpcore-1.0.9 httptools-0.7.1 httpx-0.28.1 idna-3.11 index-retriever-mcp-server-0.1.0 jinja2-3.1.6 lxml-5.4.0 markdown-it-py-3.0.0 mdurl-0.1.2 pycparser-3.0 pydantic-2.12.5 pydantic-core-2.41.5 pydantic-settings-2.13.1 pyjwt-2.11.0 python-dotenv-1.2.1 python-multipart-0.0.22 pyyaml-6.0.3 redis-7.2.0 ruamel-yaml-0.19.1 soupsieve-2.8.3 sqlalchemy-2.0.46 sse-starlette-2.4.1 starlette-0.52.1 tenacity-8.5.0 typing-extensions-4.15.0 typing-inspection-0.4.2 uvicorn-0.41.0 uvloop-0.22.1 watchfiles-1.1.1 websockets-12.0 xxhash-3.6.0
+#13 30.50 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+#13 30.80 
+#13 30.80 [notice] A new release of pip is available: 24.0 -> 26.0.1
+#13 30.80 [notice] To update, run: pip install --upgrade pip
+#13 DONE 32.1s
+
+#14 [stage-1  3/10] RUN apt-get update && apt-get install -y --no-install-recommends     curl netcat-openbsd procps net-tools     && rm -rf /var/lib/apt/lists/*
+#14 CACHED
+
+#15 [stage-1  4/10] WORKDIR /app
+#15 CACHED
+
+#16 [stage-1  5/10] COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+#16 DONE 1.4s
+
+#17 [stage-1  6/10] COPY --from=builder /usr/local/bin /usr/local/bin
+#17 DONE 0.1s
+
+#18 [stage-1  7/10] COPY src/ ./src/
+#18 DONE 0.1s
+
+#19 [stage-1  8/10] COPY defaults.yaml server_control.sh docker-entrypoint.sh healthcheck.sh ./
+#19 DONE 0.3s
+
+#20 [stage-1  9/10] RUN mkdir -p /app/logs /app/data /app/.pids /app/certs &&     chmod +x /app/docker-entrypoint.sh /app/healthcheck.sh /app/server_control.sh
+#20 DONE 0.2s
+
+#21 [stage-1 10/10] RUN useradd --system --create-home --uid 10001 appuser &&     chown -R appuser:appuser /app
+#21 0.109 useradd warning: appuser's uid 10001 is greater than SYS_UID_MAX 999
+#21 DONE 0.6s
+
+#22 exporting to image
+#22 exporting layers
+#22 exporting layers 1.6s done
+#22 writing image sha256:1050f866ea96fe872bca20b6ce00a2013f210db7837ed43b7b07874805cfd9cd done
+#22 naming to docker.io/cloud-dog/index-retriever-mcp-server:0.1.0 done
+#22 DONE 1.6s

@@ -1,0 +1,10 @@
+# Unit test environment
+TEST_ENV_TIER=UT
+INGEST_ROOT=/tmp/index-retriever-ut
+CHROMA_PATH=/tmp/index-retriever-ut/chroma
+DB_URL=sqlite+aiosqlite:////tmp/index-retriever-ut.db
+CLOUD_DOG__INDEX__VDB__PROVIDER=chroma
+CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=ollama
+CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text
+EMBED_BASE_URL=http://127.0.0.1:11434/v1
+EMBED_API_KEY=dummy

@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: index-retriever-api
+    command: api
+    ports:
+      - "${API_PORT:-8686}:8686"
+    env_file: .env
+    environment:
+      - CLOUD_DOG__INDEX__API_SERVER__PORT=8686
+      - CLOUD_DOG__INDEX__API_SERVER__HOST=0.0.0.0
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./certs:/app/certs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8686/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  mcp:
+    build: .
+    container_name: index-retriever-mcp
+    command: mcp
+    ports:
+      - "${MCP_PORT:-8687}:8687"
+    env_file: .env
+    environment:
+      - CLOUD_DOG__INDEX__MCP_SERVER__PORT=8687
+      - CLOUD_DOG__INDEX__MCP_SERVER__HOST=0.0.0.0
+    volumes:
+      - ./logs:/app/logs
+      - ./certs:/app/certs
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # All-in-one (development only)
+  all-in-one:
+    build: .
+    container_name: index-retriever-all
+    command: all
+    ports:
+      - "8686:8686"
+      - "8687:8687"
+    env_file: .env
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./certs:/app/certs
+    profiles:
+      - all-in-one
+    restart: unless-stopped
