@@ -130,6 +130,28 @@ pip install -e ".[dev]" --index-url https://pypi.cloud-dog.net/simple/
 - NEVER mock VDB or embedding providers in ST/IT/AT tests
 - See TESTS.md for complete test plan
 
+### 6.1 ABSOLUTE TEST INTEGRITY — ZERO TOLERANCE
+
+**ST, IT, and AT tests MUST execute against REAL systems. No exceptions.**
+
+**NEVER:**
+- **STUB** responses, backends, or service calls in ST/IT/AT tests
+- **MOCK** real systems (VDB backends, embedding providers, APIs, MCP endpoints) in ST/IT/AT tests
+- **FAKE** success by returning hard-coded or synthetic data
+- **FUDGE** test assertions to match stub output instead of real behaviour
+- **HACK** around failures by replacing real calls with in-process fakes
+- **LIE** about test results — if it did not hit a real system, it did not pass
+- **SKIP** validation steps to claim completion
+
+**A test that uses stubs, mocks, or fake data in ST/IT/AT tiers is not a test — it is a lie.** It MUST be removed or rewritten to use real systems.
+
+- UT (unit) tests MAY use mocks/stubs for isolated logic testing only
+- ST (system) tests MUST use real local services
+- IT (integration) tests MUST use real running servers, real VDB backends, real embedding providers, and real network calls
+- AT (application) tests MUST exercise full end-to-end workflows against real systems
+
+**If a real system is unavailable, the test MUST fail explicitly — not pass with fake data.**
+
 ---
 
 ## Section 7 — Integrity Enforcement Addendum (2026-02-20)

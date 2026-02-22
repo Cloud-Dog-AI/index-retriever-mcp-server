@@ -110,6 +110,10 @@ All configuration is managed via `cloud_dog_config`. See `defaults.yaml` for the
 
 ---
 
+## Test Integrity
+
+**ST, IT, and AT tests MUST execute against REAL systems — no stubs, mocks, or fake data. See `RULES.md` § 6.1.**
+
 ## Security
 
 - RBAC gates all operations (profiles, collections, tools) via `cloud_dog_idam`
