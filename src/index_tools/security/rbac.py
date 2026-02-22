@@ -15,6 +15,7 @@ except ImportError:  # pragma: no cover - fallback for local development only
 
 @dataclass(slots=True)
 class Subject:
+    """Subject definition."""
     user_id: str
     roles: set[str]
 
@@ -23,10 +24,12 @@ class RbacAuthoriser:
     """Simple RBAC evaluator aligned to cloud_dog_idam role semantics."""
 
     def __init__(self, role_actions: dict[str, list[str]], default_deny: bool = True) -> None:
+        """Initialise the instance state."""
         self.role_actions = {role: set(actions) for role, actions in role_actions.items()}
         self.default_deny = default_deny
 
     def is_allowed(self, subject: Subject, action: str) -> bool:
+        """Execute is allowed."""
         for role in subject.roles:
             actions = self.role_actions.get(role, set())
             if "*" in actions or action in actions:
@@ -38,6 +41,7 @@ class RbacAuthoriser:
         return not self.default_deny and bool(subject.roles)
 
     def backend_name(self) -> str:
+        """Execute backend name."""
         if cloud_dog_idam is not None:
             return "cloud_dog_idam"
         return "fallback"

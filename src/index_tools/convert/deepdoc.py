@@ -7,4 +7,5 @@ from __future__ import annotations
 
 
 def available() -> bool:
+    """Execute available."""
     return False

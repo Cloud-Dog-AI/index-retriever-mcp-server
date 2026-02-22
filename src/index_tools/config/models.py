@@ -11,56 +11,67 @@ from pydantic import BaseModel, Field
 
 
 class HttpServerConfig(BaseModel):
+    """HttpServerConfig definition."""
     host: str = "0.0.0.0"
     port: int = 8686
 
 
 class McpServerConfig(BaseModel):
+    """McpServerConfig definition."""
     enabled: bool = True
     host: str = "0.0.0.0"
     port: int = 8687
 
 
 class ServerConfig(BaseModel):
+    """ServerConfig definition."""
     http: HttpServerConfig = Field(default_factory=HttpServerConfig)
     mcp: McpServerConfig = Field(default_factory=McpServerConfig)
 
 
 class JwtConfig(BaseModel):
+    """JwtConfig definition."""
     issuer: str
     audience: str
     public_keys_url: str
 
 
 class AuthConfig(BaseModel):
+    """AuthConfig definition."""
     mode: str = "apikey+jwt"
     jwt: JwtConfig
 
 
 class DbConfig(BaseModel):
+    """DbConfig definition."""
     url: str
 
 
 class AuditStorageConfig(BaseModel):
+    """AuditStorageConfig definition."""
     path: str
 
 
 class StorageConfig(BaseModel):
+    """StorageConfig definition."""
     db: DbConfig
     audit: AuditStorageConfig
 
 
 class RetryConfig(BaseModel):
+    """RetryConfig definition."""
     max_attempts: int = 3
     backoff_seconds: int = 5
 
 
 class RedisConfig(BaseModel):
+    """RedisConfig definition."""
     enabled: bool = False
     url: str = ""
 
 
 class QueueConfig(BaseModel):
+    """QueueConfig definition."""
     max_concurrency: int = 8
     per_profile_concurrency: int = 2
     default_timeout_seconds: int = 1800
@@ -69,17 +80,20 @@ class QueueConfig(BaseModel):
 
 
 class ChromaBackendConfig(BaseModel):
+    """ChromaBackendConfig definition."""
     mode: str = "local"
     path: str
     collection: str = "default"
 
 
 class VdbConfig(BaseModel):
+    """VdbConfig definition."""
     type: str
     chroma: ChromaBackendConfig | None = None
 
 
 class OpenAiCompatConfig(BaseModel):
+    """OpenAiCompatConfig definition."""
     base_url: str
     api_key: str
     model: str
@@ -87,21 +101,25 @@ class OpenAiCompatConfig(BaseModel):
 
 
 class EmbeddingsConfig(BaseModel):
+    """EmbeddingsConfig definition."""
     provider: str
     openai_compat: OpenAiCompatConfig | None = None
 
 
 class DedupeConfig(BaseModel):
+    """DedupeConfig definition."""
     mode: str = "hash"
     policy: str = "skip"
 
 
 class FileSystemIngestionConfig(BaseModel):
+    """FileSystemIngestionConfig definition."""
     roots: list[str] = Field(default_factory=list)
     deny_globs: list[str] = Field(default_factory=list)
 
 
 class IngestionConfig(BaseModel):
+    """IngestionConfig definition."""
     allowed_sources: list[str] = Field(default_factory=lambda: ["upload", "text"])
     filesystem: FileSystemIngestionConfig = Field(default_factory=FileSystemIngestionConfig)
     max_file_mb: int = 50
@@ -109,17 +127,20 @@ class IngestionConfig(BaseModel):
 
 
 class ChunkingConfig(BaseModel):
+    """ChunkingConfig definition."""
     strategy: str = "token"
     chunk_size: int = 800
     chunk_overlap: int = 100
 
 
 class SearchConfig(BaseModel):
+    """SearchConfig definition."""
     top_k_default: int = 10
     score_threshold: float = 0.0
 
 
 class ProfileConfig(BaseModel):
+    """ProfileConfig definition."""
     enabled: bool = True
     vdb: VdbConfig
     embeddings: EmbeddingsConfig
@@ -129,12 +150,14 @@ class ProfileConfig(BaseModel):
 
 
 class RbacConfig(BaseModel):
+    """RbacConfig definition."""
     enabled: bool = True
     default_deny: bool = True
     roles: dict[str, list[str]] = Field(default_factory=dict)
 
 
 class GlobalConfig(BaseModel):
+    """GlobalConfig definition."""
     server: ServerConfig
     auth: AuthConfig
     storage: StorageConfig
@@ -144,4 +167,5 @@ class GlobalConfig(BaseModel):
 
     @classmethod
     def from_mapping(cls, value: dict[str, Any]) -> GlobalConfig:
+        """Execute from mapping."""
         return cls.model_validate(value)

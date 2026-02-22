@@ -10,10 +10,12 @@ class RedisBridge:
     """Optional queue bridge placeholder used for runtime toggling."""
 
     def __init__(self, enabled: bool, url: str = "") -> None:
+        """Initialise the instance state."""
         self.enabled = enabled
         self.url = url
 
     def status(self) -> str:
+        """Execute status."""
         if self.enabled:
             return "enabled"
         return "disabled"

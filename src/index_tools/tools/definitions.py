@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 
 class SearchInput(BaseModel):
+    """SearchInput definition."""
     profile: str
     collection: str
     query: str
@@ -19,6 +20,7 @@ class SearchInput(BaseModel):
 
 
 class SearchResult(BaseModel):
+    """SearchResult definition."""
     doc_id: str
     chunk_id: str
     text: str
@@ -27,10 +29,12 @@ class SearchResult(BaseModel):
 
 
 class SearchOutput(BaseModel):
+    """SearchOutput definition."""
     results: list[SearchResult] = Field(default_factory=list)
 
 
 class IngestTextInput(BaseModel):
+    """IngestTextInput definition."""
     profile: str
     collection: str
     text: str
@@ -38,14 +42,17 @@ class IngestTextInput(BaseModel):
 
 
 class IngestOutput(BaseModel):
+    """IngestOutput definition."""
     job_id: str
     status: str
 
 
 class GenericToolInput(BaseModel):
+    """GenericToolInput definition."""
     profile: str = "default"
     collection: str = "default"
 
 
 class GenericToolOutput(BaseModel):
+    """GenericToolOutput definition."""
     status: str = "ok"

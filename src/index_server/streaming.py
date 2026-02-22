@@ -11,6 +11,7 @@ from index_tools.tools.service import IndexService
 
 
 def ingest_stream_open(service: IndexService, profile: str, collection: str, ordering_key: str) -> dict[str, str]:
+    """Execute ingest stream open."""
     session_id = service.ingest_stream_open(profile=profile, collection=collection, ordering_key=ordering_key)
     return {"session_id": session_id}
 
@@ -22,9 +23,11 @@ def ingest_stream_event(
     actor: str,
     metadata: dict[str, Any] | None = None,
 ) -> dict[str, str]:
+    """Execute ingest stream event."""
     job_id = service.ingest_stream_event(session_id=session_id, text=text, actor=actor, metadata=metadata)
     return {"job_id": job_id}
 
 
 def ingest_stream_close(service: IndexService, session_id: str) -> dict[str, Any]:
+    """Execute ingest stream close."""
     return service.ingest_stream_close(session_id=session_id)

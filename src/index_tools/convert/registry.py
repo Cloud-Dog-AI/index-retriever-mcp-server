@@ -14,12 +14,15 @@ class ConverterRegistry:
     """Registry mapping file extensions to converter callables."""
 
     def __init__(self) -> None:
+        """Initialise the instance state."""
         self._converters: dict[str, Converter] = {}
 
     def register(self, extension: str, converter: Converter) -> None:
+        """Execute register."""
         self._converters[extension.lower().strip()] = converter
 
     def select(self, extension: str) -> Converter:
+        """Execute select."""
         key = extension.lower().strip()
         if key in self._converters:
             return self._converters[key]

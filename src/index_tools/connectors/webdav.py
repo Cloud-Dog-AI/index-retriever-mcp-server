@@ -11,6 +11,7 @@ from index_tools.connectors.models import FetchPlan
 
 
 def resolve(uri: str) -> FetchPlan:
+    """Execute resolve."""
     parsed = urlparse(uri)
     if parsed.scheme not in {"webdav", "webdavs", "http", "https"}:
         raise ValueError("Invalid WebDAV URI")

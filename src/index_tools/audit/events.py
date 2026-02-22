@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 
 class AuditEvent(BaseModel):
+    """AuditEvent definition."""
     timestamp_utc: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))  # noqa: UP017
     actor: str
     operation: str
@@ -27,16 +28,20 @@ class AuditEvent(BaseModel):
 
 
 class IngestAuditEvent(AuditEvent):
+    """IngestAuditEvent definition."""
     operation: str = "ingest"
 
 
 class SearchAuditEvent(AuditEvent):
+    """SearchAuditEvent definition."""
     operation: str = "search"
 
 
 class DeleteAuditEvent(AuditEvent):
+    """DeleteAuditEvent definition."""
     operation: str = "delete"
 
 
 class AdminAuditEvent(AuditEvent):
+    """AdminAuditEvent definition."""
     operation: str = "admin"

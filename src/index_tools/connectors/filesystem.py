@@ -12,9 +12,11 @@ from index_tools.security.scope import resolve_scoped_path
 
 
 def resolve(allowed_roots: list[str], requested_path: str) -> FetchPlan:
+    """Execute resolve."""
     path = resolve_scoped_path(allowed_roots=allowed_roots, requested_path=requested_path)
     return FetchPlan(source_type="filesystem", location=str(path), metadata={"scheme": "file"})
 
 
 def fetch(plan: FetchPlan) -> bytes:
+    """Execute fetch."""
     return Path(plan.location).read_bytes()

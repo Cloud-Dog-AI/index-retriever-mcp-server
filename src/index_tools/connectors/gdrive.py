@@ -9,6 +9,7 @@ from index_tools.connectors.models import FetchPlan
 
 
 def resolve(file_id: str) -> FetchPlan:
+    """Execute resolve."""
     if not file_id.strip():
         raise ValueError("Google Drive file ID is required")
     return FetchPlan(source_type="gdrive", location=file_id, metadata={"file_id": file_id})

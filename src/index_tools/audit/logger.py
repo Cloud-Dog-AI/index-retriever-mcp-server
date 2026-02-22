@@ -47,16 +47,19 @@ class AuditLogger:
     """Append-only JSONL audit logger."""
 
     def __init__(self, path: str | Path) -> None:
+        """Initialise the instance state."""
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
     def write_event(self, event: AuditEvent) -> None:
+        """Execute write event."""
         payload = redact_payload(event.model_dump(mode="json"))
         line = json.dumps(payload, ensure_ascii=True)
         with self.path.open("a", encoding="utf-8") as handle:
             handle.write(line + "\n")
 
     def get_backend_name(self) -> str:
+        """Execute get backend name."""
         if cloud_dog_logging is not None:
             return "cloud_dog_logging"
         return "jsonl-fallback"

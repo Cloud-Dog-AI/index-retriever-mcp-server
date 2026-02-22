@@ -7,6 +7,7 @@ from __future__ import annotations
 
 
 def _score(value: object) -> float:
+    """Internal helper to score."""
     if isinstance(value, (int, float, str)):
         return float(value)
     return 0.0

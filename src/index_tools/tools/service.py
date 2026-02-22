@@ -26,6 +26,7 @@ from index_tools.vdb.adapters import InMemoryVdbAdapter
 
 @dataclass(slots=True)
 class DocumentRecord:
+    """DocumentRecord definition."""
     doc_id: str
     profile: str
     collection: str
@@ -37,6 +38,7 @@ class DocumentRecord:
 
 @dataclass(slots=True)
 class StreamSession:
+    """StreamSession definition."""
     session_id: str
     profile: str
     collection: str
@@ -57,6 +59,7 @@ class IndexService:
         embedding_model: str | None = None,
         default_backend: str | None = None,
     ) -> None:
+        """Initialise the instance state."""
         resolved_provider = embedding_provider or _required_env(
             "CLOUD_DOG__INDEX__EMBEDDING__PROVIDER",
             "EMBED_PROVIDER",
@@ -89,19 +92,24 @@ class IndexService:
 
     @staticmethod
     def _collection_key(profile: str, collection: str) -> str:
+        """Internal helper to collection key."""
         return f"{profile}:{collection}"
 
     def _require_admin(self, roles: set[str]) -> None:
+        """Internal helper to require admin."""
         if "admin" not in roles:
             raise PermissionError("Admin role required")
 
     def profiles_list(self) -> list[str]:
+        """Execute profiles list."""
         return sorted(self.profiles.keys())
 
     def profile_get(self, profile: str) -> dict[str, Any]:
+        """Execute profile get."""
         return self.profiles[profile]
 
     def admin_profile_create(self, profile: str, roles: set[str]) -> None:
+        """Execute admin profile create."""
         self._require_admin(roles)
         self.profiles[profile] = {
             "enabled": True,
@@ -118,12 +126,14 @@ class IndexService:
         )
 
     def admin_profile_delete(self, profile: str, roles: set[str]) -> None:
+        """Execute admin profile delete."""
         self._require_admin(roles)
         if profile == "default":
             raise ValueError("Default profile cannot be deleted")
         self.profiles.pop(profile, None)
 
     def collections_list(self, profile: str) -> list[str]:
+        """Execute collections list."""
         prefix = f"{profile}:"
         output: list[str] = []
         for name in self.collection_manager.list():
@@ -132,10 +142,12 @@ class IndexService:
         return sorted(output)
 
     def admin_collection_create(self, profile: str, collection: str, roles: set[str]) -> None:
+        """Execute admin collection create."""
         self._require_admin(roles)
         self.collection_manager.create(self._collection_key(profile, collection))
 
     def admin_collection_delete(self, profile: str, collection: str, roles: set[str]) -> None:
+        """Execute admin collection delete."""
         self._require_admin(roles)
         self.collection_manager.delete(self._collection_key(profile, collection))
 
@@ -150,6 +162,7 @@ class IndexService:
         metadata: dict[str, Any] | None = None,
         created_at: datetime | None = None,
     ) -> str:
+        """Execute ingest text."""
         if profile not in self.profiles:
             raise ValueError(f"Unknown profile: {profile}")
 
@@ -173,6 +186,7 @@ class IndexService:
         self.queue.enqueue(job)
 
         def _handler(_: JobRecord) -> None:
+            """Internal helper to handler."""
             doc_id = str(uuid4())
             chunks = token_chunks(text, chunk_size=64, chunk_overlap=8)
             if not chunks:
@@ -225,6 +239,7 @@ class IndexService:
         return job_id
 
     def ingest_reference(self, profile: str, collection: str, path: str, actor: str) -> str:
+        """Execute ingest reference."""
         with open(path, "rb") as handle:
             payload = handle.read()
         return self.ingest_text(
@@ -244,6 +259,7 @@ class IndexService:
         filters: dict[str, Any] | None = None,
         score_threshold: float = 0.0,
     ) -> list[dict[str, Any]]:
+        """Execute search."""
         return self.search_engine.search(
             collection=self._collection_key(profile, collection),
             query=query,
@@ -253,6 +269,7 @@ class IndexService:
         )
 
     def retrieve(self, doc_id: str) -> dict[str, Any]:
+        """Execute retrieve."""
         record = self.documents[doc_id]
         return {
             "doc_id": record.doc_id,
@@ -264,11 +281,13 @@ class IndexService:
         }
 
     def delete_by_id(self, profile: str, collection: str, doc_id: str) -> bool:
+        """Execute delete by id."""
         deleted = self.vdb.delete_by_doc_id(self._collection_key(profile, collection), doc_id)
         self.documents.pop(doc_id, None)
         return deleted
 
     def delete_by_filter(self, profile: str, collection: str, filters: dict[str, Any]) -> int:
+        """Execute delete by filter."""
         deleted = self.vdb.delete_by_filter(self._collection_key(profile, collection), filters)
         if deleted:
             keep: dict[str, DocumentRecord] = {}
@@ -282,6 +301,7 @@ class IndexService:
         return deleted
 
     def retention_run(self, profile: str, collection: str, older_than_days: int) -> int:
+        """Execute retention run."""
         threshold = datetime.now(timezone.utc) - timedelta(days=older_than_days)  # noqa: UP017
         deleted_count = 0
         for doc_id, value in list(self.documents.items()):
@@ -295,30 +315,37 @@ class IndexService:
         return deleted_count
 
     def reindex_run(self, profile: str, collection: str) -> dict[str, int]:
+        """Execute reindex run."""
         doc_count = len([d for d in self.documents.values() if d.profile == profile and d.collection == collection])
         return {"documents": doc_count}
 
     def job_list(self) -> list[JobRecord]:
+        """Execute job list."""
         return self.queue.list_jobs()
 
     def job_get(self, job_id: str) -> JobRecord:
+        """Execute job get."""
         return self.queue.get(job_id)
 
     def job_wait(self, job_id: str) -> JobRecord:
+        """Execute job wait."""
         return self.queue.get(job_id)
 
     def job_cancel(self, job_id: str) -> JobRecord:
+        """Execute job cancel."""
         job = self.queue.get(job_id)
         job.status = JobStatus.cancelled
         return job
 
     def job_retry(self, job_id: str) -> JobRecord:
+        """Execute job retry."""
         job = self.queue.get(job_id)
         if job.status is JobStatus.failed:
             job.status = JobStatus.queued
         return job
 
     def queue_status(self) -> dict[str, int]:
+        """Execute queue status."""
         jobs = self.queue.list_jobs()
         total = len(jobs)
         running = len([j for j in jobs if j.status is JobStatus.running])
@@ -326,14 +353,17 @@ class IndexService:
         return {"total": total, "running": running, "failed": failed}
 
     def backend_health_check(self) -> dict[str, str]:
+        """Execute backend health check."""
         return self.vdb.health_check()
 
     def embedding_health_check(self) -> dict[str, str | int]:
+        """Execute embedding health check."""
         vectors = self.embedding_adapter.embed(["health check"])
         dims = len(vectors[0]) if vectors else 0
         return {"status": "ok", "dimensions": dims}
 
     def ingest_stream_open(self, profile: str, collection: str, ordering_key: str) -> str:
+        """Execute ingest stream open."""
         session_id = str(uuid4())
         self.stream_sessions[session_id] = StreamSession(
             session_id=session_id,
@@ -350,6 +380,7 @@ class IndexService:
         actor: str,
         metadata: dict[str, Any] | None = None,
     ) -> str:
+        """Execute ingest stream event."""
         session = self.stream_sessions[session_id]
         if session.closed:
             raise RuntimeError("Stream session is closed")
@@ -366,6 +397,7 @@ class IndexService:
         return job_id
 
     def ingest_stream_close(self, session_id: str) -> dict[str, Any]:
+        """Execute ingest stream close."""
         session = self.stream_sessions[session_id]
         session.closed = True
         return {

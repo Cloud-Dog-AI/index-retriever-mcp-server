@@ -1,6 +1,6 @@
 # Application test environment
 TEST_ENV_TIER=AT
-DB_URL=sqlite+aiosqlite:////tmp/index-retriever-at.db
+DB_URL=sqlite+aiosqlite:///data/index-retriever-at.db
 CLOUD_DOG__INDEX__VDB__PROVIDER=chroma
 CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=ollama
 CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text

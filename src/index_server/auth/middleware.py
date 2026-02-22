@@ -16,6 +16,7 @@ except ImportError:  # pragma: no cover
 
 @dataclass(slots=True)
 class AuthResult:
+    """AuthResult definition."""
     user_id: str
     roles: set[str]
     token_type: str
@@ -25,9 +26,11 @@ class AuthMiddleware:
     """Auth middleware placeholder delegating to cloud_dog_idam at runtime."""
 
     def __init__(self, api_keys: dict[str, set[str]] | None = None) -> None:
+        """Initialise the instance state."""
         self.api_keys = api_keys or {"test-api-key": {"admin", "maintainer", "writer", "reader"}}
 
     def authenticate(self, headers: dict[str, str]) -> AuthResult:
+        """Execute authenticate."""
         key = headers.get("x-api-key", "").strip()
         if key in self.api_keys:
             return AuthResult(user_id="api-key-user", roles=self.api_keys[key], token_type="api_key")
@@ -45,14 +48,17 @@ class AuthMiddleware:
 
     @staticmethod
     def require_roles(identity: AuthResult, allowed_roles: set[str]) -> None:
+        """Execute require roles."""
         if identity.roles.intersection(allowed_roles):
             return
         raise PermissionError("Authorisation failed")
 
     def auth_health(self) -> dict[str, Any]:
+        """Execute auth health."""
         return {"status": "ok", "backend": self.backend_name()}
 
     def backend_name(self) -> str:
+        """Execute backend name."""
         if cloud_dog_idam is not None:
             return "cloud_dog_idam"
         return "fallback"

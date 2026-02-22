@@ -11,6 +11,7 @@ from index_tools.connectors.models import FetchPlan
 
 
 def resolve(uri: str) -> FetchPlan:
+    """Execute resolve."""
     parsed = urlparse(uri)
     if parsed.scheme != "s3" or not parsed.netloc:
         raise ValueError("Invalid S3 URI")

@@ -28,9 +28,9 @@ class LocalIndexRuntime:
 
     def __init__(self) -> None:
         # Consume ST/UT env variables so env files are active inputs rather than decoration.
-        ingest_root = os.getenv("INGEST_ROOT", "/tmp/index-retriever-st")
+        ingest_root = os.getenv("INGEST_ROOT", "data/index-retriever-st")
         chroma_path = os.getenv("CHROMA_PATH", f"{ingest_root}/chroma")
-        _ = os.getenv("DB_URL", "sqlite+aiosqlite:////tmp/index-retriever-st.db")
+        _ = os.getenv("DB_URL", "sqlite+aiosqlite:///data/index-retriever-st.db")
         _ = os.getenv("EMBED_BASE_URL", "http://127.0.0.1:11434/v1")
         _ = os.getenv("EMBED_API_KEY", "dummy")
 

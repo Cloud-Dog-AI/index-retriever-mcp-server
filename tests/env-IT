@@ -1,6 +1,6 @@
 # Integration test environment
 TEST_ENV_TIER=IT
-DB_URL=sqlite+aiosqlite:////tmp/index-retriever-it.db
+DB_URL=sqlite+aiosqlite:///data/index-retriever-it.db
 CLOUD_DOG__INDEX__VDB__PROVIDER=chroma
 CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=ollama
 CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text

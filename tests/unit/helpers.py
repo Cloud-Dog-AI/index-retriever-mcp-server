@@ -18,8 +18,8 @@ def minimal_config() -> dict[str, object]:
             },
         },
         "storage": {
-            "db": {"url": "sqlite+aiosqlite:////tmp/test.db"},
-            "audit": {"path": "/tmp/audit.jsonl"},
+            "db": {"url": "sqlite+aiosqlite:///data/test.db"},
+            "audit": {"path": "data/audit.jsonl"},
         },
         "queue": {
             "max_concurrency": 8,
@@ -31,7 +31,7 @@ def minimal_config() -> dict[str, object]:
         "profiles": {
             "default": {
                 "enabled": True,
-                "vdb": {"type": "chroma", "chroma": {"mode": "local", "path": "/tmp/chroma", "collection": "default"}},
+                "vdb": {"type": "chroma", "chroma": {"mode": "local", "path": "data/chroma", "collection": "default"}},
                 "embeddings": {
                     "provider": "openai_compat",
                     "openai_compat": {
@@ -43,7 +43,7 @@ def minimal_config() -> dict[str, object]:
                 },
                 "ingestion": {
                     "allowed_sources": ["upload", "text", "filesystem"],
-                    "filesystem": {"roots": ["/tmp"], "deny_globs": ["**/.git/**"]},
+                    "filesystem": {"roots": ["data"], "deny_globs": ["**/.git/**"]},
                     "max_file_mb": 50,
                     "dedupe": {"mode": "hash", "policy": "skip"},
                 },

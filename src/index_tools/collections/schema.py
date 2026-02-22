@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 
 class CollectionSchema(BaseModel):
+    """CollectionSchema definition."""
     name: str
     dimension: int
     distance_metric: str = "cosine"

@@ -16,6 +16,7 @@ except ImportError:  # pragma: no cover
 
 @dataclass(slots=True)
 class StoredDocument:
+    """StoredDocument definition."""
     chunks: list[str]
     vectors: list[list[float]]
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -25,15 +26,19 @@ class InMemoryVdbAdapter:
     """Fallback adapter for unit testing without external VDB services."""
 
     def __init__(self) -> None:
+        """Initialise the instance state."""
         self.collections: dict[str, dict[str, StoredDocument]] = {}
 
     def create_collection(self, name: str) -> None:
+        """Execute create collection."""
         self.collections.setdefault(name, {})
 
     def list_collections(self) -> list[str]:
+        """Execute list collections."""
         return sorted(self.collections.keys())
 
     def delete_collection(self, name: str) -> None:
+        """Execute delete collection."""
         self.collections.pop(name, None)
 
     def upsert(
@@ -44,6 +49,7 @@ class InMemoryVdbAdapter:
         vectors: list[list[float]],
         metadata: dict[str, Any] | None = None,
     ) -> None:
+        """Execute upsert."""
         self.collections.setdefault(collection, {})[doc_id] = StoredDocument(
             chunks=chunks,
             vectors=vectors,
@@ -51,10 +57,12 @@ class InMemoryVdbAdapter:
         )
 
     def delete_by_doc_id(self, collection: str, doc_id: str) -> bool:
+        """Execute delete by doc id."""
         docs = self.collections.get(collection, {})
         return docs.pop(doc_id, None) is not None
 
     def delete_by_filter(self, collection: str, filters: dict[str, Any]) -> int:
+        """Execute delete by filter."""
         docs = self.collections.get(collection, {})
         to_delete = [doc_id for doc_id, payload in docs.items() if _matches_filters(payload.metadata, filters)]
         for doc_id in to_delete:
@@ -69,6 +77,7 @@ class InMemoryVdbAdapter:
         filters: dict[str, Any] | None = None,
         score_threshold: float = 0.0,
     ) -> list[dict[str, Any]]:
+        """Execute query."""
         docs = self.collections.get(collection, {})
         results: list[dict[str, Any]] = []
         for doc_id, payload in docs.items():
@@ -92,10 +101,12 @@ class InMemoryVdbAdapter:
         return ordered[:top_k]
 
     def health_check(self) -> dict[str, str]:
+        """Execute health check."""
         return {"status": "ok", "backend": "in-memory"}
 
 
 def _score_chunk(query_text: str, chunk: str) -> float:
+    """Internal helper to score chunk."""
     query = set(query_text.lower().split())
     target = set(chunk.lower().split())
     if not query or not target:
@@ -105,4 +116,5 @@ def _score_chunk(query_text: str, chunk: str) -> float:
 
 
 def _matches_filters(metadata: dict[str, Any], filters: dict[str, Any]) -> bool:
+    """Internal helper to matches filters."""
     return all(metadata.get(key) == expected for key, expected in filters.items())

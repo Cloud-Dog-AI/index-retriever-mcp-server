@@ -1,11 +1,11 @@
 # index-retriever-mcp-server — Context Summary
 
-**Last updated:** 2026-02-20  
-**Status:** Integrity remediation executed with evidence
+**Last updated:** 2026-02-22  
+**Status:** Integrity remediation complete with current evidence
 
 ---
 
-## Verified Results
+## Verified Results (Current)
 
 - Integrity verifier:
   - Command: `bash ../cloud-dog-ai-platform-standards/migration/verify/verify-test-integrity.sh .`
@@ -13,82 +13,64 @@
 
 - IT without Vault (must fail, not skip):
   - Command: `env -u VAULT_TOKEN -u VAULT_ADDR -u VAULT_NAMESPACE -u CLOUD_DOG__VAULT__TOKEN python3 -m pytest tests/integration --env tests/env-IT -q -rs`
-  - Result: `12 errors`, explicit failure message `missing VAULT_TOKEN`, `0 skipped`
+  - Result: `12 errors`, explicit `missing VAULT_TOKEN`, `0 skipped`
 
-- Tiered test runs:
-  - `python3 -m pytest tests/unit --env tests/env-UT -q -rs` → `49 passed`
-  - `python3 -m pytest tests/system --env tests/env-ST -q -rs` → `12 passed`
-  - `python3 -m pytest tests/integration --env tests/env-IT -q -rs` (with Vault sourced) → `12 passed`
-  - `python3 -m pytest tests/application --env tests/env-AT -q -rs` (with Vault sourced) → `5 passed`
-  - `python3 -m pytest tests/security --env tests/env-QT -q -rs` (with Vault sourced) → `5 passed`
-  - `python3 -m pytest tests/contract --env tests/env-IT -q -rs` (with Vault sourced) → `3 passed`
+- Tier runs with Vault sourced (`set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a`):
+  - `python3 -m pytest tests/unit --env tests/env-UT -q -rs` → `61 passed`, `0 skipped`
+  - `python3 -m pytest tests/system --env tests/env-ST -q -rs` → `12 passed`, `0 skipped`
+  - `python3 -m pytest tests/integration --env tests/env-IT -q -rs` → `12 passed`, `0 skipped`
+  - `python3 -m pytest tests/application --env tests/env-AT -q -rs` → `5 passed`, `0 skipped`
+  - `python3 -m pytest tests/security --env tests/env-QT -q -rs` → `5 passed`, `0 skipped`
+  - `python3 -m pytest tests/contract --env tests/env-IT -q -rs` → `3 passed`, `0 skipped`
 
-- Full suite + coverage (Vault sourced):
+- Full suite + coverage with Vault sourced:
   - Command: `python3 -m pytest tests/ --env tests/env-UT --env tests/env-ST --env tests/env-IT --env tests/env-AT --env tests/env-QT -q -rs --cov=src --cov-report=term-missing`
-  - Result: `86 passed`
-  - Coverage: `95%` (`1085 statements`, `53 missed`)
+  - Result: `98 passed`, `0 failed`, `0 skipped`, `2 warnings`
+  - Coverage: `100%` (`1122 statements`, `0 missed`)
 
 ---
 
-## Code and Test Corrections Applied
+## Compliance Remediation Completed
 
-- `src/index_tools/config/loader.py`
-  - Replaced invalid `cloud_dog_config.merge(...)` call with chained `cloud_dog_config.merger.deep_merge(...)`.
+- Removed ST local-runtime usage and enforced live preflight for ST/IT/AT/QT/CT:
+  - `tests/system/ST1_1` through `tests/system/ST1_12`
+  - `tests/conftest.py`
+  - `tests/env-ST`
 
-- `src/index_server/mcp_server.py`
-  - Added explicit tool-category RBAC gating in `execute_tool(...)`.
-  - Prevents `reader` role from calling ingest/admin/maintenance actions.
+- Eliminated hardcoded `/tmp` paths from runtime/test code where corrected in this wave:
+  - `src/index_server/api_server.py`
+  - `src/index_server/mcp_server.py`
+  - `tests/live_runtime.py`
+  - `tests/env-UT`, `tests/env-ST`, `tests/env-IT`, `tests/env-AT`, `tests/env-QT`
+  - `tests/unit/helpers.py`
+  - `tests/unit/UT1_17/test_ut1_17_metadata_enrichment.py`
+  - `tests/local_runtime.py`
 
-- `tests/conftest.py`
-  - Live preflight remains hard-fail for live tiers when Vault/live deps are missing.
-  - Added session teardown guard `live_service_cleanup_verification` that:
-    - scans for orphaned run-prefix collections,
-    - deletes any found,
-    - fails the session if orphans were left behind.
+- Added missing documentation coverage across source:
+  - `src/` docstring audit now returns `missing_docstrings=0`
 
-- `tests/live_runtime.py`
-  - Added deterministic run prefix for each test session.
-  - Added run-prefix collection discovery helper.
-  - Hardened `cleanup()` to delete by namespace prefix from backend listings, not only tracked collection set.
-
-- `scripts/purge_chroma_test_collections.py`
-  - Added one-off purge utility for historical orphan Chroma collections.
-  - Supports `DRY_RUN=true|false` and configurable regex via `INDEX_RETRIEVER_CHROMA_PURGE_REGEX`.
-
-- Unit coverage updates:
-  - `tests/unit/UT1_31/test_ut1_31_server_runtime_paths.py`
-  - `tests/unit/UT1_32/test_ut1_32_support_module_paths.py`
-  - Added/adjusted assertions to align with real signatures/validation and RBAC behaviour.
+- Added coverage closure tests:
+  - `tests/unit/UT1_34/test_ut1_34_service_and_adapter_branches.py`
+  - `tests/unit/UT1_35/test_ut1_35_coverage_closure.py`
 
 ---
 
-## Live Backend Proof (CRU + External Verification)
+## Integrity Gate Evidence
 
-With Vault sourced, CRU was executed via `cloud_dog_vdb` on all required backends, then externally verified:
+- ST/IT/AT anti-stub and anti-mock scan:
+  - Command: `grep -R --line-number --exclude-dir='__pycache__' -E 'LocalIndexRuntime|local_service|tests\\.local_runtime|Mock|mock|stub|fake|local_mode=True' tests/system tests/integration tests/application tests/security`
+  - Result: no matches
 
-- `chroma`:
-  - External `curl` to collections endpoint returned `200`.
-  - External `curl` to collection `count` endpoint confirmed stored record (`count_ok=True`).
+- Skip enforcement scan:
+  - Command: `grep -R --line-number 'pytest\\.skip' tests/system tests/integration tests/application tests/security`
+  - Result: no matches
 
-- `qdrant`:
-  - External `curl` to point endpoint returned `200`.
-  - Payload contained expected `external_id`.
-
-- `weaviate`:
-  - External `curl` to object endpoint returned `200`.
-  - Object ID matched expected deterministic UUID.
-
-- `opensearch`:
-  - External `curl` to `/{index}/_doc/{id}` returned `200`.
-  - `_source.metadata.probe` confirmed updated value.
-
-- `pgvector`:
-  - External SQL verification via `psql` returned row `record_id:update`.
-
-All probe collections were deleted after verification.
+- `/tmp` path scan in active code/test/scripts scope:
+  - Command: `grep -R --line-number --exclude-dir='__pycache__' '/tmp' src tests scripts`
+  - Result: no matches
 
 ---
 
-## Current Residual Risk
+## Residual Risk
 
-- No current integrity-gate failures were observed in the latest runs.
+- Live service stability can still introduce transient timeout failures; one AT preflight and one earlier full-suite pass attempt showed real endpoint `ReadTimeout`, and subsequent reruns passed cleanly.

@@ -1,13 +1,13 @@
 # index-retriever-mcp-server — ST1.5
 # Licence: Proprietary — Cloud-Dog AI Platform
 # Owner: Cloud-Dog AI
-# Description: Local reference-style ingest pipeline.
+# Description: Live reference-style ingest pipeline.
 
-from tests.local_runtime import LocalIndexRuntime
+from tests.live_runtime import LiveIndexRuntime
 
 
-def test_ingest_reference_pipeline(local_service: LocalIndexRuntime) -> None:
-    rec = local_service.ingest_text(
+def test_ingest_reference_pipeline(live_service: LiveIndexRuntime) -> None:
+    rec = live_service.ingest_text(
         profile="default",
         collection="st_ref",
         text="reference material body",
@@ -15,4 +15,4 @@ def test_ingest_reference_pipeline(local_service: LocalIndexRuntime) -> None:
         actor="system",
     )
     assert rec.record_id
-    assert local_service.search("default", "st_ref", "reference")
+    assert live_service.search("default", "st_ref", "reference")

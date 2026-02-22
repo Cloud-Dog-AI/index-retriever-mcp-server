@@ -20,10 +20,9 @@ if str(SRC) not in sys.path:
 from index_server.auth.middleware import AuthMiddleware  # noqa: E402
 from index_tools.tools.service import IndexService  # noqa: E402
 from tests.live_runtime import LiveIndexRuntime, load_vault_dev_config  # noqa: E402
-from tests.local_runtime import LocalIndexRuntime  # noqa: E402
 
 _INITIAL_ENV_KEYS = set(os.environ.keys())
-_LIVE_REQUIRED_TIERS = {"IT", "AT", "CT", "QT"}
+_LIVE_REQUIRED_TIERS = {"ST", "IT", "AT", "CT", "QT"}
 
 
 def _load_env_file(path: Path, *, override: bool) -> dict[str, str]:
@@ -227,7 +226,7 @@ def live_service_cleanup_verification(env_tiers: list[str]) -> None:
         yield
         return
     if not os.environ.get("VAULT_TOKEN"):
-        # IT/AT/QT/CT no-vault runs intentionally fail earlier in preflight.
+        # ST/IT/AT/QT/CT no-vault runs intentionally fail earlier in preflight.
         yield
         return
 
@@ -252,12 +251,3 @@ def live_service_cleanup_verification(env_tiers: list[str]) -> None:
         if runtime is not None:
             runtime.cleanup()
 
-
-@pytest.fixture()
-def local_service() -> LocalIndexRuntime:
-    """Provide local runtime for system-tier tests without external dependencies."""
-    runtime = LocalIndexRuntime()
-    try:
-        yield runtime
-    finally:
-        runtime.cleanup()

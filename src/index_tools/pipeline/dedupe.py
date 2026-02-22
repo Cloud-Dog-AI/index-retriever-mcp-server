@@ -18,6 +18,7 @@ except ImportError:  # pragma: no cover
 
 @dataclass(slots=True)
 class DedupeRecord:
+    """DedupeRecord definition."""
     doc_id: str
     size: int
     mtime: int
@@ -28,15 +29,18 @@ class DedupeIndex:
     """In-memory dedupe index for policy decisions."""
 
     def __init__(self) -> None:
+        """Initialise the instance state."""
         self._records: dict[str, DedupeRecord] = {}
 
     @staticmethod
     def fingerprint(content: bytes, method: str = "sha256") -> str:
+        """Execute fingerprint."""
         if method == "xxhash" and xxhash_module is not None:
             return str(xxhash_module.xxh64(content).hexdigest())
         return sha256(content).hexdigest()
 
     def check_duplicate(self, candidate: DedupeRecord, mode: str) -> DedupeRecord | None:
+        """Execute check duplicate."""
         if mode == "size+mtime":
             for existing in self._records.values():
                 if existing.size == candidate.size and existing.mtime == candidate.mtime:
@@ -48,6 +52,7 @@ class DedupeIndex:
         return None
 
     def apply_policy(self, existing: DedupeRecord | None, policy: str) -> str:
+        """Execute apply policy."""
         if existing is None:
             return "ingest"
         if policy == "skip":
@@ -59,4 +64,5 @@ class DedupeIndex:
         raise ValueError(f"Unsupported dedupe policy: {policy}")
 
     def upsert(self, record: DedupeRecord) -> None:
+        """Execute upsert."""
         self._records[record.doc_id] = record

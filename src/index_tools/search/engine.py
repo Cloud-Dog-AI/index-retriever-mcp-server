@@ -31,6 +31,7 @@ class SearchEngine:
     """Search facade over configured vector backend adapter."""
 
     def __init__(self, adapter: InMemoryVdbAdapter | None = None) -> None:
+        """Initialise the instance state."""
         self.adapter = adapter or InMemoryVdbAdapter()
 
     def search(
@@ -41,6 +42,7 @@ class SearchEngine:
         filters: dict[str, Any] | None = None,
         score_threshold: float = 0.0,
     ) -> list[dict[str, Any]]:
+        """Execute search."""
         checked_filters = validate_filters(filters)
         normalised = normalise_query(query)
         return self.adapter.query(

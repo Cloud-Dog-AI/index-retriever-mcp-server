@@ -12,13 +12,17 @@ class CollectionManager:
     """Collection management facade for VDB operations."""
 
     def __init__(self, adapter: InMemoryVdbAdapter | None = None) -> None:
+        """Initialise the instance state."""
         self.adapter = adapter or InMemoryVdbAdapter()
 
     def create(self, name: str) -> None:
+        """Execute create."""
         self.adapter.create_collection(name)
 
     def list(self) -> list[str]:
+        """Execute list."""
         return self.adapter.list_collections()
 
     def delete(self, name: str) -> None:
+        """Execute delete."""
         self.adapter.delete_collection(name)

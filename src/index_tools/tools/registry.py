@@ -22,6 +22,7 @@ from index_tools.tools.definitions import (
 
 @dataclass(slots=True)
 class ToolSpec:
+    """ToolSpec definition."""
     name: str
     input_model: type[BaseModel]
     output_model: type[BaseModel]
@@ -31,15 +32,19 @@ class ToolRegistry:
     """Tool registry with schema lookup and listing support."""
 
     def __init__(self) -> None:
+        """Initialise the instance state."""
         self._tools: dict[str, ToolSpec] = {}
 
     def register(self, spec: ToolSpec) -> None:
+        """Execute register."""
         self._tools[spec.name] = spec
 
     def get(self, name: str) -> ToolSpec:
+        """Execute get."""
         return self._tools[name]
 
     def list_tools(self) -> list[dict[str, Any]]:
+        """Execute list tools."""
         return [
             {
                 "name": spec.name,
@@ -51,6 +56,7 @@ class ToolRegistry:
 
 
 def build_default_tool_registry() -> ToolRegistry:
+    """Execute build default tool registry."""
     registry = ToolRegistry()
     specs: list[ToolSpec] = [
         ToolSpec(name="profiles_list", input_model=GenericToolInput, output_model=GenericToolOutput),

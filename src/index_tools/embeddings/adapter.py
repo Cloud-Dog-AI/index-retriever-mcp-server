@@ -18,10 +18,12 @@ class EmbeddingAdapter:
     """Adapter wrapper for cloud_dog_llm embedding clients."""
 
     def __init__(self, provider: str, model: str) -> None:
+        """Initialise the instance state."""
         self.provider = provider
         self.model = model
 
     def embed(self, texts: list[str], dimensions: int = 8) -> list[list[float]]:
+        """Execute embed."""
         if cloud_dog_llm is not None and hasattr(cloud_dog_llm, "embed"):
             response: Any = cloud_dog_llm.embed(provider=self.provider, model=self.model, inputs=texts)
             return cast(list[list[float]], response)

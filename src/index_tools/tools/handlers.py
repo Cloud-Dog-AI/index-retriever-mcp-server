@@ -13,6 +13,7 @@ from index_tools.tools.definitions import IngestOutput, SearchInput, SearchOutpu
 
 
 def handle_search(input_data: SearchInput, search_fn: Callable[..., list[dict[str, Any]]]) -> SearchOutput:
+    """Execute handle search."""
     rows = search_fn(
         collection=input_data.collection,
         query=input_data.query,
@@ -24,4 +25,5 @@ def handle_search(input_data: SearchInput, search_fn: Callable[..., list[dict[st
 
 
 def handle_ingest_text() -> IngestOutput:
+    """Execute handle ingest text."""
     return IngestOutput(job_id=str(uuid.uuid4()), status="queued")

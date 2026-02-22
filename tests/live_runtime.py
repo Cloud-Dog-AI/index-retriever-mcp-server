@@ -225,7 +225,7 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
                 queue_db_url = _postgres_url_from_vault(postgres)
 
     if not queue_db_url:
-        queue_db_url = "sqlite:////tmp/index-retriever-live.db"
+        queue_db_url = "sqlite:///data/index-retriever-live.db"
     queue_db_url = _normalise_queue_db_url(queue_db_url)
 
     enabled_backends = [backend for backend, url in (("chroma", chroma_url), ("qdrant", qdrant_url)) if url]
@@ -291,7 +291,7 @@ class LiveIndexRuntime:
                         "base_url": self._config.embedding_base_url,
                         "model": self.embedding_model,
                         "api_key": self._config.embedding_api_key,
-                        "timeout_seconds": 120,
+                        "timeout_seconds": 300,
                     }
                 },
             }

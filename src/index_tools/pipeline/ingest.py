@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 @dataclass(slots=True)
 class PipelineResult:
+    """PipelineResult definition."""
     doc_id: str
     chunk_count: int
     embedded_count: int
@@ -27,6 +28,7 @@ class IngestPipeline:
         embed_chunks: Callable[[list[str]], list[list[float]]],
         upsert_vectors: Callable[[str, list[str], list[list[float]]], None],
     ) -> None:
+        """Initialise the instance state."""
         self.fetch_content = fetch_content
         self.convert_content = convert_content
         self.chunk_content = chunk_content
@@ -34,6 +36,7 @@ class IngestPipeline:
         self.upsert_vectors = upsert_vectors
 
     def run(self, source: str, doc_id: str) -> tuple[PipelineResult, list[str]]:
+        """Execute run."""
         progress: list[str] = []
 
         raw = self.fetch_content(source)

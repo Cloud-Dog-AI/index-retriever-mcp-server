@@ -7,8 +7,8 @@ from index_tools.pipeline.metadata import build_metadata
 
 
 def test_metadata_enrichment() -> None:
-    data = build_metadata("/tmp/doc.txt", b"hello", profile="default", collection="kb")
-    assert data["source"] == "/tmp/doc.txt"
+    data = build_metadata("data/doc.txt", b"hello", profile="default", collection="kb")
+    assert data["source"] == "data/doc.txt"
     assert data["size"] == 5
     assert data["profile"] == "default"
     assert data["collection"] == "kb"
