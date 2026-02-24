@@ -8,8 +8,16 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from cloud_dog_api_kit import create_app  # type: ignore
+from cloud_dog_api_kit import (  # type: ignore
+    ToolContract,
+    UnauthenticatedError,
+    UnauthorisedError,
+    create_app,
+    register_mcp_contract,
+)
+from fastapi import Request
 
+from index_server.auth.middleware import AuthMiddleware
 from index_tools.tools.registry import ToolRegistry, build_default_tool_registry
 from index_tools.tools.service import IndexService
 
@@ -114,14 +122,15 @@ def execute_tool(
         )
         return {"status": "ok"}
     if tool_name == "ingest_text":
-        job_id = service.ingest_text(
+        ingest_result = service.ingest_text(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
             text=str(arguments["text"]),
             source=str(arguments.get("source", "inline")),
             actor=str(arguments.get("actor", "mcp")),
         )
-        return {"job_id": job_id, "status": "queued"}
+        job_id = getattr(ingest_result, "job_id", ingest_result)
+        return {"job_id": str(job_id), "status": "queued"}
     if tool_name == "search":
         return {
             "results": service.search(
@@ -143,8 +152,9 @@ def execute_tool(
 
 def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | None = None) -> Any:
     """Execute build mcp app."""
-    _ = service or IndexService(audit_path=_mcp_audit_path())
+    active_service = service or IndexService(audit_path=_mcp_audit_path())
     active_registry = registry or build_registry()
+    auth = AuthMiddleware()
     try:
         app = create_app(title="index-retriever-mcp-server-mcp", version="0.1.0")
     except TypeError:
@@ -156,16 +166,50 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
         """Execute health."""
         return {"status": "ok"}
 
-    @app.get("/mcp/tools")
-    def mcp_tools() -> dict[str, Any]:
-        # Keep envelope aligned with other MCP services for tool discovery.
-        """Execute mcp tools."""
-        return {"ok": True, "data": active_registry.list_tools()}
+    def _make_tool_handler(tool_name: str) -> Any:
+        """Build an auth-enforcing handler for a single tool."""
 
-    @app.get("/tools")
-    def tools() -> dict[str, list[dict[str, Any]]]:
-        """Execute tools."""
-        return {"tools": active_registry.list_tools()}
+        def handler(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+            headers = {k.lower(): v for k, v in request.headers.items()}
+            try:
+                identity = auth.authenticate(headers)
+            except PermissionError as exc:
+                raise UnauthenticatedError(message=str(exc)) from exc
+            arguments = dict(payload)
+            arguments.setdefault("actor", identity.user_id)
+            try:
+                return execute_tool(
+                    service=active_service,
+                    tool_name=tool_name,
+                    arguments=arguments,
+                    registry=active_registry,
+                    identity_roles=identity.roles,
+                )
+            except PermissionError as exc:
+                raise UnauthorisedError(message=str(exc)) from exc
+            except (KeyError, ValueError) as exc:
+                from cloud_dog_api_kit import ValidationError as APIValidationError
+
+                raise APIValidationError(message=str(exc)) from exc
+
+        return handler
+
+    tool_contracts: dict[str, ToolContract] = {}
+    for tool in active_registry.list_tools():
+        name = tool["name"]
+        tool_contracts[name] = ToolContract(
+            name=name,
+            handler=_make_tool_handler(name),
+            description=tool.get("description", ""),
+            input_schema=tool.get("input_schema", {}),
+            output_schema=tool.get("output_schema", {}),
+        )
+
+    register_mcp_contract(
+        app,
+        tool_contracts,
+        include_legacy_tools_alias=True,
+    )
 
     return app
 

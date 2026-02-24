@@ -1,28 +1,55 @@
 # index-retriever-mcp-server — Test Plan
 
-**Version:** 1.0  
-**Date:** 2026-02-17  
+**Version:** 1.1  
+**Date:** 2026-02-24  
 **Standard:** PS-95  
-**Total tests:** 30 UT + 12 ST + 12 IT + 5 AT + 5 QT = 64
+**Current executed cases:** 61 UT + 12 ST + 12 IT + 6 AT + 5 QT + 3 CT = 99
 
 ---
 
 ## Environment Requirements
 
-### Vault (all tests)
+### Vault (live tiers)
 ```bash
 set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
 ```
 
-### Private env files
-- `private/env-test` — non-secret test config (VDB endpoints, embedding endpoints, filesystem roots)
-- `private/env-test-secrets` — credentials (API keys, DB passwords, VDB auth tokens)
+### Env files
+- `tests/env-UT`
+- `tests/env-ST`
+- `tests/env-IT`
+- `tests/env-AT`
+- `tests/env-QT`
 
 ### External services (IT/AT/QT)
 - PostgreSQL (profiles, jobs, audit metadata)
 - Chroma (local or remote)
 - Qdrant, OpenSearch, Weaviate, PGVector (for contract tests, optional per backend)
 - Embedding provider (Ollama on llm1/llm2, or OpenAI-compat endpoint)
+
+---
+
+## Latest Verified Runs (2026-02-24)
+
+- Baseline socket capability checks before each live tier:
+  - `vdb1.app.vpc0.cloud-dog.net:6333 CONNECT_OK`
+  - `llm1.cloud-dog.net:443 CONNECT_OK`
+- External availability:
+  - `curl http://vdb1.app.vpc0.cloud-dog.net:6333/healthz` → `healthz check passed`
+  - `https://llm1.cloud-dog.net/api/tags` → `bge-m3:567m AVAILABLE`, `nomic-embed-text AVAILABLE`, `granite-embedding:278m AVAILABLE`
+- Vault-less IT proof:
+  - `env -u VAULT_TOKEN -u VAULT_ADDR -u VAULT_NAMESPACE -u CLOUD_DOG__VAULT__TOKEN python3 -m pytest tests/integration --env tests/env-IT -q -rs`
+  - Result: `12 errors`, explicit `missing VAULT_TOKEN`, `0 skipped`
+- Tier results with Vault sourced:
+  - `python3 -m pytest tests/unit --env tests/env-UT -q -rs` → `61 passed, 0 skipped`
+  - `python3 -m pytest tests/system --env tests/env-ST -q -rs` → `12 passed, 0 skipped`
+  - `python3 -m pytest tests/contract --env tests/env-IT -q -rs` → `3 passed, 0 skipped`
+  - `python3 -m pytest tests/integration --env tests/env-IT -q -rs` → `12 passed, 0 skipped`
+  - `python3 -m pytest tests/application --env tests/env-AT -q -rs` → `6 passed, 0 skipped`
+  - `python3 -m pytest tests/security --env tests/env-QT -q -rs` → `5 passed, 0 skipped`
+- Full suite + coverage:
+  - `python3 -m pytest tests/ --env tests/env-UT --env tests/env-ST --env tests/env-IT --env tests/env-AT --env tests/env-QT -q -rs --cov=src --cov-report=term-missing`
+  - Result: `99 passed, 0 failed, 0 skipped` (2 warnings), `Coverage 100% (1123/1123)`
 
 ---
 
@@ -97,8 +124,8 @@ Real services required. Tests cross-component interaction.
 | IT1.3 | APIAuthAccept | Valid API key/JWT grants access | FastAPI + `cloud_dog_idam` |
 | IT1.4 | APIRBACIngestGating | Reader role cannot ingest; writer role can | FastAPI + `cloud_dog_idam` |
 | IT1.5 | APIRBACAdminGating | Non-admin cannot create profiles | FastAPI + `cloud_dog_idam` |
-| IT1.6 | MCPToolCatalogue | MCP client lists all tools with correct schemas | MCP transport |
-| IT1.7 | MCPToolExecution | MCP tool call executes search and returns results | MCP transport + VDB |
+| IT1.6 | MCPToolCatalogue | MCP transport `/mcp/tools` includes `admin_collection_create`, `ingest_text`, and `search` | MCP transport |
+| IT1.7 | MCPToolExecution | API tool transport validates collection create idempotency, ingest→search source round-trip, and collection isolation | API transport + VDB + embedding |
 | IT1.8 | CorrelationIDPropagation | Correlation ID propagates through logs and audit | FastAPI + `cloud_dog_logging` |
 | IT1.9 | ChromaContractTest | All CRUD operations pass against Chroma | `cloud_dog_vdb` + Chroma |
 | IT1.10 | QdrantContractTest | All CRUD operations pass against Qdrant | `cloud_dog_vdb` + Qdrant |
@@ -114,7 +141,7 @@ End-to-end user workflows.
 | ID | Test | Description |
 |----|------|-------------|
 | AT1.1 | FullWorkflow_UploadSearchRetrieve | Upload file → wait for job → search → retrieve chunks → verify content |
-| AT1.2 | FullWorkflow_DeduplicateSkip | Upload same file twice with skip policy → second upload skipped |
+| AT1.2 | FullWorkflow_DeduplicateSkip | Duplicate skip, replace-on-change, and stale-triggered reindex behaviours |
 | AT1.3 | FullWorkflow_ProfileCollectionLifecycle | Admin creates profile → creates collection → ingests → searches → deletes collection |
 | AT1.4 | FullWorkflow_RetentionEnforcement | Ingest documents → run retention with age policy → verify old docs removed |
 | AT1.5 | FullWorkflow_MultiBackendSwitch | Create two profiles (Chroma, Qdrant) → ingest to both → search both → same contract |
@@ -142,23 +169,23 @@ Security and quality checks.
 set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
 
 # Unit tests (no external services)
-pytest tests/unit/ --env private/env-test -v
+pytest tests/unit/ --env tests/env-UT -v
 
 # System tests (requires DB + Chroma)
-pytest tests/system/ --env private/env-test -v
+pytest tests/system/ --env tests/env-ST -v
 
 # Contract tests (requires VDB backends)
-pytest tests/contract/ --env private/env-test -v
+pytest tests/contract/ --env tests/env-IT -v
 
 # Integration tests (requires running API server + VDB + embedding)
-pytest tests/integration/ --env private/env-test -v
+pytest tests/integration/ --env tests/env-IT -v
 
 # Application tests (full stack)
-pytest tests/application/ --env private/env-test -v
+pytest tests/application/ --env tests/env-AT -v
 
 # Quality tests
-pytest tests/security/ --env private/env-test -v
+pytest tests/security/ --env tests/env-QT -v
 
 # All tests
-pytest tests/ --env private/env-test -v --cov=src/
+pytest tests/ --env tests/env-UT --env tests/env-ST --env tests/env-IT --env tests/env-AT --env tests/env-QT -v --cov=src/
 ```

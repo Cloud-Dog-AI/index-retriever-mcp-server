@@ -12,6 +12,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import lru_cache
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -264,6 +265,13 @@ class LiveRecord:
     collection_name: str
 
 
+@dataclass(frozen=True, slots=True)
+class SourceIngestState:
+    record: LiveRecord
+    payload_signature: str
+    indexed_at: datetime
+
+
 class LiveIndexRuntime:
     """Live runtime for ST/IT/AT/QT using platform adapters and real services."""
 
@@ -326,6 +334,8 @@ class LiveIndexRuntime:
         self._collections: set[tuple[str, str]] = set()
         self._stream_sessions: dict[str, dict[str, Any]] = {}
         self._profiles: dict[str, dict[str, Any]] = {"default": {"enabled": True}}
+        self._idempotency_records: dict[tuple[str, str, str], LiveRecord] = {}
+        self._source_records: dict[tuple[str, str, str, str], SourceIngestState] = {}
 
     @classmethod
     def run_prefix(cls) -> str:
@@ -345,6 +355,26 @@ class LiveIndexRuntime:
 
     def _collection_name(self, profile: str, collection: str) -> str:
         return f"{self._namespace}_{profile}_{collection}".replace("-", "_")
+
+    @staticmethod
+    def _payload_signature(text: str, metadata: dict[str, Any], indexing_signature: str) -> str:
+        payload = {"text": text, "metadata": metadata, "indexing_signature": indexing_signature}
+        raw = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+        return sha256(raw).hexdigest()
+
+    @staticmethod
+    def _is_stale(indexed_at: datetime, now: datetime, stale_after_days: int | None) -> bool:
+        if stale_after_days is None:
+            return False
+        return (now - indexed_at).total_seconds() >= stale_after_days * 86400
+
+    def _forget_record(self, record_id: str) -> None:
+        for key, value in list(self._idempotency_records.items()):
+            if value.record_id == record_id:
+                del self._idempotency_records[key]
+        for key, value in list(self._source_records.items()):
+            if value.record.record_id == record_id:
+                del self._source_records[key]
 
     def required_live_providers(self) -> list[str]:
         raw = os.getenv("INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS", "chroma")
@@ -397,7 +427,35 @@ class LiveIndexRuntime:
         metadata: dict[str, Any] | None = None,
         idempotency_key: str | None = None,
         created_at: datetime | None = None,
+        dedupe_policy: str = "skip",
+        stale_after_days: int | None = None,
+        indexing_signature: str | None = None,
     ) -> LiveRecord:
+        if dedupe_policy not in {"skip", "replace", "version"}:
+            raise ValueError(f"Unsupported dedupe policy: {dedupe_policy}")
+
+        now = created_at or datetime.now(timezone.utc)  # noqa: UP017
+        collection_name = self.ensure_collection(profile, collection, provider_id=provider_id)
+        effective_signature = (indexing_signature or self.embedding_model).strip() or self.embedding_model
+        user_metadata = dict(metadata or {})
+        payload_signature = self._payload_signature(text, user_metadata, effective_signature)
+        idempotency_map_key = (provider_id, collection_name, idempotency_key or "")
+        source_map_key = (provider_id, collection_name, source, effective_signature)
+
+        if idempotency_key and dedupe_policy == "skip":
+            existing = self._idempotency_records.get(idempotency_map_key)
+            if existing is not None:
+                return existing
+
+        existing_source = self._source_records.get(source_map_key)
+        if existing_source is not None:
+            payload_changed = existing_source.payload_signature != payload_signature
+            stale = self._is_stale(existing_source.indexed_at, now, stale_after_days)
+            if dedupe_policy == "skip" and not payload_changed and not stale:
+                return existing_source.record
+            if dedupe_policy in {"skip", "replace"} and (payload_changed or stale):
+                _ = self.delete_by_id(profile, collection, existing_source.record.record_id, provider_id=provider_id)
+
         collection_name = self.ensure_collection(profile, collection, provider_id=provider_id)
         _ = self._run(self.llm_client.embed([text], provider_id=self.embedding_provider, model=self.embedding_model))
 
@@ -410,9 +468,9 @@ class LiveIndexRuntime:
         )
         job_id = self.job_queue.submit(request)
 
-        now = created_at or datetime.now(timezone.utc)  # noqa: UP017
         base_metadata: dict[str, Any] = {
             "tenant_id": profile,
+            "source": source,
             "source_uri": source,
             "source_type": "file" if "://" in source else "other",
             "lifecycle_state": "active",
@@ -420,9 +478,10 @@ class LiveIndexRuntime:
             "actor": actor,
             "profile": profile,
             "collection": collection,
+            "indexing_signature": effective_signature,
         }
-        if metadata:
-            base_metadata.update(metadata)
+        if user_metadata:
+            base_metadata.update(user_metadata)
 
         record_id = str(uuid4())
         self._run(
@@ -432,7 +491,44 @@ class LiveIndexRuntime:
                 provider_id=provider_id,
             )
         )
-        return LiveRecord(job_id=job_id, record_id=record_id, provider_id=provider_id, collection_name=collection_name)
+        record = LiveRecord(job_id=job_id, record_id=record_id, provider_id=provider_id, collection_name=collection_name)
+        if idempotency_key:
+            self._idempotency_records[idempotency_map_key] = record
+        self._source_records[source_map_key] = SourceIngestState(
+            record=record,
+            payload_signature=payload_signature,
+            indexed_at=now,
+        )
+        return record
+
+    def ingest_reference(
+        self,
+        profile: str,
+        collection: str,
+        path: str,
+        actor: str,
+        provider_id: str = "chroma",
+        metadata: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
+        dedupe_policy: str = "skip",
+        stale_after_days: int | None = None,
+        indexing_signature: str | None = None,
+    ) -> LiveRecord:
+        with open(path, "rb") as handle:
+            payload = handle.read()
+        return self.ingest_text(
+            profile=profile,
+            collection=collection,
+            text=payload.decode("utf-8", errors="replace"),
+            source=f"file://{path}",
+            actor=actor,
+            provider_id=provider_id,
+            metadata=metadata,
+            idempotency_key=idempotency_key,
+            dedupe_policy=dedupe_policy,
+            stale_after_days=stale_after_days,
+            indexing_signature=indexing_signature,
+        )
 
     def search(
         self,
@@ -476,7 +572,10 @@ class LiveIndexRuntime:
 
     def delete_by_id(self, profile: str, collection: str, record_id: str, provider_id: str = "chroma") -> bool:
         collection_name = self._collection_name(profile, collection)
-        return bool(self._run(self.vdb_client.delete_record(collection_name, record_id, provider_id=provider_id)))
+        deleted = bool(self._run(self.vdb_client.delete_record(collection_name, record_id, provider_id=provider_id)))
+        if deleted:
+            self._forget_record(record_id)
+        return deleted
 
     def delete_by_filter(
         self,
@@ -486,7 +585,13 @@ class LiveIndexRuntime:
         provider_id: str = "chroma",
     ) -> int:
         collection_name = self._collection_name(profile, collection)
-        return int(self._run(self.vdb_client.delete_by_filter(collection_name, filters, provider_id=provider_id)))
+        existing = self._run(self.vdb_client.list_records(collection_name, provider_id=provider_id))
+        deleted = int(self._run(self.vdb_client.delete_by_filter(collection_name, filters, provider_id=provider_id)))
+        if deleted:
+            for record in existing:
+                if all(record.metadata.get(key) == value for key, value in filters.items()):
+                    self._forget_record(str(record.record_id))
+        return deleted
 
     def retention_run(self, profile: str, collection: str, older_than_days: int, provider_id: str = "chroma") -> int:
         collection_name = self._collection_name(profile, collection)
@@ -631,6 +736,26 @@ class LiveIndexRuntime:
         if "admin" not in roles:
             raise PermissionError("Admin role required")
         _ = self.ensure_collection(profile, collection)
+
+    def collections_list(self, profile: str) -> list[str]:
+        prefix = f"{self._namespace}_{profile}_"
+        names = self._list_collection_names(self._config.default_backend)
+        out = [name.removeprefix(prefix) for name in names if name.startswith(prefix)]
+        return sorted(out)
+
+    def admin_collection_delete(self, profile: str, collection: str, roles: set[str]) -> None:
+        if "admin" not in roles:
+            raise PermissionError("Admin role required")
+        collection_name = self._collection_name(profile, collection)
+        with suppress(Exception):
+            self._run(self.vdb_client.delete_collection(collection_name, provider_id=self._config.default_backend))
+        self._collections.discard((self._config.default_backend, collection_name))
+        for key, value in list(self._source_records.items()):
+            if value.record.collection_name == collection_name:
+                del self._source_records[key]
+        for key, value in list(self._idempotency_records.items()):
+            if value.collection_name == collection_name:
+                del self._idempotency_records[key]
 
     def ingest_stream_open(self, profile: str, collection: str, ordering_key: str, provider_id: str = "chroma") -> str:
         session_id = str(uuid4())

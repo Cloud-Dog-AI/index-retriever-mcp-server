@@ -103,6 +103,44 @@ def test_mcp_app_and_execute_tool_paths(service: IndexService) -> None:
     tools_payload = client.get("/tools").json()
     assert isinstance(tools_payload["tools"], list)
 
+    # POST /mcp/tools/{tool_name} — auth required
+    no_auth = client.post("/mcp/tools/profiles_list", json={})
+    assert no_auth.status_code == 401
+
+    # POST /mcp/tools/{tool_name} — successful call
+    authed = client.post(
+        "/mcp/tools/profiles_list",
+        headers={"x-api-key": "test-api-key"},
+        json={},
+    )
+    assert authed.status_code == 200
+    body = authed.json()
+    assert body["ok"] is True
+    assert "profiles" in body["data"]
+
+    # POST /mcp/tools/{tool_name} — unknown tool
+    unknown = client.post(
+        "/mcp/tools/nonexistent_tool",
+        headers={"x-api-key": "test-api-key"},
+        json={},
+    )
+    assert unknown.status_code == 404
+
+    # POST /mcp/tools/{tool_name} — permission denied
+    forbidden = client.post(
+        "/mcp/tools/ingest_text",
+        headers={"authorization": "Bearer valid-reader-token"},
+        json={"profile": "default", "collection": "ut_mcp", "text": "blocked"},
+    )
+    assert forbidden.status_code == 403
+
+    bad_payload = client.post(
+        "/mcp/tools/search",
+        headers={"x-api-key": "test-api-key"},
+        json={"profile": "default", "collection": "ut_mcp"},
+    )
+    assert bad_payload.status_code == 422
+
     assert mcp_server.execute_tool(service, "profiles_list", {})["profiles"] == ["default"]
     assert mcp_server.execute_tool(service, "backend_health_check", {})["status"] == "ok"
     assert mcp_server.execute_tool(service, "embedding_health_check", {})["status"] == "ok"
@@ -119,8 +157,16 @@ def test_mcp_app_and_execute_tool_paths(service: IndexService) -> None:
 
 
 def test_mcp_build_app_typeerror_fallback(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
+    class DummyState:
+        pass
+
     class DummyApp:
-        def get(self, _path: str) -> object:
+        state = DummyState()
+
+        def get(self, _path: str, **kwargs: object) -> object:
+            return lambda fn: fn
+
+        def post(self, _path: str, **kwargs: object) -> object:
             return lambda fn: fn
 
     def fake_create_app(**kwargs: object) -> DummyApp:

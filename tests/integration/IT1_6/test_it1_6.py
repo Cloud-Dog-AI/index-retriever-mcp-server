@@ -3,12 +3,22 @@
 # Owner: Cloud-Dog AI
 # Description: MCP tool catalogue exposes required tools.
 
-from index_server.mcp_server import build_registry, list_tool_names
+from fastapi.testclient import TestClient
+
+from index_server.mcp_server import build_mcp_app, build_registry, list_tool_names
 from tests.live_runtime import LiveIndexRuntime
 
 
 def test_mcp_tool_catalogue(live_service: LiveIndexRuntime) -> None:
     assert live_service.backend_health_check(provider_id="chroma") is True
-    names = list_tool_names(build_registry())
-    for required in ["profiles_list", "ingest_text", "search", "queue_status"]:
+    names_direct = list_tool_names(build_registry())
+    for required in ["admin_collection_create", "ingest_text", "search"]:
+        assert required in names_direct
+
+    client = TestClient(build_mcp_app(service=live_service))
+    response = client.get("/mcp/tools")
+    assert response.status_code == 200
+    payload = response.json()
+    names = [tool["name"] for tool in payload["data"]]
+    for required in ["admin_collection_create", "ingest_text", "search"]:
         assert required in names

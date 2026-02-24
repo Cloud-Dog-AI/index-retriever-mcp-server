@@ -3,16 +3,20 @@
 # Owner: Cloud-Dog AI
 # Description: Live reference-style ingest pipeline.
 
+from pathlib import Path
+
 from tests.live_runtime import LiveIndexRuntime
 
 
-def test_ingest_reference_pipeline(live_service: LiveIndexRuntime) -> None:
-    rec = live_service.ingest_text(
+def test_ingest_reference_pipeline(live_service: LiveIndexRuntime, tmp_path: Path) -> None:
+    path = tmp_path / "reference-doc.txt"
+    path.write_text("reference material body", encoding="utf-8")
+    rec = live_service.ingest_reference(
         profile="default",
         collection="st_ref",
-        text="reference material body",
-        source="file://reference/doc.md",
+        path=str(path),
         actor="system",
     )
-    assert rec.record_id
-    assert live_service.search("default", "st_ref", "reference")
+    rows = live_service.search("default", "st_ref", "reference")
+    assert rows
+    assert rows[0]["id"] == rec.record_id

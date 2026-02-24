@@ -1,7 +1,7 @@
 # Requirements — index-retriever-mcp-server
 
-**Version:** 1.0  
-**Date:** 2026-02-17  
+**Version:** 1.1  
+**Date:** 2026-02-24  
 **Standards:** PS-00, PS-10, PS-20, PS-40, PS-50, PS-60, PS-70, PS-75, PS-80, PS-90, PS-95  
 **Platform packages:** `cloud_dog_config`, `cloud_dog_logging`, `cloud_dog_api_kit`, `cloud_dog_idam`, `cloud_dog_jobs`, `cloud_dog_llm`, `cloud_dog_vdb`
 
@@ -199,6 +199,66 @@ The system SHALL support ingestion of:
 - Conversion SHALL be pluggable (backend registry).
 - Timeouts and max input size SHALL be configurable.
 
+
+
+#### FR-09A Parser/Extractor Framework (NEW)
+- The system SHALL implement a **pluggable parser/extractor framework** that can select one or more parsers per document, driven by profile configuration.
+- Parsers SHALL be treated as **capability providers** with explicit support matrices:
+  - input types (PDF, images, Office, HTML, etc.),
+  - outputs (plain text, markdown, HTML, JSON),
+  - features (layout preservation, tables, OCR).
+- Each profile SHALL support:
+  - a **default parser chain** (ordered list),
+  - **fallback policies** (on error / on low-quality result / on missing capabilities),
+  - per-filetype overrides (e.g. `pdf` vs `docx`),
+  - per-source overrides (upload vs S3 vs Drive).
+
+#### FR-09B Supported Parser Options (NEW)
+The system SHALL support enabling/disabling the following parsers (as available), per profile:
+- **MinerU** (external) — for PDF/document parsing where configured.
+- **DeepDoc** (external) — optional parser/enricher where configured.
+- **Docling** (external or embedded) — optional conversion and structured extraction where configured.
+- **marker-mcp** (external MCP service) — invoked via configured MCP endpoint as a parsing backend.
+- **LlamaIndex readers** (internal) — baseline parsing via LlamaIndex reader ecosystem.
+- **Pandoc** — conversion backend where available (already supported; now part of the parser chain).
+- The system SHOULD support additional parsers via a generic “external command” adapter and/or “HTTP/MCP adapter” with sandboxing controls.
+
+#### FR-09C OCR Support (NEW)
+- The system SHALL support OCR as an optional step in the parser chain for:
+  - scanned PDFs,
+  - images (png/jpg/tiff),
+  - PDFs with low text density.
+- OCR modes SHALL be configurable per profile:
+  - `disabled`
+  - `local_engine` (e.g. Tesseract/ocrmypdf if present)
+  - `external_ocr_service` (HTTP/OpenAI-compatible or other provider)
+  - `external_llm_ocr` (LLM-backed OCR engine) with strict rate limits and cost controls
+- The system SHALL detect when OCR is needed using heuristics (configurable), for example:
+  - extracted text length below threshold,
+  - high image coverage per page (if parser provides),
+  - “scanned” PDF markers.
+- OCR results MUST be attributed in metadata (engine, confidence, pages, cost/time metrics).
+
+#### FR-09D Table Handling & Structured Outputs (NEW)
+- For documents containing tables, the system SHALL support configurable table extraction policies per profile:
+  - `table_as_text` (flatten to readable text)
+  - `table_as_markdown`
+  - `table_as_html`
+  - `table_as_json` (rows/columns schema; preferred for analytics)
+  - `table_dual` (store both a human-readable representation and JSON)
+- Table extraction SHALL preserve provenance:
+  - page number, bounding box (if available), section heading context, table index.
+- The system SHALL allow table chunks to be indexed separately with a distinct metadata marker (e.g. `chunk_kind="table"`).
+
+#### FR-09E Layout, Pages, and Provenance (NEW)
+- The system SHOULD support layout-aware parsing when available (e.g., paragraphs, headings, lists, footnotes).
+- The system SHALL record provenance metadata for every chunk:
+  - source doc id, source URI, parser used, parser version,
+  - page number(s),
+  - section/heading path (where available),
+  - content type (`text`, `table`, `image_caption`, `footnote`, etc.).
+- The system SHALL support storing and optionally indexing extracted **image captions/alt text** and OCR’d image text.
+
 ### FR-10 Chunking and metadata enrichment
 - The system SHALL support configurable chunking strategies per profile:
   - fixed token/char sizes,
@@ -213,6 +273,23 @@ The system SHALL support ingestion of:
   - profile, collection,
   - optional tags, tenant, user/thread IDs.
 - Metadata schema MUST support management operations (deletion, filtering, retention).
+
+
+
+#### Chunking configuration extensions (NEW)
+- The system SHALL support additional chunking controls per profile:
+  - chunk size units: `tokens | characters | bytes`
+  - chunk boundaries: `page | paragraph | heading | list_item | table_row | semantic`
+  - overlap rules: numeric and “boundary-respecting” overlap
+  - “do not split” guards for:
+    - code blocks,
+    - tables (keep whole table or keep row-based chunks),
+    - headings + first paragraph.
+- The system SHOULD support chunk post-processing options:
+  - normalisation (whitespace, unicode),
+  - language detection (optional),
+  - boilerplate removal (headers/footers repeated across pages),
+  - quality scoring and rejection (e.g., drop low-signal chunks).
 
 ### FR-11 Deduplication
 - The system SHALL detect duplicates using configurable strategies:
@@ -265,7 +342,6 @@ The system SHALL support ingestion of:
   - retrieving source content and/or chunk text,
   - configurable `top_k`, score thresholds, reranking hooks (optional).
 - Retrieval MUST return stable identifiers for documents and chunks.
-- The `source` value provided at ingest time (`ingest_text`, `ingest_upload`, `ingest_reference`) MUST be preserved and returned in search-result metadata to support traceability and deterministic removal/reindex decisions.
 
 ### FR-15 Stateful / streaming ingestion
 - The system SHALL support streaming ingestion modes:
@@ -312,6 +388,16 @@ Admin/maintainer tools SHALL include:
 - `ingest_reference`
 - `ingest_stream_open` / `ingest_stream_event` / `ingest_stream_close`
 
+
+
+**Parser & OCR tooling (NEW)**
+- `parsers_list` (per profile) — list available parsers and capabilities
+- `parser_test` — run a parser on a sample file and return extracted structure + metrics
+- `ingest_preview` — show chosen parser chain, OCR decision, chunk plan, and dedupe decision *without* indexing
+- `extract_only` — run conversion/parsing/OCR and return outputs (text/markdown/json) without indexing
+- `ocr_run` — force OCR on a document (admin/maintainer only by default)
+- `table_extract` — extract table representations for inspection (admin/maintainer)
+
 ### 7.3 Search & retrieval
 - `search`
 - `retrieve` (by doc/chunk IDs)
@@ -353,3 +439,42 @@ Admin/maintainer tools SHALL include:
 - End-user document browsing UI (Admin UI only)
 - LLM chat completion features (embedding only; retrieval returns data)
 - Full data lake governance (beyond profiles, RBAC, retention, audit)
+
+
+---
+
+## 10. Appendix — Parser/OCR/Table Configuration (starter shape)
+
+```yaml
+profiles:
+  default:
+    parsing:
+      chain: ["docling", "mineru", "llamaindex_reader"]  # ordered fallback
+      fallback_on:
+        error: true
+        low_quality: true
+      quality_gates:
+        min_text_chars: 1200
+        min_unique_tokens: 150
+    ocr:
+      mode: "auto"              # disabled|auto|force
+      provider: "external_llm"  # local_tesseract|external_service|external_llm
+      auto_heuristics:
+        min_text_chars_per_page: 50
+        max_pages: 200
+      limits:
+        max_cost_usd_per_job: 2.50
+        max_pages_per_job: 200
+        rate_limit_rps: 2
+    tables:
+      policy: "table_dual"      # table_as_text|table_as_markdown|table_as_html|table_as_json|table_dual
+      json_schema: "rows_cols"  # rows_cols|records
+      chunking:
+        mode: "row"             # whole|row
+        max_rows_per_chunk: 50
+    chunking:
+      unit: "tokens"
+      boundaries: ["heading", "paragraph", "table"]
+      chunk_size: 800
+      overlap: 100
+```
