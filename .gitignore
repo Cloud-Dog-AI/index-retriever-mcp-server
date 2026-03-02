@@ -43,3 +43,9 @@ htmlcov/
 
 # mypy
 .mypy_cache/
+.run/
+.tmp-tests/
+logs/
+working/
+docker-build.log
+*.log
