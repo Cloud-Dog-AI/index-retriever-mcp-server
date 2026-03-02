@@ -3,7 +3,190 @@
 **Version:** 1.1  
 **Date:** 2026-02-24  
 **Standard:** PS-95  
-**Current executed cases:** 61 UT + 12 ST + 12 IT + 6 AT + 5 QT + 3 CT = 99
+**Current executed cases:** 74 UT + 12 ST + 18 IT + 9 AT + 6 QT + 4 CT = 123
+
+## Latest W15B-03 Status (2026-03-02)
+
+- Instruction file used:
+  - `cloud-dog-ai-platform-standards/working/AGENT-INSTRUCTION-W15B-03-INDEX-RETRIEVER-COMPLIANCE-LOCKDOWN-STRICT.md`
+- Canonical loader check:
+  - `python3 - <<'PY' ... assert 'load_config(' in src/index_tools/config/loader.py ... PY`
+  - Result: `config_loader_check=ok`
+- Loader/runtime compliance updates:
+  - `src/index_tools/config/loader.py` now contains canonical `cloud_dog_config.load_config(...)` path via `load_runtime_config(...)` with strict unresolved policy.
+  - Backward compatibility preserved for layer-merge unit path when explicit layers are provided.
+- Live runtime provider contract for local-docker strict tiers:
+  - `tests/env-ST-local-docker`, `tests/env-IT-local-docker`, `tests/env-AT-local-docker`
+    - `CLOUD_DOG__INDEX__VDB__PROVIDER=qdrant`
+    - `INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS=qdrant`
+  - Required Vault env sourced for ST/IT/AT runs:
+    - `set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a`
+- Added strict no-fallback identity tests:
+  - `tests/system/ST1_13/test_st1_13_no_fallback_backend_identity.py`
+  - `tests/integration/IT1_19/test_it1_19_no_fallback_backend_identity.py`
+  - `tests/application/AT1_9/test_at1_9_no_fallback_backend_identity.py`
+
+Exact strict backend summary lines:
+
+- `74 passed, 2 warnings in 1.50s` (UT, `/tmp/w15b03_index_ut.log`)
+- `13 passed in 11.86s` (ST, `/tmp/w15b03_index_st.log`)
+- `19 passed in 11.86s` (IT, `/tmp/w15b03_index_it.log`)
+- `10 passed in 11.58s` (AT, `/tmp/w15b03_index_at.log`)
+
+## Latest W14B-03 Status (2026-03-01)
+
+- Instruction file used: `cloud-dog-ai-platform-standards/working/AGENT-INSTRUCTION-W14B-03-INDEX-RETRIEVER-A2A-ENABLE-AUTH-CONTRACT-STRICT.md`
+- Runtime image + hash:
+  - `index-retriever-local-docker-all-in-one`
+  - `sha256:9cc4f10fc4802cc6bd387a0d058cb629180ed6c391718298385bdb618671bd29`
+- A2A env/auth contract keys applied in active local runtime env files:
+  - `TEST_A2A_API_KEY=12345678`
+  - `CLOUD_DOG__INDEX__AUTH__API_KEYS=test-api-key,12345678`
+
+Hard-stop precheck evidence:
+
+- initial baseline (before fix): `/a2a/health` returned `404` (no-auth and auth), captured in strict precheck shell output prior to implementation
+- post-fix strict precheck:
+  - no-auth: `401` (`/tmp/w14b03_index_a2a_noauth.code`)
+  - `Authorization: Bearer 12345678`: `200` (`/tmp/w14b03_index_a2a_auth.code`)
+  - `/tmp/w14b03_index_a2a_noauth.json` -> `{"detail":"Authentication failed"}`
+  - `/tmp/w14b03_index_a2a_auth.json` -> `{"status":"ok", ...}`
+
+Exact strict backend summary lines:
+
+- `74 passed, 2 warnings in 1.34s` (UT, `/tmp/w14b03_index_ut.log`)
+- `12 passed in 9.59s` (ST, `/tmp/w14b03_index_st.log`)
+- `18 passed in 9.22s` (IT, `/tmp/w14b03_index_it.log`)
+- `9 passed in 9.25s` (AT, `/tmp/w14b03_index_at.log`)
+
+Exact WebUI strict summary lines:
+
+- `Tasks: 8 successful, 8 total` (lint, `/tmp/w14b03_index_ui_lint.log`)
+- `Tasks: 8 successful, 8 total` (typecheck, `/tmp/w14b03_index_ui_typecheck.log`)
+- `12 passed (25.8s)` (e2e, `/tmp/w14b03_index_ui_e2e.log`)
+- `2 passed (13.4s)` (a11y, `/tmp/w14b03_index_ui_a11y.log`)
+
+Integrity + coverage evidence:
+
+- `verify-test-integrity.sh` -> `PASS: 10`, `FAIL: 0`, `WARN: 5` (`/tmp/w14b03_index_verify_test_integrity.log`)
+- no-Vault IT fail-closed check -> explicit `missing VAULT_TOKEN`, `18 errors` (`/tmp/w14b03_index_it_no_vault.log`)
+- full tier coverage -> `TOTAL 1446 0 100%`, `123 passed` (`/tmp/w14b03_index_cov.log`)
+
+---
+
+## Latest W14A-04 Status (2026-03-01)
+
+- Instruction file used: `cloud-dog-ai-platform-standards/working/AGENT-INSTRUCTION-W14A-04-INDEX-RETRIEVER-ROUTE-PFX-VDB-CLOSEOUT-STRICT.md`
+- Route-prefix env contract applied across active env files:
+  - `TEST_API_BASE_PATH=/app/v1`
+  - `TEST_MCP_BASE_PATH=/mcp`
+  - `TEST_WEB_BASE_PATH=/`
+  - `TEST_A2A_BASE_PATH=/a2a`
+- Runtime image + hash:
+  - `index-retriever-local-docker-all-in-one`
+  - `sha256:0648af633a50f7f59b1e7e6329e90e02836c97307e16adec4c94c20b63cb569c`
+- `cloud_dog_vdb` runtime version evidence:
+  - `/tmp/w14a04_index_vdb_version.log` -> `0.4.1`
+
+Exact strict backend summary lines:
+
+- `71 passed, 2 warnings in 1.58s` (UT, `/tmp/w14a04_index_ut.log`)
+- `12 passed in 11.19s` (ST, `/tmp/w14a04_index_st.log`)
+- `17 passed in 9.12s` (IT, `/tmp/w14a04_index_it.log`)
+- `8 passed in 8.90s` (AT, `/tmp/w14a04_index_at.log`)
+
+Route probe outputs:
+
+- canonical API health: `curl -fsS http://127.0.0.1:8686/app/v1/health` -> HTTP 200 (`/tmp/w14a04_index_health_canonical.json`)
+- canonical MCP tools: `curl -fsS http://127.0.0.1:8687/mcp/tools` -> HTTP 200, `ok=true`, `tools=37` (`/tmp/w14a04_index_tools_canonical.json`)
+- legacy MCP alias: `curl -fsS http://127.0.0.1:8687/tools` -> HTTP 200, compatibility alias (`/tmp/w14a04_index_tools_legacy_alias.json`, `tools=37`)
+
+Exact WebUI strict summary lines:
+
+- `Tasks: 8 successful, 8 total` (lint, `/tmp/w14a04_index_ui_lint.log`)
+- `Tasks: 8 successful, 8 total` (typecheck, `/tmp/w14a04_index_ui_typecheck.log`)
+- `12 passed (25.8s)` (e2e, `/tmp/w14a04_index_ui_e2e.log`)
+- `2 passed (13.4s)` (a11y, `/tmp/w14a04_index_ui_a11y.log`)
+
+---
+
+## Latest W13B Status (2026-03-01)
+
+- Instruction file used: `cloud-dog-ai-platform-standards/working/AGENT-INSTRUCTION-W13B-INDEX-RETRIEVER-VDB-0.4.1-ADOPTION-STRICT.md`
+- Runtime env/controller env files used:
+  - `tests/env-local-docker-server`
+  - `tests/env-UT-local-docker`
+  - `tests/env-ST-local-docker`
+  - `tests/env-IT-local-docker`
+  - `tests/env-AT-local-docker`
+  - `tests/env-QT-local-docker`
+- Runtime image + hash:
+  - `index-retriever-local-docker-all-in-one`
+  - `sha256:4dabd651208252abd5dc0bd743687dd3ace7b74bb85f6f29f09b835dbe2e2766`
+- Capability gate checks:
+  - `CONNECT_OK 127.0.0.1:8686`
+  - `CONNECT_OK 127.0.0.1:8687`
+  - `CONNECT_OK llm1.cloud-dog.net:443`
+
+Exact backend strict summary lines:
+
+- `71 passed, 2 warnings in 1.39s` (UT, `/tmp/w13b_idx_ut.log`)
+- `12 passed in 10.21s` (ST, `/tmp/w13b_idx_st.log`)
+- `4 passed in 4.22s` (CT, `/tmp/w13b_idx_ct.log`)
+- `17 passed in 9.34s` (IT, `/tmp/w13b_idx_it.log`)
+- `8 passed in 9.33s` (AT, `/tmp/w13b_idx_at.log`)
+- `6 passed in 2.30s` (QT, `/tmp/w13b_idx_qt.log`)
+
+Exact WebUI strict summary lines:
+
+- `Tasks: 8 successful, 8 total` (lint, `/tmp/w13b_idx_ui_lint.log`)
+- `Tasks: 8 successful, 8 total` (typecheck, `/tmp/w13b_idx_ui_typecheck.log`)
+- `12 passed (25.8s)` (e2e, `/tmp/w13b_idx_ui_e2e.log`)
+- `2 passed (13.4s)` (a11y, `/tmp/w13b_idx_ui_a11y.log`)
+
+Coverage evidence:
+
+- `python3 -m pytest tests/ --env tests/env-UT-local-docker --env tests/env-ST-local-docker --env tests/env-IT-local-docker --env tests/env-AT-local-docker --env tests/env-QT-local-docker -q -rs --cov=src --cov-report=term-missing`
+- Result: `118 passed, 2 warnings`, `TOTAL 1383 0 100%` (`/tmp/w13b_idx_cov.log`)
+
+W13B added/updated test IDs:
+
+| ID | Tier | Coverage intent |
+|----|------|------------------|
+| IT1.13 | IT | Metadata round-trip: `source_uri`, `filename`, `mime_type` |
+| IT1.14 | IT | Capability-aware planning and unsupported-filter failure path |
+| IT1.15 | IT | Infinity backend path / strict blocked behavior when unavailable |
+| IT1.16 | IT | Delegation boundary through `cloud_dog_vdb` parser/OCR/table path |
+| IT1.17 | IT | MCP/API execution coverage for wrapper tools |
+| CT1.4 | CT | Infinity adapter contract coverage |
+| AT1.7 | AT | Multi-profile cross-backend metadata parity invariants |
+| QT1.6 | QT | Provider diagnostic envelope explicit + secret-safe |
+
+---
+
+## Latest W11D Status (2026-02-28)
+
+- Instruction file used: `cloud-dog-ai-platform-standards/working/AGENT-INSTRUCTION-W11D-03-INDEX-RETRIEVER-LOCAL-DOCKER-IT-AT-STRICT.md`
+- Runtime env/controller env files used:
+  - `tests/env-local-docker-server`
+  - `tests/env-IT-local-docker`
+  - `tests/env-AT-local-docker`
+- Runtime image + hash:
+  - `index-retriever-local-docker-all-in-one`
+  - `sha256:937a3d17d6be3e253a03c1d74a517cd087a0587700ae07abea20c547cdc86f3f`
+- Exact commands run:
+  - `bash local-docker-server.sh --env tests/env-local-docker-server ensure`
+  - `curl -fsS http://127.0.0.1:8686/health >/tmp/w11d_index_health_api.json`
+  - `curl -fsS http://127.0.0.1:8687/mcp/tools >/tmp/w11d_index_tools.json`
+  - `python3 -m pytest tests/integration/ --env tests/env-IT-local-docker -q`
+  - `python3 -m pytest tests/application/ --env tests/env-AT-local-docker -q`
+  - `python3 -m pytest tests/application/AT1_1 --env tests/env-AT-local-docker -q`
+- Exact summary lines:
+  - `12 passed in 7.98s`
+  - `7 passed in 7.22s`
+  - `1 passed in 1.67s`
+- Evidence report path: `working/W11D-P3-INDEX-LOCAL-DOCKER-IT-AT-REPORT-2026-02-27.md`
+- Current status: `COMPLETE VERIFIED`
 
 ---
 
@@ -20,6 +203,14 @@ set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
 - `tests/env-IT`
 - `tests/env-AT`
 - `tests/env-QT`
+
+Required route-prefix keys in active env files:
+- `TEST_API_BASE_PATH`
+- `TEST_MCP_BASE_PATH`
+- `TEST_WEB_BASE_PATH`
+- `TEST_A2A_BASE_PATH`
+- `TEST_A2A_API_KEY`
+- `CLOUD_DOG__INDEX__AUTH__API_KEYS`
 
 ### External services (IT/AT/QT)
 - PostgreSQL (profiles, jobs, audit metadata)
@@ -134,7 +325,7 @@ Real services required. Tests cross-component interaction.
 
 ---
 
-## Application Tests (AT) — 5 tests
+## Application Tests (AT) — 6 tests
 
 End-to-end user workflows.
 
@@ -145,6 +336,7 @@ End-to-end user workflows.
 | AT1.3 | FullWorkflow_ProfileCollectionLifecycle | Admin creates profile → creates collection → ingests → searches → deletes collection |
 | AT1.4 | FullWorkflow_RetentionEnforcement | Ingest documents → run retention with age policy → verify old docs removed |
 | AT1.5 | FullWorkflow_MultiBackendSwitch | Create two profiles (Chroma, Qdrant) → ingest to both → search both → same contract |
+| AT1.6 | RuntimeMatrix_API_MCP_Transport | Local-docker/remote-runtime API + MCP transport workflow with live endpoints |
 
 ---
 
@@ -189,3 +381,184 @@ pytest tests/security/ --env tests/env-QT -v
 # All tests
 pytest tests/ --env tests/env-UT --env tests/env-ST --env tests/env-IT --env tests/env-AT --env tests/env-QT -v --cov=src/
 ```
+
+---
+
+## Runtime Matrix Evidence (2026-02-27, local-docker)
+
+- Runtime controller: `./local-docker-server.sh --env tests/env-local-docker-server`
+- Runtime env source: `tests/env-IT-local-docker`
+- Runtime container/image: `index-retriever-all` / `index-retriever-local-docker-all-in-one` (`sha256:937a3d17d6be...`)
+- Code revision under test: `ae460a1`
+
+Prerequisite for live integration/application runs:
+
+- `set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a`
+
+Commands executed:
+
+- `python3 -m pytest tests/integration/IT1_1 --env tests/env-IT-local-docker -q` -> `1 passed` (with Vault env sourced)
+- `python3 -m pytest tests/application/AT1_1 --env tests/env-AT-local-docker -q` -> `1 passed` (with Vault env sourced)
+
+## W11D Strict Local-Docker IT/AT Evidence (2026-02-27)
+
+- Vault sourced:
+  - `set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a`
+- Runtime ensure:
+  - `bash local-docker-server.sh --env tests/env-local-docker-server ensure`
+  - Result: `ALREADY RUNNING with matching env`
+- Endpoint prechecks:
+  - `curl -fsS http://127.0.0.1:8686/health >/tmp/w11d_index_health_api.json`
+  - `curl -fsS http://127.0.0.1:8687/mcp/tools >/tmp/w11d_index_tools.json`
+  - `/tmp/w11d_index_health_api.json` SHA256: `6d743e7ccfa94a025e1e81d6f1490593a9b10d7456de81d10238d1e1d93cf636`
+  - `/tmp/w11d_index_tools.json` SHA256: `d8a8d749e815fbccf74da3cdc8b9853243041cfa1bc12b29240626697b7b1aee`
+- Runtime image/hash:
+  - Container: `631d636d7963`
+  - Image: `index-retriever-local-docker-all-in-one`
+  - Image ID: `sha256:937a3d17d6be3e253a03c1d74a517cd087a0587700ae07abea20c547cdc86f3f`
+  - Env hash: `2b5377ab75dd1510bed7c08f1ecc6d052b5243283dbffa0ac500a4dd5fa1fd0b`
+- Strict command outcomes:
+  - `python3 -m pytest tests/integration/ --env tests/env-IT-local-docker -q` -> `12 passed`
+  - `python3 -m pytest tests/application/ --env tests/env-AT-local-docker -q` -> `7 passed`
+- `python3 -m pytest tests/application/AT1_1 --env tests/env-AT-local-docker -q` -> `1 passed`
+- Final accumulator: `W11D_EXIT_CODE=0`
+
+---
+
+## Web UI + A2A Traceability (UI-P5-IDX-TST)
+
+Target app: `cloud-dog-ai-ui-monorepo/apps/index-retriever`  
+Execution mode: Playwright E2E/a11y against real API runtime; WebUI is API-only client.
+
+| UI Test ID | Requirement Mapping | Playwright Spec File | Test Type | Expected Outcome |
+|---|---|---|---|---|
+| UI-IT1.1 | FR-01, FR-17 | `apps/index-retriever/tests/e2e/health-auth.spec.ts` | IT | API health/auth and initial console readiness |
+| UI-IT1.2 | FR-03, FR-16, FR-17 | `apps/index-retriever/tests/e2e/profile-crud.spec.ts` | IT | Runtime profile CRUD and validation error mapping |
+| UI-IT1.3 | FR-16, FR-17 | `apps/index-retriever/tests/e2e/collection-crud.spec.ts` | IT | Collection lifecycle operations mapped to API |
+| UI-IT1.4 | FR-01, FR-14 | `apps/index-retriever/tests/e2e/mcp-catalogue-and-tool-call.spec.ts` | IT | MCP catalogue exposure and tool execution panel |
+| UI-IT1.5 | FR-06, FR-17 | `apps/index-retriever/tests/e2e/audit-job-health-observability.spec.ts` | IT | Audit/log/job/health views and correlation IDs |
+| UI-AT1.1 | FR-08, FR-09, FR-10 | `apps/index-retriever/tests/e2e/upload-index-search.spec.ts` | AT | Upload -> index -> search -> retrieve full workflow |
+| UI-AT1.2 | FR-11, FR-14 | `apps/index-retriever/tests/e2e/dedupe-and-reindex.spec.ts` | AT | Dedupe and reindex workflow with deterministic outcomes |
+| UI-AT1.3 | FR-13, FR-16 | `apps/index-retriever/tests/e2e/multi-backend-profile-switch.spec.ts` | AT | Profile/backend switch workflow behaves consistently |
+| UI-AT1.4 | FR-16, FR-17 | `apps/index-retriever/tests/e2e/retention-and-delete-controls.spec.ts` | AT | Retention/delete actions require confirmation and succeed |
+| UI-AT1.5 | NFR WebUI usability/accessibility | `apps/index-retriever/tests/a11y.spec.ts` | AT/a11y | Zero critical accessibility violations on core routes |
+
+Strict command set (when app is implemented):
+
+```bash
+cd /opt/iac/Development/cloud-dog-ai/cloud-dog-ai-ui-monorepo
+npm run lint -- --filter=@cloud-dog/app-index-retriever
+npm run typecheck -- --filter=@cloud-dog/app-index-retriever
+npm run e2e -- --filter=@cloud-dog/app-index-retriever
+npm run a11y -- --filter=@cloud-dog/app-index-retriever
+```
+
+### W12C Execution Evidence (2026-02-28)
+
+Runtime and capability gates (real runtime; no mocks/stubs):
+
+- Runtime ensure command used by Playwright webServer:
+  - `cd /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server && bash local-docker-server.sh --env tests/env-local-docker-server ensure`
+- Runtime env chain:
+  - Control env: `tests/env-local-docker-server`
+  - Source runtime env: `tests/env-IT-local-docker`
+  - API endpoint: `http://127.0.0.1:8686`
+  - MCP endpoint: `http://127.0.0.1:8687`
+- Mandatory socket/network capability checks before test execution:
+  - `bind_local|ok`
+  - `api_8686|ok`
+  - `mcp_8687|ok`
+
+Strict command outcomes (exact commands executed):
+
+```bash
+cd /opt/iac/Development/cloud-dog-ai/cloud-dog-ai-ui-monorepo
+npm run lint -- --filter=@cloud-dog/app-index-retriever
+npm run typecheck -- --filter=@cloud-dog/app-index-retriever
+npm run e2e -- --filter=@cloud-dog/app-index-retriever
+npm run a11y -- --filter=@cloud-dog/app-index-retriever
+```
+
+- `npm run lint -- --filter=@cloud-dog/app-index-retriever`
+  - Result: PASS (`Tasks: 8 successful, 8 total`; failed tasks: 0)
+- `npm run typecheck -- --filter=@cloud-dog/app-index-retriever`
+  - Result: PASS (`Tasks: 8 successful, 8 total`; failed tasks: 0)
+- `npm run e2e -- --filter=@cloud-dog/app-index-retriever`
+  - Result: PASS (`12 passed (25.8s)`, `0 failed`, `0 skipped`)
+- `npm run a11y -- --filter=@cloud-dog/app-index-retriever`
+  - Result: PASS (`2 passed (13.4s)`, `0 failed`, `0 skipped`)
+
+Evidence artefacts:
+
+- Turbo logs:
+  - `cloud-dog-ai-ui-monorepo/apps/index-retriever/.turbo/turbo-lint.log`
+  - `cloud-dog-ai-ui-monorepo/apps/index-retriever/.turbo/turbo-typecheck.log`
+  - `cloud-dog-ai-ui-monorepo/apps/index-retriever/.turbo/turbo-e2e.log`
+  - `cloud-dog-ai-ui-monorepo/apps/index-retriever/.turbo/turbo-a11y.log`
+- Playwright run state:
+  - `cloud-dog-ai-ui-monorepo/apps/index-retriever/test-results/.last-run.json`
+
+### W12E UAT Readiness Evidence (2026-03-01, single-docker wave)
+
+Instruction file:
+
+- `cloud-dog-ai-platform-standards/working/AGENT-INSTRUCTION-W12E-03-INDEX-RETRIEVER-UAT-READY-SINGLE-DOCKER.md`
+
+Required runtime contract (validated):
+
+- Control env: `tests/env-local-docker-server`
+- Runtime env: `tests/env-IT-local-docker`
+- Health: `http://127.0.0.1:8686/health` -> HTTP 200 with `status: ok`
+- MCP tools: `http://127.0.0.1:8687/mcp/tools` -> HTTP 200 with `ok: true`
+
+Mandatory sequence command lines executed:
+
+```bash
+bash local-docker-server.sh --env tests/env-local-docker-server ensure
+curl -fsS http://127.0.0.1:8686/health
+curl -fsS http://127.0.0.1:8687/mcp/tools
+python3 -m pytest tests/unit/ --env tests/env-UT-local-docker -q
+python3 -m pytest tests/system/ --env tests/env-ST-local-docker -q
+python3 -m pytest tests/integration/ --env tests/env-IT-local-docker -q
+python3 -m pytest tests/application/ --env tests/env-AT-local-docker -q
+cd /opt/iac/Development/cloud-dog-ai/cloud-dog-ai-ui-monorepo
+npm run lint -- --filter=@cloud-dog/app-index-retriever
+npm run typecheck -- --filter=@cloud-dog/app-index-retriever
+npm run e2e -- --filter=@cloud-dog/app-index-retriever
+npm run a11y -- --filter=@cloud-dog/app-index-retriever
+```
+
+Exact backend summary lines (final strict run with Vault sourced):
+
+- `61 passed, 2 warnings in 1.55s` (UT local-docker)
+- `12 passed in 14.24s` (ST local-docker)
+- `12 passed in 6.47s` (IT local-docker)
+- `7 passed in 7.17s` (AT local-docker)
+
+Backend tier counts:
+
+- UT: pass 61, fail 0, skip 0
+- ST: pass 12, fail 0, skip 0
+- IT: pass 12, fail 0, skip 0
+- AT: pass 7, fail 0, skip 0
+
+Exact UI strict summary lines:
+
+- `npm run lint -- --filter=@cloud-dog/app-index-retriever` -> `Tasks: 8 successful, 8 total` (pass; fail 0)
+- `npm run typecheck -- --filter=@cloud-dog/app-index-retriever` -> `Tasks: 8 successful, 8 total` (pass; fail 0)
+- `npm run e2e -- --filter=@cloud-dog/app-index-retriever` -> `12 passed (25.8s)` (pass 12, fail 0, skip 0)
+- `npm run a11y -- --filter=@cloud-dog/app-index-retriever` -> `2 passed (13.4s)` (pass 2, fail 0, skip 0)
+
+Capability gate evidence:
+
+- Socket connectivity prechecks:
+  - `127.0.0.1:8686 CONNECT_OK`
+  - `127.0.0.1:8687 CONNECT_OK`
+
+Evidence artefacts:
+
+- `cloud-dog-ai-ui-monorepo/apps/index-retriever/.turbo/turbo-lint.log`
+- `cloud-dog-ai-ui-monorepo/apps/index-retriever/.turbo/turbo-typecheck.log`
+- `cloud-dog-ai-ui-monorepo/apps/index-retriever/.turbo/turbo-e2e.log`
+- `cloud-dog-ai-ui-monorepo/apps/index-retriever/.turbo/turbo-a11y.log`
+- `cloud-dog-ai-ui-monorepo/apps/index-retriever/test-results/.last-run.json`

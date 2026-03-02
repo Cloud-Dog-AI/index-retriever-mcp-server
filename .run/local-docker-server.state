@@ -1,0 +1,6 @@
+STATE_RUNTIME_ENV_FILE=/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/tests/env-IT-local-docker
+STATE_RUNTIME_ENV_HASH=3df87d337b39d47ec14264aebe4294bf175594e57ffbccd66d7af1508de241d9
+STATE_COMPOSE_FILE=/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/docker-compose.yml
+STATE_PROJECT_NAME=index-retriever-local-docker
+STATE_COMPOSE_PROFILES=all-in-one
+STATE_SERVICES=all-in-one

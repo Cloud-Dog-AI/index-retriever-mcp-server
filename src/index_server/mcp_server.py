@@ -57,6 +57,12 @@ def _required_roles_for_tool(tool_name: str) -> set[str]:
         return {"admin"}
     if tool_name.startswith("ingest_"):
         return {"writer", "maintainer", "admin"}
+    if tool_name in {"parsers_list"}:
+        return {"reader", "writer", "maintainer", "admin"}
+    if tool_name in {"parser_test", "ocr_run", "table_extract"}:
+        return {"maintainer", "admin"}
+    if tool_name in {"extract_only"}:
+        return {"writer", "maintainer", "admin"}
     if tool_name in {
         "search",
         "search_explain",
@@ -131,6 +137,60 @@ def execute_tool(
         )
         job_id = getattr(ingest_result, "job_id", ingest_result)
         return {"job_id": str(job_id), "status": "queued"}
+    if tool_name == "parsers_list":
+        return {"parsers": service.parsers_list(parser_services=arguments.get("parser_services"))}
+    if tool_name == "parser_test":
+        return service.parser_test(
+            provider_id=str(arguments["provider_id"]),
+            sample_text=str(arguments.get("sample_text", "parser health check")),
+            source_uri=str(arguments.get("source_uri", "inline://parser-test.txt")),
+            parser_services=arguments.get("parser_services"),
+            options=arguments.get("options"),
+        )
+    if tool_name == "ingest_preview":
+        return service.ingest_preview(
+            text=str(arguments["text"]),
+            source_uri=str(arguments.get("source_uri", "inline://preview.txt")),
+            parser_chain=list(arguments.get("parser_chain", ["internal"])),
+            parser_options=arguments.get("parser_options"),
+            parser_services=arguments.get("parser_services"),
+            metadata=arguments.get("metadata"),
+            ocr_mode=str(arguments.get("ocr_mode", "disabled")),
+            ocr_provider=str(arguments.get("ocr_provider", "")),
+            table_policy=str(arguments.get("table_policy", "table_as_markdown")),
+            table_json_shape=str(arguments.get("table_json_shape", "records")),
+        )
+    if tool_name == "extract_only":
+        return service.extract_only(
+            text=str(arguments["text"]),
+            source_uri=str(arguments.get("source_uri", "inline://extract-only.txt")),
+            parser_chain=list(arguments.get("parser_chain", ["internal"])),
+            parser_options=arguments.get("parser_options"),
+            parser_services=arguments.get("parser_services"),
+            ocr_mode=str(arguments.get("ocr_mode", "disabled")),
+            ocr_provider=str(arguments.get("ocr_provider", "")),
+            table_policy=str(arguments.get("table_policy", "table_as_markdown")),
+            table_json_shape=str(arguments.get("table_json_shape", "records")),
+        )
+    if tool_name == "ocr_run":
+        return service.ocr_run(
+            text=str(arguments["text"]),
+            mode=str(arguments.get("mode", "auto")),
+            provider_id=str(arguments.get("provider_id", "")),
+            min_chars=int(arguments.get("min_chars", 200)),
+            min_scanned_ratio=float(arguments.get("min_scanned_ratio", 0.5)),
+            scanned_ratio=float(arguments.get("scanned_ratio", 0.0)),
+        )
+    if tool_name == "table_extract":
+        return service.table_extract(
+            text=str(arguments["text"]),
+            source_uri=str(arguments.get("source_uri", "inline://table-extract.txt")),
+            parser_chain=list(arguments.get("parser_chain", ["internal"])),
+            parser_options=arguments.get("parser_options"),
+            parser_services=arguments.get("parser_services"),
+            table_policy=str(arguments.get("table_policy", "table_as_json")),
+            table_json_shape=str(arguments.get("table_json_shape", "records")),
+        )
     if tool_name == "search":
         return {
             "results": service.search(

@@ -1,0 +1,1187 @@
+INFO:     Started server process [17]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8687 (Press CTRL+C to quit)
+INFO:     127.0.0.1:46728 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46734 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46734 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46744 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46744 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46750 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46750 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46766 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46766 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46780 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46780 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46788 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46788 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46790 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46790 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46804 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46804 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46820 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46820 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46834 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46834 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46838 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46838 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46854 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46854 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46864 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46864 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46866 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46866 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35080 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35080 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35094 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35094 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35102 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35102 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35116 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35116 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35128 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35128 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35138 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35138 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35148 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35148 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35152 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35152 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35166 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35166 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35178 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35178 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35190 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35190 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35204 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35204 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35208 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35216 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35216 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35230 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35230 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35246 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35246 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35250 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35250 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35252 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35252 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35264 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35264 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35280 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35280 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35290 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35290 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35296 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35296 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35304 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35304 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35320 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35320 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35328 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35328 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35340 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35340 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35344 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35344 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35354 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35354 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35360 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35360 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59496 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59496 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50182 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50182 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50198 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50198 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50204 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50204 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50220 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50220 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50232 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50232 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50256 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50262 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50262 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50266 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50266 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50282 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50282 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50294 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50294 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50306 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50306 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50322 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50322 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50330 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50330 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50344 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50344 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50348 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50348 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50350 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50350 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50358 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50368 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50368 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50380 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50380 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50392 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50392 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50406 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50406 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50410 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50410 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50414 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50414 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50428 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50428 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50434 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50434 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50448 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50448 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50464 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50464 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50466 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50466 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:39864 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39864 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:39874 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39874 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:39884 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39884 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:39900 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39900 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:39916 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39916 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:39924 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39924 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:39934 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39934 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:39948 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39948 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:39958 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39958 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:39964 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39964 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:39968 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39968 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:39982 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39982 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:39996 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39996 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40006 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40008 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40008 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40020 - "POST /mcp/tools/profiles_list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40028 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40028 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40036 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40036 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40042 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40042 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40052 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40052 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40062 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40062 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40064 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40064 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40078 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40078 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40092 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40092 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40100 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40100 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40106 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40106 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40116 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40116 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60304 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60304 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60314 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60314 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60324 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60324 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60336 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60336 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60348 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60348 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60360 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60360 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60376 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60376 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60382 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60382 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60398 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60398 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60400 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60400 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60402 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60402 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60404 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60404 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60420 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60420 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60428 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60428 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60442 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60442 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60446 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60446 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60462 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60462 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60476 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60476 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60484 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60484 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60490 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60490 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60496 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60496 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60498 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60498 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46512 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46512 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46514 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46514 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46526 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46526 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46536 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46536 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46540 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46546 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46546 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46562 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46562 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46568 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46568 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46582 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46582 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46592 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46592 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46604 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46604 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46606 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46606 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46622 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46622 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46636 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46636 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46646 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46646 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46660 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46660 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46662 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46662 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46676 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46676 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46688 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46688 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46698 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46698 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46710 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46710 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49230 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49230 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49246 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49246 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49260 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49260 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49264 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49264 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49274 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49274 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49282 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49282 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49292 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49292 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49306 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49306 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59602 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33506 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33522 - "POST /mcp/tools/profiles_list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33532 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33532 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45606 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35132 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35146 - "POST /mcp/tools/profiles_list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47260 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47268 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47268 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:51822 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51822 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:38880 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38882 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38476 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38476 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:38494 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38496 - "POST /mcp/tools/profiles_list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47120 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47120 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:47134 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47134 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59920 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59920 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46348 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46348 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46354 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46354 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40688 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40688 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:37852 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37852 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60734 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60734 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60748 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60748 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60756 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60756 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:47936 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47936 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:47940 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47940 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:43794 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43794 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:43808 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43808 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:43816 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43816 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:43832 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43832 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:43846 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43846 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44264 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44264 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44268 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44268 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44278 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44278 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:38122 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38122 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50804 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50804 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50812 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50812 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40422 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40422 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:41802 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41802 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:41806 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41806 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:41808 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41808 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:41824 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41824 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:41838 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41838 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:41846 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41846 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50538 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50538 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45332 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45332 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45334 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45334 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45342 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45342 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45344 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45344 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:43770 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56906 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34328 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60810 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60810 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60824 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60824 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60838 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60838 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60854 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60854 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60860 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60860 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60862 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60862 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60874 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60874 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60880 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60880 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59950 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59950 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59956 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59956 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59958 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59958 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59974 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59974 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59980 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59980 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59994 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59994 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60006 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60006 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60012 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60012 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60028 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60028 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60040 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60040 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60052 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60052 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60064 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60064 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60066 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60066 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60078 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60078 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60080 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60080 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45496 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45496 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45498 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45498 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45510 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45510 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45526 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45526 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45538 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45538 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45540 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45540 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45544 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45544 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45546 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45546 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45550 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45550 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45556 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45556 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45564 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45564 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45578 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45578 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45592 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45592 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45594 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45594 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45610 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45610 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45620 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45620 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45628 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45628 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45640 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45640 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45654 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45654 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45660 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45660 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45674 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45674 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45682 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45682 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45686 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45686 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45694 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45694 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45698 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45698 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45714 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45714 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45730 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45730 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45746 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45746 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45758 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45758 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45762 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45762 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45766 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45766 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45772 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45772 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45780 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45780 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45796 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45796 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45810 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45810 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45818 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45818 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44854 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44854 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44864 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44864 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44874 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44874 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44884 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44884 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44896 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44896 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44898 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44898 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44910 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44910 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52486 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52486 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52500 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52500 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52508 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52508 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52510 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52510 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52526 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52526 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52534 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52534 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52544 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52544 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52552 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52552 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52566 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52566 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52570 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52570 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52584 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52584 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52600 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52600 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52616 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52616 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52618 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52618 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52624 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52624 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52628 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52628 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52632 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52632 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52640 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52640 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52650 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52650 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52660 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52660 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52668 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52668 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52670 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52670 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52676 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52676 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52682 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52682 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52690 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52690 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52706 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52706 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52710 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52710 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52724 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52724 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52738 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52738 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52748 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52748 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52760 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52760 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52770 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52770 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52784 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52784 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55176 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55176 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55188 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55188 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55198 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55198 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55212 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55212 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55224 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55224 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55238 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55238 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55242 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55244 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55244 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55250 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55250 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55256 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55256 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55260 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55260 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55266 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55266 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55280 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55280 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55286 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55286 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55296 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55296 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55302 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55302 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55318 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55318 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55334 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55334 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55350 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55350 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55362 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55362 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55364 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55364 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55368 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55368 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55376 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55376 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55388 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55388 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55400 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55400 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55402 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55402 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55406 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55406 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55408 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55408 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55424 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55424 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55428 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55428 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55432 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55432 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55446 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55446 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55454 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55454 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55468 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55468 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55470 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55470 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58490 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58490 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58502 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58502 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58514 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58514 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58516 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58516 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58532 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58532 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58538 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58538 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58544 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58544 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58550 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58550 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58554 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58554 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58568 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58568 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58576 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58576 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58584 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58584 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58590 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58590 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58592 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58592 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58602 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58602 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58616 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58616 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58628 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58628 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58636 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58636 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58640 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58640 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58648 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58648 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:33134 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33134 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:33138 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33138 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:33140 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33140 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:33142 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33142 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:33148 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33148 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:33158 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33158 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:33160 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33160 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:33172 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33172 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:53558 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53558 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:37040 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37040 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52354 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52354 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42828 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42828 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:56174 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56174 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:56188 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56188 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:51584 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51584 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:37418 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37418 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:37434 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37434 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:54632 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54632 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42668 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42668 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42680 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42680 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:51444 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51444 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57962 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57962 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57968 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57968 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57978 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57978 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57980 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57992 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57992 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57998 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57998 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42426 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42426 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60802 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60802 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60818 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60818 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60832 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60832 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60844 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60844 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:48806 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48806 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:48822 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48822 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:51192 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51192 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:40552 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40552 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35438 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35438 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:35442 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35442 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44698 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44698 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44706 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44706 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55614 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55614 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55626 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55626 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55634 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55634 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58522 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58522 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58530 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58530 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58540 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58540 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58550 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58550 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58560 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58560 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58566 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58566 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58580 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58580 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:58582 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58582 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50418 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50418 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50432 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50432 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50440 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50440 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50450 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50450 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50456 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50456 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42520 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42520 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42532 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42532 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42538 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42538 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42550 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42550 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42558 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42558 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42574 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42574 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42578 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42578 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42582 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42582 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42592 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42592 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42604 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42604 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42620 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42620 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42622 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42622 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42628 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42628 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42640 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42640 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42642 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42642 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42644 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42644 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42658 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42658 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42662 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42662 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42678 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42678 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42688 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42688 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42698 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42698 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42712 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42712 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42718 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42718 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42734 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42734 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42742 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42742 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42750 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42750 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42764 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42764 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42774 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42774 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42782 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42782 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42786 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42786 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42792 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42792 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:42800 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42800 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46784 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46784 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46788 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46788 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46796 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46796 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46810 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46810 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46826 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46826 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46838 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46838 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46852 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46852 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46866 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46866 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46872 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46872 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46874 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46874 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46882 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46882 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46884 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46884 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46898 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46898 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46914 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46914 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46920 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46920 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46922 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46922 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46934 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46934 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46946 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46946 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46958 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46958 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46974 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46974 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46978 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46978 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46994 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46994 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:47006 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47006 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:47020 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47020 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:47030 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47030 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:47040 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47040 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:47048 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47048 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:47064 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47064 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:47076 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47076 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:47084 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47084 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:54912 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54912 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:54914 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54914 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:54918 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54918 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:54922 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54922 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:54936 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54936 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:54950 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54950 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34332 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34332 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34348 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34348 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34358 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34358 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34368 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34368 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34370 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34370 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34382 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34382 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34396 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34396 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34400 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34400 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34404 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34404 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34416 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34416 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34422 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34422 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34432 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34432 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34446 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34446 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34452 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34452 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34454 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34454 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34462 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34462 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34464 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34464 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34480 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34480 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34492 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34492 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34502 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34502 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34512 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34512 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34516 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34516 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:34522 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34522 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46300 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46300 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46310 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46310 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46324 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46324 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46328 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46328 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46334 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46334 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46344 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46344 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46354 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46354 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46364 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46364 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46378 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46378 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46380 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46380 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46392 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46392 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46398 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46398 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46408 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46408 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46412 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46412 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46416 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46416 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46426 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46426 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46430 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46430 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46432 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46432 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46448 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46448 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46460 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46460 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46468 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46468 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46482 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46482 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46494 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46494 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46500 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46500 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46508 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46508 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46520 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46520 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46522 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46522 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46530 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46530 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46532 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46532 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46538 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46538 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46554 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46554 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46560 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46560 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46564 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46564 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46578 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46578 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:46586 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46586 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49180 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49180 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49190 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49190 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49194 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49194 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49210 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49210 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49212 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49212 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49226 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49226 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49228 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49228 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49242 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49242 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49244 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49244 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49260 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49260 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49272 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49272 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49278 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49278 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49280 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49280 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49286 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49286 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49292 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49292 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49304 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49304 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49320 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49320 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49324 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49324 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49336 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49336 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49348 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49348 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49352 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49352 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49364 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49364 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49372 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49372 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57560 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57560 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57574 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57574 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57580 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57580 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57592 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57592 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57598 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57598 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57602 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57602 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57612 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57612 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:57620 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57620 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:53610 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53610 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:43360 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43360 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:47886 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47886 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59434 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59434 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44156 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44156 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:44170 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44170 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:41790 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41790 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59180 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59180 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59194 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59194 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:47278 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47278 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45650 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45650 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45656 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45656 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45664 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45664 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:45678 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45678 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:36712 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36712 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:38024 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38024 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:51464 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51464 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:51472 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51472 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:51480 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51480 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:51490 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51490 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:54996 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54996 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55006 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55006 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55016 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55016 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55024 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55024 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:53146 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53146 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:53158 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53158 - "DELETE /mcp HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:55376 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55386 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36706 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36720 - "POST /mcp/tools/profiles_list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37232 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37250 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37252 - "POST /mcp/tools/profiles_list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37262 - "GET /mcp/tools HTTP/1.1" 200 OK

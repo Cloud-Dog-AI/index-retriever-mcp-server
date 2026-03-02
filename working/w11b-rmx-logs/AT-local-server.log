@@ -1,0 +1,44 @@
+.......                                                                  [100%]
+=============================== warnings summary ===============================
+tests/application/AT1_1/test_at1_1.py: 10 warnings
+tests/application/AT1_2/test_at1_2.py: 8 warnings
+tests/application/AT1_3/test_at1_3.py: 4 warnings
+tests/application/AT1_4/test_at1_4.py: 4 warnings
+tests/application/AT1_5/test_at1_5.py: 6 warnings
+tests/application/AT1_6/test_at1_6.py: 24 warnings
+  /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:589: DeprecationWarning: Passing 'msg' argument to Task.cancel() is deprecated since Python 3.11, and scheduled for removal in Python 3.14.
+    should_retry = scope._deliver_cancellation(origin) or should_retry
+
+tests/application/AT1_1/test_at1_1.py: 10 warnings
+tests/application/AT1_2/test_at1_2.py: 8 warnings
+tests/application/AT1_3/test_at1_3.py: 4 warnings
+tests/application/AT1_4/test_at1_4.py: 4 warnings
+tests/application/AT1_5/test_at1_5.py: 6 warnings
+tests/application/AT1_6/test_at1_6.py: 24 warnings
+  /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:589: DeprecationWarning: Passing 'msg' argument to Future.cancel() is deprecated since Python 3.11, and scheduled for removal in Python 3.14.
+    should_retry = scope._deliver_cancellation(origin) or should_retry
+
+tests/application/AT1_6/test_at1_6.py::test_runtime_matrix_api_and_mcp_transport
+tests/application/AT1_6/test_at1_6.py::test_runtime_matrix_api_and_mcp_transport
+tests/application/AT1_6/test_at1_6.py::test_runtime_matrix_api_and_mcp_transport
+tests/application/AT1_6/test_at1_6.py::test_runtime_matrix_api_and_mcp_transport
+  /usr/lib/python3.11/asyncio/events.py:80: DeprecationWarning: Passing 'msg' argument to Task.cancel() is deprecated since Python 3.11, and scheduled for removal in Python 3.14.
+    self._context.run(self._callback, *self._args)
+
+tests/application/AT1_6/test_at1_6.py::test_runtime_matrix_api_and_mcp_transport
+tests/application/AT1_6/test_at1_6.py::test_runtime_matrix_api_and_mcp_transport
+tests/application/AT1_6/test_at1_6.py::test_runtime_matrix_api_and_mcp_transport
+tests/application/AT1_6/test_at1_6.py::test_runtime_matrix_api_and_mcp_transport
+  /usr/lib/python3.11/asyncio/events.py:80: DeprecationWarning: Passing 'msg' argument to Future.cancel() is deprecated since Python 3.11, and scheduled for removal in Python 3.14.
+    self._context.run(self._callback, *self._args)
+
+tests/application/AT1_6/test_at1_6.py: 16 warnings
+  /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:636: DeprecationWarning: Passing 'msg' argument to Task.cancel() is deprecated since Python 3.11, and scheduled for removal in Python 3.14.
+    self._deliver_cancellation(self)
+
+tests/application/AT1_6/test_at1_6.py: 16 warnings
+  /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:636: DeprecationWarning: Passing 'msg' argument to Future.cancel() is deprecated since Python 3.11, and scheduled for removal in Python 3.14.
+    self._deliver_cancellation(self)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+7 passed, 152 warnings in 7.78s

@@ -2,12 +2,15 @@ version: '3.8'
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      network: host
     container_name: index-retriever-api
     command: api
-    ports:
-      - "${API_PORT:-8686}:8686"
-    env_file: .env
+    user: "0:0"
+    network_mode: host
+    env_file:
+      - ${ENV_FILE:-.env}
     environment:
       - CLOUD_DOG__INDEX__API_SERVER__PORT=8686
       - CLOUD_DOG__INDEX__API_SERVER__HOST=0.0.0.0
@@ -24,12 +27,15 @@ services:
     restart: unless-stopped
 
   mcp:
-    build: .
+    build:
+      context: .
+      network: host
     container_name: index-retriever-mcp
     command: mcp
-    ports:
-      - "${MCP_PORT:-8687}:8687"
-    env_file: .env
+    user: "0:0"
+    network_mode: host
+    env_file:
+      - ${ENV_FILE:-.env}
     environment:
       - CLOUD_DOG__INDEX__MCP_SERVER__PORT=8687
       - CLOUD_DOG__INDEX__MCP_SERVER__HOST=0.0.0.0
@@ -43,13 +49,15 @@ services:
 
   # All-in-one (development only)
   all-in-one:
-    build: .
+    build:
+      context: .
+      network: host
     container_name: index-retriever-all
     command: all
-    ports:
-      - "8686:8686"
-      - "8687:8687"
-    env_file: .env
+    user: "0:0"
+    network_mode: host
+    env_file:
+      - ${ENV_FILE:-.env}
     volumes:
       - ./logs:/app/logs
       - ./data:/app/data

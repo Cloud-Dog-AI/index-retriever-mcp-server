@@ -28,6 +28,7 @@ from index_tools.security.rbac import RbacAuthoriser, Subject
 from index_tools.tools.definitions import GenericToolInput, GenericToolOutput
 from index_tools.tools.registry import ToolRegistry, ToolSpec
 from index_tools.vdb.registry import VdbRegistry
+from tests.http_paths import api_tools_path
 
 
 class _DummyService:
@@ -103,7 +104,7 @@ def test_api_require_roles_http403_branch(monkeypatch: pytest.MonkeyPatch, servi
     assert local_health()["status"] == "ok"
 
     client = TestClient(app)
-    response = client.get("/api/v1/tools", headers={"x-api-key": "test-api-key"})
+    response = client.get(api_tools_path(), headers={"x-api-key": "test-api-key"})
     assert response.status_code == 403
     assert "denied" in response.text
 

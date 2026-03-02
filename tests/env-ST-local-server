@@ -1,0 +1,23 @@
+# System test environment
+TEST_ENV_TIER=ST
+DB_URL=sqlite+aiosqlite:///data/index-retriever-st.db
+CLOUD_DOG__INDEX__VDB__PROVIDER=chroma
+CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=ollama
+CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text
+EMBED_BASE_URL=https://llm1.cloud-dog.net
+EMBED_API_KEY=
+CLOUD_DOG__INDEX__VDB__CHROMA_URL=${vault.dev.vdbs.chroma.base_url}
+CLOUD_DOG__INDEX__VDB__QDRANT_URL=${vault.dev.vdbs.qdrant.url}
+INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS=chroma,qdrant
+VAULT_ADDR=https://vault0.cloud-dog.net
+VAULT_MOUNT_POINT=cloud_dog_ai
+VAULT_CONFIG_PATH=config
+
+# Runtime matrix mode
+INDEX_RETRIEVER_RUNTIME_MODE=local-server
+TEST_API_BASE_PATH=/app/v1
+TEST_MCP_BASE_PATH=/mcp
+TEST_WEB_BASE_PATH=/
+TEST_A2A_BASE_PATH=/a2a
+TEST_A2A_API_KEY=12345678
+CLOUD_DOG__INDEX__AUTH__API_KEYS=test-api-key,12345678

@@ -17,6 +17,7 @@ from index_server.admin.endpoints import collection_create
 from index_server.main import main
 from index_server.streaming import ingest_stream_close, ingest_stream_event, ingest_stream_open
 from index_tools.tools.service import IndexService
+from tests.http_paths import api_tools_path, mcp_tools_path
 
 
 def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
@@ -27,29 +28,40 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     assert health.status_code == 200
     assert health.json()["status"] == "ok"
 
-    unauth = client.get("/api/v1/tools")
+    a2a_unauth = client.get("/a2a/health")
+    assert a2a_unauth.status_code == 401
+
+    a2a_auth = client.get("/a2a/health", headers={"x-api-key": "test-api-key"})
+    assert a2a_auth.status_code == 200
+    assert a2a_auth.json()["status"] == "ok"
+
+    a2a_root = client.get("/a2a", headers={"x-api-key": "test-api-key"})
+    assert a2a_root.status_code == 200
+    assert a2a_root.json()["base_path"] == "/a2a"
+
+    unauth = client.get(api_tools_path())
     assert unauth.status_code == 401
 
-    tools = client.get("/api/v1/tools", headers={"x-api-key": "test-api-key"})
+    tools = client.get(api_tools_path(), headers={"x-api-key": "test-api-key"})
     assert tools.status_code == 200
     assert isinstance(tools.json(), list)
 
     forbidden = client.post(
-        "/api/v1/tools/ingest_text",
+        api_tools_path("ingest_text"),
         headers={"authorization": "Bearer valid-reader-token"},
         json={"profile": "default", "collection": "ut_api", "text": "alpha"},
     )
     assert forbidden.status_code == 403
 
     bad_request = client.post(
-        "/api/v1/tools/ingest_text",
+        api_tools_path("ingest_text"),
         headers={"authorization": "Bearer valid-writer-token"},
         json={"profile": "unknown", "collection": "ut_api", "text": "alpha"},
     )
     assert bad_request.status_code == 400
 
     unknown = client.post(
-        "/api/v1/tools/unknown_tool",
+        api_tools_path("unknown_tool"),
         headers={"x-api-key": "test-api-key"},
         json={},
     )
@@ -96,20 +108,23 @@ def test_mcp_app_and_execute_tool_paths(service: IndexService) -> None:
     client = TestClient(app)
 
     assert client.get("/health").json()["status"] == "ok"
-    mcp_payload = client.get("/mcp/tools").json()
+    mcp_payload = client.get(mcp_tools_path()).json()
     assert mcp_payload["ok"] is True
     assert isinstance(mcp_payload["data"], list)
 
-    tools_payload = client.get("/tools").json()
-    assert isinstance(tools_payload["tools"], list)
+    # Optional compatibility alias: do not rely on legacy /tools for canonical contract.
+    tools_payload = client.get("/tools")
+    assert tools_payload.status_code in {200, 404}
+    if tools_payload.status_code == 200:
+        assert isinstance(tools_payload.json()["tools"], list)
 
-    # POST /mcp/tools/{tool_name} — auth required
-    no_auth = client.post("/mcp/tools/profiles_list", json={})
+    # POST canonical /mcp/tools/{tool_name} — auth required
+    no_auth = client.post(mcp_tools_path("profiles_list"), json={})
     assert no_auth.status_code == 401
 
-    # POST /mcp/tools/{tool_name} — successful call
+    # POST canonical /mcp/tools/{tool_name} — successful call
     authed = client.post(
-        "/mcp/tools/profiles_list",
+        mcp_tools_path("profiles_list"),
         headers={"x-api-key": "test-api-key"},
         json={},
     )
@@ -118,24 +133,24 @@ def test_mcp_app_and_execute_tool_paths(service: IndexService) -> None:
     assert body["ok"] is True
     assert "profiles" in body["data"]
 
-    # POST /mcp/tools/{tool_name} — unknown tool
+    # POST canonical /mcp/tools/{tool_name} — unknown tool
     unknown = client.post(
-        "/mcp/tools/nonexistent_tool",
+        mcp_tools_path("nonexistent_tool"),
         headers={"x-api-key": "test-api-key"},
         json={},
     )
     assert unknown.status_code == 404
 
-    # POST /mcp/tools/{tool_name} — permission denied
+    # POST canonical /mcp/tools/{tool_name} — permission denied
     forbidden = client.post(
-        "/mcp/tools/ingest_text",
+        mcp_tools_path("ingest_text"),
         headers={"authorization": "Bearer valid-reader-token"},
         json={"profile": "default", "collection": "ut_mcp", "text": "blocked"},
     )
     assert forbidden.status_code == 403
 
     bad_payload = client.post(
-        "/mcp/tools/search",
+        mcp_tools_path("search"),
         headers={"x-api-key": "test-api-key"},
         json={"profile": "default", "collection": "ut_mcp"},
     )

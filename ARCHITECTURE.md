@@ -21,6 +21,17 @@ The service wraps LlamaIndex (and optionally LangChain) to deliver a consistent 
 
 **API-first:** HTTP API is canonical; MCP tools and WebUI call into the same handlers.
 
+### 1.1 Route-prefix contract (W14A-04)
+- API canonical base path: `/app/v1`
+- MCP canonical base path: `/mcp` (catalogue `GET /mcp/tools`)
+- Web canonical base path: `/`
+- A2A canonical base path: `/a2a`
+- Runtime preserves `/api/v1` as compatibility alias for API tool routes while canonical tests/docs target `/app/v1`.
+- A2A namespace endpoints:
+  - `GET /a2a` (auth-gated namespace probe),
+  - `GET /a2a/health` (auth-gated health probe).
+- A2A auth uses the same API-key authority as API tool routes (`X-API-Key` and `Authorization: Bearer <api-key>` are validated by one shared key validator).
+
 ---
 
 ## 2. Recommended Repository Layout
@@ -149,12 +160,10 @@ Uniform fetch interface:
 Scopes and credentials enforced here.
 
 ### 3.4 Conversion & Parsing
-Converter registry selects best backend available.
-- Pandoc where present,
-- python-native fallbacks,
-- optional external enrichers DeepDoc/MinerU.
-
-Outputs: text/markdown + structured metadata.
+Runtime parser/OCR/table internals are delegated to `cloud_dog_vdb` pipeline surfaces.
+- Index-retriever exposes thin wrappers (`parsers_list`, `parser_test`, `ingest_preview`, `extract_only`, `ocr_run`, `table_extract`).
+- Parser chain selection, OCR heuristics, and table extraction internals are not re-implemented locally.
+- Outputs include text/markdown and metadata with `source_uri`, `filename`, and `mime_type`.
 
 ### 3.5 Pipeline Orchestrator
 `fetch -> convert -> parse -> chunk -> embed -> upsert -> commit metadata`
@@ -176,6 +185,11 @@ Uses `cloud_dog_vdb` backend adapters. Each backend implements a common contract
 - query: top_k + filters
 - delete: by IDs and by filters
 - health + optional maintenance ops
+
+### 3.7A Capability planning and diagnostics (VDB 0.4.1)
+- Search calls use backend capability descriptors to derive execution plans and guard unsupported operations (for example, metadata filtering when disabled).
+- Backend/provider failures in parser/ingestion surfaces are propagated as explicit diagnostic envelopes with secret redaction.
+- Infinity backend is wired as a conditional provider path through the same `cloud_dog_vdb` contracts, enabled only when env configuration is present.
 
 ### 3.8 Search/Retrieve Layer
 - Normalises queries and filter semantics.
@@ -239,6 +253,12 @@ Append-only JSONL via `cloud_dog_logging` audit logger.
 3. Server buffers/batches per ordering key
 4. Emits progress and ack events
 5. Jobs created implicitly or tracked as “stream sessions”
+
+### 5.4 Preview and delegated parser tool flow
+1. API/MCP call enters index-retriever tool wrapper.
+2. Wrapper validates auth/RBAC and maps request shape.
+3. Wrapper delegates preview/test/extract/OCR/table operation to `cloud_dog_vdb` parser pipeline APIs.
+4. Response returns normalized metadata and diagnostics through PS-20-compatible envelopes.
 
 ---
 

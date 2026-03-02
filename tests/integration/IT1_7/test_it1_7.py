@@ -3,16 +3,38 @@
 # Owner: Cloud-Dog AI
 # Description: MCP tool execution over live runtime.
 
+import json
 from uuid import uuid4
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
 from fastapi.testclient import TestClient
 
 from index_server.api_server import build_api_app
+from tests.http_paths import api_tools_path
 from tests.live_runtime import LiveIndexRuntime
 
 
-def test_mcp_tool_execution(live_service: LiveIndexRuntime) -> None:
-    client = TestClient(build_api_app(service=live_service))
+def _post_json(url: str, payload: dict[str, object], headers: dict[str, str]) -> tuple[int, dict[str, object]]:
+    request = Request(
+        url=url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=30) as response:
+            body = json.loads(response.read().decode("utf-8"))
+            return response.status, body
+    except HTTPError as exc:
+        detail = exc.read().decode("utf-8")
+        raise AssertionError(f"HTTP {exc.code} for {url}: {detail}") from exc
+
+
+def test_mcp_tool_execution(
+    live_service: LiveIndexRuntime, runtime_mode: str, runtime_endpoints: dict[str, str] | None
+) -> None:
+    client = TestClient(build_api_app(service=live_service)) if runtime_mode == "local-server" else None
     admin_headers = {"authorization": "Bearer valid-admin-token"}
     writer_headers = {"authorization": "Bearer valid-writer-token"}
     reader_headers = {"authorization": "Bearer valid-reader-token"}
@@ -23,9 +45,22 @@ def test_mcp_tool_execution(live_service: LiveIndexRuntime) -> None:
     iso_b = f"it_iso_b_{suffix}"
 
     def call_tool(tool_name: str, payload: dict[str, object], headers: dict[str, str]) -> dict[str, object]:
-        response = client.post(f"/api/v1/tools/{tool_name}", json=payload, headers=headers)
-        assert response.status_code == 200, response.text
-        return response.json()
+        if runtime_mode == "local-server":
+            assert client is not None
+            response = client.post(api_tools_path(tool_name), json=payload, headers=headers)
+            assert response.status_code == 200, response.text
+            return response.json()
+
+        assert runtime_endpoints is not None
+        merged_headers = dict(headers)
+        merged_headers["Content-Type"] = "application/json"
+        status, body = _post_json(
+            f"{runtime_endpoints['api_base_url']}{api_tools_path(tool_name)}",
+            payload,
+            merged_headers,
+        )
+        assert status == 200, body
+        return body
 
     create_payload = {"profile": "default", "collection": primary_collection}
     created_once = call_tool("admin_collection_create", create_payload, admin_headers)
@@ -63,6 +98,9 @@ def test_mcp_tool_execution(live_service: LiveIndexRuntime) -> None:
     assert results
     assert any(float(row.get("score", 0.0)) > 0 for row in results)
     assert any((row.get("metadata") or {}).get("source") == "test:w8c:step4" for row in results)
+    assert any((row.get("metadata") or {}).get("source_uri") == "test:w8c:step4" for row in results)
+    assert any((row.get("metadata") or {}).get("filename") in {"test:w8c:step4", "w8c:step4"} for row in results)
+    assert any((row.get("metadata") or {}).get("mime_type") == "text/plain" for row in results)
 
     _ = call_tool("admin_collection_create", {"profile": "default", "collection": iso_a}, admin_headers)
     _ = call_tool("admin_collection_create", {"profile": "default", "collection": iso_b}, admin_headers)

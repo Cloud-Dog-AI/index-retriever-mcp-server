@@ -16,7 +16,7 @@ dependencies = [
     "cloud_dog_idam>=0.1.0",
     "cloud_dog_jobs>=0.1.0",
     "cloud_dog_llm>=0.1.0",
-    "cloud_dog_vdb>=0.1.0",
+    "cloud_dog_vdb>=0.4.1",
     # Core runtime
     "pydantic>=2.7,<3.0",
     "pydantic-settings>=2.2,<3.0",

@@ -7,7 +7,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import mimetypes
 import os
+import re
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -16,14 +18,23 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
+from cloud_dog_config.vault.client import (  # type: ignore[import-untyped]
+    VaultClient,
+    VaultConnectionConfig,
+)
 from cloud_dog_jobs import JobQueue, JobRequest, SQLQueueBackend
 from cloud_dog_llm import get_llm_client
 from cloud_dog_vdb import CollectionSpec, Record, SearchRequest, get_vdb_client
+from cloud_dog_vdb.capabilities.planner import plan_search as vdb_plan_search
+from cloud_dog_vdb.domain.models import CapabilityDescriptor
+from cloud_dog_vdb.ingestion import ParserIngestionOptions, build_parser_registry, ingest_document
+from cloud_dog_vdb.ingestion.ocr.planner import decide_ocr
 
 ROOT = Path(__file__).resolve().parents[1]
+_SECRET_FIELD_PATTERN = re.compile(r"(?i)(api[_-]?key|token|password|secret)\s*[:=]\s*([^\s,;]+)")
 
 
 def _load_env_file(path: Path) -> None:
@@ -55,6 +66,26 @@ def _env(*keys: str, default: str = "") -> str:
         if value is not None and value != "":
             return value
     return default
+
+
+def _infer_filename(source_uri: str) -> str:
+    parsed = urlparse(source_uri)
+    candidate = parsed.path if parsed.scheme else source_uri
+    return Path(unquote(candidate)).name or source_uri
+
+
+def _infer_mime_type(filename: str) -> str:
+    guessed, _ = mimetypes.guess_type(filename)
+    return guessed or "text/plain"
+
+
+def _redact_diagnostic_detail(detail: str) -> str:
+    return _SECRET_FIELD_PATTERN.sub(r"\1=[REDACTED]", detail)
+
+
+def _dataclass_to_dict(value: Any) -> dict[str, Any]:
+    names = getattr(type(value), "__dataclass_fields__", {})
+    return {name: getattr(value, name) for name in names}
 
 
 def _as_bool(raw: str | None, *, default: bool = False) -> bool:
@@ -95,11 +126,20 @@ def load_vault_dev_config(required: bool = True) -> dict[str, Any]:
             raise RuntimeError("Vault credentials are missing in environment")
         return {}
 
-    url = f"{vault_addr.rstrip('/')}/v1/{mount}/data/{config_path.lstrip('/')}"
-    req = Request(url, headers={"X-Vault-Token": vault_token}, method="GET")
     try:
-        with urlopen(req, timeout=15) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+        client = VaultClient(
+            VaultConnectionConfig(
+                server=vault_addr.rstrip("/"),
+                token=vault_token,
+                timeout_seconds=15.0,
+                mount_point=mount.strip("/"),
+            )
+        )
+        payload = client.read(config_path.lstrip("/") or "config")
+        if isinstance(payload, str):
+            payload = json.loads(payload)
+        if not isinstance(payload, dict):
+            raise RuntimeError("Vault payload is not a mapping")
         return _extract_dev_section(payload)
     except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, KeyError, RuntimeError):
         if required:
@@ -140,6 +180,29 @@ def _qdrant_url_from_vault(raw: dict[str, Any]) -> str:
     return f"{scheme}://{host}:{port}"
 
 
+def _infinity_url_from_env() -> str:
+    explicit = _env("CLOUD_DOG__INDEX__VDB__INFINITY_URL", "INFINITY_URL")
+    if explicit:
+        return explicit
+    host = _env("CLOUD_DOG__INDEX__VDB__INFINITY_HOST", "INFINITY_HOST")
+    if not host:
+        return ""
+    port = _env("CLOUD_DOG__INDEX__VDB__INFINITY_PORT", "INFINITY_PORT", default="8080")
+    scheme = _env("CLOUD_DOG__INDEX__VDB__INFINITY_SCHEME", "INFINITY_SCHEME", default="http")
+    return f"{scheme}://{host}:{port}"
+
+
+def _infinity_url_from_vault(raw: dict[str, Any]) -> str:
+    explicit = str(raw.get("base_url", raw.get("url", "")))
+    if explicit:
+        return explicit
+    host = str(raw.get("host", ""))
+    if not host:
+        return ""
+    port = str(raw.get("port", raw.get("client_port", "8080")) or "8080")
+    return f"http://{host}:{port}"
+
+
 def _postgres_url_from_vault(raw: dict[str, Any]) -> str:
     username = str(raw.get("username", ""))
     password = str(raw.get("password", ""))
@@ -168,6 +231,8 @@ class LiveRuntimeConfig:
     chroma_auth_token: str
     qdrant_url: str
     qdrant_api_key: str
+    infinity_url: str
+    infinity_api_key: str
     queue_db_url: str
     default_backend: str
 
@@ -185,6 +250,8 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
 
     qdrant_url = _qdrant_url_from_env()
     qdrant_api_key = _env("CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY", "CLOUD_DOG__INDEX__VDB__API_KEY", "QDRANT_API_KEY")
+    infinity_url = _infinity_url_from_env()
+    infinity_api_key = _env("CLOUD_DOG__INDEX__VDB__INFINITY_API_KEY", "INFINITY_API_KEY")
 
     queue_db_url = _env("INDEX_RETRIEVER_DB_URL", "CLOUD_DOG__INDEX__DB__URL", "DB_URL")
     default_backend = _env("CLOUD_DOG__INDEX__VDB__PROVIDER", default="chroma").strip().lower() or "chroma"
@@ -203,6 +270,7 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
             ollama = _nested_dict(vault, "models", "ollama_nomic_embed_text_llm1")
             chroma = _nested_dict(vault, "vdbs", "chroma")
             qdrant = _nested_dict(vault, "vdbs", "qdrant")
+            infinity = _nested_dict(vault, "vdbs", "infinity")
             postgres = _nested_dict(vault, "databases", "providers", "postgres")
 
             if not embedding_base_url:
@@ -222,6 +290,11 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
             if not qdrant_api_key:
                 qdrant_api_key = str(qdrant.get("api_key", ""))
 
+            if not infinity_url:
+                infinity_url = _infinity_url_from_vault(infinity)
+            if not infinity_api_key:
+                infinity_api_key = str(infinity.get("api_key", ""))
+
             if not queue_db_url:
                 queue_db_url = _postgres_url_from_vault(postgres)
 
@@ -229,7 +302,11 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
         queue_db_url = "sqlite:///data/index-retriever-live.db"
     queue_db_url = _normalise_queue_db_url(queue_db_url)
 
-    enabled_backends = [backend for backend, url in (("chroma", chroma_url), ("qdrant", qdrant_url)) if url]
+    enabled_backends = [
+        backend
+        for backend, url in (("chroma", chroma_url), ("qdrant", qdrant_url), ("infinity", infinity_url))
+        if url
+    ]
     if default_backend not in enabled_backends and enabled_backends:
         default_backend = enabled_backends[0]
 
@@ -241,7 +318,8 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
     if not enabled_backends:
         raise RuntimeError(
             "Missing VDB endpoints. Set CLOUD_DOG__INDEX__VDB__CHROMA_URL and/or "
-            "CLOUD_DOG__INDEX__VDB__QDRANT_URL (or HOST/PORT), or provide Vault env for fallback."
+            "CLOUD_DOG__INDEX__VDB__QDRANT_URL and/or CLOUD_DOG__INDEX__VDB__INFINITY_URL "
+            "(or HOST/PORT), or provide Vault env for fallback."
         )
 
     return LiveRuntimeConfig(
@@ -252,6 +330,8 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
         chroma_auth_token=chroma_auth_token,
         qdrant_url=qdrant_url,
         qdrant_api_key=qdrant_api_key,
+        infinity_url=infinity_url,
+        infinity_api_key=infinity_api_key,
         queue_db_url=queue_db_url,
         default_backend=default_backend,
     )
@@ -270,6 +350,36 @@ class SourceIngestState:
     record: LiveRecord
     payload_signature: str
     indexed_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class RuntimeDiagnosticError(ValueError):
+    operation: str
+    provider: str
+    message: str
+    detail: str
+
+    def __str__(self) -> str:
+        payload = {
+            "error": {
+                "code": "PROVIDER_DIAGNOSTIC",
+                "operation": self.operation,
+                "provider": self.provider,
+                "message": self.message,
+                "detail": _redact_diagnostic_detail(self.detail),
+            }
+        }
+        return json.dumps(payload, ensure_ascii=True, sort_keys=True)
+
+
+class _PreviewVdbBridge:
+    def __init__(self) -> None:
+        self.records: list[Record] = []
+
+    async def upsert_records(self, collection: str, records: list[Record], provider_id: str | None = None) -> list[str]:
+        _ = collection, provider_id
+        self.records.extend(records)
+        return [str(record.record_id) for record in records]
 
 
 class LiveIndexRuntime:
@@ -328,12 +438,23 @@ class LiveIndexRuntime:
                 "local_mode": False,
             }
 
+        if self._config.infinity_url:
+            self._enabled_providers.add("infinity")
+            vector_stores["infinity"] = {
+                "enabled": True,
+                "base_url": self._config.infinity_url,
+                "api_key": self._config.infinity_api_key,
+                "database": _env("CLOUD_DOG__INDEX__VDB__INFINITY_DATABASE", default="default_db"),
+                "timeout_seconds": 120,
+                "local_mode": False,
+            }
+
         self.vdb_client = get_vdb_client({"vector_stores": vector_stores})
         self.job_queue = JobQueue(SQLQueueBackend(self._config.queue_db_url))
 
         self._collections: set[tuple[str, str]] = set()
         self._stream_sessions: dict[str, dict[str, Any]] = {}
-        self._profiles: dict[str, dict[str, Any]] = {"default": {"enabled": True}}
+        self._profiles: dict[str, dict[str, Any]] = {"default": {"enabled": True, "backend": self._config.default_backend}}
         self._idempotency_records: dict[tuple[str, str, str], LiveRecord] = {}
         self._source_records: dict[tuple[str, str, str, str], SourceIngestState] = {}
 
@@ -353,8 +474,12 @@ class LiveIndexRuntime:
         self._embedding_dim = len(vectors[0]) if vectors else 768
         return self._embedding_dim
 
-    def _collection_name(self, profile: str, collection: str) -> str:
-        return f"{self._namespace}_{profile}_{collection}".replace("-", "_")
+    def _collection_name(self, profile: str, collection: str, provider_id: str | None = None) -> str:
+        base_name = f"{self._namespace}_{profile}_{collection}".replace("-", "_")
+        if str(provider_id or "").strip().lower() != "infinity":
+            return base_name
+        digest = sha256(base_name.encode("utf-8")).hexdigest()[:18]
+        return f"idxinf_{digest}"
 
     @staticmethod
     def _payload_signature(text: str, metadata: dict[str, Any], indexing_signature: str) -> str:
@@ -398,8 +523,304 @@ class LiveIndexRuntime:
         marker = f"{prefix}_"
         return [name for name in self._list_collection_names(provider_id) if name.startswith(marker)]
 
+    def _provider_capabilities_descriptor(self, provider_id: str) -> CapabilityDescriptor:
+        if provider_id not in self._enabled_providers:
+            raise ValueError(f"Provider not configured: {provider_id}")
+        registry = getattr(self.vdb_client, "_registry", None)
+        if registry is None:
+            raise RuntimeError("VDB client registry is unavailable")
+        adapter = registry.get(provider_id)
+        return adapter.capabilities()
+
+    def backend_capabilities(self, provider_id: str) -> dict[str, Any]:
+        return _dataclass_to_dict(self._provider_capabilities_descriptor(provider_id))
+
+    def plan_search(
+        self,
+        *,
+        provider_id: str,
+        query: str,
+        top_k: int,
+        filters: dict[str, Any] | None = None,
+        score_threshold: float | None = None,
+        capability_override: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        descriptor = self._provider_capabilities_descriptor(provider_id)
+        if capability_override:
+            payload = _dataclass_to_dict(descriptor)
+            payload.update(capability_override)
+            descriptor = CapabilityDescriptor(**payload)
+
+        request = SearchRequest(
+            query_text=query,
+            top_k=max(1, int(top_k)),
+            filters=filters or {},
+            score_threshold=score_threshold,
+        )
+        plan = dict(vdb_plan_search(request, descriptor))
+        if request.filters and not plan.get("filters"):
+            raise ValueError("Backend capabilities do not support metadata filters")
+        return plan
+
+    def _run_pipeline_preview(
+        self,
+        *,
+        source: bytes | str,
+        source_uri: str,
+        parser_chain: list[str] | None = None,
+        parser_options: dict[str, dict[str, Any]] | None = None,
+        parser_services: dict[str, dict[str, Any]] | None = None,
+        metadata: dict[str, Any] | None = None,
+        ocr_mode: str = "disabled",
+        ocr_provider: str = "",
+        table_policy: str = "table_as_markdown",
+        table_json_shape: str = "records",
+    ) -> dict[str, Any]:
+        filename = _infer_filename(source_uri)
+        mime_type = _infer_mime_type(filename)
+        opts = ParserIngestionOptions(
+            parser_chain=list(parser_chain or ["internal"]),
+            parser_options=parser_options or {},
+            ocr_mode=ocr_mode,
+            ocr_provider=ocr_provider,
+            table_policy=table_policy,
+            table_json_shape=table_json_shape,
+        )
+        base_metadata = dict(metadata or {})
+        base_metadata.setdefault("tenant_id", "default")
+        base_metadata.setdefault("source_uri", source_uri)
+        base_metadata.setdefault("filename", filename)
+        base_metadata.setdefault("mime_type", mime_type)
+        bridge = _PreviewVdbBridge()
+        checkpoints: list[dict[str, Any]] = []
+        try:
+            record_ids = self._run(
+                ingest_document(
+                    bridge,
+                    "__preview__",
+                    source,
+                    source_uri=source_uri,
+                    options=opts,
+                    metadata=base_metadata,
+                    parser_services=parser_services,
+                    on_checkpoint=lambda stage, count: checkpoints.append({"stage": stage, "count": int(count)}),
+                )
+            )
+        except Exception as exc:
+            raise RuntimeDiagnosticError(
+                operation="ingest_preview",
+                provider=",".join(opts.parser_chain),
+                message="Provider parsing/ingestion failed",
+                detail=f"{type(exc).__name__}: {exc}",
+            ) from exc
+        chunks = [str(record.content) for record in bridge.records]
+        first_metadata = dict(bridge.records[0].metadata) if bridge.records else base_metadata
+        return {
+            "record_ids": [str(item) for item in record_ids],
+            "chunks": chunks,
+            "metadata": first_metadata,
+            "checkpoints": checkpoints,
+        }
+
+    def parsers_list(self, parser_services: dict[str, dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+        registry = build_parser_registry(parser_services)
+        out: list[dict[str, Any]] = []
+        for provider_id in registry.list_ids():
+            provider = registry.get(provider_id)
+            if provider is None:
+                continue
+            out.append(
+                {
+                    "provider_id": provider.provider_id,
+                    "provider_version": provider.provider_version,
+                    "capabilities": _dataclass_to_dict(provider.capabilities),
+                }
+            )
+        return out
+
+    def parser_test(
+        self,
+        *,
+        provider_id: str,
+        sample_text: str = "parser health check",
+        source_uri: str = "inline://parser-test.txt",
+        parser_services: dict[str, dict[str, Any]] | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        registry = build_parser_registry(parser_services)
+        provider = registry.get(provider_id)
+        if provider is None:
+            raise ValueError(f"Unknown parser provider: {provider_id}")
+        filename = _infer_filename(source_uri)
+        mime_type = _infer_mime_type(filename)
+
+        async def _probe() -> tuple[bool, Any]:
+            healthy = await provider.health_check()
+            ir = await provider.parse_bytes(
+                sample_text.encode("utf-8"),
+                filename=filename,
+                source_uri=source_uri,
+                mime_type=mime_type,
+                options=options or {},
+            )
+            return bool(healthy), ir
+
+        try:
+            healthy, ir = self._run(_probe())
+        except Exception as exc:
+            raise RuntimeDiagnosticError(
+                operation="parser_test",
+                provider=provider_id,
+                message="Provider parser test failed",
+                detail=f"{type(exc).__name__}: {exc}",
+            ) from exc
+        return {
+            "provider_id": provider.provider_id,
+            "provider_version": provider.provider_version,
+            "healthy": bool(healthy),
+            "text_blocks": len(getattr(ir, "text_blocks", [])),
+            "table_blocks": len(getattr(ir, "table_blocks", [])),
+            "quality": dict(getattr(ir, "quality", {})),
+        }
+
+    def ingest_preview(
+        self,
+        *,
+        text: str,
+        source_uri: str = "inline://preview.txt",
+        parser_chain: list[str] | None = None,
+        parser_options: dict[str, dict[str, Any]] | None = None,
+        parser_services: dict[str, dict[str, Any]] | None = None,
+        metadata: dict[str, Any] | None = None,
+        ocr_mode: str = "disabled",
+        ocr_provider: str = "",
+        table_policy: str = "table_as_markdown",
+        table_json_shape: str = "records",
+    ) -> dict[str, Any]:
+        result = self._run_pipeline_preview(
+            source=text.encode("utf-8"),
+            source_uri=source_uri,
+            parser_chain=parser_chain,
+            parser_options=parser_options,
+            parser_services=parser_services,
+            metadata=metadata,
+            ocr_mode=ocr_mode,
+            ocr_provider=ocr_provider,
+            table_policy=table_policy,
+            table_json_shape=table_json_shape,
+        )
+        meta = dict(result["metadata"])
+        return {
+            "source_uri": meta.get("source_uri", source_uri),
+            "filename": meta.get("filename", _infer_filename(source_uri)),
+            "mime_type": meta.get("mime_type", _infer_mime_type(_infer_filename(source_uri))),
+            "chunk_count": len(result["chunks"]),
+            "parser_provider": meta.get("parser_provider", ""),
+            "parser_version": meta.get("parser_version", ""),
+            "ocr_mode": meta.get("ocr_mode", ocr_mode),
+            "ocr_applied": bool(meta.get("ocr_applied", False)),
+            "table_policy": meta.get("table_policy", table_policy),
+            "checkpoints": list(result["checkpoints"]),
+        }
+
+    def extract_only(
+        self,
+        *,
+        text: str,
+        source_uri: str = "inline://extract-only.txt",
+        parser_chain: list[str] | None = None,
+        parser_options: dict[str, dict[str, Any]] | None = None,
+        parser_services: dict[str, dict[str, Any]] | None = None,
+        ocr_mode: str = "disabled",
+        ocr_provider: str = "",
+        table_policy: str = "table_as_markdown",
+        table_json_shape: str = "records",
+    ) -> dict[str, Any]:
+        result = self._run_pipeline_preview(
+            source=text.encode("utf-8"),
+            source_uri=source_uri,
+            parser_chain=parser_chain,
+            parser_options=parser_options,
+            parser_services=parser_services,
+            ocr_mode=ocr_mode,
+            ocr_provider=ocr_provider,
+            table_policy=table_policy,
+            table_json_shape=table_json_shape,
+        )
+        meta = dict(result["metadata"])
+        return {
+            "source_uri": source_uri,
+            "text": "\n\n".join(chunk for chunk in result["chunks"] if chunk.strip()),
+            "chunk_count": len(result["chunks"]),
+            "parser_provider": meta.get("parser_provider", ""),
+            "ocr_applied": bool(meta.get("ocr_applied", False)),
+            "table_policy": meta.get("table_policy", table_policy),
+        }
+
+    def ocr_run(
+        self,
+        *,
+        text: str,
+        mode: str = "auto",
+        provider_id: str = "",
+        min_chars: int = 200,
+        min_scanned_ratio: float = 0.5,
+        scanned_ratio: float = 0.0,
+    ) -> dict[str, Any]:
+        decision = decide_ocr(
+            mode=mode,
+            text_chars=len(text),
+            scanned_ratio=float(scanned_ratio),
+            provider_id=provider_id,
+            min_chars=max(1, int(min_chars)),
+            min_scanned_ratio=float(min_scanned_ratio),
+        )
+        return {
+            "enabled": bool(decision.enabled),
+            "mode": decision.mode,
+            "reason": decision.reason,
+            "provider_id": decision.provider_id,
+        }
+
+    def table_extract(
+        self,
+        *,
+        text: str,
+        source_uri: str = "inline://table-extract.txt",
+        parser_chain: list[str] | None = None,
+        parser_options: dict[str, dict[str, Any]] | None = None,
+        parser_services: dict[str, dict[str, Any]] | None = None,
+        table_policy: str = "table_as_json",
+        table_json_shape: str = "records",
+    ) -> dict[str, Any]:
+        result = self._run_pipeline_preview(
+            source=text.encode("utf-8"),
+            source_uri=source_uri,
+            parser_chain=parser_chain,
+            parser_options=parser_options,
+            parser_services=parser_services,
+            table_policy=table_policy,
+            table_json_shape=table_json_shape,
+        )
+        meta = dict(result["metadata"])
+        table_like = [
+            chunk
+            for chunk in result["chunks"]
+            if "|" in chunk or "<table" in chunk.lower() or ("{" in chunk and "}" in chunk)
+        ]
+        if not table_like and result["chunks"]:
+            table_like = [str(result["chunks"][0])]
+        return {
+            "source_uri": source_uri,
+            "table_policy": table_policy,
+            "table_json_shape": table_json_shape,
+            "table_count": len(table_like),
+            "tables": table_like,
+            "parser_provider": meta.get("parser_provider", ""),
+        }
+
     def ensure_collection(self, profile: str, collection: str, provider_id: str = "chroma") -> str:
-        name = self._collection_name(profile, collection)
+        name = self._collection_name(profile, collection, provider_id)
         if (provider_id, name) in self._collections:
             return name
 
@@ -468,11 +889,15 @@ class LiveIndexRuntime:
         )
         job_id = self.job_queue.submit(request)
 
+        filename = _infer_filename(source)
+        mime_type = _infer_mime_type(filename)
         base_metadata: dict[str, Any] = {
             "tenant_id": profile,
             "source": source,
             "source_uri": source,
             "source_type": "file" if "://" in source else "other",
+            "filename": filename,
+            "mime_type": mime_type,
             "lifecycle_state": "active",
             "created_at": now.isoformat().replace("+00:00", "Z"),
             "actor": actor,
@@ -540,14 +965,21 @@ class LiveIndexRuntime:
         top_k: int = 10,
         score_threshold: float | None = None,
     ) -> list[dict[str, Any]]:
-        collection_name = self._collection_name(profile, collection)
+        collection_name = self._collection_name(profile, collection, provider_id)
+        plan = self.plan_search(
+            provider_id=provider_id,
+            query=query,
+            top_k=top_k,
+            filters=filters,
+            score_threshold=score_threshold,
+        )
         response = self._run(
             self.vdb_client.search(
                 collection_name,
                 SearchRequest(
                     query_text=query,
-                    top_k=top_k,
-                    filters=filters or {},
+                    top_k=int(plan.get("top_k", top_k)),
+                    filters=dict(plan.get("filters", filters or {})),
                     score_threshold=score_threshold,
                 ),
                 provider_id=provider_id,
@@ -567,11 +999,11 @@ class LiveIndexRuntime:
         return out
 
     def retrieve(self, profile: str, collection: str, record_id: str, provider_id: str = "chroma") -> Record | None:
-        collection_name = self._collection_name(profile, collection)
+        collection_name = self._collection_name(profile, collection, provider_id)
         return self._run(self.vdb_client.get_record(collection_name, record_id, provider_id=provider_id))
 
     def delete_by_id(self, profile: str, collection: str, record_id: str, provider_id: str = "chroma") -> bool:
-        collection_name = self._collection_name(profile, collection)
+        collection_name = self._collection_name(profile, collection, provider_id)
         deleted = bool(self._run(self.vdb_client.delete_record(collection_name, record_id, provider_id=provider_id)))
         if deleted:
             self._forget_record(record_id)
@@ -584,7 +1016,7 @@ class LiveIndexRuntime:
         filters: dict[str, Any],
         provider_id: str = "chroma",
     ) -> int:
-        collection_name = self._collection_name(profile, collection)
+        collection_name = self._collection_name(profile, collection, provider_id)
         existing = self._run(self.vdb_client.list_records(collection_name, provider_id=provider_id))
         deleted = int(self._run(self.vdb_client.delete_by_filter(collection_name, filters, provider_id=provider_id)))
         if deleted:
@@ -594,7 +1026,7 @@ class LiveIndexRuntime:
         return deleted
 
     def retention_run(self, profile: str, collection: str, older_than_days: int, provider_id: str = "chroma") -> int:
-        collection_name = self._collection_name(profile, collection)
+        collection_name = self._collection_name(profile, collection, provider_id)
         records = self._run(self.vdb_client.list_records(collection_name, provider_id=provider_id))
         threshold = datetime.now(timezone.utc).timestamp() - (older_than_days * 86400)  # noqa: UP017
         deleted = 0
@@ -640,7 +1072,7 @@ class LiveIndexRuntime:
         if provider_id not in self._enabled_providers:
             return False, "provider not configured"
 
-        probe_collection = self._collection_name("preflight", f"{provider_id}_{uuid4().hex[:6]}")
+        probe_collection = self._collection_name("preflight", f"{provider_id}_{uuid4().hex[:6]}", provider_id)
         probe_id = str(uuid4())
         probe_metadata: dict[str, Any] = {
             "tenant_id": "preflight",
@@ -684,6 +1116,8 @@ class LiveIndexRuntime:
             print(f"[live-runtime] chroma_url={self._config.chroma_url}")
         if self._config.qdrant_url:
             print(f"[live-runtime] qdrant_url={self._config.qdrant_url}")
+        if self._config.infinity_url:
+            print(f"[live-runtime] infinity_url={self._config.infinity_url}")
 
         if not self.embedding_health_check():
             issues.append("embedding provider health check failed")
@@ -730,7 +1164,7 @@ class LiveIndexRuntime:
     def admin_profile_create(self, profile: str, roles: set[str]) -> None:
         if "admin" not in roles:
             raise PermissionError("Admin role required")
-        self._profiles[profile] = {"enabled": True}
+        self._profiles[profile] = {"enabled": True, "backend": self._config.default_backend}
 
     def admin_collection_create(self, profile: str, collection: str, roles: set[str]) -> None:
         if "admin" not in roles:
@@ -746,7 +1180,7 @@ class LiveIndexRuntime:
     def admin_collection_delete(self, profile: str, collection: str, roles: set[str]) -> None:
         if "admin" not in roles:
             raise PermissionError("Admin role required")
-        collection_name = self._collection_name(profile, collection)
+        collection_name = self._collection_name(profile, collection, self._config.default_backend)
         with suppress(Exception):
             self._run(self.vdb_client.delete_collection(collection_name, provider_id=self._config.default_backend))
         self._collections.discard((self._config.default_backend, collection_name))

@@ -1,7 +1,7 @@
 # Requirements — index-retriever-mcp-server
 
-**Version:** 1.0  
-**Date:** 2026-02-17  
+**Version:** 1.1  
+**Date:** 2026-02-28  
 **Standards:** PS-00, PS-10, PS-20, PS-40, PS-50, PS-60, PS-70, PS-75, PS-80, PS-90, PS-95  
 **Platform packages:** `cloud_dog_config`, `cloud_dog_logging`, `cloud_dog_api_kit`, `cloud_dog_idam`, `cloud_dog_jobs`, `cloud_dog_llm`, `cloud_dog_vdb`
 
@@ -107,6 +107,24 @@ Primary goals:
 - HTTP API SHALL include correlation IDs, structured error responses, and health endpoints per PS-20.
 - The Admin WebUI SHALL call the HTTP API only (PS-00 P1).
 - All operations SHALL be available via API (no UI-only behaviour).
+
+### FR-01A Canonical route-prefix contract (W14A-04)
+- Canonical API base path SHALL be `/app/v1`.
+- Canonical MCP base path SHALL be `/mcp` and catalogue path SHALL be `GET /mcp/tools`.
+- Canonical Web base path SHALL be `/`.
+- Canonical A2A base path SHALL be `/a2a`.
+- Test/runtime env contracts SHALL expose:
+  - `TEST_API_BASE_PATH`
+  - `TEST_MCP_BASE_PATH`
+  - `TEST_WEB_BASE_PATH`
+  - `TEST_A2A_BASE_PATH`
+- Legacy API path `/api/v1` MAY remain as temporary compatibility alias, but tests and docs SHALL use canonical `/app/v1`.
+
+### FR-01B A2A auth contract parity (W14B-03)
+- API runtime SHALL expose `/a2a` and `/a2a/health`.
+- `/a2a/health` SHALL return `401` when no authentication is provided.
+- `Authorization: Bearer <api-key>` and `X-API-Key: <api-key>` SHALL reuse the same API-key validator and authority.
+- For strict local runtime tests, `TEST_A2A_API_KEY=12345678` SHALL be accepted at `/a2a/health` and return `200`.
 
 ### FR-02 Configuration precedence and no hard-coded values (PS-80, PS-00 P2)
 - SHALL use `cloud_dog_config` for all configuration loading.
@@ -257,6 +275,16 @@ The system SHALL support ingestion of:
   - maintenance operations where supported (compact, optimize).
 - Backend-specific options MUST be configurable per profile.
 
+### FR-13A VDB 0.4.1 adoption requirements (W13B)
+- Runtime dependency floor SHALL be `cloud_dog_vdb>=0.4.1` and local Docker build wiring SHALL install the `0.4.1` wheel from `vendor/wheels`.
+- Ingest and retrieval metadata SHALL preserve and return `source_uri`, `filename`, and `mime_type` to support deterministic identification, dedupe/reindex decisions, and delete targeting.
+- Search execution SHALL be capability-aware per backend profile:
+  - capability descriptors SHALL drive plan selection,
+  - unsupported filter paths SHALL fail closed with explicit validation errors.
+- Provider parse/ingest failures surfaced to API/MCP callers SHALL use explicit diagnostic envelopes with redacted secrets.
+- Infinity backend support SHALL be conditional on runtime env availability and SHALL use the same contract path as other adapters.
+- Parser/OCR/table internals SHALL remain delegated to `cloud_dog_vdb`; index-retriever SHALL keep control-plane/orchestration scope only.
+
 ### FR-14 Search and retrieval
 - The system SHALL support:
   - vector similarity search,
@@ -283,6 +311,18 @@ Admin/maintainer tools SHALL include:
 - diagnostics (backend connectivity, embedding provider tests),
 - test search and retrieval tools.
 
+### FR-17 WebUI/API parity and controlled operations
+- The Admin WebUI SHALL be a strict API client (no direct DB/VDB/backend access).
+- Every admin operation exposed in MCP/API SHALL be reachable in WebUI with equivalent validation and error semantics.
+- WebUI SHALL provide controlled CRUD workflows for:
+  - profile management,
+  - collection management,
+  - connector/ingestion source management,
+  - retention/reindex job management.
+- WebUI SHALL provide observability views for audit logs, structured logs, job status, and backend health.
+- Destructive actions (delete/purge/reindex) SHALL require explicit confirmation and display scope impact before submission.
+- WebUI SHALL propagate correlation IDs and machine-readable error codes from API responses.
+
 ---
 
 ## 6. Non-Functional Requirements (NFR)
@@ -293,6 +333,7 @@ Admin/maintainer tools SHALL include:
 - **Observability**: structured operational logs separate from audit logs; correlation IDs; job metrics.
 - **Portability**: POSIX-friendly; external tools optional and discovered at runtime.
 - **Extensibility**: plugin adapters for backends, embedding providers, converters, and connectors.
+- **WebUI usability/accessibility**: keyboard navigation, WCAG 2.2 AA minimum, and responsive layout for standard desktop/laptop operator viewports.
 
 ---
 
@@ -334,6 +375,14 @@ Admin/maintainer tools SHALL include:
 - `backend_health_check`
 - `embedding_health_check`
 
+### 7.6 Delegated parse/preview wrappers (via `cloud_dog_vdb`)
+- `parsers_list`
+- `parser_test`
+- `ingest_preview`
+- `extract_only`
+- `ocr_run`
+- `table_extract`
+
 ---
 
 ## 8. Acceptance Criteria (examples)
@@ -345,6 +394,8 @@ Admin/maintainer tools SHALL include:
 5. Chroma, Qdrant, and PGVector backends each pass the same contract tests.
 6. Streaming ingestion indexes events in order per configured ordering key (e.g., thread_id).
 7. Audit log contains profile/collection/job_id and status for all mutating operations.
+8. WebUI can complete profile and collection CRUD with API-only calls and matching audit records.
+9. WebUI presents backend/embedding/job failures using API machine error codes and correlation IDs.
 
 ---
 

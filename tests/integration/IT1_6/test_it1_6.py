@@ -3,22 +3,51 @@
 # Owner: Cloud-Dog AI
 # Description: MCP tool catalogue exposes required tools.
 
+import json
+from urllib.request import Request, urlopen
+
 from fastapi.testclient import TestClient
 
 from index_server.mcp_server import build_mcp_app, build_registry, list_tool_names
+from tests.http_paths import mcp_tools_path
 from tests.live_runtime import LiveIndexRuntime
 
 
-def test_mcp_tool_catalogue(live_service: LiveIndexRuntime) -> None:
+def test_mcp_tool_catalogue(
+    live_service: LiveIndexRuntime, runtime_mode: str, runtime_endpoints: dict[str, str] | None
+) -> None:
     assert live_service.backend_health_check(provider_id="chroma") is True
     names_direct = list_tool_names(build_registry())
-    for required in ["admin_collection_create", "ingest_text", "search"]:
+    required_tools = [
+        "admin_collection_create",
+        "ingest_text",
+        "search",
+        "parsers_list",
+        "parser_test",
+        "ingest_preview",
+        "extract_only",
+        "ocr_run",
+        "table_extract",
+    ]
+    for required in required_tools:
         assert required in names_direct
 
-    client = TestClient(build_mcp_app(service=live_service))
-    response = client.get("/mcp/tools")
-    assert response.status_code == 200
-    payload = response.json()
+    if runtime_mode == "local-server":
+        client = TestClient(build_mcp_app(service=live_service))
+        response = client.get(mcp_tools_path())
+        assert response.status_code == 200
+        payload = response.json()
+    else:
+        assert runtime_endpoints is not None
+        req = Request(
+            f"{runtime_endpoints['mcp_base_url']}{mcp_tools_path()}",
+            headers={"X-API-Key": "test-api-key"},
+            method="GET",
+        )
+        with urlopen(req, timeout=30) as response:
+            assert response.status == 200
+            payload = json.loads(response.read().decode("utf-8"))
+
     names = [tool["name"] for tool in payload["data"]]
-    for required in ["admin_collection_create", "ingest_text", "search"]:
+    for required in required_tools:
         assert required in names

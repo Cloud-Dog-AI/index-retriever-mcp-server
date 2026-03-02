@@ -11,12 +11,22 @@ from typing import Any
 from pydantic import BaseModel
 
 from index_tools.tools.definitions import (
+    ExtractOnlyOutput,
     GenericToolInput,
     GenericToolOutput,
     IngestOutput,
+    IngestPreviewInput,
+    IngestPreviewOutput,
     IngestTextInput,
+    OcrRunInput,
+    OcrRunOutput,
+    ParsersListInput,
+    ParsersListOutput,
+    ParserTestInput,
+    ParserTestOutput,
     SearchInput,
     SearchOutput,
+    TableExtractOutput,
 )
 
 
@@ -71,6 +81,12 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="ingest_upload", input_model=GenericToolInput, output_model=IngestOutput),
         ToolSpec(name="ingest_text", input_model=IngestTextInput, output_model=IngestOutput),
         ToolSpec(name="ingest_reference", input_model=GenericToolInput, output_model=IngestOutput),
+        ToolSpec(name="parsers_list", input_model=ParsersListInput, output_model=ParsersListOutput),
+        ToolSpec(name="parser_test", input_model=ParserTestInput, output_model=ParserTestOutput),
+        ToolSpec(name="ingest_preview", input_model=IngestPreviewInput, output_model=IngestPreviewOutput),
+        ToolSpec(name="extract_only", input_model=IngestPreviewInput, output_model=ExtractOnlyOutput),
+        ToolSpec(name="ocr_run", input_model=OcrRunInput, output_model=OcrRunOutput),
+        ToolSpec(name="table_extract", input_model=IngestPreviewInput, output_model=TableExtractOutput),
         ToolSpec(name="ingest_stream_open", input_model=GenericToolInput, output_model=GenericToolOutput),
         ToolSpec(name="ingest_stream_event", input_model=GenericToolInput, output_model=IngestOutput),
         ToolSpec(name="ingest_stream_close", input_model=GenericToolInput, output_model=GenericToolOutput),

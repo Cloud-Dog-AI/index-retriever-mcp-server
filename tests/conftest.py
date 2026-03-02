@@ -6,9 +6,13 @@
 from __future__ import annotations
 
 import os
+import socket
 import sys
 from contextlib import suppress
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 import pytest
 
@@ -23,6 +27,8 @@ from tests.live_runtime import LiveIndexRuntime, load_vault_dev_config  # noqa: 
 
 _INITIAL_ENV_KEYS = set(os.environ.keys())
 _LIVE_REQUIRED_TIERS = {"ST", "IT", "AT", "CT", "QT"}
+_RUNTIME_MODES = {"local-server", "local-docker", "remote-runtime"}
+_EXTERNAL_ENDPOINT_MODES = {"local-docker", "remote-runtime"}
 
 
 def _load_env_file(path: Path, *, override: bool) -> dict[str, str]:
@@ -46,6 +52,38 @@ def _load_env_file(path: Path, *, override: bool) -> dict[str, str]:
     return loaded
 
 
+def _connect_endpoint(label: str, raw_url: str) -> str:
+    """Validate socket capability and endpoint health for runtime HTTP endpoints."""
+    parsed = urlparse(raw_url)
+    if not parsed.scheme or not parsed.hostname:
+        pytest.fail(f"Invalid {label} URL: {raw_url}")
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+
+    sock = socket.socket()
+    sock.settimeout(5)
+    try:
+        sock.connect((parsed.hostname, port))
+    except PermissionError as exc:
+        pytest.fail(f"BLOCKED: socket capability restricted for {label} {parsed.hostname}:{port}: {exc}")
+    except OSError as exc:
+        if getattr(exc, "errno", None) == 1:
+            pytest.fail(f"BLOCKED: socket capability restricted for {label} {parsed.hostname}:{port}: {exc}")
+        pytest.fail(f"{label} endpoint is not reachable at {parsed.hostname}:{port}: {exc}")
+    finally:
+        sock.close()
+
+    health_url = f"{raw_url.rstrip('/')}/health"
+    req = Request(health_url, method="GET")
+    try:
+        with urlopen(req, timeout=10) as response:
+            status = int(getattr(response, "status", 0) or 0)
+        if status != 200:
+            pytest.fail(f"{label} health check failed at {health_url}: HTTP {status}")
+    except (HTTPError, URLError, TimeoutError) as exc:
+        pytest.fail(f"{label} health check failed at {health_url}: {exc}")
+    return raw_url.rstrip("/")
+
+
 def pytest_addoption(parser: pytest.Parser) -> None:
     """Add mandatory --env option for test environment selection."""
     with suppress(ValueError):
@@ -55,6 +93,38 @@ def pytest_addoption(parser: pytest.Parser) -> None:
             required=True,
             help=("Test environment(s). Use UT/ST/IT/AT/QT, tests/env-<TIER>, or private/env-<name>."),
         )
+
+
+@pytest.fixture(scope="session")
+def runtime_mode(load_env_files: dict[str, str]) -> str:
+    """Resolve and validate runtime mode contract for matrix execution."""
+    _ = load_env_files
+    raw_mode = os.environ.get("INDEX_RETRIEVER_RUNTIME_MODE", "local-server").strip().lower()
+    if raw_mode not in _RUNTIME_MODES:
+        raise pytest.UsageError(
+            "Invalid INDEX_RETRIEVER_RUNTIME_MODE="
+            f"{raw_mode!r}. Expected one of: {', '.join(sorted(_RUNTIME_MODES))}."
+        )
+    return raw_mode
+
+
+@pytest.fixture(scope="session")
+def runtime_endpoints(runtime_mode: str) -> dict[str, str] | None:
+    """Provide validated runtime API/MCP endpoints for external runtime modes."""
+    if runtime_mode not in _EXTERNAL_ENDPOINT_MODES:
+        return None
+
+    api_base = os.environ.get("INDEX_RETRIEVER_API_BASE_URL", "").strip()
+    mcp_base = os.environ.get("INDEX_RETRIEVER_MCP_BASE_URL", "").strip()
+    if not api_base or not mcp_base:
+        pytest.fail(
+            "External runtime mode requires INDEX_RETRIEVER_API_BASE_URL and INDEX_RETRIEVER_MCP_BASE_URL."
+        )
+
+    return {
+        "api_base_url": _connect_endpoint("API", api_base),
+        "mcp_base_url": _connect_endpoint("MCP", mcp_base),
+    }
 
 
 @pytest.fixture(scope="session")
@@ -250,4 +320,3 @@ def live_service_cleanup_verification(env_tiers: list[str]) -> None:
     finally:
         if runtime is not None:
             runtime.cleanup()
-

@@ -16,6 +16,10 @@ from index_server.auth.middleware import AuthMiddleware
 from index_server.mcp_server import build_registry, execute_tool
 from index_tools.tools.service import IndexService
 
+_CANONICAL_API_BASE_PATH = "/app/v1"
+_LEGACY_API_BASE_PATH = "/api/v1"
+_CANONICAL_A2A_BASE_PATH = "/a2a"
+
 
 def _api_audit_path() -> str:
     """Resolve API audit path from configured environment keys."""
@@ -131,12 +135,34 @@ def build_api_app(service: IndexService | None = None) -> Any:
         except PermissionError as exc:
             raise HTTPException(status_code=403, detail=str(exc)) from exc
 
+    def _a2a_auth_or_raise(headers: dict[str, str]) -> Any:
+        """Enforce A2A auth contract using shared API-key authority."""
+        try:
+            return auth.authenticate_api_key(headers)
+        except PermissionError as exc:
+            raise HTTPException(status_code=401, detail=str(exc)) from exc
+
     def _headers_from_request(request: Request) -> dict[str, str]:
         """Internal helper to headers from request."""
         return {k.lower(): v for k, v in request.headers.items()}
 
     def health() -> dict[str, Any]:
         """Execute health."""
+        return build_health_payload(active_service)
+
+    def a2a_root(request: Request) -> dict[str, Any]:
+        """Execute a2a root."""
+        _ = _a2a_auth_or_raise(_headers_from_request(request))
+        return {
+            "status": "ok",
+            "service": "index-retriever-a2a",
+            "base_path": _CANONICAL_A2A_BASE_PATH,
+            "auth": auth.auth_health(),
+        }
+
+    def a2a_health(request: Request) -> dict[str, Any]:
+        """Execute a2a health."""
+        _ = _a2a_auth_or_raise(_headers_from_request(request))
         return build_health_payload(active_service)
 
     def list_tools(request: Request) -> list[dict[str, Any]]:
@@ -167,8 +193,12 @@ def build_api_app(service: IndexService | None = None) -> Any:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     app.get("/health")(health)
-    app.get("/api/v1/tools")(list_tools)
-    app.post("/api/v1/tools/{tool_name}")(call_tool)
+    app.get(f"{_CANONICAL_API_BASE_PATH}/health")(health)
+    app.get(_CANONICAL_A2A_BASE_PATH)(a2a_root)
+    app.get(f"{_CANONICAL_A2A_BASE_PATH}/health")(a2a_health)
+    for base_path in (_CANONICAL_API_BASE_PATH, _LEGACY_API_BASE_PATH):
+        app.get(f"{base_path}/tools")(list_tools)
+        app.post(f"{base_path}/tools/{{tool_name}}")(call_tool)
     return app
 
 

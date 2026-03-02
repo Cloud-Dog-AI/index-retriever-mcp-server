@@ -10,15 +10,15 @@ server:
 auth:
   mode: "apikey+jwt"
   jwt:
-    issuer: "${JWT_ISSUER}"
-    audience: "${JWT_AUDIENCE}"
-    public_keys_url: "${JWT_JWKS_URL}"
+    issuer: "${JWT_ISSUER:}"
+    audience: "${JWT_AUDIENCE:}"
+    public_keys_url: "${JWT_JWKS_URL:}"
 
 storage:
   db:
-    url: "${DB_URL}"   # e.g. postgresql+asyncpg://...
+    url: "${DB_URL:sqlite+aiosqlite:///./data/index_retriever.db}"   # e.g. postgresql+asyncpg://...
   audit:
-    path: "${AUDIT_LOG_PATH}"
+    path: "${AUDIT_LOG_PATH:./logs/audit.log}"
 
 queue:
   max_concurrency: 8
@@ -29,7 +29,7 @@ queue:
     backoff_seconds: 5
   redis:
     enabled: false
-    url: "${REDIS_URL}"
+    url: "${REDIS_URL:redis://127.0.0.1:6379/0}"
 
 profiles:
   default:
@@ -38,19 +38,19 @@ profiles:
       type: "chroma"
       chroma:
         mode: "local"
-        path: "${CHROMA_PATH}"
+        path: "${CHROMA_PATH:./data/chroma}"
         collection: "default"
     embeddings:
       provider: "openai_compat"
       openai_compat:
-        base_url: "${EMBED_BASE_URL}"
-        api_key: "${EMBED_API_KEY}"
+        base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
+        api_key: "${EMBED_API_KEY:}"
         model: "nomic-embed-text"
         timeout_seconds: 60
     ingestion:
       allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
       filesystem:
-        roots: ["${INGEST_ROOT}"]
+        roots: ["${INGEST_ROOT:./uploads}"]
         deny_globs: ["**/.git/**", "**/node_modules/**"]
       max_file_mb: 50
       dedupe:
