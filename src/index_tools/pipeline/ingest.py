@@ -12,6 +12,7 @@ from dataclasses import dataclass
 @dataclass(slots=True)
 class PipelineResult:
     """PipelineResult definition."""
+
     doc_id: str
     chunk_count: int
     embedded_count: int

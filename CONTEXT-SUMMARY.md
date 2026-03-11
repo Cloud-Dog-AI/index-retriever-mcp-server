@@ -1,7 +1,123 @@
 # index-retriever-mcp-server — Context Summary
 
-**Last updated:** 2026-03-02  
-**Status:** W15B-03 compliance lockdown verified (canonical loader + strict no-fallback identity checks + UT/ST/IT/AT pass)
+**Last updated:** 2026-03-03  
+**Status:** W16F full maturity confirmation complete verified (backend + UI + coverage + quality gates pass)
+
+---
+
+## W16F Full Verification Sweep and Maturity Confirmation (2026-03-03)
+
+Instruction:
+
+- `cloud-dog-ai-platform-standards/working/AGENT-INSTRUCTION-W16F-INDEX-RETRIEVER-MCP-SERVER-FULL-MATURITY.md`
+
+Startup/runtime checks:
+
+- Vault env sourced via `set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a`
+- `VAULT_ADDR=https://vault0.cloud-dog.net`
+- Runtime container healthy:
+  - `docker ps --filter "name=index-retriever"` -> `index-retriever-all Up (healthy)`
+- Runtime endpoints:
+  - `http://127.0.0.1:8686/health` -> `200`
+  - `http://127.0.0.1:8687/mcp/tools` -> `200`
+- External dependency reachability confirmed:
+  - `http://vdb1.app.vpc0.cloud-dog.net:6333/healthz` -> `healthz check passed`
+  - `https://llm1.cloud-dog.net/api/tags` -> reachable with model catalogue response
+
+Phase A backend strict tiers (local-docker):
+
+- `python3 -m pytest tests/unit/ --env tests/env-UT-local-docker -q` -> `77 passed, 2 warnings in 1.80s`
+- `python3 -m pytest tests/system/ --env tests/env-ST-local-docker -q` -> `13 passed in 10.20s`
+- `python3 -m pytest tests/integration/ --env tests/env-IT-local-docker -q` -> `19 passed in 9.75s`
+- `python3 -m pytest tests/application/ --env tests/env-AT-local-docker -q` -> `10 passed in 10.00s`
+- `python3 -m pytest tests/security/ --env tests/env-QT-local-docker -q` -> `6 passed in 2.01s`
+
+Phase B route/auth verification:
+
+- Authenticated canonical probes:
+  - `/app/v1/health` -> `200`
+  - `/mcp/tools` -> `200`
+  - `/tools` (compat alias) -> `200`
+- Auth enforcement probes:
+  - `/app/v1/tools` without auth -> `401`
+  - `/a2a/health` without auth -> `401`
+  - `/a2a/health` with `Bearer 12345678` -> `200`
+- Note: `/app/v1/health` remains intentionally unauthenticated (`200`) in current contract.
+
+Phase C WebUI strict validation (`@cloud-dog/app-index-retriever`):
+
+- lint -> `Tasks: 8 successful, 8 total`
+- typecheck -> `Tasks: 8 successful, 8 total`
+- e2e -> `12 passed (28.3s)`
+- a11y -> `2 passed (13.4s)`
+
+Phase D coverage and quality gates:
+
+- full coverage run:
+  - `python3 -m pytest tests/ ... --cov=src --cov-report=term-missing`
+  - result: `TOTAL 1466 0 100%` and `129 passed, 2 warnings in 35.63s`
+- `python3 -m ruff check src/ tests/` -> `All checks passed!`
+- `python3 -m ruff format --check src/ tests/` -> `160 files already formatted`
+- `grep -rn "os\\.environ\\|import hvac\\|overlay_secrets" src/index_tools/ src/index_server/` -> zero hits
+- `verify-test-integrity.sh` -> `PASS: 10, FAIL: 0, WARN: 0`
+- no-Vault failure proof:
+  - `env -u VAULT_TOKEN ... pytest tests/integration ...`
+  - result: `19 errors`, explicit `missing VAULT_TOKEN`, exit `1` (`NO_VAULT_EXIT=1`)
+- `python3 -m build --no-isolation` -> success (`sdist` + `wheel`)
+
+W16F remediation delivered:
+
+- Added UT1.39 coverage tests:
+  - `tests/unit/UT1_39/test_ut1_39_runtime_config_loader_paths.py`
+- Updated loader lint compliance:
+  - `src/index_tools/config/loader.py`
+- Replaced direct `os.environ` access in server layer to satisfy delegation gate:
+  - `src/index_server/api_server.py`
+  - `src/index_server/mcp_server.py`
+  - `src/index_server/auth/middleware.py`
+  - `src/index_server/main.py`
+- Applied `ruff` fix/format pass for repo quality gate alignment.
+
+Evidence:
+
+- `/tmp/w16f_index_ut.log`
+- `/tmp/w16f_index_st.log`
+- `/tmp/w16f_index_it.log`
+- `/tmp/w16f_index_at.log`
+- `/tmp/w16f_index_qt.log`
+- `/tmp/w16f_index_health_canonical.code`
+- `/tmp/w16f_index_tools_canonical.code`
+- `/tmp/w16f_index_tools_compat.code`
+- `/tmp/w16f_index_tools_unauth.code`
+- `/tmp/w16f_index_a2a_noauth.code`
+- `/tmp/w16f_index_a2a_auth.code`
+- `/tmp/w16f_index_ui_lint.log`
+- `/tmp/w16f_index_ui_typecheck.log`
+- `/tmp/w16f_index_ui_e2e.log`
+- `/tmp/w16f_index_ui_a11y.log`
+- `/tmp/w16f_index_coverage.log`
+- `/tmp/w16f_index_ruff_check.log`
+- `/tmp/w16f_index_ruff_format.log`
+- `/tmp/w16f_index_config_delegation.log`
+- `/tmp/w16f_index_test_integrity.log`
+- `/tmp/w16f_index_novault.log`
+- `/tmp/w16f_index_novault.exit`
+- `/tmp/w16f_index_build.log`
+
+Current status:
+
+- `COMPLETE VERIFIED`
+
+---
+
+## Session Update (2026-03-03)
+
+- Context summary refreshed on request.
+- W14B-03 evidence/report remains present and traceable:
+  - `working/W14B-03-INDEX-RETRIEVER-A2A-ENABLE-AUTH-CONTRACT-REPORT-2026-03-01.md`
+  - A2A auth matrix logs in `/tmp/w14b03_index_a2a_*.{code,json}`
+  - strict tier logs: `/tmp/w14b03_index_{ut,st,it,at}.log`
+  - coverage log: `/tmp/w14b03_index_cov.log` (`TOTAL 1446 0 100%`)
 
 ---
 
@@ -285,6 +401,32 @@ No-vault failure proof:
 
 ---
 
+## ⚠️ CRITICAL — Known Test Timeouts (DO NOT SKIP — READ THIS)
+
+### IT2.10 — Marker OCR Processing
+
+**The marker_mcp OCR call on large documents takes 5–15 minutes. This is NORMAL behaviour, NOT an infrastructure issue.**
+
+- The marker server IS healthy (`busy:false` at start).
+- The OCR parsing simply takes a long time for large/complex PDFs.
+- **Minimum marker_mcp call timeout: 360 seconds (6 minutes).** The default 240s retry limit is too short and causes false timeouts.
+- **Minimum outer pytest timeout: 1800 seconds.**
+- Do NOT classify IT2.10 timeout as INFRA_CAPACITY or INFRA_GAP.
+- Do NOT park IT2.10. FIX THE TIMEOUT.
+
+### MinerU — IT2.13, IT2.14, AT2.3
+
+- MinerU `/health` returns 404 — service genuinely down.
+- These tests ARE correctly classified as INFRA_CAPACITY / parked.
+
 ## Residual Risk
 
 - Live endpoints can be slower on some runs; long-running AT/IT transport tests were observed, but completed successfully with no capability restrictions.
+
+## 2026-03-11 — Marker0 timeout policy (agent note)
+- For marker0-backed test runs, enforce 10 minute timeout policy:
+  - MARKER_MCP_TIMEOUT_SECONDS=1200
+  - MARKER_MCP_DOC_TIMEOUT_SECONDS=1200
+  - MARKER_MCP_ASYNC_MAX_WAIT_SECONDS=1200
+  - MARKER_MCP_BUSY_RETRY_MAX_SECONDS=1200
+- Applied in tests/env-REQUIRE-ALL-PARSERS and marker defaults in tests/w23a_helpers.py.

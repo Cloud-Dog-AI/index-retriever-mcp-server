@@ -120,6 +120,7 @@ class _PreviewVdbBridge:
 @dataclass(slots=True)
 class DocumentRecord:
     """DocumentRecord definition."""
+
     doc_id: str
     profile: str
     collection: str
@@ -132,6 +133,7 @@ class DocumentRecord:
 @dataclass(slots=True)
 class StreamSession:
     """StreamSession definition."""
+
     session_id: str
     profile: str
     collection: str

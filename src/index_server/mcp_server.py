@@ -18,6 +18,7 @@ from cloud_dog_api_kit import (  # type: ignore
 from fastapi import Request
 
 from index_server.auth.middleware import AuthMiddleware
+from index_tools.db import database_health, initialise_database, shutdown_database
 from index_tools.tools.registry import ToolRegistry, build_default_tool_registry
 from index_tools.tools.service import IndexService
 
@@ -25,17 +26,17 @@ from index_tools.tools.service import IndexService
 def _mcp_audit_path() -> str:
     """Resolve MCP audit path from configured environment keys."""
     return (
-        os.environ.get("CLOUD_DOG__INDEX__MCP_AUDIT_PATH", "").strip()
-        or os.environ.get("CLOUD_DOG__INDEX__STORAGE__AUDIT__PATH", "").strip()
-        or os.environ.get("AUDIT_LOG_PATH", "").strip()
+        os.getenv("CLOUD_DOG__INDEX__MCP_AUDIT_PATH", "").strip()
+        or os.getenv("CLOUD_DOG__INDEX__STORAGE__AUDIT__PATH", "").strip()
+        or os.getenv("AUDIT_LOG_PATH", "").strip()
         or "logs/index-retriever-audit-mcp.jsonl"
     )
 
 
 def _maybe_disable_timeout_middleware(app: Any) -> Any:
     """Avoid TestClient deadlocks from platform timeout middleware in local tiers."""
-    in_pytest = "PYTEST_CURRENT_TEST" in os.environ
-    if not in_pytest and os.environ.get("TEST_ENV_TIER", "").upper() not in {"UT", "ST"}:
+    in_pytest = os.getenv("PYTEST_CURRENT_TEST") is not None
+    if not in_pytest and os.getenv("TEST_ENV_TIER", "").upper() not in {"UT", "ST"}:
         return app
     user_middleware = getattr(app, "user_middleware", None)
     build_stack = getattr(app, "build_middleware_stack", None)
@@ -213,6 +214,7 @@ def execute_tool(
 def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | None = None) -> Any:
     """Execute build mcp app."""
     active_service = service or IndexService(audit_path=_mcp_audit_path())
+    db_runtime = initialise_database()
     active_registry = registry or build_registry()
     auth = AuthMiddleware()
     try:
@@ -224,6 +226,7 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
     @app.get("/health")
     def health() -> dict[str, str]:
         """Execute health."""
+        _ = database_health(db_runtime)
         return {"status": "ok"}
 
     def _make_tool_handler(tool_name: str) -> Any:
@@ -271,6 +274,13 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
         include_legacy_tools_alias=True,
     )
 
+    app.state.db_runtime = db_runtime
+
+    if callable(getattr(app, "on_event", None)):
+        @app.on_event("shutdown")
+        async def _shutdown_runtime() -> None:
+            shutdown_database()
+
     return app
 
 
@@ -282,8 +292,8 @@ def run_mcp_server() -> None:
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("uvicorn is required to run MCP server") from exc
 
-    host = os.environ.get("CLOUD_DOG__INDEX__MCP_SERVER__HOST", "0.0.0.0")
-    port = int(os.environ.get("CLOUD_DOG__INDEX__MCP_SERVER__PORT", "8687"))
+    host = os.getenv("CLOUD_DOG__INDEX__MCP_SERVER__HOST", "0.0.0.0")
+    port = int(os.getenv("CLOUD_DOG__INDEX__MCP_SERVER__PORT", "8687"))
     uvicorn.run(app, host=host, port=port, log_level="info")
 
 

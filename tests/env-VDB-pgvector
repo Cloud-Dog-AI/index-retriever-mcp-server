@@ -1,0 +1,4 @@
+# W23A overlay: force PGVector backend for VDB matrix runs
+CLOUD_DOG__INDEX__VDB__PROVIDER=pgvector
+CLOUD_DOG__INDEX__VDB__PGVECTOR_DATABASE_URI=${vault.dev.vdbs.pgvector.database_uri}
+INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS=pgvector

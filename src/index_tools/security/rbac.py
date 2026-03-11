@@ -16,6 +16,7 @@ except ImportError:  # pragma: no cover - fallback for local development only
 @dataclass(slots=True)
 class Subject:
     """Subject definition."""
+
     user_id: str
     roles: set[str]
 

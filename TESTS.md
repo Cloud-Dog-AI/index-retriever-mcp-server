@@ -5,6 +5,63 @@
 **Standard:** PS-95  
 **Current executed cases:** 74 UT + 12 ST + 18 IT + 9 AT + 6 QT + 4 CT = 123
 
+## Latest W23A Status (2026-03-06)
+
+- Instruction file used:
+  - `cloud-dog-ai-platform-standards/working/AGENT-INSTRUCTION-W23A-INDEX-RETRIEVER-VDB-FULL-INTEGRATION.md`
+- Added W23A matrix suites:
+  - IT2.1-IT2.6: backend contract matrix (Chroma/Qdrant/OpenSearch/PGVector/Weaviate/Infinity)
+  - IT2.7-IT2.12: parser provider matrix (DeepDoc/Docling/MinerU/Marker MCP/Transformers/Internal)
+  - IT2.13: OCR-capable parser matrix
+  - IT2.14: table extraction matrix
+  - AT2.1-AT2.2: multi-backend consistency
+  - AT2.3: multi-parser quality comparison
+  - AT2.4: multi-embedding model comparison (BGE/Nomic/Granite)
+  - AT2.5: full parser->chunk->index->search->retrieve E2E per backend
+  - PT1.1-PT1.3: backend ingest baseline, backend search latency, parser throughput
+- Added W23A env overlays:
+  - `tests/env-VDB-chroma`
+  - `tests/env-VDB-qdrant`
+  - `tests/env-VDB-opensearch`
+  - `tests/env-VDB-pgvector`
+  - `tests/env-VDB-weaviate`
+  - `tests/env-VDB-infinity`
+  - `tests/env-PT`
+- Exact W23A summary lines:
+  - `7 passed, 7 skipped in 6.66s` (IT, `working/W23A-VDB-IT.log`)
+  - `4 passed, 1 skipped in 41.93s` (AT, `working/W23A-VDB-AT.log`)
+  - `2 passed, 1 skipped in 22.36s` (PT, `working/W23A-VDB-PT.log`)
+- Skip classification for W23A:
+  - Parser-provider coverage tests skip when provider endpoints/commands are not enabled/configured in env/Vault.
+  - OCR/table/parser-throughput matrices skip when fewer than required parser providers are enabled.
+
+W23A test ID map:
+
+| ID | Tier | Path |
+|---|---|---|
+| IT2.1 | IT | `tests/integration/IT2_1/test_it2_1_chroma_contract.py` |
+| IT2.2 | IT | `tests/integration/IT2_2/test_it2_2_qdrant_contract.py` |
+| IT2.3 | IT | `tests/integration/IT2_3/test_it2_3_opensearch_contract.py` |
+| IT2.4 | IT | `tests/integration/IT2_4/test_it2_4_pgvector_contract.py` |
+| IT2.5 | IT | `tests/integration/IT2_5/test_it2_5_weaviate_contract.py` |
+| IT2.6 | IT | `tests/integration/IT2_6/test_it2_6_infinity_contract.py` |
+| IT2.7 | IT | `tests/integration/IT2_7/test_it2_7_deepdoc_parser.py` |
+| IT2.8 | IT | `tests/integration/IT2_8/test_it2_8_docling_parser.py` |
+| IT2.9 | IT | `tests/integration/IT2_9/test_it2_9_mineru_parser.py` |
+| IT2.10 | IT | `tests/integration/IT2_10/test_it2_10_marker_parser.py` |
+| IT2.11 | IT | `tests/integration/IT2_11/test_it2_11_transformers_parser.py` |
+| IT2.12 | IT | `tests/integration/IT2_12/test_it2_12_internal_parser.py` |
+| IT2.13 | IT | `tests/integration/IT2_13/test_it2_13_ocr_provider_matrix.py` |
+| IT2.14 | IT | `tests/integration/IT2_14/test_it2_14_table_extraction_matrix.py` |
+| AT2.1 | AT | `tests/application/AT2_1/test_at2_1_multi_backend_consistency_chroma_qdrant.py` |
+| AT2.2 | AT | `tests/application/AT2_2/test_at2_2_multi_backend_consistency_pgvector_opensearch.py` |
+| AT2.3 | AT | `tests/application/AT2_3/test_at2_3_multi_parser_quality_comparison.py` |
+| AT2.4 | AT | `tests/application/AT2_4/test_at2_4_multi_embedding_models.py` |
+| AT2.5 | AT | `tests/application/AT2_5/test_at2_5_full_pipeline_e2e_per_backend.py` |
+| PT1.1 | PT | `tests/parser/PT1_1/test_pt1_1_backend_ingest_baseline.py` |
+| PT1.2 | PT | `tests/parser/PT1_2/test_pt1_2_backend_search_latency.py` |
+| PT1.3 | PT | `tests/parser/PT1_3/test_pt1_3_parser_throughput_comparison.py` |
+
 ## Latest W15B-03 Status (2026-03-02)
 
 - Instruction file used:
@@ -562,3 +619,14 @@ Evidence artefacts:
 - `cloud-dog-ai-ui-monorepo/apps/index-retriever/.turbo/turbo-e2e.log`
 - `cloud-dog-ai-ui-monorepo/apps/index-retriever/.turbo/turbo-a11y.log`
 - `cloud-dog-ai-ui-monorepo/apps/index-retriever/test-results/.last-run.json`
+
+### Database Abstraction Tests (cloud_dog_db)
+
+| Test ID | Tier | Description | Traces To |
+|---------|------|-------------|-----------|
+| UT-DB-01 | UT | cloud_dog_db engine factory creates valid SQLite engine from config | R-DB-01, R-DB-02 |
+| UT-DB-02 | UT | Session manager provides working sessions | R-DB-01, R-DB-03 |
+| ST-DB-01 | ST | Schema migration init→current on fresh SQLite | R-DB-04 |
+| ST-DB-02 | ST | CRUD operations via repository abstraction | R-DB-01 |
+| IT-DB-01 | IT | Full app startup with cloud_dog_db engine | R-DB-02 |
+| AT-DB-01 | AT | End-to-end flow uses cloud_dog_db path | R-DB-01 |

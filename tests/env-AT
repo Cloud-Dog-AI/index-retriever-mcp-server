@@ -15,3 +15,9 @@ TEST_API_BASE_PATH=/app/v1
 TEST_MCP_BASE_PATH=/mcp
 TEST_WEB_BASE_PATH=/
 TEST_A2A_BASE_PATH=/a2a
+
+CLOUD_DOG__DB__DIALECT=sqlite
+CLOUD_DOG__DB__DATABASE=./data/index-retriever-at.db
+
+# Built-in test API key accepted by AuthMiddleware (not a real credential)
+TEST_A2A_API_KEY=test-api-key

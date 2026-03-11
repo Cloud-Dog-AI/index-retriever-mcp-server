@@ -28,6 +28,7 @@ RUN pip install --no-cache-dir \
     ./vendor/wheels/cloud_dog_api_kit-0.2.0-py3-none-any.whl \
     ./vendor/wheels/cloud_dog_idam-0.2.0-py3-none-any.whl \
     ./vendor/wheels/cloud_dog_jobs-0.2.0-py3-none-any.whl \
+    ./vendor/wheels/cloud_dog_db-0.1.0-py3-none-any.whl \
     ./vendor/wheels/cloud_dog_llm-0.2.0-py3-none-any.whl \
     ./vendor/wheels/cloud_dog_vdb-0.4.1-py3-none-any.whl
 

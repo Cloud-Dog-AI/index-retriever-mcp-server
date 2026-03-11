@@ -33,6 +33,7 @@ from index_tools.tools.definitions import (
 @dataclass(slots=True)
 class ToolSpec:
     """ToolSpec definition."""
+
     name: str
     input_model: type[BaseModel]
     output_model: type[BaseModel]

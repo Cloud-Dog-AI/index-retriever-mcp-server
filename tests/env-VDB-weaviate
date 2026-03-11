@@ -1,0 +1,5 @@
+# W23A overlay: force Weaviate backend for VDB matrix runs
+CLOUD_DOG__INDEX__VDB__PROVIDER=weaviate
+CLOUD_DOG__INDEX__VDB__WEAVIATE_URL=${vault.dev.vdbs.weaviate.url}
+CLOUD_DOG__INDEX__VDB__WEAVIATE_API_KEY=${vault.dev.vdbs.weaviate.api_key}
+INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS=weaviate

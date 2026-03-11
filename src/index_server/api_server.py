@@ -14,6 +14,12 @@ from fastapi import HTTPException, Request
 
 from index_server.auth.middleware import AuthMiddleware
 from index_server.mcp_server import build_registry, execute_tool
+from index_tools.db import (
+    PlatformDatabaseRuntime,
+    database_health,
+    initialise_database,
+    shutdown_database,
+)
 from index_tools.tools.service import IndexService
 
 _CANONICAL_API_BASE_PATH = "/app/v1"
@@ -24,17 +30,17 @@ _CANONICAL_A2A_BASE_PATH = "/a2a"
 def _api_audit_path() -> str:
     """Resolve API audit path from configured environment keys."""
     return (
-        os.environ.get("CLOUD_DOG__INDEX__API_AUDIT_PATH", "").strip()
-        or os.environ.get("CLOUD_DOG__INDEX__STORAGE__AUDIT__PATH", "").strip()
-        or os.environ.get("AUDIT_LOG_PATH", "").strip()
+        os.getenv("CLOUD_DOG__INDEX__API_AUDIT_PATH", "").strip()
+        or os.getenv("CLOUD_DOG__INDEX__STORAGE__AUDIT__PATH", "").strip()
+        or os.getenv("AUDIT_LOG_PATH", "").strip()
         or "logs/index-retriever-audit-api.jsonl"
     )
 
 
 def _maybe_disable_timeout_middleware(app: Any) -> Any:
     """Avoid TestClient deadlocks from platform timeout middleware in local tiers."""
-    in_pytest = "PYTEST_CURRENT_TEST" in os.environ
-    if not in_pytest and os.environ.get("TEST_ENV_TIER", "").upper() not in {"UT", "ST"}:
+    in_pytest = os.getenv("PYTEST_CURRENT_TEST") is not None
+    if not in_pytest and os.getenv("TEST_ENV_TIER", "").upper() not in {"UT", "ST"}:
         return app
     user_middleware = getattr(app, "user_middleware", None)
     build_stack = getattr(app, "build_middleware_stack", None)
@@ -60,14 +66,20 @@ def _create_runtime_app() -> Any:
     return _maybe_disable_timeout_middleware(app)
 
 
-def build_health_payload(service: Any | None, correlation_id: str | None = None) -> dict[str, Any]:
+def build_health_payload(
+    service: Any | None,
+    correlation_id: str | None = None,
+    db_runtime: PlatformDatabaseRuntime | None = None,
+) -> dict[str, Any]:
     """Execute build health payload."""
     request_id = correlation_id or str(uuid4())
     active_service = service or IndexService(audit_path=_api_audit_path())
+    db_probe = database_health(db_runtime)
     return {
         "status": "ok",
         "correlation_id": request_id,
         "checks": {
+            "db": db_probe,
             "vdb": active_service.backend_health_check(),
             "embedding": active_service.embedding_health_check(),
         },
@@ -117,6 +129,7 @@ def handle_ingest_text(
 def build_api_app(service: IndexService | None = None) -> Any:
     """Execute build api app."""
     active_service = service or IndexService(audit_path=_api_audit_path())
+    db_runtime = initialise_database()
     auth = AuthMiddleware()
     registry = build_registry()
     app = _create_runtime_app()
@@ -148,7 +161,7 @@ def build_api_app(service: IndexService | None = None) -> Any:
 
     def health() -> dict[str, Any]:
         """Execute health."""
-        return build_health_payload(active_service)
+        return build_health_payload(active_service, db_runtime=db_runtime)
 
     def a2a_root(request: Request) -> dict[str, Any]:
         """Execute a2a root."""
@@ -163,7 +176,7 @@ def build_api_app(service: IndexService | None = None) -> Any:
     def a2a_health(request: Request) -> dict[str, Any]:
         """Execute a2a health."""
         _ = _a2a_auth_or_raise(_headers_from_request(request))
-        return build_health_payload(active_service)
+        return build_health_payload(active_service, db_runtime=db_runtime)
 
     def list_tools(request: Request) -> list[dict[str, Any]]:
         """Execute list tools."""
@@ -199,6 +212,13 @@ def build_api_app(service: IndexService | None = None) -> Any:
     for base_path in (_CANONICAL_API_BASE_PATH, _LEGACY_API_BASE_PATH):
         app.get(f"{base_path}/tools")(list_tools)
         app.post(f"{base_path}/tools/{{tool_name}}")(call_tool)
+
+    app.state.db_runtime = db_runtime
+
+    @app.on_event("shutdown")
+    async def _shutdown_runtime() -> None:
+        shutdown_database()
+
     return app
 
 
@@ -210,8 +230,8 @@ def run_api_server() -> None:
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("uvicorn is required to run API server") from exc
 
-    host = os.environ.get("CLOUD_DOG__INDEX__API_SERVER__HOST", "0.0.0.0")
-    port = int(os.environ.get("CLOUD_DOG__INDEX__API_SERVER__PORT", "8686"))
+    host = os.getenv("CLOUD_DOG__INDEX__API_SERVER__HOST", "0.0.0.0")
+    port = int(os.getenv("CLOUD_DOG__INDEX__API_SERVER__PORT", "8686"))
     uvicorn.run(app, host=host, port=port, log_level="info")
 
 

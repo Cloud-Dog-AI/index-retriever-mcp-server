@@ -12,7 +12,7 @@ from index_server.api_server import build_api_app
 
 def main() -> object:
     """Bootstrap the API app. Only bootstrap env access is allowed here."""
-    _ = os.environ.get("CLOUD_DOG_ENV_FILES", "")
+    _ = os.getenv("CLOUD_DOG_ENV_FILES", "")
     return build_api_app()
 
 

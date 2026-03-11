@@ -142,18 +142,33 @@ def test_mcp_role_mapping_and_execute_paths(service, monkeypatch: pytest.MonkeyP
     assert "collections" in mcp_server.execute_tool(
         service, "collections_list", {"profile": "default"}, identity_roles={"admin"}
     )
-    assert mcp_server.execute_tool(
-        service, "admin_collection_create", {"profile": "default", "collection": "mcp_cov"}, identity_roles={"admin"}
-    )["status"] == "ok"
-    assert mcp_server.execute_tool(
-        service, "admin_collection_delete", {"profile": "default", "collection": "mcp_cov"}, identity_roles={"admin"}
-    )["status"] == "ok"
-    assert mcp_server.execute_tool(
-        service,
-        "ingest_text",
-        {"profile": "default", "collection": "mcp_cov", "text": "payload"},
-        identity_roles={"admin"},
-    )["status"] == "queued"
+    assert (
+        mcp_server.execute_tool(
+            service,
+            "admin_collection_create",
+            {"profile": "default", "collection": "mcp_cov"},
+            identity_roles={"admin"},
+        )["status"]
+        == "ok"
+    )
+    assert (
+        mcp_server.execute_tool(
+            service,
+            "admin_collection_delete",
+            {"profile": "default", "collection": "mcp_cov"},
+            identity_roles={"admin"},
+        )["status"]
+        == "ok"
+    )
+    assert (
+        mcp_server.execute_tool(
+            service,
+            "ingest_text",
+            {"profile": "default", "collection": "mcp_cov", "text": "payload"},
+            identity_roles={"admin"},
+        )["status"]
+        == "queued"
+    )
     assert "results" in mcp_server.execute_tool(
         service,
         "search",
@@ -162,7 +177,9 @@ def test_mcp_role_mapping_and_execute_paths(service, monkeypatch: pytest.MonkeyP
     )
 
     registry = ToolRegistry()
-    registry.register(ToolSpec(name="admin_profile_update", input_model=GenericToolInput, output_model=GenericToolOutput))
+    registry.register(
+        ToolSpec(name="admin_profile_update", input_model=GenericToolInput, output_model=GenericToolOutput)
+    )
     assert mcp_server.execute_tool(
         service,
         "admin_profile_update",

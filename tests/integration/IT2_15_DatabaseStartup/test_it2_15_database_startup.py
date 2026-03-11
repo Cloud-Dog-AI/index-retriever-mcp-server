@@ -1,0 +1,48 @@
+# index-retriever-mcp-server — IT2.15 DatabaseStartup
+# Licence: Proprietary — Cloud-Dog AI Platform
+# Owner: Cloud-Dog AI
+# Description: Validates API startup health and DB CRUD against configured dialect.
+
+from __future__ import annotations
+
+from uuid import uuid4
+
+from fastapi.testclient import TestClient
+from sqlalchemy import Column, MetaData, String, Table, select
+
+from index_server.api_server import build_api_app
+from index_tools.tools.service import IndexService
+
+
+def _headers() -> dict[str, str]:
+    return {"x-api-key": "test-api-key", "Authorization": "Bearer test-api-key"}
+
+
+def test_it2_15_database_startup_and_crud(tmp_path) -> None:
+    service = IndexService(audit_path=str(tmp_path / "audit-it2-15.jsonl"))
+    app = build_api_app(service=service)
+    runtime = app.state.db_runtime
+    table_name = f"it2_15_db_{uuid4().hex[:8]}"
+    metadata = MetaData()
+    records = Table(
+        table_name,
+        metadata,
+        Column("id", String(64), primary_key=True),
+        Column("value", String(128), nullable=False),
+    )
+
+    with TestClient(app) as client:
+        health = client.get("/app/v1/health", headers=_headers())
+        assert health.status_code == 200
+        payload = health.json()
+        db_probe = (payload.get("checks") or {}).get("db") or {}
+        assert bool(db_probe.get("ok")) is True
+
+        metadata.create_all(runtime.engine)
+        try:
+            with runtime.engine.begin() as conn:
+                conn.execute(records.insert().values(id="row-1", value="alpha"))
+                row = conn.execute(select(records.c.value).where(records.c.id == "row-1")).scalar_one()
+            assert row == "alpha"
+        finally:
+            metadata.drop_all(runtime.engine)

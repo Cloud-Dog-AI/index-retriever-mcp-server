@@ -191,9 +191,33 @@ Uses `cloud_dog_vdb` backend adapters. Each backend implements a common contract
 - Backend/provider failures in parser/ingestion surfaces are propagated as explicit diagnostic envelopes with secret redaction.
 - Infinity backend is wired as a conditional provider path through the same `cloud_dog_vdb` contracts, enabled only when env configuration is present.
 
+### 3.7B Backend capability matrix (W23A)
+
+| Backend | Filtering | Hybrid Search | Delete-by-filter | Primary config keys |
+|---|---|---|---|---|
+| Chroma | Yes | No | No (portable fallback) | `CHROMA_URL`, `CHROMA_AUTH_TOKEN` |
+| Qdrant | Yes | No | Yes | `QDRANT_URL`, `QDRANT_API_KEY` |
+| OpenSearch | Yes | Yes | Yes | `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD` |
+| PGVector | Yes | No | Yes | `PGVECTOR_DATABASE_URI` |
+| Weaviate | Yes | Yes | No (portable fallback) | `WEAVIATE_URL`, `WEAVIATE_API_KEY` |
+| Infinity | Backend-defined | Backend-defined | Backend-defined | `INFINITY_URL`, `INFINITY_API_KEY` |
+
+Capability-aware planning rules:
+- Request planning uses backend descriptors from `cloud_dog_vdb.capabilities`.
+- Unsupported filter/hybrid paths are rejected early with explicit errors.
+- No cross-backend implicit fallback is allowed during the same request path.
+
 ### 3.8 Search/Retrieve Layer
 - Normalises queries and filter semantics.
 - Supports backend-specific enhancements (hybrid, sparse, rerank hooks) via pluggable extensions.
+
+### 3.8A Embedding architecture (W23A)
+- Provider routing is delegated to `cloud_dog_llm` with profile-scoped model selection.
+- Runtime resolves embedding endpoint/model/API key from env first, then Vault fallback.
+- Collection creation enforces dimension compatibility by probing embeddings before first write.
+- Batch behavior, timeouts, retries, and API credentials are provider-configurable.
+- Multi-model test matrix includes `bge-m3:567m` (1024d), `nomic-embed-text` (768d), and `granite-embedding:278m` (768d).
+- Failure mode policy is fail-closed: embedding/provider errors are surfaced through diagnostic envelopes with redaction.
 
 ### 3.9 Auth/RBAC (via `cloud_dog_idam`)
 - API keys/JWT mandatory — `cloud_dog_idam` middleware.
@@ -259,6 +283,14 @@ Append-only JSONL via `cloud_dog_logging` audit logger.
 2. Wrapper validates auth/RBAC and maps request shape.
 3. Wrapper delegates preview/test/extract/OCR/table operation to `cloud_dog_vdb` parser pipeline APIs.
 4. Response returns normalized metadata and diagnostics through PS-20-compatible envelopes.
+
+### 5.5 Parser delegation and fallback flow (W23A)
+1. Request supplies parser chain (for example `mineru -> internal`) and parser options.
+2. `build_parser_registry(...)` wires configured providers (`deepdoc`, `docling`, `mineru`, `marker_mcp`, `transformers`, `internal`).
+3. Ingestion attempts providers in declared order; failures are accumulated with provider-tagged diagnostics.
+4. First successful provider returns normalized IR (`text_blocks`, `table_blocks`, `quality`, provider/version).
+5. OCR mode and table policy are applied to IR rendering and metadata annotations.
+6. Chunking/upsert proceeds with parser provenance preserved in metadata for audit/debug parity.
 
 ---
 

@@ -4,9 +4,9 @@
 # Description: MCP tool execution over live runtime.
 
 import json
-from uuid import uuid4
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
@@ -115,12 +115,12 @@ def test_mcp_tool_execution(
         writer_headers,
     )
 
-    a_rows = call_tool("search", {"profile": "default", "collection": iso_a, "query": "unique token", "top_k": 5}, reader_headers)[
-        "results"
-    ]
-    b_rows = call_tool("search", {"profile": "default", "collection": iso_b, "query": "unique token", "top_k": 5}, reader_headers)[
-        "results"
-    ]
+    a_rows = call_tool(
+        "search", {"profile": "default", "collection": iso_a, "query": "unique token", "top_k": 5}, reader_headers
+    )["results"]
+    b_rows = call_tool(
+        "search", {"profile": "default", "collection": iso_b, "query": "unique token", "top_k": 5}, reader_headers
+    )["results"]
     assert a_rows and b_rows
     assert all((row.get("metadata") or {}).get("collection") == iso_a for row in a_rows)
     assert all((row.get("metadata") or {}).get("collection") == iso_b for row in b_rows)

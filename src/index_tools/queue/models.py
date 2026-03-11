@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 class JobStatus(str, Enum):  # noqa: UP042
     """JobStatus definition."""
+
     queued = "queued"
     running = "running"
     succeeded = "succeeded"
@@ -22,6 +23,7 @@ class JobStatus(str, Enum):  # noqa: UP042
 
 class JobRecord(BaseModel):
     """JobRecord definition."""
+
     job_id: str
     profile: str
     collection: str

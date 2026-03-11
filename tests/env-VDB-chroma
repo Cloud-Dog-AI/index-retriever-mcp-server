@@ -1,0 +1,5 @@
+# W23A overlay: force Chroma backend for VDB matrix runs
+CLOUD_DOG__INDEX__VDB__PROVIDER=chroma
+CLOUD_DOG__INDEX__VDB__CHROMA_URL=${vault.dev.vdbs.chroma.base_url}
+CLOUD_DOG__INDEX__VDB__CHROMA_AUTH_TOKEN=${vault.dev.vdbs.chroma.auth_token}
+INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS=chroma

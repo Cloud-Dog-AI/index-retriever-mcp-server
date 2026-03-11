@@ -19,6 +19,7 @@ except ImportError:  # pragma: no cover
 @dataclass(slots=True)
 class DedupeRecord:
     """DedupeRecord definition."""
+
     doc_id: str
     size: int
     mtime: int

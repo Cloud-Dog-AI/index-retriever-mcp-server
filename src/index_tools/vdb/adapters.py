@@ -17,6 +17,7 @@ except ImportError:  # pragma: no cover
 @dataclass(slots=True)
 class StoredDocument:
     """StoredDocument definition."""
+
     chunks: list[str]
     vectors: list[list[float]]
     metadata: dict[str, Any] = field(default_factory=dict)

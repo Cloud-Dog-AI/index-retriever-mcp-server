@@ -1,22 +1,33 @@
 # index-retriever-mcp-server — Agent & Engineer Rules
 
-**Version:** 1.1  
-**Date:** 2026-02-20  
-**Parent:** `cloud-dog-ai-platform-standards/RULES.md` v1.2
+**Version:** 2.0
+**Date:** 2026-03-04
+**Parent:** `cloud-dog-ai-platform-standards/RULES.md` v1.5
 
-This document extends the platform-wide rules. Read the parent RULES.md first.
+> **⛔ BINDING CONTRACT:** This document extends the platform-wide rules.
+> Read the parent [Cloud-Dog AI Platform Common Rules](../cloud-dog-ai-platform-standards/RULES.md) **IN FULL** first.
+> ALL platform rules apply without exception. This file adds project-specific rules ONLY.
 
 ---
 
 ## Section 1 — Platform Rules (Inherited)
 
-All rules from `cloud-dog-ai-platform-standards/RULES.md` apply without exception:
-- Integrity and honesty (non-negotiable)
-- Configuration precedence: `os.environ → .env → config.yaml → defaults.yaml → Vault`
-- Env file usage: `--env tests/env-<TIER>` for tests (UT/ST/IT/AT/QT); `private/env-<name>` only if credentials not yet in Vault
-- Credential management: Vault primary; `private/` only for credentials not yet migrated to Vault
-- Zero hardcoded values
-- UK English throughout
+All rules from `cloud-dog-ai-platform-standards/RULES.md` v1.5 apply without exception:
+- **§ 1** Integrity and honesty (non-negotiable)
+- **§ 2** Configuration precedence: `os.environ → env file → config.yaml → defaults.yaml`
+- **§ 2.3** Credential management: Vault primary; `private/` only for credentials not yet in Vault
+- **§ 2.4** Zero hardcoded values (zero tolerance)
+- **§ 3** Server and process management (server_control.sh, Docker rules)
+- **§ 4** Code and change management (approval rules, code standards, UK English)
+- **§ 5** Testing rules (UT/ST/IT/AT hierarchy, real systems, forensic validation)
+- **§ 6** Documentation standards (REQUIREMENTS, ARCHITECTURE, TESTS, TASKS, etc.)
+- **§ 7** Repository structure
+- **§ 8** Operational controls (timeouts, stop controls, verification)
+- **§ 9** Security boundaries (project confinement, credential boundaries, network boundaries, scope discipline)
+- **§ 10** Infrastructure protection (Vault config read-only, Terraform read-only)
+- **§ 11** Vault path verification (never invent paths, query first)
+- **§ 12** Implementation truthfulness (never claim done without evidence)
+- **Mandatory Completion Warranty** required on every task completion
 
 ---
 
@@ -121,36 +132,14 @@ pip install -e ".[dev]" --index-url https://pypi.cloud-dog.net/simple/
 
 ---
 
-## Section 6 — Testing Rules
+## Section 6 — Testing Rules (Project-Specific Extensions)
 
-- Follow PS-95 test hierarchy: UT/ST/IT/AT/QT
-- All tests use `--env tests/env-<TIER>` for configuration (e.g. `--env tests/env-UT`, `--env tests/env-IT`)
+Platform testing rules (§ 5) apply in full. This section adds index-retriever specifics.
+
 - Backend contract tests MUST run against all enabled VDB backends
 - Integration tests require real VDB, embedding provider, and running API server
 - NEVER mock VDB or embedding providers in ST/IT/AT tests
 - See TESTS.md for complete test plan
-
-### 6.1 ABSOLUTE TEST INTEGRITY — ZERO TOLERANCE
-
-**ST, IT, and AT tests MUST execute against REAL systems. No exceptions.**
-
-**NEVER:**
-- **STUB** responses, backends, or service calls in ST/IT/AT tests
-- **MOCK** real systems (VDB backends, embedding providers, APIs, MCP endpoints) in ST/IT/AT tests
-- **FAKE** success by returning hard-coded or synthetic data
-- **FUDGE** test assertions to match stub output instead of real behaviour
-- **HACK** around failures by replacing real calls with in-process fakes
-- **LIE** about test results — if it did not hit a real system, it did not pass
-- **SKIP** validation steps to claim completion
-
-**A test that uses stubs, mocks, or fake data in ST/IT/AT tiers is not a test — it is a lie.** It MUST be removed or rewritten to use real systems.
-
-- UT (unit) tests MAY use mocks/stubs for isolated logic testing only
-- ST (system) tests MUST use real local services
-- IT (integration) tests MUST use real running servers, real VDB backends, real embedding providers, and real network calls
-- AT (application) tests MUST exercise full end-to-end workflows against real systems
-
-**If a real system is unavailable, the test MUST fail explicitly — not pass with fake data.**
 
 ---
 
@@ -203,3 +192,7 @@ This section is mandatory and was added after a documented integrity failure in 
   - list corrective actions completed,
   - list remaining non-compliance.
 - Until all listed items are closed, completion claims are prohibited.
+
+---
+
+*Last updated: 2026-03-04*

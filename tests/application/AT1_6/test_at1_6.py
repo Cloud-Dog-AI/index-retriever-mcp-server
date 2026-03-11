@@ -66,7 +66,9 @@ def test_runtime_matrix_api_and_mcp_transport(
         else:
             assert runtime_endpoints is not None
             headers["Content-Type"] = "application/json"
-            status, body = _post_json(f"{runtime_endpoints['mcp_base_url']}{mcp_tools_path(tool_name)}", payload, headers)
+            status, body = _post_json(
+                f"{runtime_endpoints['mcp_base_url']}{mcp_tools_path(tool_name)}", payload, headers
+            )
             assert status == 200, body
         assert body.get("ok") is True
         return body["data"]

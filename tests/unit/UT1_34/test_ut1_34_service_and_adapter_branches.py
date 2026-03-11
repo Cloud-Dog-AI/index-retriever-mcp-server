@@ -25,7 +25,9 @@ def test_service_collection_and_admin_paths(service: IndexService) -> None:
     assert service.collections_list("default") == []
 
 
-def test_service_idempotency_retrieve_delete_and_retention(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
+def test_service_idempotency_retrieve_delete_and_retention(
+    monkeypatch: pytest.MonkeyPatch, service: IndexService
+) -> None:
     first_job_id = service.ingest_text(
         "default",
         "idem",

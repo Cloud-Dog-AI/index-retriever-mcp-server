@@ -1,0 +1,5 @@
+# W23A overlay: force Infinity backend for VDB matrix runs
+CLOUD_DOG__INDEX__VDB__PROVIDER=infinity
+CLOUD_DOG__INDEX__VDB__INFINITY_URL=${vault.dev.vdbs.infinity.url}
+CLOUD_DOG__INDEX__VDB__INFINITY_API_KEY=${vault.dev.vdbs.infinity.api_key}
+INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS=infinity

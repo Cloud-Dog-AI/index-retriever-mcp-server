@@ -95,15 +95,21 @@ def _as_bool(raw: str | None, *, default: bool = False) -> bool:
 
 
 def _extract_dev_section(payload: dict[str, Any]) -> dict[str, Any]:
-    root = payload["data"]["data"]
-    if isinstance(root.get("dev"), dict):
-        return root["dev"]
-    if isinstance(root.get("json"), dict) and isinstance(root["json"].get("dev"), dict):
-        return root["json"]["dev"]
-    if isinstance(root.get("content"), str):
-        parsed = json.loads(root["content"])
+    # VaultClient.read() already unwraps KV v2 data.data; try unwrapped first.
+    if isinstance(payload.get("dev"), dict):
+        return payload["dev"]
+    if isinstance(payload.get("json"), dict) and isinstance(payload["json"].get("dev"), dict):
+        return payload["json"]["dev"]
+    if isinstance(payload.get("content"), str):
+        parsed = json.loads(payload["content"])
         if isinstance(parsed.get("dev"), dict):
             return parsed["dev"]
+    # Fallback: raw hvac response that still has data.data wrapper.
+    raw = payload.get("data", {})
+    if isinstance(raw, dict):
+        inner = raw.get("data", {})
+        if isinstance(inner, dict) and isinstance(inner.get("dev"), dict):
+            return inner["dev"]
     raise RuntimeError("Vault config did not contain a dev section")
 
 
@@ -135,7 +141,10 @@ def load_vault_dev_config(required: bool = True) -> dict[str, Any]:
                 mount_point=mount.strip("/"),
             )
         )
-        payload = client.read(config_path.lstrip("/") or "config")
+        # _split_mount expects path to include mount prefix as first segment;
+        # pass mount/config_path so it splits correctly to (mount, config_path).
+        read_path = f"{mount.strip('/')}/{config_path.lstrip('/') or 'config'}"
+        payload = client.read(read_path)
         if isinstance(payload, str):
             payload = json.loads(payload)
         if not isinstance(payload, dict):
@@ -203,6 +212,70 @@ def _infinity_url_from_vault(raw: dict[str, Any]) -> str:
     return f"http://{host}:{port}"
 
 
+def _opensearch_url_from_env() -> str:
+    explicit = _env("CLOUD_DOG__INDEX__VDB__OPENSEARCH_URL", "OPENSEARCH_URL")
+    if explicit:
+        return explicit
+    host = _env("CLOUD_DOG__INDEX__VDB__OPENSEARCH_HOST", "OPENSEARCH_HOST")
+    if not host:
+        return ""
+    port = _env("CLOUD_DOG__INDEX__VDB__OPENSEARCH_PORT", "OPENSEARCH_PORT", default="9200")
+    return f"http://{host}:{port}"
+
+
+def _opensearch_url_from_vault(raw: dict[str, Any]) -> str:
+    explicit = str(raw.get("base_url", raw.get("url", "")))
+    if explicit:
+        return explicit
+    host = str(raw.get("host", ""))
+    if not host:
+        return ""
+    port = str(raw.get("port", "9200") or "9200")
+    return f"http://{host}:{port}"
+
+
+def _weaviate_url_from_env() -> str:
+    explicit = _env("CLOUD_DOG__INDEX__VDB__WEAVIATE_URL", "WEAVIATE_URL")
+    if explicit:
+        return explicit
+    host = _env("CLOUD_DOG__INDEX__VDB__WEAVIATE_HOST", "WEAVIATE_HOST")
+    if not host:
+        return ""
+    port = _env("CLOUD_DOG__INDEX__VDB__WEAVIATE_PORT", "WEAVIATE_PORT", default="8080")
+    scheme = _env("CLOUD_DOG__INDEX__VDB__WEAVIATE_SCHEME", "WEAVIATE_SCHEME", default="http")
+    return f"{scheme}://{host}:{port}"
+
+
+def _weaviate_url_from_vault(raw: dict[str, Any]) -> str:
+    explicit = str(raw.get("base_url", raw.get("url", "")))
+    if explicit:
+        return explicit
+    host = str(raw.get("host", ""))
+    if not host:
+        return ""
+    port = str(raw.get("port", "8080") or "8080")
+    scheme = str(raw.get("scheme", "http") or "http")
+    return f"{scheme}://{host}:{port}"
+
+
+def _pgvector_uri_from_env() -> str:
+    return _env("CLOUD_DOG__INDEX__VDB__PGVECTOR_DATABASE_URI", "PGVECTOR_DATABASE_URI")
+
+
+def _pgvector_uri_from_vault(raw: dict[str, Any]) -> str:
+    explicit = str(raw.get("database_uri", raw.get("url", "")))
+    if explicit:
+        return explicit
+    username = str(raw.get("username", ""))
+    password = str(raw.get("password", ""))
+    host = str(raw.get("host", ""))
+    port = str(raw.get("port", "5432") or "5432")
+    database = str(raw.get("database", "postgres") or "postgres")
+    if not username or not password or not host:
+        return ""
+    return f"postgresql://{username}:{password}@{host}:{port}/{database}"
+
+
 def _postgres_url_from_vault(raw: dict[str, Any]) -> str:
     username = str(raw.get("username", ""))
     password = str(raw.get("password", ""))
@@ -231,6 +304,12 @@ class LiveRuntimeConfig:
     chroma_auth_token: str
     qdrant_url: str
     qdrant_api_key: str
+    opensearch_url: str
+    opensearch_username: str
+    opensearch_password: str
+    pgvector_database_uri: str
+    weaviate_url: str
+    weaviate_api_key: str
     infinity_url: str
     infinity_api_key: str
     queue_db_url: str
@@ -250,6 +329,12 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
 
     qdrant_url = _qdrant_url_from_env()
     qdrant_api_key = _env("CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY", "CLOUD_DOG__INDEX__VDB__API_KEY", "QDRANT_API_KEY")
+    opensearch_url = _opensearch_url_from_env()
+    opensearch_username = _env("CLOUD_DOG__INDEX__VDB__OPENSEARCH_USERNAME", "OPENSEARCH_USERNAME")
+    opensearch_password = _env("CLOUD_DOG__INDEX__VDB__OPENSEARCH_PASSWORD", "OPENSEARCH_PASSWORD")
+    pgvector_database_uri = _pgvector_uri_from_env()
+    weaviate_url = _weaviate_url_from_env()
+    weaviate_api_key = _env("CLOUD_DOG__INDEX__VDB__WEAVIATE_API_KEY", "WEAVIATE_API_KEY")
     infinity_url = _infinity_url_from_env()
     infinity_api_key = _env("CLOUD_DOG__INDEX__VDB__INFINITY_API_KEY", "INFINITY_API_KEY")
 
@@ -270,6 +355,9 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
             ollama = _nested_dict(vault, "models", "ollama_nomic_embed_text_llm1")
             chroma = _nested_dict(vault, "vdbs", "chroma")
             qdrant = _nested_dict(vault, "vdbs", "qdrant")
+            opensearch = _nested_dict(vault, "vdbs", "opensearch")
+            pgvector = _nested_dict(vault, "vdbs", "pgvector")
+            weaviate = _nested_dict(vault, "vdbs", "weaviate")
             infinity = _nested_dict(vault, "vdbs", "infinity")
             postgres = _nested_dict(vault, "databases", "providers", "postgres")
 
@@ -290,6 +378,21 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
             if not qdrant_api_key:
                 qdrant_api_key = str(qdrant.get("api_key", ""))
 
+            if not opensearch_url:
+                opensearch_url = _opensearch_url_from_vault(opensearch)
+            if not opensearch_username:
+                opensearch_username = str(opensearch.get("username", ""))
+            if not opensearch_password:
+                opensearch_password = str(opensearch.get("password", ""))
+
+            if not pgvector_database_uri:
+                pgvector_database_uri = _pgvector_uri_from_vault(pgvector)
+
+            if not weaviate_url:
+                weaviate_url = _weaviate_url_from_vault(weaviate)
+            if not weaviate_api_key:
+                weaviate_api_key = str(weaviate.get("api_key", ""))
+
             if not infinity_url:
                 infinity_url = _infinity_url_from_vault(infinity)
             if not infinity_api_key:
@@ -304,8 +407,15 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
 
     enabled_backends = [
         backend
-        for backend, url in (("chroma", chroma_url), ("qdrant", qdrant_url), ("infinity", infinity_url))
-        if url
+        for backend, present in (
+            ("chroma", bool(chroma_url)),
+            ("qdrant", bool(qdrant_url)),
+            ("opensearch", bool(opensearch_url)),
+            ("pgvector", bool(pgvector_database_uri)),
+            ("weaviate", bool(weaviate_url)),
+            ("infinity", bool(infinity_url)),
+        )
+        if present
     ]
     if default_backend not in enabled_backends and enabled_backends:
         default_backend = enabled_backends[0]
@@ -318,7 +428,9 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
     if not enabled_backends:
         raise RuntimeError(
             "Missing VDB endpoints. Set CLOUD_DOG__INDEX__VDB__CHROMA_URL and/or "
-            "CLOUD_DOG__INDEX__VDB__QDRANT_URL and/or CLOUD_DOG__INDEX__VDB__INFINITY_URL "
+            "CLOUD_DOG__INDEX__VDB__QDRANT_URL and/or CLOUD_DOG__INDEX__VDB__OPENSEARCH_URL and/or "
+            "CLOUD_DOG__INDEX__VDB__PGVECTOR_DATABASE_URI and/or CLOUD_DOG__INDEX__VDB__WEAVIATE_URL and/or "
+            "CLOUD_DOG__INDEX__VDB__INFINITY_URL "
             "(or HOST/PORT), or provide Vault env for fallback."
         )
 
@@ -330,6 +442,12 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
         chroma_auth_token=chroma_auth_token,
         qdrant_url=qdrant_url,
         qdrant_api_key=qdrant_api_key,
+        opensearch_url=opensearch_url,
+        opensearch_username=opensearch_username,
+        opensearch_password=opensearch_password,
+        pgvector_database_uri=pgvector_database_uri,
+        weaviate_url=weaviate_url,
+        weaviate_api_key=weaviate_api_key,
         infinity_url=infinity_url,
         infinity_api_key=infinity_api_key,
         queue_db_url=queue_db_url,
@@ -391,7 +509,10 @@ class LiveIndexRuntime:
         self._loop = asyncio.new_event_loop()
         if LiveIndexRuntime._run_prefix is None:
             configured = os.environ.get("INDEX_RETRIEVER_TEST_RUN_PREFIX", "").strip().lower()
-            LiveIndexRuntime._run_prefix = configured or uuid4().hex[:8]
+            token = configured or uuid4().hex[:8]
+            if not token[:1].isalpha():
+                token = f"r{token}"
+            LiveIndexRuntime._run_prefix = token
             os.environ["INDEX_RETRIEVER_TEST_RUN_PREFIX"] = LiveIndexRuntime._run_prefix
         self._namespace = f"{LiveIndexRuntime._run_prefix}_{uuid4().hex[:4]}"
         self._config = resolve_live_runtime_config()
@@ -438,6 +559,36 @@ class LiveIndexRuntime:
                 "local_mode": False,
             }
 
+        if self._config.opensearch_url:
+            self._enabled_providers.add("opensearch")
+            vector_stores["opensearch"] = {
+                "enabled": True,
+                "base_url": self._config.opensearch_url,
+                "username": self._config.opensearch_username,
+                "password": self._config.opensearch_password,
+                "timeout_seconds": 120,
+                "local_mode": False,
+            }
+
+        if self._config.pgvector_database_uri:
+            self._enabled_providers.add("pgvector")
+            vector_stores["pgvector"] = {
+                "enabled": True,
+                "database_uri": self._config.pgvector_database_uri,
+                "timeout_seconds": 120,
+                "local_mode": False,
+            }
+
+        if self._config.weaviate_url:
+            self._enabled_providers.add("weaviate")
+            vector_stores["weaviate"] = {
+                "enabled": True,
+                "base_url": self._config.weaviate_url,
+                "api_key": self._config.weaviate_api_key,
+                "timeout_seconds": 120,
+                "local_mode": False,
+            }
+
         if self._config.infinity_url:
             self._enabled_providers.add("infinity")
             vector_stores["infinity"] = {
@@ -454,7 +605,9 @@ class LiveIndexRuntime:
 
         self._collections: set[tuple[str, str]] = set()
         self._stream_sessions: dict[str, dict[str, Any]] = {}
-        self._profiles: dict[str, dict[str, Any]] = {"default": {"enabled": True, "backend": self._config.default_backend}}
+        self._profiles: dict[str, dict[str, Any]] = {
+            "default": {"enabled": True, "backend": self._config.default_backend}
+        }
         self._idempotency_records: dict[tuple[str, str, str], LiveRecord] = {}
         self._source_records: dict[tuple[str, str, str, str], SourceIngestState] = {}
 
@@ -468,14 +621,22 @@ class LiveIndexRuntime:
     def _embedding_dimension(self) -> int:
         if self._embedding_dim is not None:
             return self._embedding_dim
-        vectors = self._run(
-            self.llm_client.embed(["dimension probe"], provider_id=self.embedding_provider, model=self.embedding_model)
-        )
-        self._embedding_dim = len(vectors[0]) if vectors else 768
+        try:
+            vectors = self._run(
+                asyncio.wait_for(
+                    self.llm_client.embed(["dimension probe"], provider_id=self.embedding_provider, model=self.embedding_model),
+                    timeout=30.0,
+                )
+            )
+            self._embedding_dim = len(vectors[0]) if vectors else 768
+        except (asyncio.TimeoutError, Exception):
+            self._embedding_dim = 768
         return self._embedding_dim
 
     def _collection_name(self, profile: str, collection: str, provider_id: str | None = None) -> str:
         base_name = f"{self._namespace}_{profile}_{collection}".replace("-", "_")
+        if str(provider_id or "").strip().lower() == "pgvector" and base_name[:1].isdigit():
+            base_name = f"idx_{base_name}"
         if str(provider_id or "").strip().lower() != "infinity":
             return base_name
         digest = sha256(base_name.encode("utf-8")).hexdigest()[:18]
@@ -916,7 +1077,9 @@ class LiveIndexRuntime:
                 provider_id=provider_id,
             )
         )
-        record = LiveRecord(job_id=job_id, record_id=record_id, provider_id=provider_id, collection_name=collection_name)
+        record = LiveRecord(
+            job_id=job_id, record_id=record_id, provider_id=provider_id, collection_name=collection_name
+        )
         if idempotency_key:
             self._idempotency_records[idempotency_map_key] = record
         self._source_records[source_map_key] = SourceIngestState(
@@ -1116,6 +1279,12 @@ class LiveIndexRuntime:
             print(f"[live-runtime] chroma_url={self._config.chroma_url}")
         if self._config.qdrant_url:
             print(f"[live-runtime] qdrant_url={self._config.qdrant_url}")
+        if self._config.opensearch_url:
+            print(f"[live-runtime] opensearch_url={self._config.opensearch_url}")
+        if self._config.pgvector_database_uri:
+            print("[live-runtime] pgvector_database_uri=[configured]")
+        if self._config.weaviate_url:
+            print(f"[live-runtime] weaviate_url={self._config.weaviate_url}")
         if self._config.infinity_url:
             print(f"[live-runtime] infinity_url={self._config.infinity_url}")
 

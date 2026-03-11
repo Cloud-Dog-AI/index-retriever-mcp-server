@@ -3,9 +3,11 @@ server:
   http:
     host: "0.0.0.0"
     port: 8686
+    base_path: ""  # Reverse proxy prefix (DC-11). e.g. "/index" when behind Traefik.
   mcp:
     enabled: true
     port: 8687
+    base_path: ""  # Reverse proxy prefix (DC-11). e.g. "/index-mcp" when behind Traefik.
 
 auth:
   mode: "apikey+jwt"

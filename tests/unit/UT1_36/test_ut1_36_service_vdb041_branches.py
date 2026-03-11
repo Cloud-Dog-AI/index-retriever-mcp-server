@@ -17,10 +17,10 @@ import index_tools.tools.service as service_mod
 from index_tools.tools.service import (
     IndexService,
     ProviderDiagnosticError,
-    _PreviewResult,
-    _PreviewVdbBridge,
     _descriptor_to_dict,
     _parser_probe,
+    _PreviewResult,
+    _PreviewVdbBridge,
     _redact_diagnostic_detail,
 )
 
@@ -154,7 +154,7 @@ def test_search_plan_capability_override_and_filter_rejection(
     assert capability_payload["provider_id"] == service.profile_get("default")["backend"]
 
     descriptor = service._build_capability_descriptor("default", capability_override={"max_batch_size": 7})
-    assert getattr(descriptor, "max_batch_size") == 7
+    assert descriptor.max_batch_size == 7
     with pytest.raises(ValueError):
         service.search_plan(profile="default", query="alpha", top_k=3, filters={"tenant": "x"})
 
@@ -166,9 +166,7 @@ def test_pipeline_preview_unavailable_branch(monkeypatch: pytest.MonkeyPatch, se
         service._run_pipeline_preview(source=b"payload", source_uri="inline://preview.txt")
 
 
-def test_pipeline_preview_success_and_failure_branches(
-    monkeypatch: pytest.MonkeyPatch, service: IndexService
-) -> None:
+def test_pipeline_preview_success_and_failure_branches(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
     class _Options:
         def __init__(self, **kwargs: Any) -> None:
             self.payload = dict(kwargs)

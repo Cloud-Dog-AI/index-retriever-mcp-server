@@ -28,7 +28,7 @@ def _http_status(url: str, headers: dict[str, str] | None = None) -> tuple[int, 
 def test_a2a_health_auth_matrix(
     live_service: LiveIndexRuntime, runtime_mode: str, runtime_endpoints: dict[str, str] | None
 ) -> None:
-    valid_key = os.environ.get("TEST_A2A_API_KEY", "12345678").strip() or "12345678"
+    valid_key = os.environ.get("TEST_A2A_API_KEY", "test-api-key").strip() or "test-api-key"
 
     if runtime_mode == "local-server":
         client = TestClient(build_api_app(service=live_service))

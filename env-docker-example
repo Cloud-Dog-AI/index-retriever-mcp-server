@@ -1,0 +1,104 @@
+# index-retriever-mcp-server — preprod all-4-in-one docker env example
+#
+# Use as a single source of truth for:
+# - local-docker-server.sh control settings
+# - docker compose runtime env for the `all-in-one` profile
+#
+# Recommended usage:
+#   set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
+#   bash local-docker-server.sh --env env-docker-example ensure
+#
+# Notes:
+# - Defaults from defaults.yaml are intentionally not duplicated unless required
+#   by runtime/test contract wiring.
+# - Keep secrets out of this file; inject via Vault/environment where needed.
+# - Docker compose does not accept `${vault.*}` placeholders in env files.
+#   Use direct endpoints here and external Vault token/fallback for secure values.
+
+# ---- local-docker-server.sh control plane ----
+LOCAL_DOCKER_COMPOSE_FILE=docker-compose.yml
+LOCAL_DOCKER_PROJECT_NAME=index-retriever-preprod
+LOCAL_DOCKER_COMPOSE_PROFILES=all-in-one
+LOCAL_DOCKER_SERVICES=all-in-one
+
+# ---- docker compose self-reference ----
+ENV_FILE=env-docker-example
+
+# ---- runtime + AT contract ----
+TEST_ENV_TIER=AT
+INDEX_RETRIEVER_RUNTIME_MODE=local-docker
+INDEX_RETRIEVER_API_BASE_URL=http://127.0.0.1:8686
+INDEX_RETRIEVER_MCP_BASE_URL=http://127.0.0.1:8687
+TEST_API_BASE_PATH=/app/v1
+TEST_MCP_BASE_PATH=/mcp
+TEST_WEB_BASE_PATH=/
+TEST_A2A_BASE_PATH=/a2a
+
+# ---- auth contract ----
+TEST_A2A_API_KEY=12345678
+CLOUD_DOG__INDEX__AUTH__API_KEYS=test-api-key,12345678
+
+# ---- service runtime selectors ----
+CLOUD_DOG__INDEX__VDB__PROVIDER=qdrant
+INDEX_RETRIEVER_DEFAULT_BACKEND=qdrant
+CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=ollama
+CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text
+
+# ---- external connection set (all-4-in-one) ----
+# 1) Embedding endpoint
+CLOUD_DOG__INDEX__EMBEDDING__BASE_URL=https://llm1.cloud-dog.net
+EMBED_BASE_URL=https://llm1.cloud-dog.net
+# EMBED_API_KEY should normally be provided by Vault/runtime secret injection.
+EMBED_API_KEY=
+
+# 2) Chroma endpoint
+CLOUD_DOG__INDEX__VDB__CHROMA_URL=https://chroma.cloud-dog.net
+CHROMA_URL=https://chroma.cloud-dog.net
+# Optional when Chroma auth is enabled:
+# CLOUD_DOG__INDEX__VDB__CHROMA_AUTH_TOKEN=<inject-from-vault>
+# CHROMA_AUTH_TOKEN=<inject-from-vault>
+
+# 3) Qdrant endpoint
+CLOUD_DOG__INDEX__VDB__QDRANT_URL=http://vdb1.app.vpc0.cloud-dog.net:6333
+QDRANT_URL=http://vdb1.app.vpc0.cloud-dog.net:6333
+# Optional when Qdrant API-key auth is enabled:
+# CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY=<inject-from-vault>
+# QDRANT_API_KEY=<inject-from-vault>
+
+# 4) Infinity endpoint (example wiring; enable when available in your env)
+# CLOUD_DOG__INDEX__VDB__INFINITY_URL=http://infinity.example.internal:23817
+# INFINITY_URL=http://infinity.example.internal:23817
+# CLOUD_DOG__INDEX__VDB__INFINITY_API_KEY=<inject-from-vault>
+# INFINITY_API_KEY=<inject-from-vault>
+# CLOUD_DOG__INDEX__VDB__INFINITY_DATABASE=default_db
+# INFINITY_DATABASE=default_db
+
+# Provider gate used by live AT/IT fixtures.
+# Keep qdrant as default hard requirement; include others when preprod confirms them.
+INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS=qdrant
+
+# ---- storage/queue ----
+DB_URL=sqlite+aiosqlite:///data/index-retriever-preprod.db
+INDEX_RETRIEVER_DB_URL=sqlite+aiosqlite:///data/index-retriever-preprod.db
+CLOUD_DOG__INDEX__DB__URL=sqlite+aiosqlite:///data/index-retriever-preprod.db
+
+# ---- audit paths ----
+CLOUD_DOG__INDEX__API_AUDIT_PATH=/app/logs/index-retriever-audit-api.jsonl
+CLOUD_DOG__INDEX__MCP_AUDIT_PATH=/app/logs/index-retriever-audit-mcp.jsonl
+CLOUD_DOG__INDEX__STORAGE__AUDIT__PATH=/app/logs/index-retriever-audit.log
+
+# ---- vault bootstrap (token externalised) ----
+VAULT_ADDR=https://vault0.cloud-dog.net
+# VAULT_TOKEN is intentionally external (env-vault/orchestrator secret manager)
+VAULT_MOUNT_POINT=cloud_dog_ai
+VAULT_CONFIG_PATH=config
+CLOUD_DOG__VAULT__ADDR=https://vault0.cloud-dog.net
+CLOUD_DOG__VAULT__MOUNT_POINT=cloud_dog_ai
+CLOUD_DOG__VAULT__CONFIG_PATH=config
+
+# ---- optional runtime hints ----
+INDEX_RETRIEVER_LIVE_USE_VAULT_FALLBACK=true
+NO_PROXY=127.0.0.1,localhost,.cloud-dog.net
+
+CLOUD_DOG__DB__DIALECT=sqlite
+CLOUD_DOG__DB__DATABASE=./data/index-retriever-preprod.db

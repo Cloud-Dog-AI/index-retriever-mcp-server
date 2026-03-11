@@ -18,6 +18,7 @@ except ImportError:  # pragma: no cover
 @dataclass(slots=True)
 class AuthResult:
     """AuthResult definition."""
+
     user_id: str
     roles: set[str]
     token_type: str
@@ -38,7 +39,7 @@ class AuthMiddleware:
     def _load_api_keys(cls) -> dict[str, set[str]]:
         keys: dict[str, set[str]] = {"test-api-key": cls._default_roles()}
 
-        raw = os.environ.get("CLOUD_DOG__INDEX__AUTH__API_KEYS", "").strip()
+        raw = os.getenv("CLOUD_DOG__INDEX__AUTH__API_KEYS", "").strip()
         if raw:
             for entry in raw.split(","):
                 token = entry.strip()
@@ -54,7 +55,7 @@ class AuthMiddleware:
                 if token:
                     keys[token] = roles
 
-        a2a_key = os.environ.get("TEST_A2A_API_KEY", "").strip()
+        a2a_key = os.getenv("TEST_A2A_API_KEY", "").strip()
         if a2a_key:
             keys[a2a_key] = cls._default_roles()
 

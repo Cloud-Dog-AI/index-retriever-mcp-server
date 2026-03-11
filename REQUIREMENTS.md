@@ -285,6 +285,37 @@ The system SHALL support ingestion of:
 - Infinity backend support SHALL be conditional on runtime env availability and SHALL use the same contract path as other adapters.
 - Parser/OCR/table internals SHALL remain delegated to `cloud_dog_vdb`; index-retriever SHALL keep control-plane/orchestration scope only.
 
+### FR-13B W23A full `cloud_dog_vdb` integration requirements
+
+#### R-VDB (backend breadth and contract parity)
+- **R-VDB-01:** The system SHALL support all six `cloud_dog_vdb` adapters: `chroma`, `qdrant`, `opensearch`, `pgvector`, `weaviate`, `infinity`.
+- **R-VDB-02:** Each enabled backend SHALL pass the same CRUD/search contract tests (create collection, upsert, top-k search, delete, empty verification).
+- **R-VDB-03:** Backend selection SHALL be profile-scoped and switchable without code changes.
+- **R-VDB-04:** Health checks SHALL be enforced per backend before live ingest/search operations.
+- **R-VDB-05:** Unsupported backend capability paths SHALL fail closed with explicit diagnostics (no silent fallback).
+- **R-VDB-06:** Infinity support remains conditional on environment/Vault configuration and SHALL follow the same adapter contract path.
+
+#### R-PARSE (parser breadth, fallback, OCR/table)
+- **R-PARSE-01:** The parser provider matrix SHALL cover `deepdoc`, `docling`, `mineru`, `marker_mcp`, `transformers`, `internal`.
+- **R-PARSE-02:** Parser selection SHALL be configurable per profile and per request parser chain.
+- **R-PARSE-03:** Parser fallback chain SHALL execute deterministically in configured order and surface failure causes.
+- **R-PARSE-04:** Parser output SHALL be normalized to the IR contract (`text_blocks`, `table_blocks`, `quality`, provider/version metadata).
+- **R-PARSE-05:** Parser provider health probing SHALL be exposed for runtime diagnostics.
+- **R-PARSE-06:** OCR-enabled parsing SHALL be testable against real image-heavy corpus samples.
+- **R-PARSE-07:** Table extraction SHALL be testable against table-heavy corpus samples with structured outputs.
+
+#### R-CONSIST (cross-backend consistency)
+- **R-CONSIST-01:** Ingest/search round-trip for identical payloads SHALL be consistent across backend pairs.
+- **R-CONSIST-02:** Metadata parity (`source_uri`, `filename`, `mime_type`, tenant/document markers) SHALL hold across backends.
+- **R-CONSIST-03:** Delete-by-id/filter semantics SHALL remove indexed content consistently across enabled backends.
+- **R-CONSIST-04:** Collection lifecycle (create/list/delete) SHALL preserve the same observable contract across backends.
+
+#### R-EMBED (multi-provider embedding operations)
+- **R-EMBED-01:** Embedding provider routing SHALL support Vault-configured multi-model operation.
+- **R-EMBED-02:** Embedding dimension validation SHALL be enforced before backend collection writes.
+- **R-EMBED-03:** Embedding model failure paths SHALL fail closed with explicit provider diagnostics (no silent downgrade).
+- **R-EMBED-04:** Live application tests SHALL exercise `bge-m3:567m`, `nomic-embed-text`, and `granite-embedding:278m`.
+
 ### FR-14 Search and retrieval
 - The system SHALL support:
   - vector similarity search,
@@ -404,3 +435,16 @@ Admin/maintainer tools SHALL include:
 - End-user document browsing UI (Admin UI only)
 - LLM chat completion features (embedding only; retrieval returns data)
 - Full data lake governance (beyond profiles, RBAC, retention, audit)
+
+### Database Abstraction (cloud_dog_db adoption)
+
+- R-DB-01: All database access MUST use `cloud_dog_db` engine/session/CRUD abstractions
+- R-DB-02: Engine creation MUST use `cloud_dog_db` engine factories
+- R-DB-03: Session management MUST use `cloud_dog_db.session.SyncSessionManager`/`AsyncSessionManager`
+- R-DB-04: Schema migrations MUST use `cloud_dog_db` migration runner
+- R-DB-05: Direct sqlite3/create_engine()/sessionmaker()/raw Session() FORBIDDEN in app code
+- R-DB-06: DB health MUST use `cloud_dog_db.health.probe_database()`
+- R-DB-07: DB connection config MUST come from cloud_dog_config/Vault-backed env hierarchy
+- R-DB-08: Schema versioning MUST be tested across SQLite, MySQL, and PostgreSQL
+- R-DB-09: Schema upgrade/downgrade MUST be validated with at least two migrations per dialect
+- R-DB-10: CRUD outcomes MUST be consistent across SQLite, MySQL, and PostgreSQL

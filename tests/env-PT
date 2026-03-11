@@ -1,0 +1,11 @@
+# Performance test environment
+TEST_ENV_TIER=PT
+DB_URL=sqlite+aiosqlite:///data/index-retriever-pt.db
+CLOUD_DOG__INDEX__VDB__PROVIDER=chroma
+CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=ollama
+CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text
+EMBED_BASE_URL=https://llm1.cloud-dog.net
+EMBED_API_KEY=
+VAULT_ADDR=https://vault0.cloud-dog.net
+VAULT_MOUNT_POINT=cloud_dog_ai
+VAULT_CONFIG_PATH=config

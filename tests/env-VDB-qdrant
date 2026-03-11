@@ -1,0 +1,5 @@
+# W23A overlay: force Qdrant backend for VDB matrix runs
+CLOUD_DOG__INDEX__VDB__PROVIDER=qdrant
+CLOUD_DOG__INDEX__VDB__QDRANT_URL=${vault.dev.vdbs.qdrant.url}
+CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY=${vault.dev.vdbs.qdrant.api_key}
+INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS=qdrant

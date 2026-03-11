@@ -5,9 +5,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 import cloud_dog_config  # type: ignore
 from cloud_dog_config import load_config  # type: ignore
@@ -36,10 +36,7 @@ def bind_model(config_data: Mapping[str, Any]) -> GlobalConfig:
 def _normalise_env_files(env_files: str | Path | Sequence[str | Path] | None) -> list[str]:
     if env_files is None:
         return []
-    if isinstance(env_files, (str, Path)):
-        items = [env_files]
-    else:
-        items = list(env_files)
+    items = [env_files] if isinstance(env_files, (str, Path)) else list(env_files)
     output: list[str] = []
     for item in items:
         text = str(item).strip()

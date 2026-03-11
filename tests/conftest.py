@@ -6,15 +6,19 @@
 from __future__ import annotations
 
 import os
+import re
 import socket
 import sys
 from contextlib import suppress
+from functools import lru_cache
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 import pytest
+from cloud_dog_config.compiler.vault_resolver import resolve_vault_identifier
+from cloud_dog_config.vault.client import VaultClient, VaultConnectionConfig
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -29,6 +33,48 @@ _INITIAL_ENV_KEYS = set(os.environ.keys())
 _LIVE_REQUIRED_TIERS = {"ST", "IT", "AT", "CT", "QT"}
 _RUNTIME_MODES = {"local-server", "local-docker", "remote-runtime"}
 _EXTERNAL_ENDPOINT_MODES = {"local-docker", "remote-runtime"}
+_VAULT_REF_PATTERN = re.compile(r"^\$\{(vault\.[^}]+)\}$")
+
+
+@lru_cache(maxsize=1)
+def _vault_client() -> VaultClient | None:
+    addr = os.environ.get("VAULT_ADDR", "").strip()
+    token = os.environ.get("VAULT_TOKEN", "").strip()
+    if not addr or not token:
+        return None
+    mount = os.environ.get("VAULT_MOUNT_POINT", "").strip().strip("/")
+    config_path = os.environ.get("VAULT_CONFIG_PATH", "").strip().strip("/")
+    if config_path:
+        mount = "/".join([p for p in (mount, config_path) if p])
+    try:
+        return VaultClient(
+            VaultConnectionConfig(
+                server=addr,
+                token=token,
+                timeout_seconds=10.0,
+                mount_point=mount,
+            )
+        )
+    except Exception:
+        return None
+
+
+def _resolve_env_value(raw_value: str) -> str:
+    value = raw_value.strip()
+    if not value:
+        return value
+    match = _VAULT_REF_PATTERN.match(value)
+    if match is None:
+        return value
+    client = _vault_client()
+    if client is None:
+        return value
+    resolved = resolve_vault_identifier(match.group(1), vault=client)
+    if isinstance(resolved, (str, int, float, bool)):
+        resolved_text = str(resolved).strip()
+        if resolved_text:
+            return resolved_text
+    return value
 
 
 def _load_env_file(path: Path, *, override: bool) -> dict[str, str]:
@@ -47,8 +93,9 @@ def _load_env_file(path: Path, *, override: bool) -> dict[str, str]:
         if not override and key in os.environ:
             loaded[key] = os.environ[key]
             continue
-        os.environ[key] = value
-        loaded[key] = value
+        resolved = _resolve_env_value(value)
+        os.environ[key] = resolved
+        loaded[key] = resolved
     return loaded
 
 
@@ -102,8 +149,7 @@ def runtime_mode(load_env_files: dict[str, str]) -> str:
     raw_mode = os.environ.get("INDEX_RETRIEVER_RUNTIME_MODE", "local-server").strip().lower()
     if raw_mode not in _RUNTIME_MODES:
         raise pytest.UsageError(
-            "Invalid INDEX_RETRIEVER_RUNTIME_MODE="
-            f"{raw_mode!r}. Expected one of: {', '.join(sorted(_RUNTIME_MODES))}."
+            f"Invalid INDEX_RETRIEVER_RUNTIME_MODE={raw_mode!r}. Expected one of: {', '.join(sorted(_RUNTIME_MODES))}."
         )
     return raw_mode
 
@@ -117,9 +163,7 @@ def runtime_endpoints(runtime_mode: str) -> dict[str, str] | None:
     api_base = os.environ.get("INDEX_RETRIEVER_API_BASE_URL", "").strip()
     mcp_base = os.environ.get("INDEX_RETRIEVER_MCP_BASE_URL", "").strip()
     if not api_base or not mcp_base:
-        pytest.fail(
-            "External runtime mode requires INDEX_RETRIEVER_API_BASE_URL and INDEX_RETRIEVER_MCP_BASE_URL."
-        )
+        pytest.fail("External runtime mode requires INDEX_RETRIEVER_API_BASE_URL and INDEX_RETRIEVER_MCP_BASE_URL.")
 
     return {
         "api_base_url": _connect_endpoint("API", api_base),
@@ -314,8 +358,7 @@ def live_service_cleanup_verification(env_tiers: list[str]) -> None:
         if orphans:
             prefix = LiveIndexRuntime.run_prefix() or "<unset>"
             pytest.fail(
-                "Live runtime cleanup left orphan collections for this session "
-                f"(prefix={prefix}): {', '.join(orphans)}"
+                f"Live runtime cleanup left orphan collections for this session (prefix={prefix}): {', '.join(orphans)}"
             )
     finally:
         if runtime is not None:

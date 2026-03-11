@@ -1,0 +1,6 @@
+# W23A overlay: force OpenSearch backend for VDB matrix runs
+CLOUD_DOG__INDEX__VDB__PROVIDER=opensearch
+CLOUD_DOG__INDEX__VDB__OPENSEARCH_URL=${vault.dev.vdbs.opensearch.url}
+CLOUD_DOG__INDEX__VDB__OPENSEARCH_USERNAME=${vault.dev.vdbs.opensearch.username}
+CLOUD_DOG__INDEX__VDB__OPENSEARCH_PASSWORD=${vault.dev.vdbs.opensearch.password}
+INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS=opensearch
