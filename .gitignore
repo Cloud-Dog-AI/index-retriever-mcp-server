@@ -47,5 +47,9 @@ htmlcov/
 .tmp-tests/
 logs/
 working/
+archive/
+tmp/
+.pids/
 docker-build.log
 *.log
+env-*-secrets

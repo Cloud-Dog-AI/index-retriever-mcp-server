@@ -1,3 +1,17 @@
+# Copyright 2026 Cloud-Dog, Viewdeck Engineering Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # index-retriever-mcp-server — API Server
 # Licence: Proprietary — Cloud-Dog AI Platform
 # Owner: Cloud-Dog AI
@@ -5,11 +19,13 @@
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 import os
+from collections.abc import Callable
 from typing import Any
 from uuid import uuid4
 
-from cloud_dog_api_kit import create_app  # type: ignore
+from cloud_dog_api_kit import LifecycleHooks, create_app  # type: ignore
 from fastapi import HTTPException, Request
 
 from index_server.auth.middleware import AuthMiddleware
@@ -56,13 +72,39 @@ def _maybe_disable_timeout_middleware(app: Any) -> Any:
     return app
 
 
-def _create_runtime_app() -> Any:
+def _attach_shutdown_lifespan(app: Any, on_shutdown: Callable[[], None]) -> Any:
+    """Attach a shutdown callback to app lifespan for legacy app-factory variants."""
+    router = getattr(app, "router", None)
+    original = getattr(router, "lifespan_context", None)
+    if not callable(original):
+        return app
+
+    @asynccontextmanager
+    async def _lifespan(inner_app: Any) -> Any:
+        async with original(inner_app):
+            yield
+        on_shutdown()
+
+    router.lifespan_context = _lifespan
+    return app
+
+
+def _create_runtime_app(on_shutdown: Callable[[], None] | None = None) -> Any:
     """Internal helper to create runtime app."""
+    lifecycle_hooks = None
+    if on_shutdown is not None:
+        lifecycle_hooks = LifecycleHooks(on_shutdown=lambda _app: on_shutdown())
     try:
-        app = create_app(title="index-retriever-mcp-server", version="0.1.0")
+        app = create_app(
+            title="index-retriever-mcp-server",
+            version="0.1.0",
+            lifecycle_hooks=lifecycle_hooks,
+        )
     except TypeError:
         # Backward compatibility with older cloud_dog_api_kit signatures.
         app = create_app(service_name="index-retriever-mcp-server")
+        if on_shutdown is not None:
+            app = _attach_shutdown_lifespan(app, on_shutdown)
     return _maybe_disable_timeout_middleware(app)
 
 
@@ -132,7 +174,7 @@ def build_api_app(service: IndexService | None = None) -> Any:
     db_runtime = initialise_database()
     auth = AuthMiddleware()
     registry = build_registry()
-    app = _create_runtime_app()
+    app = _create_runtime_app(on_shutdown=shutdown_database)
 
     def _auth_or_raise(headers: dict[str, str]) -> Any:
         """Internal helper to auth or raise."""
@@ -214,10 +256,6 @@ def build_api_app(service: IndexService | None = None) -> Any:
         app.post(f"{base_path}/tools/{{tool_name}}")(call_tool)
 
     app.state.db_runtime = db_runtime
-
-    @app.on_event("shutdown")
-    async def _shutdown_runtime() -> None:
-        shutdown_database()
 
     return app
 

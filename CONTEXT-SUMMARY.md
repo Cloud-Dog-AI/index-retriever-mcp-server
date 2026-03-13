@@ -1,7 +1,54 @@
 # index-retriever-mcp-server — Context Summary
 
-**Last updated:** 2026-03-03  
-**Status:** W16F full maturity confirmation complete verified (backend + UI + coverage + quality gates pass)
+**Last updated:** 2026-03-12  
+**Status:** W28A-134 repo tidy and documentation completion delivered; W28A-133 remediation tiers green
+
+---
+
+## W28A-134 Repo Tidy Snapshot (2026-03-12)
+
+- Instruction:
+  - `cloud-dog-ai-platform-standards/working/AGENT-INSTRUCTION-W28A-134-REPO-TIDY.md`
+- Layout/documentation actions completed:
+  - Created `docs/` structure with mandatory files:
+    - `docs/REQUIREMENTS.md`
+    - `docs/ARCHITECTURE.md`
+    - `docs/TESTS.md`
+    - `docs/BUILD.md`
+    - `docs/DEPLOY.md`
+    - `docs/API-REFERENCE.md`
+    - `docs/ENV-REFERENCE.md`
+    - `docs/openapi.json`
+  - Updated root `README.md` to platform-standard section order.
+  - Generated `working/w28a-134-file-inventory.txt` (`956` files listed).
+  - Housekeeping cleanup performed for `__pycache__/`, `.pytest_cache/`, and `*.pyc`.
+  - `.gitignore` updated for `archive/`, `tmp/`, and `.pids/`.
+- Regression checks for documentation-only change set:
+  - `.venv/bin/python -m pytest tests/quality --env tests/env-QT -q` -> `31 passed in 5.38s`
+  - `.venv/bin/python -m pytest tests/unit --env tests/env-UT -q` -> `90 passed, 156 warnings in 8.13s`
+- Evidence:
+  - `working/w28a-134-qt.log`
+  - `working/w28a-134-ut.log`
+  - `working/W28A-134-F-REPO-TIDY-REPORT.md`
+
+---
+
+## W28A-133-F Remediation Snapshot (2026-03-12)
+
+- Source report:
+  - `working/W28A-133-F-INDEX-RETRIEVER-AUDIT-REMEDIATION-REPORT.md`
+- Key promoted insights:
+  - Job-management tool surface and tests expanded (`job_list`, `job_get`, `job_wait`, `job_cancel`, `job_retry`, `queue_status`).
+  - Collection-level RBAC test coverage added (`IT1.21`).
+  - Connector test coverage added for FTP/GDrive (`UT1.41`, `UT1.42`).
+  - Embedding dimension mismatch validation coverage added (`UT1.43`).
+  - Requirement IDs `FR-P001` and `FR-P002` introduced for preview/explain tool semantics.
+- Final W28A-133-F tier outcomes:
+  - QT: `31 passed`
+  - UT: `90 passed, 156 warnings`
+  - ST: `17 passed, 108 warnings`
+  - IT: `33 passed, 3 skipped, 814 warnings`
+  - AT: `16 passed, 348 warnings`
 
 ---
 

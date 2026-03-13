@@ -1,123 +1,101 @@
 # index-retriever-mcp-server
 
-**Version:** 0.1.0 (pre-development)  
-**Status:** Seed — documentation complete, ready for implementation  
-**Repository:** `https://git.cloud-dog.net/cloud-dog-ai/index-retriever-mcp-server`
+`index-retriever-mcp-server` is the Cloud-Dog AI platform retrieval service for ingesting, indexing, and searching enterprise content across multiple vector database backends and parser providers, exposed through REST, MCP, and A2A-compatible interfaces.
 
-An **API-first MCP server** providing the full range of vector database indexing, searching, and retrieval capabilities for agentic flows. Wraps LlamaIndex (and optionally LangChain) with a consistent operational envelope: ingestion, conversion, embedding, pluggable vector backends, multi-profile multi-collection management, deduplication, job/queue management, audit logging, RBAC, and an admin WebUI.
+## Quick Start
 
----
+### Prerequisites
+- Python `3.11+`
+- Access to `https://pypi.cloud-dog.net/simple/`
+- Vault bootstrap env file: `/opt/iac/Development/cloud-dog-ai/env-vault`
+
+### Install
+```bash
+set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]" --index-url https://pypi.cloud-dog.net/simple/
+```
+
+### Run
+```bash
+./server_control.sh --env tests/env-IT start all
+./server_control.sh --env tests/env-IT status all
+```
+
+### Test
+```bash
+.venv/bin/python -m pytest tests/quality --env tests/env-QT -q
+.venv/bin/python -m pytest tests/unit --env tests/env-UT -q
+```
 
 ## Architecture Overview
 
-```
-src/
-  index_tools/                # Reusable library (no server/transport concerns)
-    config/                   # cloud_dog_config integration
-    security/                 # cloud_dog_idam RBAC + scope enforcement
-    audit/                    # cloud_dog_logging audit trail
-    queue/                    # cloud_dog_jobs integration
-    connectors/               # Source fetchers (filesystem, S3, WebDAV, FTP, GDrive)
-    convert/                  # Document conversion (Pandoc, PDF, Office)
-    pipeline/                 # Ingest orchestration: fetch→convert→chunk→embed→upsert
-    embeddings/               # cloud_dog_llm embedding provider adapters
-    vdb/                      # cloud_dog_vdb vector backend adapters
-    search/                   # Query, filters, hybrid, rerank
-    tools/                    # Tool definitions and Pydantic schemas
-  index_server/               # Transport + auth + routing
-    api_server.py             # cloud_dog_api_kit FastAPI factory
-    mcp_server.py             # MCP transport (stdio/HTTP)
-    streaming.py              # SSE/WS ingestion + job updates
-    auth/                     # cloud_dog_idam middleware
-    admin/                    # Admin endpoints
-    webui/                    # Admin UI (future, @cloud-dog/* packages)
-    main.py                   # Entrypoint
-```
+The repository separates transport/runtime concerns from indexing/search domain logic:
+- `src/index_server/` for REST/MCP process bootstrap and auth middleware
+- `src/index_tools/` for connectors, parsing orchestration, embeddings, VDB, queue, and service facade
 
----
+Detailed architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-## Platform Standards Alignment
+## API Interfaces
 
-| Standard | ID | Status | Notes |
-|----------|-----|--------|-------|
-| Engineering Principles | PS-00 | ✅ Designed | UK English, API-first, config-driven, testable |
-| Architecture | PS-10 | ✅ Designed | Library/server separation |
-| API Contracts | PS-20 | ✅ Designed | OpenAPI, correlation IDs, error taxonomy |
-| UI Standards | PS-30 | 🔲 Planned | Admin WebUI via `@cloud-dog/*` |
-| Logging & Observability | PS-40 | ✅ Designed | Structured JSON + JSONL audit |
-| LLM Interfaces | PS-50 | ✅ Designed | Embedding via `cloud_dog_llm` |
-| VDB Interfaces | PS-60 | ✅ Designed | Vector backends via `cloud_dog_vdb` |
-| User Mgmt & IDAM | PS-70 | ✅ Designed | Auth/RBAC via `cloud_dog_idam` |
-| Job Queue | PS-75 | ✅ Designed | Ingest/reindex/retention jobs via `cloud_dog_jobs` |
-| Config Management | PS-80 | ✅ Designed | `cloud_dog_config` integration |
-| Security | PS-90 | ✅ Designed | Secrets never logged, default-deny |
-| Testing | PS-95 | ✅ Designed | Full test plan in TESTS.md |
+| Interface | Base Path | Transport | Reference |
+|---|---|---|---|
+| REST API | `/app/v1` | HTTP/JSON | [docs/API-REFERENCE.md#rest-api](docs/API-REFERENCE.md#rest-api) |
+| MCP API | `/mcp` | Streamable HTTP MCP | [docs/API-REFERENCE.md#mcp-tools](docs/API-REFERENCE.md#mcp-tools) |
+| A2A | `/a2a` | HTTP/JSON (auth-gated) | [docs/API-REFERENCE.md#a2a-endpoints](docs/API-REFERENCE.md#a2a-endpoints) |
 
----
+## Configuration
 
-## Platform Package Dependencies
+Configuration precedence and variable catalogue: [docs/ENV-REFERENCE.md](docs/ENV-REFERENCE.md)  
+Deployment profiles and Vault wiring: [docs/DEPLOY.md](docs/DEPLOY.md)
 
-| Package | PyPI | Purpose |
-|---------|------|---------|
-| `cloud_dog_config` | ✅ | Config loading: env → .env → YAML → defaults → Vault |
-| `cloud_dog_logging` | ✅ | Structured JSON ops logs + JSONL audit |
-| `cloud_dog_api_kit` | ✅ | FastAPI app factory, middleware, health, errors |
-| `cloud_dog_idam` | ✅ | Auth middleware, RBAC, JWT/API key, OIDC/LDAP/SAML |
-| `cloud_dog_jobs` | ✅ | Job queue for ingest, reindex, retention, compact |
-| `cloud_dog_llm` | ✅ | Embedding provider adapters (OpenAI-compat, Ollama-compat) |
-| `cloud_dog_vdb` | ✅ | Vector backend adapters (Chroma, Qdrant, OpenSearch, Weaviate, PGVector) |
+## Platform Packages
 
----
+| Package | Version Constraint | Role |
+|---|---|---|
+| `cloud_dog_config` | `>=0.1.0` | layered config and Vault resolution |
+| `cloud_dog_logging` | `>=0.1.0` | structured logs and audit trail |
+| `cloud_dog_api_kit` | `>=0.1.0` | API and MCP app factory |
+| `cloud_dog_idam` | `>=0.1.0` | auth and RBAC enforcement |
+| `cloud_dog_jobs` | `>=0.1.0` | job queue abstraction |
+| `cloud_dog_db` | `>=0.1.0` | DB runtime helper |
+| `cloud_dog_llm` | `>=0.1.0` | embedding/provider integration |
+| `cloud_dog_vdb` | `>=0.5.0` | VDB + parser/OCR abstraction |
 
-## Quick Start (Development)
+## Standards Alignment
 
-```bash
-# 1. Load Vault credentials
-set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
+| Standard | Status |
+|---|---|
+| PS-00 | ✅ |
+| PS-10 | ✅ |
+| PS-20 | ✅ |
+| PS-30 | ✅ |
+| PS-40 | ✅ |
+| PS-50 | ✅ |
+| PS-60 | ✅ |
+| PS-70 | ✅ |
+| PS-75 | ✅ |
+| PS-80 | ✅ |
+| PS-90 | ✅ |
+| PS-95 | ✅ |
 
-# 2. Install dependencies
-pip install -e ".[dev]" --index-url https://pypi.cloud-dog.net/simple/
+## Documentation Links
 
-# 3. Copy and configure environment
-cp .env.example private/.env
-# Edit private/.env with your settings
+| Document | Path |
+|---|---|
+| Build Guide | [docs/BUILD.md](docs/BUILD.md) |
+| Deploy Guide | [docs/DEPLOY.md](docs/DEPLOY.md) |
+| API Reference | [docs/API-REFERENCE.md](docs/API-REFERENCE.md) |
+| Environment Reference | [docs/ENV-REFERENCE.md](docs/ENV-REFERENCE.md) |
+| Requirements | [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) |
+| Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Tests | [docs/TESTS.md](docs/TESTS.md) |
+| Rules | [RULES.md](RULES.md) |
+| Context Handoff | [CONTEXT-SUMMARY.md](CONTEXT-SUMMARY.md) |
 
-# 4. Run
-python -m index_server.main --env private/.env
-```
+## Licence
 
----
+Apache 2.0 — © 2026 Cloud-Dog, Viewdeck Engineering Limited
 
-## Key Documentation
-
-| Document | Purpose |
-|----------|---------|
-| [REQUIREMENTS.md](REQUIREMENTS.md) | Full functional and non-functional requirements |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Module decomposition, data model, flows |
-| [TESTS.md](TESTS.md) | Complete test plan (UT/ST/IT/AT/QT) |
-| [RULES.md](RULES.md) | Project-specific agent/engineer rules |
-| [CONTEXT-SUMMARY.md](CONTEXT-SUMMARY.md) | Living project state summary |
-
----
-
-## Configuration Precedence
-
-```
-os.environ → .env → config.yaml → defaults.yaml → Vault
-```
-
-All configuration is managed via `cloud_dog_config`. See `defaults.yaml` for the full configuration schema.
-
----
-
-## Test Integrity
-
-**ST, IT, and AT tests MUST execute against REAL systems — no stubs, mocks, or fake data. See `RULES.md` § 6.1.**
-
-## Security
-
-- RBAC gates all operations (profiles, collections, tools) via `cloud_dog_idam`
-- Audit log is append-only JSONL via `cloud_dog_logging`
-- Connector scopes enforce filesystem/URI boundaries
-- Secrets never logged; credentials encrypted at rest
-- Default-deny posture
+See [LICENCE](LICENCE) for full text.

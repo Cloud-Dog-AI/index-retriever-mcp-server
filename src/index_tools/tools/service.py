@@ -1,3 +1,17 @@
+# Copyright 2026 Cloud-Dog, Viewdeck Engineering Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # index-retriever-mcp-server — Index Service
 # Licence: Proprietary — Cloud-Dog AI Platform
 # Owner: Cloud-Dog AI
@@ -182,9 +196,11 @@ class IndexService:
                 "roles": {"reader", "writer", "maintainer", "admin"},
             }
         }
+        self.collection_roles: dict[str, set[str]] = {}
         self.documents: dict[str, DocumentRecord] = {}
         self.idempotency: dict[str, str] = {}
         self.stream_sessions: dict[str, StreamSession] = {}
+        self._job_handlers: dict[str, Any] = {}
 
     @staticmethod
     def _collection_key(profile: str, collection: str) -> str:
@@ -237,15 +253,42 @@ class IndexService:
                 output.append(name.removeprefix(prefix))
         return sorted(output)
 
-    def admin_collection_create(self, profile: str, collection: str, roles: set[str]) -> None:
+    def admin_collection_create(
+        self,
+        profile: str,
+        collection: str,
+        roles: set[str],
+        allowed_roles: set[str] | None = None,
+    ) -> None:
         """Execute admin collection create."""
         self._require_admin(roles)
-        self.collection_manager.create(self._collection_key(profile, collection))
+        collection_key = self._collection_key(profile, collection)
+        self.collection_manager.create(collection_key)
+        self.collection_roles[collection_key] = set(allowed_roles or {"reader", "writer", "maintainer", "admin"})
 
     def admin_collection_delete(self, profile: str, collection: str, roles: set[str]) -> None:
         """Execute admin collection delete."""
         self._require_admin(roles)
-        self.collection_manager.delete(self._collection_key(profile, collection))
+        collection_key = self._collection_key(profile, collection)
+        self.collection_manager.delete(collection_key)
+        self.collection_roles.pop(collection_key, None)
+
+    def set_collection_roles(self, profile: str, collection: str, roles: set[str], allowed_roles: set[str]) -> None:
+        """Set collection-level ACL roles for collection access checks."""
+        self._require_admin(roles)
+        if not allowed_roles:
+            raise ValueError("allowed_roles must not be empty")
+        collection_key = self._collection_key(profile, collection)
+        self.collection_manager.create(collection_key)
+        self.collection_roles[collection_key] = set(allowed_roles)
+
+    def is_collection_role_allowed(self, profile: str, collection: str, roles: set[str]) -> bool:
+        """Return True when caller roles are permitted for the collection."""
+        collection_key = self._collection_key(profile, collection)
+        allowed = self.collection_roles.get(collection_key)
+        if allowed is None:
+            return True
+        return bool(set(roles).intersection(allowed))
 
     def ingest_text(
         self,
@@ -333,6 +376,7 @@ class IndexService:
                 )
             )
 
+        self._job_handlers[job_id] = _handler
         self.queue.run(job_id=job_id, handler=_handler)
         self.idempotency[request_key] = job_id
         return job_id
@@ -509,6 +553,9 @@ class IndexService:
         job = self.queue.get(job_id)
         if job.status is JobStatus.failed:
             job.status = JobStatus.queued
+            handler = self._job_handlers.get(job_id)
+            if callable(handler):
+                _ = self.queue.run(job_id=job_id, handler=handler)
         return job
 
     def queue_status(self) -> dict[str, int]:
@@ -517,7 +564,15 @@ class IndexService:
         total = len(jobs)
         running = len([j for j in jobs if j.status is JobStatus.running])
         failed = len([j for j in jobs if j.status is JobStatus.failed])
-        return {"total": total, "running": running, "failed": failed}
+        queue_depth = len([j for j in jobs if j.status is JobStatus.queued])
+        return {
+            "total": total,
+            "running": running,
+            "failed": failed,
+            "queue_depth": queue_depth,
+            "active_jobs": running,
+            "worker_count": 1,
+        }
 
     def backend_health_check(self) -> dict[str, str]:
         """Execute backend health check."""

@@ -1,3 +1,17 @@
+# Copyright 2026 Cloud-Dog, Viewdeck Engineering Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # index-retriever-mcp-server — VDB Adapters
 # Licence: Proprietary — Cloud-Dog AI Platform
 # Owner: Cloud-Dog AI
@@ -29,10 +43,13 @@ class InMemoryVdbAdapter:
     def __init__(self) -> None:
         """Initialise the instance state."""
         self.collections: dict[str, dict[str, StoredDocument]] = {}
+        self.collection_dimensions: dict[str, int] = {}
 
-    def create_collection(self, name: str) -> None:
+    def create_collection(self, name: str, embedding_dim: int | None = None) -> None:
         """Execute create collection."""
         self.collections.setdefault(name, {})
+        if embedding_dim is not None:
+            self.collection_dimensions[name] = int(embedding_dim)
 
     def list_collections(self) -> list[str]:
         """Execute list collections."""
@@ -41,6 +58,7 @@ class InMemoryVdbAdapter:
     def delete_collection(self, name: str) -> None:
         """Execute delete collection."""
         self.collections.pop(name, None)
+        self.collection_dimensions.pop(name, None)
 
     def upsert(
         self,
@@ -51,6 +69,7 @@ class InMemoryVdbAdapter:
         metadata: dict[str, Any] | None = None,
     ) -> None:
         """Execute upsert."""
+        self._validate_embedding_dimensions(collection=collection, vectors=vectors)
         self.collections.setdefault(collection, {})[doc_id] = StoredDocument(
             chunks=chunks,
             vectors=vectors,
@@ -104,6 +123,21 @@ class InMemoryVdbAdapter:
     def health_check(self) -> dict[str, str]:
         """Execute health check."""
         return {"status": "ok", "backend": "in-memory"}
+
+    def _validate_embedding_dimensions(self, collection: str, vectors: list[list[float]]) -> None:
+        """Validate embedding vector dimensions for cross-ingest consistency."""
+        if not vectors:
+            return
+        dims = {len(item) for item in vectors}
+        if len(dims) != 1:
+            raise ValueError("Embedding vectors contain inconsistent dimensions in a single upsert request")
+        actual = next(iter(dims))
+        expected = self.collection_dimensions.get(collection)
+        if expected is None:
+            self.collection_dimensions[collection] = actual
+            return
+        if expected != actual:
+            raise ValueError(f"Embedding dimension mismatch for collection '{collection}': expected {expected}, got {actual}")
 
 
 def _score_chunk(query_text: str, chunk: str) -> float:

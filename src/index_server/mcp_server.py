@@ -1,3 +1,17 @@
+# Copyright 2026 Cloud-Dog, Viewdeck Engineering Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # index-retriever-mcp-server — MCP Server
 # Licence: Proprietary — Cloud-Dog AI Platform
 # Owner: Cloud-Dog AI
@@ -5,10 +19,13 @@
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+from collections.abc import Callable
 import os
 from typing import Any
 
 from cloud_dog_api_kit import (  # type: ignore
+    LifecycleHooks,
     ToolContract,
     UnauthenticatedError,
     UnauthorisedError,
@@ -52,6 +69,41 @@ def _maybe_disable_timeout_middleware(app: Any) -> Any:
     return app
 
 
+def _attach_shutdown_lifespan(app: Any, on_shutdown: Callable[[], None]) -> Any:
+    """Attach a shutdown callback to app lifespan for legacy app-factory variants."""
+    router = getattr(app, "router", None)
+    original = getattr(router, "lifespan_context", None)
+    if not callable(original):
+        return app
+
+    @asynccontextmanager
+    async def _lifespan(inner_app: Any) -> Any:
+        async with original(inner_app):
+            yield
+        on_shutdown()
+
+    router.lifespan_context = _lifespan
+    return app
+
+
+def _create_runtime_app(on_shutdown: Callable[[], None] | None = None) -> Any:
+    """Create MCP runtime app with optional shutdown lifecycle callback."""
+    lifecycle_hooks = None
+    if on_shutdown is not None:
+        lifecycle_hooks = LifecycleHooks(on_shutdown=lambda _app: on_shutdown())
+    try:
+        app = create_app(
+            title="index-retriever-mcp-server-mcp",
+            version="0.1.0",
+            lifecycle_hooks=lifecycle_hooks,
+        )
+    except TypeError:
+        app = create_app(service_name="index-retriever-mcp-server-mcp")
+        if on_shutdown is not None:
+            app = _attach_shutdown_lifespan(app, on_shutdown)
+    return _maybe_disable_timeout_middleware(app)
+
+
 def _required_roles_for_tool(tool_name: str) -> set[str]:
     """Internal helper to required roles for tool."""
     if tool_name.startswith("admin_"):
@@ -93,6 +145,73 @@ def build_registry() -> ToolRegistry:
     return build_default_tool_registry()
 
 
+def _normalise_job_payload(job: Any) -> dict[str, Any]:
+    """Convert runtime job records to JSON-safe payload."""
+    if job is None:
+        return {}
+    if isinstance(job, dict):
+        payload = dict(job)
+    elif callable(getattr(job, "model_dump", None)):
+        payload = dict(job.model_dump())
+    else:
+        payload = {}
+        for key in (
+            "job_id",
+            "profile",
+            "collection",
+            "job_type",
+            "status",
+            "ordering_key",
+            "idempotency_key",
+            "created_at",
+        ):
+            if hasattr(job, key):
+                payload[key] = getattr(job, key)
+
+    status = payload.get("status")
+    if hasattr(status, "value"):
+        payload["status"] = status.value
+    created_at = payload.get("created_at")
+    if callable(getattr(created_at, "isoformat", None)):
+        payload["created_at"] = created_at.isoformat()
+    return payload
+
+
+def _normalise_queue_status(payload: Any) -> dict[str, Any]:
+    """Normalise queue health payload with stable keys expected by tests."""
+    if not isinstance(payload, dict):
+        payload = {"raw_status": str(payload)}
+    out = dict(payload)
+    if "queue_depth" not in out:
+        if "queued" in out and isinstance(out["queued"], int):
+            out["queue_depth"] = int(out["queued"])
+        elif "total" in out and "running" in out:
+            total = int(out.get("total", 0) or 0)
+            running = int(out.get("running", 0) or 0)
+            out["queue_depth"] = max(0, total - running)
+        else:
+            out["queue_depth"] = 0
+    if "active_jobs" not in out:
+        out["active_jobs"] = int(out.get("running", 0) or 0)
+    if "worker_count" not in out:
+        out["worker_count"] = int(out.get("workers", 1) or 1)
+    return out
+
+
+def _enforce_collection_acl(service: IndexService, roles: set[str], arguments: dict[str, Any]) -> None:
+    """Enforce per-collection RBAC when service exposes collection ACL checks."""
+    checker = getattr(service, "is_collection_role_allowed", None)
+    if not callable(checker):
+        return
+    collection = str(arguments.get("collection", "")).strip()
+    if not collection:
+        return
+    profile = str(arguments.get("profile", "default"))
+    if checker(profile, collection, roles):
+        return
+    raise PermissionError(f"Authorisation failed for collection '{collection}'")
+
+
 def execute_tool(
     service: IndexService,
     tool_name: str,
@@ -115,11 +234,21 @@ def execute_tool(
     if tool_name == "collections_list":
         return {"collections": service.collections_list(str(arguments.get("profile", "default")))}
     if tool_name == "admin_collection_create":
-        service.admin_collection_create(
-            profile=str(arguments.get("profile", "default")),
-            collection=str(arguments["collection"]),
-            roles=roles,
-        )
+        requested_roles = arguments.get("allowed_roles")
+        allowed_roles = set(requested_roles) if isinstance(requested_roles, list) else None
+        try:
+            service.admin_collection_create(
+                profile=str(arguments.get("profile", "default")),
+                collection=str(arguments["collection"]),
+                roles=roles,
+                allowed_roles=allowed_roles,
+            )
+        except TypeError:
+            service.admin_collection_create(
+                profile=str(arguments.get("profile", "default")),
+                collection=str(arguments["collection"]),
+                roles=roles,
+            )
         return {"status": "ok"}
     if tool_name == "admin_collection_delete":
         service.admin_collection_delete(
@@ -129,6 +258,7 @@ def execute_tool(
         )
         return {"status": "ok"}
     if tool_name == "ingest_text":
+        _enforce_collection_acl(service, roles, arguments)
         ingest_result = service.ingest_text(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -193,6 +323,7 @@ def execute_tool(
             table_json_shape=str(arguments.get("table_json_shape", "records")),
         )
     if tool_name == "search":
+        _enforce_collection_acl(service, roles, arguments)
         return {
             "results": service.search(
                 profile=str(arguments["profile"]),
@@ -202,12 +333,53 @@ def execute_tool(
                 filters=arguments.get("filters"),
             )
         }
+    if tool_name == "job_get":
+        job = service.job_get(str(arguments["job_id"]))
+        return {"job": _normalise_job_payload(job)}
+    if tool_name == "job_wait":
+        job = service.job_wait(str(arguments["job_id"]))
+        return {"job": _normalise_job_payload(job)}
+    if tool_name == "job_list":
+        status_filter = str(arguments.get("status", "")).strip().lower()
+        limit = int(arguments.get("limit", 50))
+        try:
+            jobs_raw = service.job_list(limit=limit)
+        except TypeError:
+            jobs_raw = service.job_list()
+        jobs = [_normalise_job_payload(job) for job in list(jobs_raw)]
+        if status_filter:
+            jobs = [job for job in jobs if str(job.get("status", "")).strip().lower() == status_filter]
+        return {"jobs": jobs, "count": len(jobs)}
+    if tool_name == "job_cancel":
+        cancelled = service.job_cancel(str(arguments["job_id"]))
+        if isinstance(cancelled, bool):
+            if not cancelled:
+                raise ValueError("Job cancellation rejected by queue backend")
+            job = {"job_id": str(arguments["job_id"]), "status": "cancelled"}
+        else:
+            job = _normalise_job_payload(cancelled)
+        return {"job": job, "status": "cancelled"}
+    if tool_name == "job_retry":
+        retry_fn = getattr(service, "job_retry", None)
+        if not callable(retry_fn):
+            raise ValueError("Job retry is not supported by this runtime")
+        retried = retry_fn(str(arguments["job_id"]))
+        if isinstance(retried, bool):
+            if not retried:
+                raise ValueError("Job retry rejected by queue backend")
+            try:
+                job = _normalise_job_payload(service.job_get(str(arguments["job_id"])))
+            except Exception:
+                job = {"job_id": str(arguments["job_id"]), "status": "queued"}
+        else:
+            job = _normalise_job_payload(retried)
+        return {"job": job, "status": str(job.get("status", "queued"))}
     if tool_name == "backend_health_check":
         return service.backend_health_check()
     if tool_name == "embedding_health_check":
         return service.embedding_health_check()
     if tool_name == "queue_status":
-        return service.queue_status()
+        return _normalise_queue_status(service.queue_status())
     return {"status": "ok"}
 
 
@@ -217,11 +389,7 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
     db_runtime = initialise_database()
     active_registry = registry or build_registry()
     auth = AuthMiddleware()
-    try:
-        app = create_app(title="index-retriever-mcp-server-mcp", version="0.1.0")
-    except TypeError:
-        app = create_app(service_name="index-retriever-mcp-server-mcp")
-    app = _maybe_disable_timeout_middleware(app)
+    app = _create_runtime_app(on_shutdown=shutdown_database)
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -275,11 +443,6 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
     )
 
     app.state.db_runtime = db_runtime
-
-    if callable(getattr(app, "on_event", None)):
-        @app.on_event("shutdown")
-        async def _shutdown_runtime() -> None:
-            shutdown_database()
 
     return app
 

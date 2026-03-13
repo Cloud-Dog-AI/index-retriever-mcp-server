@@ -7,7 +7,7 @@ name = "index-retriever-mcp-server"
 version = "0.1.0"
 description = "API-first MCP server for vector database indexing, searching, and retrieval for agentic flows."
 requires-python = ">=3.11"
-license = {text = "Proprietary"}
+license = {text = "Apache-2.0"}
 dependencies = [
     # Platform packages (from https://pypi.cloud-dog.net/simple/)
     "cloud_dog_config>=0.1.0",
@@ -99,6 +99,13 @@ packages = ["src/index_tools", "src/index_server"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 addopts = "-p no:cloud_dog_config"
+filterwarnings = [
+    "ignore:Passing 'msg' argument to.*cancel:DeprecationWarning",
+    "ignore::RuntimeWarning:runpy",
+]
 markers = [
     "integration: tests requiring live VDB, embedding provider, and running API server",
 ]
+
+[project.urls]
+"Source" = "https://github.com/cloud-dog-ai/index-retriever-mcp-server"
