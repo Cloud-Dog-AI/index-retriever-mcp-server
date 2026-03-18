@@ -7,7 +7,10 @@ name = "index-retriever-mcp-server"
 version = "0.1.0"
 description = "API-first MCP server for vector database indexing, searching, and retrieval for agentic flows."
 requires-python = ">=3.11"
-license = {text = "Apache-2.0"}
+license = { text = "Apache-2.0" }
+authors = [
+  { name = "Cloud-Dog, Viewdeck Engineering Limited" }
+]
 dependencies = [
     # Platform packages (from https://pypi.cloud-dog.net/simple/)
     "cloud_dog_config>=0.1.0",

@@ -94,8 +94,8 @@ Deployment profiles and Vault wiring: [docs/DEPLOY.md](docs/DEPLOY.md)
 | Rules | [RULES.md](RULES.md) |
 | Context Handoff | [CONTEXT-SUMMARY.md](CONTEXT-SUMMARY.md) |
 
+---
+
 ## Licence
 
-Apache 2.0 — © 2026 Cloud-Dog, Viewdeck Engineering Limited
-
-See [LICENCE](LICENCE) for full text.
+Apache-2.0 — Copyright (c) 2026 Cloud-Dog, Viewdeck Engineering Limited

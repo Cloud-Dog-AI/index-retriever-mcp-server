@@ -43,6 +43,8 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
 
 # ── Final ────────────────────────────────────────────────────────
 FROM python:3.11-slim
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+LABEL org.opencontainers.image.vendor="Cloud-Dog, Viewdeck Engineering Limited"
 
 ARG HTTP_PROXY HTTPS_PROXY NO_PROXY http_proxy https_proxy no_proxy
 ENV HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY} NO_PROXY=${NO_PROXY} \
@@ -55,7 +57,7 @@ RUN if [ -n "${CUSTOM_CA_CERT}" ] && [ -f "${CUSTOM_CA_CERT}" ]; then \
     fi
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl netcat-openbsd procps net-tools \
+    curl netcat-openbsd procps net-tools socat \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -63,7 +65,9 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
+COPY pyproject.toml README.md ./
 COPY src/ ./src/
+COPY database/ ./database/
 COPY defaults.yaml server_control.sh docker-entrypoint.sh healthcheck.sh ./
 
 RUN mkdir -p /app/logs /app/data /app/.pids /app/certs && \
@@ -73,9 +77,19 @@ RUN useradd --system --create-home --uid 10001 appuser && \
     chown -R appuser:appuser /app
 USER appuser
 
-ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/app/src
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app/src \
+    CLOUD_DOG__INDEX__API_SERVER__HOST=0.0.0.0 \
+    CLOUD_DOG__INDEX__API_SERVER__PORT=8083 \
+    CLOUD_DOG__INDEX__MCP_SERVER__HOST=0.0.0.0 \
+    CLOUD_DOG__INDEX__MCP_SERVER__PORT=8081 \
+    CLOUD_DOG__INDEX__VDB__PROVIDER=chroma \
+    CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=ollama \
+    CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text \
+    CLOUD_DOG__INDEX__DB__URL=sqlite+aiosqlite:///app/data/index_retriever.db
 
-EXPOSE 8686 8687
+EXPOSE 8080 8081 8082 8083 8686 8687
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD /app/healthcheck.sh
