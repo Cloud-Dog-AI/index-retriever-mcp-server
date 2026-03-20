@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — QT1.6
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Provider diagnostic envelope is explicit and secret-safe.
-
 from __future__ import annotations
 
 import json

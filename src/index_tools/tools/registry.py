@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Tool Registry
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Registry of tool schemas and handlers.
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -51,6 +46,8 @@ class ToolSpec:
     name: str
     input_model: type[BaseModel]
     output_model: type[BaseModel]
+    description: str = ""
+    handler: str = ""
 
 
 class ToolRegistry:
@@ -73,6 +70,8 @@ class ToolRegistry:
         return [
             {
                 "name": spec.name,
+                "description": spec.description,
+                "handler": spec.handler or spec.name,
                 "input_schema": spec.input_model.model_json_schema(),
                 "output_schema": spec.output_model.model_json_schema(),
             }
@@ -106,6 +105,7 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="ingest_stream_event", input_model=GenericToolInput, output_model=IngestOutput),
         ToolSpec(name="ingest_stream_close", input_model=GenericToolInput, output_model=GenericToolOutput),
         ToolSpec(name="search", input_model=SearchInput, output_model=SearchOutput),
+        # Covers: FR-P002
         ToolSpec(name="retrieve", input_model=GenericToolInput, output_model=GenericToolOutput),
         ToolSpec(name="search_explain", input_model=SearchInput, output_model=SearchOutput),
         ToolSpec(name="job_list", input_model=GenericToolInput, output_model=GenericToolOutput),

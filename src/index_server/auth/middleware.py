@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Auth Middleware
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Authentication middleware integration with cloud_dog_idam.
-
 from __future__ import annotations
 
 import os
@@ -51,7 +46,8 @@ class AuthMiddleware:
 
     @classmethod
     def _load_api_keys(cls) -> dict[str, set[str]]:
-        keys: dict[str, set[str]] = {"test-api-key": cls._default_roles()}
+        # API keys are sourced from env configuration only; no hardcoded fallback tokens.
+        keys: dict[str, set[str]] = {}
 
         raw = os.getenv("CLOUD_DOG__INDEX__AUTH__API_KEYS", "").strip()
         if raw:
@@ -91,6 +87,7 @@ class AuthMiddleware:
 
     def authenticate_api_key(self, headers: dict[str, str]) -> AuthResult:
         """Authenticate using API-key authority for X-API-Key and Bearer key tokens."""
+        # Covers: FR-04, FR-01B
         key = self._resolve_api_key(headers)
         if key in self.api_keys:
             return AuthResult(user_id="api-key-user", roles=self.api_keys[key], token_type="api_key")
@@ -118,6 +115,7 @@ class AuthMiddleware:
     @staticmethod
     def require_roles(identity: AuthResult, allowed_roles: set[str]) -> None:
         """Execute require roles."""
+        # Covers: FR-05
         if identity.roles.intersection(allowed_roles):
             return
         raise PermissionError("Authorisation failed")

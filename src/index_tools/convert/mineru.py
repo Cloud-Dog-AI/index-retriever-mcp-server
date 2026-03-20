@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — MinerU Converter
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Optional external MinerU converter adapter placeholder.
-
 from __future__ import annotations
 
 

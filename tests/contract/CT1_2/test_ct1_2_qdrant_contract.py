@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — CT1.2
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Live Qdrant contract verification using cloud_dog_vdb adapters.
-
 from tests.live_runtime import LiveIndexRuntime
 
 

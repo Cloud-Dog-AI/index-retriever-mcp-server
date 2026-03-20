@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.37
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Branch coverage for MCP role mapping and VDB 0.4.1 wrapper dispatch.
-
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -61,6 +56,7 @@ def test_required_roles_for_new_wrapper_tools() -> None:
 
 
 def test_execute_tool_dispatches_vdb_wrapper_calls() -> None:
+    # Covers: FR-13B
     service = _ToolService()
     registry = SimpleNamespace(get=lambda _name: None)
 

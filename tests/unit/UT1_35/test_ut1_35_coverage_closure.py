@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.35
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Coverage closure tests for defensive and compatibility branches.
-
 from __future__ import annotations
 
 import runpy
@@ -65,6 +60,7 @@ class _DummyService:
 
 
 def test_api_middleware_helpers_and_handler_paths(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Covers: FR-17
     app = SimpleNamespace(user_middleware=[], build_middleware_stack=lambda: "noop", middleware_stack=None)
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     monkeypatch.setenv("TEST_ENV_TIER", "IT")

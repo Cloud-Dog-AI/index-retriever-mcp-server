@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.4
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Tests profile config model validation.
-
 from index_tools.config.loader import bind_model
 from tests.unit.helpers import minimal_config
 

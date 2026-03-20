@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Admin Endpoints
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Administrative API endpoint handlers.
-
 from __future__ import annotations
 
 from index_tools.tools.service import IndexService

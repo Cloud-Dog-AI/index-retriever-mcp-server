@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.19
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Tests dedupe size and mtime detection.
-
 from index_tools.pipeline.dedupe import DedupeIndex, DedupeRecord
 
 

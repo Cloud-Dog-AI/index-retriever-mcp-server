@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — IT1.5
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: RBAC admin gating on profile operations.
-
 import pytest
 
 from index_server.admin.endpoints import profile_create

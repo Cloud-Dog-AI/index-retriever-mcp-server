@@ -12,16 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — MCP Server
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: MCP transport bootstrap and tool catalogue exposure.
-
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
-from collections.abc import Callable
 import os
+from collections.abc import Callable
+from contextlib import asynccontextmanager
 from typing import Any
 
 from cloud_dog_api_kit import (  # type: ignore
@@ -200,6 +195,7 @@ def _normalise_queue_status(payload: Any) -> dict[str, Any]:
 
 def _enforce_collection_acl(service: IndexService, roles: set[str], arguments: dict[str, Any]) -> None:
     """Enforce per-collection RBAC when service exposes collection ACL checks."""
+    # Covers: FR-05
     checker = getattr(service, "is_collection_role_allowed", None)
     if not callable(checker):
         return
@@ -220,6 +216,7 @@ def execute_tool(
     identity_roles: set[str] | None = None,
 ) -> dict[str, Any]:
     """Execute execute tool."""
+    # Covers: FR-16, FR-13B
     active_registry = registry or build_registry()
     _ = active_registry.get(tool_name)
     roles = identity_roles or {"admin"}

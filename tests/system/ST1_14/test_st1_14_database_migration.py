@@ -26,10 +26,20 @@ _BASELINE_REVISION = "20260305_0001"
 
 
 def _configure_sqlite_env(monkeypatch, db_path: Path) -> None:
+    monkeypatch.setenv("CLOUD_DOG_DB__DIALECT", "sqlite")
+    monkeypatch.setenv("CLOUD_DOG_DB__DATABASE", str(db_path))
     monkeypatch.setenv("CLOUD_DOG__DB__DIALECT", "sqlite")
     monkeypatch.setenv("CLOUD_DOG__DB__DATABASE", str(db_path))
     monkeypatch.delenv("CLOUD_DOG__DB__URL", raising=False)
     monkeypatch.delenv("CLOUD_DOG_DB__URL", raising=False)
+    monkeypatch.delenv("CLOUD_DOG_DB__HOST", raising=False)
+    monkeypatch.delenv("CLOUD_DOG_DB__PORT", raising=False)
+    monkeypatch.delenv("CLOUD_DOG_DB__USERNAME", raising=False)
+    monkeypatch.delenv("CLOUD_DOG_DB__PASSWORD", raising=False)
+    monkeypatch.delenv("CLOUD_DOG__DB__HOST", raising=False)
+    monkeypatch.delenv("CLOUD_DOG__DB__PORT", raising=False)
+    monkeypatch.delenv("CLOUD_DOG__DB__USERNAME", raising=False)
+    monkeypatch.delenv("CLOUD_DOG__DB__PASSWORD", raising=False)
     monkeypatch.delenv("DB_URL", raising=False)
 
 

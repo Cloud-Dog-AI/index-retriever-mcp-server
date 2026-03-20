@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — PT1.1
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Ingest baseline (10 documents) per available VDB backend.
-
 from __future__ import annotations
 
 import asyncio

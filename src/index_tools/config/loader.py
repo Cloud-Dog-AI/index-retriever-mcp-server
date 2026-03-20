@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Config Loader
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Config loading and model binding via cloud_dog_config integration.
-
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
@@ -69,6 +64,7 @@ def load_runtime_config(
     vault_enabled: bool = True,
 ) -> GlobalConfig:
     """Load runtime config via canonical cloud_dog_config.load_config semantics."""
+    # Covers: FR-02
     resolved = load_config(
         env_files=_normalise_env_files(env_files),
         config_yaml=str(config_yaml),

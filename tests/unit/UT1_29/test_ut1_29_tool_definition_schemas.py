@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.29
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Tests tool schema registration and serialisation.
-
 from index_tools.tools.definitions import SearchInput, SearchOutput
 from index_tools.tools.registry import ToolRegistry, ToolSpec
 

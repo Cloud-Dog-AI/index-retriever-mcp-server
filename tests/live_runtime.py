@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Live Test Runtime
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Env-first live runtime with optional Vault fallback for platform VDB/LLM/jobs.
-
 from __future__ import annotations
 
 import asyncio
@@ -994,9 +989,16 @@ class LiveIndexRuntime:
             "parser_provider": meta.get("parser_provider", ""),
         }
 
-    def ensure_collection(self, profile: str, collection: str, provider_id: str = "chroma") -> str:
-        name = self._collection_name(profile, collection, provider_id)
-        if (provider_id, name) in self._collections:
+    def _resolve_provider_id(self, provider_id: str | None) -> str:
+        candidate = (provider_id or "").strip().lower()
+        if candidate:
+            return candidate
+        return self._config.default_backend
+
+    def ensure_collection(self, profile: str, collection: str, provider_id: str | None = None) -> str:
+        resolved_provider = self._resolve_provider_id(provider_id)
+        name = self._collection_name(profile, collection, resolved_provider)
+        if (resolved_provider, name) in self._collections:
             return name
 
         self._run(
@@ -1006,10 +1008,10 @@ class LiveIndexRuntime:
                     embedding_dim=self._embedding_dimension(),
                     metadata={"embedding_model": self.embedding_model},
                 ),
-                provider_id=provider_id,
+                provider_id=resolved_provider,
             )
         )
-        self._collections.add((provider_id, name))
+        self._collections.add((resolved_provider, name))
         return name
 
     def ingest_text(
@@ -1019,7 +1021,7 @@ class LiveIndexRuntime:
         text: str,
         source: str,
         actor: str,
-        provider_id: str = "chroma",
+        provider_id: str | None = None,
         metadata: dict[str, Any] | None = None,
         idempotency_key: str | None = None,
         created_at: datetime | None = None,
@@ -1030,13 +1032,14 @@ class LiveIndexRuntime:
         if dedupe_policy not in {"skip", "replace", "version"}:
             raise ValueError(f"Unsupported dedupe policy: {dedupe_policy}")
 
+        resolved_provider = self._resolve_provider_id(provider_id)
         now = created_at or datetime.now(timezone.utc)  # noqa: UP017
-        collection_name = self.ensure_collection(profile, collection, provider_id=provider_id)
+        collection_name = self.ensure_collection(profile, collection, provider_id=resolved_provider)
         effective_signature = (indexing_signature or self.embedding_model).strip() or self.embedding_model
         user_metadata = dict(metadata or {})
         payload_signature = self._payload_signature(text, user_metadata, effective_signature)
-        idempotency_map_key = (provider_id, collection_name, idempotency_key or "")
-        source_map_key = (provider_id, collection_name, source, effective_signature)
+        idempotency_map_key = (resolved_provider, collection_name, idempotency_key or "")
+        source_map_key = (resolved_provider, collection_name, source, effective_signature)
 
         if idempotency_key and dedupe_policy == "skip":
             existing = self._idempotency_records.get(idempotency_map_key)
@@ -1050,9 +1053,14 @@ class LiveIndexRuntime:
             if dedupe_policy == "skip" and not payload_changed and not stale:
                 return existing_source.record
             if dedupe_policy in {"skip", "replace"} and (payload_changed or stale):
-                _ = self.delete_by_id(profile, collection, existing_source.record.record_id, provider_id=provider_id)
+                _ = self.delete_by_id(
+                    profile,
+                    collection,
+                    existing_source.record.record_id,
+                    provider_id=resolved_provider,
+                )
 
-        collection_name = self.ensure_collection(profile, collection, provider_id=provider_id)
+        collection_name = self.ensure_collection(profile, collection, provider_id=resolved_provider)
         _ = self._run(self.llm_client.embed([text], provider_id=self.embedding_provider, model=self.embedding_model))
 
         request = JobRequest(
@@ -1088,11 +1096,11 @@ class LiveIndexRuntime:
             self.vdb_client.upsert_records(
                 collection_name,
                 [Record(record_id=record_id, content=text, metadata=base_metadata)],
-                provider_id=provider_id,
+                provider_id=resolved_provider,
             )
         )
         record = LiveRecord(
-            job_id=job_id, record_id=record_id, provider_id=provider_id, collection_name=collection_name
+            job_id=job_id, record_id=record_id, provider_id=resolved_provider, collection_name=collection_name
         )
         if idempotency_key:
             self._idempotency_records[idempotency_map_key] = record
@@ -1109,7 +1117,7 @@ class LiveIndexRuntime:
         collection: str,
         path: str,
         actor: str,
-        provider_id: str = "chroma",
+        provider_id: str | None = None,
         metadata: dict[str, Any] | None = None,
         idempotency_key: str | None = None,
         dedupe_policy: str = "skip",
@@ -1124,7 +1132,7 @@ class LiveIndexRuntime:
             text=payload.decode("utf-8", errors="replace"),
             source=f"file://{path}",
             actor=actor,
-            provider_id=provider_id,
+            provider_id=self._resolve_provider_id(provider_id),
             metadata=metadata,
             idempotency_key=idempotency_key,
             dedupe_policy=dedupe_policy,
@@ -1137,14 +1145,15 @@ class LiveIndexRuntime:
         profile: str,
         collection: str,
         query: str,
-        provider_id: str = "chroma",
+        provider_id: str | None = None,
         filters: dict[str, Any] | None = None,
         top_k: int = 10,
         score_threshold: float | None = None,
     ) -> list[dict[str, Any]]:
-        collection_name = self._collection_name(profile, collection, provider_id)
+        resolved_provider = self._resolve_provider_id(provider_id)
+        collection_name = self._collection_name(profile, collection, resolved_provider)
         plan = self.plan_search(
-            provider_id=provider_id,
+            provider_id=resolved_provider,
             query=query,
             top_k=top_k,
             filters=filters,
@@ -1159,7 +1168,7 @@ class LiveIndexRuntime:
                     filters=dict(plan.get("filters", filters or {})),
                     score_threshold=score_threshold,
                 ),
-                provider_id=provider_id,
+                provider_id=resolved_provider,
             )
         )
         out: list[dict[str, Any]] = []
@@ -1175,13 +1184,17 @@ class LiveIndexRuntime:
             )
         return out
 
-    def retrieve(self, profile: str, collection: str, record_id: str, provider_id: str = "chroma") -> Record | None:
-        collection_name = self._collection_name(profile, collection, provider_id)
-        return self._run(self.vdb_client.get_record(collection_name, record_id, provider_id=provider_id))
+    def retrieve(self, profile: str, collection: str, record_id: str, provider_id: str | None = None) -> Record | None:
+        resolved_provider = self._resolve_provider_id(provider_id)
+        collection_name = self._collection_name(profile, collection, resolved_provider)
+        return self._run(self.vdb_client.get_record(collection_name, record_id, provider_id=resolved_provider))
 
-    def delete_by_id(self, profile: str, collection: str, record_id: str, provider_id: str = "chroma") -> bool:
-        collection_name = self._collection_name(profile, collection, provider_id)
-        deleted = bool(self._run(self.vdb_client.delete_record(collection_name, record_id, provider_id=provider_id)))
+    def delete_by_id(self, profile: str, collection: str, record_id: str, provider_id: str | None = None) -> bool:
+        resolved_provider = self._resolve_provider_id(provider_id)
+        collection_name = self._collection_name(profile, collection, resolved_provider)
+        deleted = bool(
+            self._run(self.vdb_client.delete_record(collection_name, record_id, provider_id=resolved_provider))
+        )
         if deleted:
             self._forget_record(record_id)
         return deleted
@@ -1191,20 +1204,24 @@ class LiveIndexRuntime:
         profile: str,
         collection: str,
         filters: dict[str, Any],
-        provider_id: str = "chroma",
+        provider_id: str | None = None,
     ) -> int:
-        collection_name = self._collection_name(profile, collection, provider_id)
-        existing = self._run(self.vdb_client.list_records(collection_name, provider_id=provider_id))
-        deleted = int(self._run(self.vdb_client.delete_by_filter(collection_name, filters, provider_id=provider_id)))
+        resolved_provider = self._resolve_provider_id(provider_id)
+        collection_name = self._collection_name(profile, collection, resolved_provider)
+        existing = self._run(self.vdb_client.list_records(collection_name, provider_id=resolved_provider))
+        deleted = int(
+            self._run(self.vdb_client.delete_by_filter(collection_name, filters, provider_id=resolved_provider))
+        )
         if deleted:
             for record in existing:
                 if all(record.metadata.get(key) == value for key, value in filters.items()):
                     self._forget_record(str(record.record_id))
         return deleted
 
-    def retention_run(self, profile: str, collection: str, older_than_days: int, provider_id: str = "chroma") -> int:
-        collection_name = self._collection_name(profile, collection, provider_id)
-        records = self._run(self.vdb_client.list_records(collection_name, provider_id=provider_id))
+    def retention_run(self, profile: str, collection: str, older_than_days: int, provider_id: str | None = None) -> int:
+        resolved_provider = self._resolve_provider_id(provider_id)
+        collection_name = self._collection_name(profile, collection, resolved_provider)
+        records = self._run(self.vdb_client.list_records(collection_name, provider_id=resolved_provider))
         threshold = datetime.now(timezone.utc).timestamp() - (older_than_days * 86400)  # noqa: UP017
         deleted = 0
         for item in records:
@@ -1213,7 +1230,12 @@ class LiveIndexRuntime:
                 ts = datetime.fromisoformat(created_at.replace("Z", "+00:00")).timestamp()
             except ValueError:
                 continue
-            if ts < threshold and self.delete_by_id(profile, collection, item.record_id, provider_id=provider_id):
+            if ts < threshold and self.delete_by_id(
+                profile,
+                collection,
+                item.record_id,
+                provider_id=resolved_provider,
+            ):
                 deleted += 1
         return deleted
 
@@ -1243,10 +1265,11 @@ class LiveIndexRuntime:
             return bool(retry(job_id))
         return False
 
-    def backend_health_check(self, provider_id: str = "chroma") -> bool:
-        if provider_id not in self._enabled_providers:
+    def backend_health_check(self, provider_id: str | None = None) -> bool:
+        resolved_provider = self._resolve_provider_id(provider_id)
+        if resolved_provider not in self._enabled_providers:
             return False
-        return bool(self._run(self.vdb_client.health_check(provider_id=provider_id)))
+        return bool(self._run(self.vdb_client.health_check(provider_id=resolved_provider)))
 
     def embedding_health_check(self) -> bool:
         return bool(self._run(self.llm_client.health()))
@@ -1380,13 +1403,20 @@ class LiveIndexRuntime:
             if value.collection_name == collection_name:
                 del self._idempotency_records[key]
 
-    def ingest_stream_open(self, profile: str, collection: str, ordering_key: str, provider_id: str = "chroma") -> str:
+    def ingest_stream_open(
+        self,
+        profile: str,
+        collection: str,
+        ordering_key: str,
+        provider_id: str | None = None,
+    ) -> str:
+        resolved_provider = self._resolve_provider_id(provider_id)
         session_id = str(uuid4())
         self._stream_sessions[session_id] = {
             "profile": profile,
             "collection": collection,
             "ordering_key": ordering_key,
-            "provider_id": provider_id,
+            "provider_id": resolved_provider,
             "job_ids": [],
         }
         return session_id

@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — AT1.4
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Live retention policy workflow.
-
 from datetime import datetime, timedelta, timezone
 
 from tests.live_runtime import LiveIndexRuntime

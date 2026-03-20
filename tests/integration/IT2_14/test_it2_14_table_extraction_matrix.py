@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — IT2.14
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Table extraction matrix on table-heavy PDF corpus.
-
 from __future__ import annotations
 
 import asyncio

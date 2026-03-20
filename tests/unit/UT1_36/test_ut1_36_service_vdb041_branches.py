@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.36
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Branch coverage for VDB 0.4.1 service helpers and wrappers.
-
 from __future__ import annotations
 
 import asyncio
@@ -109,6 +104,7 @@ def test_preview_bridge_and_parser_probe_helper() -> None:
 def test_backend_capabilities_and_search_plan_fallback_paths(
     monkeypatch: pytest.MonkeyPatch, service: IndexService
 ) -> None:
+    # Covers: FR-13A
     monkeypatch.setattr(service_mod, "CapabilityDescriptor", None)
     monkeypatch.setattr(service_mod, "vdb_plan_search", None)
     monkeypatch.setattr(service_mod, "SearchRequest", None)
@@ -282,6 +278,7 @@ def test_parsers_list_and_parser_test_branches(monkeypatch: pytest.MonkeyPatch, 
 
 
 def test_wrapper_tools_and_ocr_paths(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
+    # Covers: FR-09, FR-P001, FR-13B
     preview_with_table = _PreviewResult(
         record_ids=["r1"],
         metadata={

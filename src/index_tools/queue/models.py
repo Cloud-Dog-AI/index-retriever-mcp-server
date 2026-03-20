@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Job Models
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Queue and job models aligned with cloud_dog_jobs semantics.
-
 from __future__ import annotations
 
 from datetime import datetime, timezone

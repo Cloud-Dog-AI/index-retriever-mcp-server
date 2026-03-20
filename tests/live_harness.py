@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Test Harness
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Shared fixtures for system, integration, application, and security tests.
-
 from __future__ import annotations
 
 from pathlib import Path

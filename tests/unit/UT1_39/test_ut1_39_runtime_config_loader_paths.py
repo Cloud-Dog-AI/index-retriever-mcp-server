@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.39
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Coverage tests for canonical runtime config loader paths.
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -46,6 +41,7 @@ def test_normalise_env_files_handles_none_scalars_and_sequence() -> None:
 def test_load_runtime_config_delegates_to_canonical_loader(
     monkeypatch: Any,
 ) -> None:
+    # Covers: FR-02
     captured: dict[str, Any] = {}
     expected = object()
 

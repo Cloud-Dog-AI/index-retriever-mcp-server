@@ -21,3 +21,5 @@ CLOUD_DOG__DB__DATABASE=./data/index-retriever-at.db
 
 # Built-in test API key accepted by AuthMiddleware (not a real credential)
 TEST_A2A_API_KEY=test-api-key
+
+CLOUD_DOG__INDEX__AUTH__API_KEYS=test-api-key,valid-reader-token:reader,valid-writer-token:writer,valid-admin-token:admin

@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — AT2.2
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Multi-backend ingest/search consistency across PGVector and OpenSearch.
-
 from __future__ import annotations
 
 import pytest

@@ -12,16 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.24
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Tests VDB registry lookup.
-
 from index_tools.vdb.adapters import InMemoryVdbAdapter
 from index_tools.vdb.registry import VdbRegistry
 
 
 def test_vdb_registry_lookup() -> None:
+    # Covers: FR-13
     registry = VdbRegistry()
     registry.register("chroma", InMemoryVdbAdapter)
     adapter = registry.get("chroma")

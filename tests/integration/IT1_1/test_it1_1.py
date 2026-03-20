@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — IT1.1
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Live health payload includes backend and embedding checks.
-
 from index_server.api_server import build_health_payload
 from tests.live_runtime import LiveIndexRuntime
 

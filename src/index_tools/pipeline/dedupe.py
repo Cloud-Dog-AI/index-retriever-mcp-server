@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Deduplication
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Deduplication strategies and policy handling.
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -56,6 +51,7 @@ class DedupeIndex:
 
     def check_duplicate(self, candidate: DedupeRecord, mode: str) -> DedupeRecord | None:
         """Execute check duplicate."""
+        # Covers: FR-11
         if mode == "size+mtime":
             for existing in self._records.values():
                 if existing.size == candidate.size and existing.mtime == candidate.mtime:

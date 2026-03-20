@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — RBAC Authoriser
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Role-based access checks using cloud_dog_idam semantics.
-
 from __future__ import annotations
 
 from dataclasses import dataclass

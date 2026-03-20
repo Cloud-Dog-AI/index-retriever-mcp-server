@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Embedding Adapter
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Embedding adapter delegating to cloud_dog_llm.
-
 from __future__ import annotations
 
 from hashlib import sha256
@@ -38,6 +33,7 @@ class EmbeddingAdapter:
 
     def embed(self, texts: list[str], dimensions: int = 8) -> list[list[float]]:
         """Execute embed."""
+        # Covers: FR-12
         if cloud_dog_llm is not None and hasattr(cloud_dog_llm, "embed"):
             response: Any = cloud_dog_llm.embed(provider=self.provider, model=self.model, inputs=texts)
             return cast(list[list[float]], response)

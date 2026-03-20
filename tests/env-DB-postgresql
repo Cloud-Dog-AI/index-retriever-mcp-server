@@ -4,3 +4,5 @@ CLOUD_DOG_DB__PORT=${vault.dev.databases.indexretrievermcp_dev_postgresql.port}
 CLOUD_DOG_DB__USERNAME=${vault.dev.databases.indexretrievermcp_dev_postgresql.username}
 CLOUD_DOG_DB__PASSWORD=${vault.dev.databases.indexretrievermcp_dev_postgresql.password}
 CLOUD_DOG_DB__DATABASE=${vault.dev.databases.indexretrievermcp_dev_postgresql.database}
+TEST_A2A_API_KEY=test-api-key
+CLOUD_DOG__INDEX__VDB__PROVIDER=chroma

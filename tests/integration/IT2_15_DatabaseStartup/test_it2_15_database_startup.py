@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — IT2.15 DatabaseStartup
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Validates API startup health and DB CRUD against configured dialect.
-
 from __future__ import annotations
 
 from uuid import uuid4

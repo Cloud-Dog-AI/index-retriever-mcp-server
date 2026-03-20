@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — AT2.3
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Multi-parser quality comparison matrix for DeepDoc/Docling/MinerU/Transformers/Internal.
-
 from __future__ import annotations
 
 import asyncio

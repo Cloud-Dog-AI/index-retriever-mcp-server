@@ -34,6 +34,14 @@ TEST_MCP_BASE_PATH=/mcp
 TEST_WEB_BASE_PATH=/
 TEST_A2A_BASE_PATH=/a2a
 
+# ---- standard preprod container port contract ----
+CLOUD_DOG__INDEX__API_SERVER__HOST=0.0.0.0
+CLOUD_DOG__INDEX__API_SERVER__PORT=8083
+CLOUD_DOG__INDEX__MCP_SERVER__HOST=0.0.0.0
+CLOUD_DOG__INDEX__MCP_SERVER__PORT=8081
+CLOUD_DOG__INDEX__WEB_SERVER__PORT=8080
+CLOUD_DOG__INDEX__A2A_SERVER__PORT=8082
+
 # ---- auth contract ----
 TEST_A2A_API_KEY=12345678
 CLOUD_DOG__INDEX__AUTH__API_KEYS=test-api-key,12345678
@@ -78,9 +86,9 @@ QDRANT_URL=http://vdb1.app.vpc0.cloud-dog.net:6333
 INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS=qdrant
 
 # ---- storage/queue ----
-DB_URL=sqlite+aiosqlite:///data/index-retriever-preprod.db
-INDEX_RETRIEVER_DB_URL=sqlite+aiosqlite:///data/index-retriever-preprod.db
-CLOUD_DOG__INDEX__DB__URL=sqlite+aiosqlite:///data/index-retriever-preprod.db
+DB_URL=sqlite+aiosqlite:///app/data/index-retriever-preprod.db
+INDEX_RETRIEVER_DB_URL=sqlite+aiosqlite:///app/data/index-retriever-preprod.db
+CLOUD_DOG__INDEX__DB__URL=sqlite+aiosqlite:///app/data/index-retriever-preprod.db
 
 # ---- audit paths ----
 CLOUD_DOG__INDEX__API_AUDIT_PATH=/app/logs/index-retriever-audit-api.jsonl

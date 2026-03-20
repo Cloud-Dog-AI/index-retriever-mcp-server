@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — AT2.4
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Multi-embedding model ingestion/search comparison for BGE, Nomic, and Granite.
-
 from __future__ import annotations
 
 import pytest

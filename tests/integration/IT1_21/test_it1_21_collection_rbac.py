@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — IT1.21
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: FR-05 per-collection RBAC enforcement for API tool calls.
-
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
@@ -42,6 +37,7 @@ def _call(
 
 
 def test_collection_level_rbac_enforced(service: IndexService) -> None:
+    # Covers: FR-05
     client = TestClient(build_api_app(service=service))
     profile = "default"
     collection = "it1_21_restricted"

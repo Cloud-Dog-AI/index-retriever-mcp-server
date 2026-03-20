@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — W23A Helpers
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Shared helpers for W23A multi-backend, parser, and embedding test matrices.
-
 from __future__ import annotations
 
 import json
@@ -36,14 +31,24 @@ EMBEDDING_MODELS: tuple[str, ...] = ("bge-m3:567m", "nomic-embed-text", "granite
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 WORKING_DIR = PROJECT_ROOT / "working"
-PLATFORM_VDB_TEST_DATA = (
+PLATFORM_VDB_ROOT = (
     PROJECT_ROOT.parent
     / "cloud-dog-ai-platform-standards"
     / "packages"
     / "backend"
     / "platform-vdb"
-    / "test-data"
 )
+PLATFORM_VDB_TEST_DATA = (
+    PLATFORM_VDB_ROOT / "test-data"
+)
+
+
+def _local_parser_command(script_name: str) -> list[str]:
+    python_bin = PLATFORM_VDB_ROOT / ".venv" / "bin" / "python"
+    script_path = PLATFORM_VDB_ROOT / "tests" / "tools" / script_name
+    if python_bin.is_file() and script_path.is_file():
+        return [str(python_bin), str(script_path)]
+    return []
 
 
 def _is_true(raw: Any) -> bool:
@@ -176,12 +181,20 @@ def parser_services_config() -> dict[str, dict[str, Any]]:
     deepdoc_command = _clean_text(os.getenv("DEEPDOC_COMMAND"))
     if deepdoc_command and "command" not in deepdoc:
         deepdoc["command"] = deepdoc_command.split()
+    if "command" not in deepdoc:
+        fallback = _local_parser_command("local_deepdoc_parser.py")
+        if fallback:
+            deepdoc["command"] = fallback
     deepdoc.setdefault("enabled", _is_true(os.getenv("DEEPDOC_ENABLED")) or bool(deepdoc.get("command")))
     deepdoc.setdefault("timeout_seconds", _parse_float(os.getenv("DEEPDOC_TIMEOUT_SECONDS"), 180.0))
 
     docling_command = _clean_text(os.getenv("DOCLING_COMMAND"))
     if docling_command and "command" not in docling:
         docling["command"] = docling_command.split()
+    if "command" not in docling:
+        fallback = _local_parser_command("local_docling_parser.py")
+        if fallback:
+            docling["command"] = fallback
     docling.setdefault("enabled", _is_true(os.getenv("DOCLING_ENABLED")) or bool(docling.get("command")))
     docling.setdefault("timeout_seconds", _parse_float(os.getenv("DOCLING_TIMEOUT_SECONDS"), 180.0))
 
@@ -189,6 +202,10 @@ def parser_services_config() -> dict[str, dict[str, Any]]:
     transformers_base_url = _clean_text(os.getenv("TRANSFORMERS_BASE_URL"))
     if transformers_command and "command" not in transformers:
         transformers["command"] = transformers_command.split()
+    if "command" not in transformers:
+        fallback = _local_parser_command("local_transformers_parser.py")
+        if fallback:
+            transformers["command"] = fallback
     if transformers_base_url:
         transformers["base_url"] = transformers_base_url
     elif not _clean_text(transformers.get("base_url")):

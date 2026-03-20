@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Metadata Enrichment
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Metadata extraction and enrichment helpers.
-
 from __future__ import annotations
 
 import mimetypes
@@ -40,6 +35,7 @@ def _resolve_mime_type(source: str, filename: str) -> str:
 
 def build_metadata(source: str, content: bytes, profile: str, collection: str) -> dict[str, str | int]:
     """Build consistent metadata for ingestion records."""
+    # Covers: FR-10, FR-14
     timestamp = datetime.now(timezone.utc).isoformat()  # noqa: UP017
     name = _resolve_filename(source)
     mime_type = _resolve_mime_type(source, name)

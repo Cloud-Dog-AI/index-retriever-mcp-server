@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.31
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Server runtime path coverage for API/MCP wrappers and entrypoints.
-
 from __future__ import annotations
 
 import runpy
@@ -35,6 +30,7 @@ from tests.http_paths import api_tools_path, mcp_tools_path
 
 
 def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
+    # Covers: FR-01, FR-01A, FR-17
     app = api_server.build_api_app(service=service)
     client = TestClient(app)
 

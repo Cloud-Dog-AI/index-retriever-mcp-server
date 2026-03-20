@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Streaming Interface
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Streaming ingestion wrappers for SSE and WebSocket style flows.
-
 from __future__ import annotations
 
 from typing import Any

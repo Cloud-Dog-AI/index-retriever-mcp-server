@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — PT1.2
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Search latency p50/p95/p99 baseline per available VDB backend.
-
 from __future__ import annotations
 
 import asyncio

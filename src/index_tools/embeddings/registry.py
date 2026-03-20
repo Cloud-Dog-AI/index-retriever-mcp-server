@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Embedding Registry
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Registry for cloud_dog_llm embedding adapters.
-
 from __future__ import annotations
 
 from collections.abc import Callable

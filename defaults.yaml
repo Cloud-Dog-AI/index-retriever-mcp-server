@@ -74,3 +74,23 @@ rbac:
     maintainer: ["profiles_*", "collections_*", "ingest_*", "search", "retrieve", "delete_*", "retention_*", "reindex_*", "job_*", "queue_status", "backend_health_check", "embedding_health_check"]
     writer: ["ingest_*", "search", "retrieve", "job_list", "job_get", "job_wait", "job_stream", "queue_status"]
     reader: ["profiles_list", "profile_get", "collections_list", "collection_get", "search", "retrieve", "search_explain", "job_get", "queue_status"]
+
+log:
+  service_instance: "${HOSTNAME:index-retriever-local}"
+  environment: "${CLOUD_DOG_ENVIRONMENT:dev}"
+  retention:
+    hot_days: 14
+    cold_days: 60
+    archive_format: "gz"
+  integrity:
+    enabled: true
+    interval_seconds: 300
+    log_file: "logs/audit-integrity.log"
+    hash_algorithm: "sha256"
+  rotation:
+    mode: "size"
+    max_bytes: 104857600
+    backup_count: 10
+    when: "midnight"
+    interval: 1
+    compress: true

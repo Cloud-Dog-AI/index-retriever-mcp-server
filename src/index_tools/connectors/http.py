@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — HTTP Connector
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: HTTP URI resolver for optional web ingestion.
-
 from __future__ import annotations
 
 from urllib.parse import urlparse

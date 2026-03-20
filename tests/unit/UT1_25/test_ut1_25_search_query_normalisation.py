@@ -12,13 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.25
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Tests query normalisation.
-
 from index_tools.search.engine import normalise_query
 
 
 def test_search_query_normalisation() -> None:
+    # Covers: FR-14
     assert normalise_query("  hello   world  ") == "hello world"

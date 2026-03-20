@@ -42,9 +42,47 @@ if [[ -n "${ENV_FILE}" && -f "${ENV_FILE}" ]]; then
   ENV_ARGS=(--env "${ENV_FILE}")
 fi
 
+# ── Port compatibility bridges (web/a2a -> api) ─────────────────
+declare -a BRIDGE_PIDS=()
+API_PORT="${CLOUD_DOG__INDEX__API_SERVER__PORT:-8083}"
+WEB_PORT="${CLOUD_DOG__INDEX__WEB_SERVER__PORT:-8080}"
+A2A_PORT="${CLOUD_DOG__INDEX__A2A_SERVER__PORT:-8082}"
+ENABLE_PORT_BRIDGES="${CLOUD_DOG_ENABLE_PORT_BRIDGES:-true}"
+
+start_bridge() {
+  local name="$1"
+  local listen_port="$2"
+  local target_port="$3"
+  if [[ "${ENABLE_PORT_BRIDGES}" != "true" ]]; then
+    return 0
+  fi
+  if [[ "${listen_port}" == "${target_port}" ]]; then
+    return 0
+  fi
+  if ! command -v socat >/dev/null 2>&1; then
+    echo "[WARN] socat missing; cannot start ${name} bridge ${listen_port}->${target_port}"
+    return 0
+  fi
+  socat "TCP-LISTEN:${listen_port},fork,reuseaddr" "TCP:127.0.0.1:${target_port}" >/app/logs/${name}.log 2>&1 &
+  BRIDGE_PIDS+=("$!")
+  echo "[INFO] ${name} bridge: 0.0.0.0:${listen_port} -> 127.0.0.1:${target_port}"
+}
+
+stop_bridges() {
+  local pid=""
+  if [[ "${#BRIDGE_PIDS[@]}" -eq 0 ]]; then
+    return 0
+  fi
+  for pid in "${BRIDGE_PIDS[@]}"; do
+    kill "${pid}" 2>/dev/null || true
+  done
+  BRIDGE_PIDS=()
+}
+
 # ── Graceful shutdown ───────────────────────────────────────────
 shutdown() {
   echo "[INFO] Stopping services..."
+  stop_bridges
   /app/server_control.sh ${ENV_ARGS[@]+"${ENV_ARGS[@]}"} stop all 2>/dev/null || true
 }
 trap shutdown INT TERM
@@ -53,6 +91,8 @@ trap shutdown INT TERM
 case "${1:-all}" in
   all)
     /app/server_control.sh ${ENV_ARGS[@]+"${ENV_ARGS[@]}"} start all
+    start_bridge "web-bridge" "${WEB_PORT}" "${API_PORT}"
+    start_bridge "a2a-bridge" "${A2A_PORT}" "${API_PORT}"
     tail -F /app/logs/*.log 2>/dev/null &
     wait $!
     ;;

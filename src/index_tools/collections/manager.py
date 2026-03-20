@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Collection Manager
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Collection management using cloud_dog_vdb adapters.
-
 from __future__ import annotations
 
 from index_tools.vdb.adapters import InMemoryVdbAdapter

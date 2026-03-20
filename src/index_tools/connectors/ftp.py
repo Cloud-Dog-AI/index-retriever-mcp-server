@@ -12,16 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — FTP Connector
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: FTP URI resolver for connector fetch planning.
-
 from __future__ import annotations
 
-from ftplib import FTP, all_errors as ftp_errors, error_perm
-from urllib.parse import unquote
-from urllib.parse import urlparse
+from ftplib import FTP, error_perm
+from ftplib import all_errors as ftp_errors
+from urllib.parse import unquote, urlparse
 
 from index_tools.connectors.models import FetchPlan
 

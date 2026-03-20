@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — IT1.7
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: MCP tool execution over live runtime.
-
 import json
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen

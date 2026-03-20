@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.38
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: A2A auth contract parity with shared API-key authority.
-
 from __future__ import annotations
 
 import pytest
@@ -25,6 +20,7 @@ from index_server.auth.middleware import AuthMiddleware
 
 
 def test_a2a_api_key_validation_parity(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Covers: FR-01B, FR-04
     monkeypatch.setenv("TEST_A2A_API_KEY", "12345678")
     auth = AuthMiddleware()
 

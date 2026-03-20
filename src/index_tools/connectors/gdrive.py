@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Google Drive Connector
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Google Drive reference resolver for connector fetch planning.
-
 from __future__ import annotations
 
 from urllib.parse import parse_qs, urlparse

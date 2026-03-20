@@ -16,10 +16,9 @@
 
 from __future__ import annotations
 
+from cloud_dog_db import PlatformBase, TimestampMixin
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
-
-from cloud_dog_db import PlatformBase, TimestampMixin
 
 
 class IndexPlatformDbState(PlatformBase, TimestampMixin):

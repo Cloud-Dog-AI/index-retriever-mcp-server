@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.32
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Support module path coverage for connectors, conversion, lifecycle, and utility helpers.
-
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone

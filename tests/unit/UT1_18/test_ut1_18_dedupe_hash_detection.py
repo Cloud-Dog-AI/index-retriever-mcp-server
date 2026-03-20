@@ -12,15 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.18
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Tests dedupe hash detection.
-
 from index_tools.pipeline.dedupe import DedupeIndex, DedupeRecord
 
 
 def test_dedupe_hash_detection() -> None:
+    # Covers: FR-11
     dedupe = DedupeIndex()
     fingerprint = dedupe.fingerprint(b"hello")
     existing = DedupeRecord(doc_id="doc1", size=5, mtime=1, fingerprint=fingerprint)

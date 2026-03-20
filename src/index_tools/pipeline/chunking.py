@@ -12,16 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Chunking
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Chunk generation strategies for ingest pipeline.
-
 from __future__ import annotations
 
 
 def token_chunks(text: str, chunk_size: int, chunk_overlap: int) -> list[str]:
     """Split text by whitespace token count with overlap."""
+    # Covers: FR-10
     if chunk_size <= 0:
         raise ValueError("chunk_size must be positive")
     if chunk_overlap < 0 or chunk_overlap >= chunk_size:

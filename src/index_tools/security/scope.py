@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Scope Enforcement
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Filesystem and URI scope validation helpers.
-
 from __future__ import annotations
 
 from pathlib import Path

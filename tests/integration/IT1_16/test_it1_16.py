@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — IT1.16
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Delegation boundary check: parser/OCR/table internals executed via cloud_dog_vdb.
-
 from tests.live_runtime import LiveIndexRuntime
 
 

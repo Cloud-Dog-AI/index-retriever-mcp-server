@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — IT2.5
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Real Weaviate CRUD contract test via cloud_dog_vdb runtime client.
-
 from __future__ import annotations
 
 import asyncio

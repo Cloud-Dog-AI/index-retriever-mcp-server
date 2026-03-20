@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — IT1.17
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Tool-catalogue wrapper execution coverage for parser/OCR/table helpers.
-
 from __future__ import annotations
 
 import json
@@ -49,6 +44,7 @@ def _post_json(url: str, payload: dict[str, object], headers: dict[str, str]) ->
 def test_tool_catalogue_wrappers_execute(
     live_service: LiveIndexRuntime, runtime_mode: str, runtime_endpoints: dict[str, str] | None
 ) -> None:
+    # Covers: FR-09, FR-P001
     client = TestClient(build_api_app(service=live_service)) if runtime_mode == "local-server" else None
 
     def call_tool(tool_name: str, payload: dict[str, object], token: str) -> dict[str, object]:

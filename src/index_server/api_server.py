@@ -12,16 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — API Server
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: HTTP API app factory using cloud_dog_api_kit.
-
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 import os
 from collections.abc import Callable
+from contextlib import asynccontextmanager
 from typing import Any
 from uuid import uuid4
 
@@ -170,6 +165,7 @@ def handle_ingest_text(
 
 def build_api_app(service: IndexService | None = None) -> Any:
     """Execute build api app."""
+    # Covers: FR-01, FR-01A, FR-17
     active_service = service or IndexService(audit_path=_api_audit_path())
     db_runtime = initialise_database()
     auth = AuthMiddleware()
@@ -192,6 +188,7 @@ def build_api_app(service: IndexService | None = None) -> Any:
 
     def _a2a_auth_or_raise(headers: dict[str, str]) -> Any:
         """Enforce A2A auth contract using shared API-key authority."""
+        # Covers: FR-01B
         try:
             return auth.authenticate_api_key(headers)
         except PermissionError as exc:
@@ -228,6 +225,7 @@ def build_api_app(service: IndexService | None = None) -> Any:
 
     def call_tool(tool_name: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         """Execute call tool."""
+        # Covers: FR-17
         identity = _auth_or_raise(_headers_from_request(request))
         _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
         arguments = dict(payload)
@@ -248,6 +246,7 @@ def build_api_app(service: IndexService | None = None) -> Any:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     app.get("/health")(health)
+    app.get("/api/health")(health)
     app.get(f"{_CANONICAL_API_BASE_PATH}/health")(health)
     app.get(_CANONICAL_A2A_BASE_PATH)(a2a_root)
     app.get(f"{_CANONICAL_A2A_BASE_PATH}/health")(a2a_health)

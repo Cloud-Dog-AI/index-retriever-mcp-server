@@ -12,15 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.17
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Tests metadata enrichment output fields.
-
 from index_tools.pipeline.metadata import build_metadata
 
 
 def test_metadata_enrichment() -> None:
+    # Covers: FR-10, FR-14
     data = build_metadata("data/doc.txt", b"hello", profile="default", collection="kb")
     assert data["source"] == "data/doc.txt"
     assert data["size"] == 5

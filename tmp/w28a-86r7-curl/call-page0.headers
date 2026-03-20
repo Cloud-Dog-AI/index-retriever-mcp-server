@@ -1,8 +1,0 @@
-HTTP/1.1 406 Not Acceptable
-Content-Length: 152
-Content-Type: application/json
-Date: Tue, 10 Mar 2026 18:23:33 GMT
-Mcp-Session-Id: e378280bb9824b72b26d4af667657594
-Server: uvicorn
-Connection: close
-

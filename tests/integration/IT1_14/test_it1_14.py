@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — IT1.14
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Capability-aware backend planning including unsupported-filter negative path.
-
 import pytest
 
 from tests.live_runtime import LiveIndexRuntime

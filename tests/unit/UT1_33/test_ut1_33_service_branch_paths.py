@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — UT1.33
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Additional branch coverage for IndexService operations and required env resolution.
-
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -28,6 +23,7 @@ from index_tools.tools.service import IndexService, _required_env
 
 
 def test_service_profile_lifecycle_and_permissions(service: IndexService) -> None:
+    # Covers: FR-03
     with pytest.raises(PermissionError):
         service.admin_profile_create("p1", roles={"writer"})
 
@@ -42,6 +38,7 @@ def test_service_profile_lifecycle_and_permissions(service: IndexService) -> Non
 
 
 def test_service_document_reference_and_jobs(service: IndexService, tmp_path) -> None:
+    # Covers: FR-07, FR-08
     p = tmp_path / "doc.txt"
     p.write_text("reference content for service", encoding="utf-8")
     job_id = service.ingest_reference("default", "refs", str(p), actor="writer")
@@ -60,6 +57,7 @@ def test_service_document_reference_and_jobs(service: IndexService, tmp_path) ->
 
 
 def test_service_delete_reindex_retention_and_stream_errors(service: IndexService) -> None:
+    # Covers: FR-15, FR-16
     old_created = datetime.now(timezone.utc) - timedelta(days=200)  # noqa: UP017
     new_created = datetime.now(timezone.utc)  # noqa: UP017
 

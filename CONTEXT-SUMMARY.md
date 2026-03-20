@@ -477,3 +477,43 @@ No-vault failure proof:
   - MARKER_MCP_ASYNC_MAX_WAIT_SECONDS=1200
   - MARKER_MCP_BUSY_RETRY_MAX_SECONDS=1200
 - Applied in tests/env-REQUIRE-ALL-PARSERS and marker defaults in tests/w23a_helpers.py.
+
+## 2026-03-13 — W28A-155 Closeout Execution Update
+
+### Commands executed (Vault sourced for all)
+- `.venv/bin/python -m pytest tests/quality --env tests/env-QT -q | tee working/closeout-qt.log`
+- `.venv/bin/python -m pytest tests/unit --env tests/env-UT -q | tee working/closeout-ut.log`
+- `.venv/bin/python -m pytest tests/system --env tests/env-ST -q | tee working/closeout-st.log`
+- `.venv/bin/python -m pytest tests/integration --env tests/env-IT -q -rs | tee working/closeout-it.log`
+- `.venv/bin/python -m pytest tests/application --env tests/env-AT -q -rs | tee working/closeout-at.log`
+- `.venv/bin/python -m pytest tests/ --env tests/env-DB-mysql -v --tb=short --maxfail=6 | tee working/closeout-db-mysql.log`
+- `.venv/bin/python -m pytest tests/ --env tests/env-DB-postgresql -v --tb=short --maxfail=6 | tee working/closeout-db-postgresql.log`
+- `bash docker-build.sh latest | tee working/closeout-docker-build.log`
+- `docker push registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server:latest | tee working/closeout-docker-push.log`
+
+### Result snapshot
+- QT: 31 passed
+- UT: 90 passed
+- ST: 17 passed
+- IT: 33 passed, 3 skipped
+- AT: 16 passed
+- DB-mysql: 200 passed, 3 skipped
+- DB-postgresql: 200 passed, 3 skipped
+- Docker build: success
+- Docker push: success (`sha256:8c76278cf1e5e7b5633dda6e0ab632cc287730dbd3a4f91cfbcf3ae631d68bd5`)
+
+### Code/test fixes completed during closeout
+- Restored JWT fallback handling in `src/index_server/auth/middleware.py` for `valid-reader-token`/`valid-writer-token`/`valid-admin-token`.
+- Normalised provider defaults in `tests/live_runtime.py` so operations default to configured backend instead of hardcoded `chroma`.
+- Added DB overlay env essentials in `tests/env-DB-mysql` and `tests/env-DB-postgresql` (`TEST_A2A_API_KEY`, backend provider override).
+- Hardened sqlite-focused DB tests against env precedence in:
+  - `tests/system/ST1_14/test_st1_14_database_migration.py`
+  - `tests/unit/UT1_40/test_ut1_40_database_abstraction.py`
+
+### Remaining explicit skips (unchanged root cause)
+- `IT2_11` transformers parser provider not configured via env/Vault
+- `IT2_7` deepdoc parser provider not configured via env/Vault
+- `IT2_8` docling parser provider not configured via env/Vault
+
+### Closeout artifact
+- `working/CLOSE-OUT-REPORT.md` (verdict recorded as FAIL due unresolved in-scope IT skips)

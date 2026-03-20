@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — AT2 Helpers
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Shared helpers for W23A application-level backend/parser/embedding matrix tests.
-
 from __future__ import annotations
 
 import os

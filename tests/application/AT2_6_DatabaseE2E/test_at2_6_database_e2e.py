@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — AT2.6 DatabaseE2E
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: End-to-end DB lifecycle (create/update/delete) with API runtime online.
-
 from __future__ import annotations
 
 from uuid import uuid4

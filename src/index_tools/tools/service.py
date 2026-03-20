@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Index Service
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: In-memory end-to-end service orchestration for profiles, ingest, search, and jobs.
-
 from __future__ import annotations
 
 import asyncio
@@ -222,6 +217,7 @@ class IndexService:
 
     def admin_profile_create(self, profile: str, roles: set[str]) -> None:
         """Execute admin profile create."""
+        # Covers: FR-03
         self._require_admin(roles)
         self.profiles[profile] = {
             "enabled": True,
@@ -261,6 +257,7 @@ class IndexService:
         allowed_roles: set[str] | None = None,
     ) -> None:
         """Execute admin collection create."""
+        # Covers: FR-16
         self._require_admin(roles)
         collection_key = self._collection_key(profile, collection)
         self.collection_manager.create(collection_key)
@@ -302,6 +299,7 @@ class IndexService:
         created_at: datetime | None = None,
     ) -> str:
         """Execute ingest text."""
+        # Covers: FR-08, FR-10, FR-14
         if profile not in self.profiles:
             raise ValueError(f"Unknown profile: {profile}")
 
@@ -383,6 +381,7 @@ class IndexService:
 
     def ingest_reference(self, profile: str, collection: str, path: str, actor: str) -> str:
         """Execute ingest reference."""
+        # Covers: FR-08
         with open(path, "rb") as handle:
             payload = handle.read()
         return self.ingest_text(
@@ -447,6 +446,7 @@ class IndexService:
         filters: dict[str, Any] | None = None,
         capability_override: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        # Covers: FR-13A
         checked_filters = dict(filters or {})
         descriptor = self._build_capability_descriptor(profile, capability_override)
         if descriptor is None or vdb_plan_search is None or SearchRequest is None:
@@ -470,6 +470,7 @@ class IndexService:
         score_threshold: float = 0.0,
     ) -> list[dict[str, Any]]:
         """Execute search."""
+        # Covers: FR-14
         planned = self.search_plan(profile=profile, query=query, top_k=top_k, filters=filters)
         return self.search_engine.search(
             collection=self._collection_key(profile, collection),
@@ -513,6 +514,7 @@ class IndexService:
 
     def retention_run(self, profile: str, collection: str, older_than_days: int) -> int:
         """Execute retention run."""
+        # Covers: FR-16
         threshold = datetime.now(timezone.utc) - timedelta(days=older_than_days)  # noqa: UP017
         deleted_count = 0
         for doc_id, value in list(self.documents.items()):
@@ -602,6 +604,7 @@ class IndexService:
         chunk_size: int = 800,
         chunk_overlap: int = 120,
     ) -> _PreviewResult:
+        # Covers: FR-09, FR-13B
         if ingest_document is None or ParserIngestionOptions is None:
             raise ProviderDiagnosticError(
                 operation="ingest_preview",
@@ -746,6 +749,7 @@ class IndexService:
         table_json_shape: str = "records",
     ) -> dict[str, Any]:
         """Run preview pipeline through cloud_dog_vdb without persisting project state."""
+        # Covers: FR-P001
         preview = self._run_pipeline_preview(
             source=text.encode("utf-8"),
             source_uri=source_uri,
@@ -875,6 +879,7 @@ class IndexService:
 
     def ingest_stream_open(self, profile: str, collection: str, ordering_key: str) -> str:
         """Execute ingest stream open."""
+        # Covers: FR-15
         session_id = str(uuid4())
         self.stream_sessions[session_id] = StreamSession(
             session_id=session_id,

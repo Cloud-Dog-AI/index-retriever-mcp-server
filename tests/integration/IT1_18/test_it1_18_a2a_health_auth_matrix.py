@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — IT1.18
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: A2A health endpoint auth matrix (401/401/200) on runtime matrix modes.
-
 from __future__ import annotations
 
 import os

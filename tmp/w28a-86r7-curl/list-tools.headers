@@ -1,9 +1,0 @@
-HTTP/1.1 200 OK
-Cache-Control: no-cache, no-transform
-Content-Type: text/event-stream
-Date: Tue, 10 Mar 2026 18:23:58 GMT
-Mcp-Session-Id: e378280bb9824b72b26d4af667657594
-Server: uvicorn
-X-Accel-Buffering: no
-Transfer-Encoding: chunked
-

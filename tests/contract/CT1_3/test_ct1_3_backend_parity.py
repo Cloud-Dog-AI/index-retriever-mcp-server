@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — CT1.3
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Contract parity check across Chroma and Qdrant backends.
-
 from tests.live_runtime import LiveIndexRuntime
 
 

@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Queue Engine
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Queue execution helper via cloud_dog_jobs integration.
-
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -32,6 +27,7 @@ except ImportError:  # pragma: no cover
 
 class QueueEngine:
     """In-process queue fallback used for deterministic unit tests."""
+    # Covers: FR-07
 
     def __init__(self) -> None:
         """Initialise the instance state."""

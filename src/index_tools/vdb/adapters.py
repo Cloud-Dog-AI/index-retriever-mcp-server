@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — VDB Adapters
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Adapter layer delegating VDB operations to cloud_dog_vdb.
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -137,7 +132,10 @@ class InMemoryVdbAdapter:
             self.collection_dimensions[collection] = actual
             return
         if expected != actual:
-            raise ValueError(f"Embedding dimension mismatch for collection '{collection}': expected {expected}, got {actual}")
+            raise ValueError(
+                f"Embedding dimension mismatch for collection '{collection}': "
+                f"expected {expected}, got {actual}"
+            )
 
 
 def _score_chunk(query_text: str, chunk: str) -> float:

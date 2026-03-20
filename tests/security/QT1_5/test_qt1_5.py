@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — QT1.5
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Backend adapter contract conformance check.
-
 from index_tools.vdb.adapters import InMemoryVdbAdapter
 
 

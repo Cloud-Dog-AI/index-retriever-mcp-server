@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Retention Policies
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Retention policy checks for lifecycle management.
-
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone

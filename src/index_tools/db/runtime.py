@@ -22,9 +22,6 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-from sqlalchemy import Engine
-from sqlalchemy.engine import make_url
-
 from cloud_dog_db import (
     DatabaseSettings,
     MigrationRunner,
@@ -33,6 +30,8 @@ from cloud_dog_db import (
     probe_database,
 )
 from cloud_dog_db.migrations.runner import MigrationConfig
+from sqlalchemy import Engine
+from sqlalchemy.engine import make_url
 
 
 @dataclass(slots=True)

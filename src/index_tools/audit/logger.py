@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Audit Logger
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: JSONL audit logger with secret redaction.
-
 from __future__ import annotations
 
 import json
@@ -67,6 +62,7 @@ class AuditLogger:
 
     def write_event(self, event: AuditEvent) -> None:
         """Execute write event."""
+        # Covers: FR-06
         payload = redact_payload(event.model_dump(mode="json"))
         line = json.dumps(payload, ensure_ascii=True)
         with self.path.open("a", encoding="utf-8") as handle:

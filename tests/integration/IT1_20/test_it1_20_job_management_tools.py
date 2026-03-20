@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — IT1.20
-# Licence: Proprietary — Cloud-Dog AI Platform
-# Owner: Cloud-Dog AI
-# Description: Job management MCP/API tools contract for FR-07 queue semantics.
-
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
@@ -38,6 +33,7 @@ def _call_tool(client: TestClient, tool_name: str, payload: dict[str, object], t
 
 
 def test_job_management_tools_contract(service: IndexService) -> None:
+    # Covers: FR-07
     client = TestClient(build_api_app(service=service))
 
     _ = _call_tool(
