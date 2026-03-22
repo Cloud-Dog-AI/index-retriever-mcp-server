@@ -456,3 +456,23 @@ Admin/maintainer tools SHALL include:
 - R-DB-08: Schema versioning MUST be tested across SQLite, MySQL, and PostgreSQL
 - R-DB-09: Schema upgrade/downgrade MUST be validated with at least two migrations per dialect
 - R-DB-10: CRUD outcomes MUST be consistent across SQLite, MySQL, and PostgreSQL
+
+## Configuration CRUD Requirements (CFG)
+
+Profile concept for this project: index and retrieval profiles defining vector backend, embedding provider, collection defaults, ingestion policy, retention, and RBAC.
+
+| ID | Requirement |
+|----|-------------|
+| CFG-01 | The system SHALL support creating a new index profile via the API with all profile settings that would otherwise be available via environment variables or env-file configuration. |
+| CFG-02 | The system SHALL support reading index profiles via the API, including both list and detail retrieval. |
+| CFG-03 | The system SHALL support updating an existing index profile via the API. |
+| CFG-04 | The system SHALL support deleting an index profile via the API. |
+| CFG-05 | Index profile CRUD operations SHALL be available as MCP tools with equivalent functionality. |
+| CFG-06 | Index profile change events SHALL be broadcast via the A2A interface. |
+| CFG-07 | Index profile CRUD operations SHALL be available in the WebUI with RBAC enforcement. |
+| CFG-08 | The system SHALL support creating, reading, updating, and deleting users via the API. |
+| CFG-09 | The system SHALL support creating, reading, updating, and deleting groups with role assignments via the API. |
+| CFG-10 | The system SHALL support creating, listing, and revoking API keys with per-key capability scoping via the API. |
+| CFG-11 | User, group, and API-key management SHALL be available via MCP, A2A, and WebUI with RBAC. |
+| CFG-12 | All CRUD operations SHALL be audit logged with user identity, action, timestamp, and outcome. |
+| CFG-13 | Only admin users SHALL be able to create, update, and delete index profiles and manage users or groups; read-only access SHALL be available to authorised non-admin users. |

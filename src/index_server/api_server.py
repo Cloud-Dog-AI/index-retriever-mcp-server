@@ -22,7 +22,9 @@ from uuid import uuid4
 
 from cloud_dog_api_kit import LifecycleHooks, create_app  # type: ignore
 from fastapi import HTTPException, Request
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 
+from index_server.admin_ui import admin_ui_script, admin_ui_styles, profiles_page, security_page
 from index_server.auth.middleware import AuthMiddleware
 from index_server.mcp_server import build_registry, execute_tool
 from index_tools.db import (
@@ -169,6 +171,9 @@ def build_api_app(service: IndexService | None = None) -> Any:
     active_service = service or IndexService(audit_path=_api_audit_path())
     db_runtime = initialise_database()
     auth = AuthMiddleware()
+    bind_auth_api_keys = getattr(active_service, "attach_auth_api_keys", None)
+    if callable(bind_auth_api_keys):
+        bind_auth_api_keys(auth.api_keys)
     registry = build_registry()
     app = _create_runtime_app(on_shutdown=shutdown_database)
 
@@ -217,6 +222,31 @@ def build_api_app(service: IndexService | None = None) -> Any:
         _ = _a2a_auth_or_raise(_headers_from_request(request))
         return build_health_payload(active_service, db_runtime=db_runtime)
 
+    def a2a_events(request: Request) -> dict[str, Any]:
+        """Expose configuration change events via the A2A interface."""
+        _ = _a2a_auth_or_raise(_headers_from_request(request))
+        return {"events": active_service.a2a_config_events()}
+
+    def admin_ui_root() -> RedirectResponse:
+        """Redirect to the default admin UI page."""
+        return RedirectResponse(url="/admin/ui/profiles", status_code=307)
+
+    def admin_ui_profiles() -> HTMLResponse:
+        """Serve the profile-management WebUI."""
+        return HTMLResponse(profiles_page())
+
+    def admin_ui_security() -> HTMLResponse:
+        """Serve the security-management WebUI."""
+        return HTMLResponse(security_page())
+
+    def admin_ui_js() -> PlainTextResponse:
+        """Serve the shared admin UI JavaScript bundle."""
+        return PlainTextResponse(admin_ui_script(), media_type="application/javascript")
+
+    def admin_ui_css() -> PlainTextResponse:
+        """Serve the shared admin UI stylesheet."""
+        return PlainTextResponse(admin_ui_styles(), media_type="text/css")
+
     def list_tools(request: Request) -> list[dict[str, Any]]:
         """Execute list tools."""
         identity = _auth_or_raise(_headers_from_request(request))
@@ -245,14 +275,195 @@ def build_api_app(service: IndexService | None = None) -> Any:
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    def admin_profiles_list(request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        profiles = [
+            active_service.profile_get(profile) | {"profile": profile}
+            for profile in active_service.profiles_list()
+        ]
+        return {"profiles": profiles}
+
+    def admin_profiles_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"admin"})
+        profile_name = str(payload["profile"])
+        config = payload.get("config") if isinstance(payload.get("config"), dict) else payload.get("profile_config", {})
+        profile = active_service.admin_profile_create(
+            profile=profile_name,
+            roles=identity.roles,
+            config=config if isinstance(config, dict) else {},
+            actor=identity.user_id,
+        )
+        return {"profile": profile_name, "config": profile}
+
+    def admin_profiles_get(profile_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        return {"profile": profile_id, "config": active_service.profile_get(profile_id)}
+
+    def admin_profiles_update(profile_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"admin"})
+        updates = payload.get("config") if isinstance(payload.get("config"), dict) else payload
+        if not isinstance(updates, dict):
+            raise HTTPException(status_code=400, detail="Invalid profile payload")
+        profile = active_service.admin_profile_update(
+            profile=profile_id,
+            roles=identity.roles,
+            updates=dict(updates),
+            actor=identity.user_id,
+        )
+        return {"profile": profile_id, "config": profile}
+
+    def admin_profiles_delete(profile_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"admin"})
+        active_service.admin_profile_delete(profile=profile_id, roles=identity.roles, actor=identity.user_id)
+        return {"status": "ok", "profile": profile_id}
+
+    def admin_users_list(request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        return {"users": active_service.users_list()}
+
+    def admin_users_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"admin"})
+        user_id = str(payload["user_id"])
+        return {
+            "user": active_service.admin_user_create(
+                user_id=user_id,
+                roles=identity.roles,
+                payload=payload,
+                actor=identity.user_id,
+            )
+        }
+
+    def admin_users_get(user_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        return {"user": active_service.user_get(user_id)}
+
+    def admin_users_update(user_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"admin"})
+        return {
+            "user": active_service.admin_user_update(
+                user_id=user_id,
+                roles=identity.roles,
+                payload=payload,
+                actor=identity.user_id,
+            )
+        }
+
+    def admin_users_delete(user_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"admin"})
+        active_service.admin_user_delete(user_id=user_id, roles=identity.roles, actor=identity.user_id)
+        return {"status": "ok", "user_id": user_id}
+
+    def admin_groups_list(request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        return {"groups": active_service.groups_list()}
+
+    def admin_groups_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"admin"})
+        group_id = str(payload["group_id"])
+        return {
+            "group": active_service.admin_group_create(
+                group_id=group_id,
+                roles=identity.roles,
+                payload=payload,
+                actor=identity.user_id,
+            )
+        }
+
+    def admin_groups_get(group_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        return {"group": active_service.group_get(group_id)}
+
+    def admin_groups_update(group_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"admin"})
+        return {
+            "group": active_service.admin_group_update(
+                group_id=group_id,
+                roles=identity.roles,
+                payload=payload,
+                actor=identity.user_id,
+            )
+        }
+
+    def admin_groups_delete(group_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"admin"})
+        active_service.admin_group_delete(group_id=group_id, roles=identity.roles, actor=identity.user_id)
+        return {"status": "ok", "group_id": group_id}
+
+    def admin_api_keys_list(request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        return {"api_keys": active_service.api_keys_list()}
+
+    def admin_api_keys_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"admin"})
+        return {
+            "api_key": active_service.admin_api_key_create(
+                roles=identity.roles,
+                payload=payload,
+                actor=identity.user_id,
+            )
+        }
+
+    def admin_api_keys_delete(key_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(_headers_from_request(request))
+        _require_or_raise(identity, {"admin"})
+        return {
+            "api_key": active_service.admin_api_key_revoke(
+                key_id=key_id,
+                roles=identity.roles,
+                actor=identity.user_id,
+            )
+        }
+
     app.get("/health")(health)
     app.get("/api/health")(health)
     app.get(f"{_CANONICAL_API_BASE_PATH}/health")(health)
     app.get(_CANONICAL_A2A_BASE_PATH)(a2a_root)
     app.get(f"{_CANONICAL_A2A_BASE_PATH}/health")(a2a_health)
+    app.get(f"{_CANONICAL_A2A_BASE_PATH}/events")(a2a_events)
+    app.get("/admin/ui")(admin_ui_root)
+    app.get("/admin/ui/profiles")(admin_ui_profiles)
+    app.get("/admin/ui/security")(admin_ui_security)
+    app.get("/admin/ui/app.js")(admin_ui_js)
+    app.get("/admin/ui/styles.css")(admin_ui_css)
     for base_path in (_CANONICAL_API_BASE_PATH, _LEGACY_API_BASE_PATH):
         app.get(f"{base_path}/tools")(list_tools)
         app.post(f"{base_path}/tools/{{tool_name}}")(call_tool)
+
+    app.get("/admin/profiles")(admin_profiles_list)
+    app.post("/admin/profiles")(admin_profiles_create)
+    app.get("/admin/profiles/{profile_id}")(admin_profiles_get)
+    app.put("/admin/profiles/{profile_id}")(admin_profiles_update)
+    app.delete("/admin/profiles/{profile_id}")(admin_profiles_delete)
+    app.get("/admin/users")(admin_users_list)
+    app.post("/admin/users")(admin_users_create)
+    app.get("/admin/users/{user_id}")(admin_users_get)
+    app.put("/admin/users/{user_id}")(admin_users_update)
+    app.delete("/admin/users/{user_id}")(admin_users_delete)
+    app.get("/admin/groups")(admin_groups_list)
+    app.post("/admin/groups")(admin_groups_create)
+    app.get("/admin/groups/{group_id}")(admin_groups_get)
+    app.put("/admin/groups/{group_id}")(admin_groups_update)
+    app.delete("/admin/groups/{group_id}")(admin_groups_delete)
+    app.get("/admin/api-keys")(admin_api_keys_list)
+    app.post("/admin/api-keys")(admin_api_keys_create)
+    app.delete("/admin/api-keys/{key_id}")(admin_api_keys_delete)
 
     app.state.db_runtime = db_runtime
 

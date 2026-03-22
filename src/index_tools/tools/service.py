@@ -20,7 +20,7 @@ import mimetypes
 import os
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
@@ -152,6 +152,52 @@ class StreamSession:
     job_ids: list[str] = field(default_factory=list)
 
 
+@dataclass(slots=True)
+class UserRecord:
+    """UserRecord definition."""
+
+    user_id: str
+    display_name: str
+    roles: set[str]
+    groups: set[str] = field(default_factory=set)
+    enabled: bool = True
+
+
+@dataclass(slots=True)
+class GroupRecord:
+    """GroupRecord definition."""
+
+    group_id: str
+    roles: set[str]
+    members: set[str] = field(default_factory=set)
+
+
+@dataclass(slots=True)
+class ApiKeyRecord:
+    """ApiKeyRecord definition."""
+
+    key_id: str
+    token: str
+    label: str
+    roles: set[str]
+    capabilities: set[str]
+    user_id: str | None = None
+    revoked: bool = False
+
+
+@dataclass(slots=True)
+class ConfigEventRecord:
+    """ConfigEventRecord definition."""
+
+    event_id: str
+    entity_type: str
+    entity_id: str
+    action: str
+    actor: str
+    payload: dict[str, Any]
+    created_at: datetime
+
+
 class IndexService:
     """Service facade providing deterministic behaviour for all tool flows."""
 
@@ -196,6 +242,11 @@ class IndexService:
         self.idempotency: dict[str, str] = {}
         self.stream_sessions: dict[str, StreamSession] = {}
         self._job_handlers: dict[str, Any] = {}
+        self.users: dict[str, UserRecord] = {}
+        self.groups: dict[str, GroupRecord] = {}
+        self.api_keys: dict[str, ApiKeyRecord] = {}
+        self.a2a_events: list[ConfigEventRecord] = []
+        self._auth_api_keys: dict[str, set[str]] = {}
 
     @staticmethod
     def _collection_key(profile: str, collection: str) -> str:
@@ -207,38 +258,428 @@ class IndexService:
         if "admin" not in roles:
             raise PermissionError("Admin role required")
 
+    def attach_auth_api_keys(self, auth_api_keys: dict[str, set[str]]) -> None:
+        """Bind the runtime auth API-key store so admin key CRUD updates auth immediately."""
+        self._auth_api_keys = auth_api_keys
+
+    def _profile_payload(self, profile: str) -> dict[str, Any]:
+        payload = dict(self.profiles[profile])
+        roles = payload.get("roles")
+        if isinstance(roles, set):
+            payload["roles"] = sorted(roles)
+        return payload
+
+    def _emit_config_event(
+        self,
+        *,
+        entity_type: str,
+        entity_id: str,
+        action: str,
+        actor: str,
+        payload: dict[str, Any],
+    ) -> None:
+        self.a2a_events.append(
+            ConfigEventRecord(
+                event_id=str(uuid4()),
+                entity_type=entity_type,
+                entity_id=entity_id,
+                action=action,
+                actor=actor,
+                payload=payload,
+                created_at=datetime.now(UTC),
+            )
+        )
+
     def profiles_list(self) -> list[str]:
         """Execute profiles list."""
         return sorted(self.profiles.keys())
 
     def profile_get(self, profile: str) -> dict[str, Any]:
         """Execute profile get."""
-        return self.profiles[profile]
+        return self._profile_payload(profile)
 
-    def admin_profile_create(self, profile: str, roles: set[str]) -> None:
+    def admin_profile_create(
+        self,
+        profile: str,
+        roles: set[str],
+        config: dict[str, Any] | None = None,
+        actor: str = "admin",
+    ) -> dict[str, Any]:
         """Execute admin profile create."""
-        # Covers: FR-03
+        # Covers: FR-03, CFG-01
         self._require_admin(roles)
-        self.profiles[profile] = {
+        if profile in self.profiles:
+            raise ValueError(f"Profile already exists: {profile}")
+        payload = {
             "enabled": True,
             "backend": self.profiles["default"]["backend"],
             "roles": {"reader", "writer", "maintainer"},
         }
+        if config:
+            payload.update(dict(config))
+        if "roles" in payload and isinstance(payload["roles"], list):
+            payload["roles"] = set(str(item) for item in payload["roles"])
+        elif "roles" not in payload:
+            payload["roles"] = {"reader", "writer", "maintainer"}
+        self.profiles[profile] = payload
         self.audit_logger.write_event(
             AdminAuditEvent(
-                actor="admin",
+                actor=actor,
                 operation="admin",
                 profile=profile,
-                params={"action": "create"},
+                params={"action": "create", "config": self._profile_payload(profile)},
             )
         )
+        self._emit_config_event(
+            entity_type="profile",
+            entity_id=profile,
+            action="created",
+            actor=actor,
+            payload=self._profile_payload(profile),
+        )
+        return self._profile_payload(profile)
 
-    def admin_profile_delete(self, profile: str, roles: set[str]) -> None:
+    def admin_profile_update(
+        self,
+        profile: str,
+        roles: set[str],
+        updates: dict[str, Any],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Execute admin profile update."""
+        # Covers: CFG-03
+        self._require_admin(roles)
+        if profile not in self.profiles:
+            raise KeyError(profile)
+        current = dict(self.profiles[profile])
+        current.update(dict(updates))
+        if "roles" in current and isinstance(current["roles"], list):
+            current["roles"] = set(str(item) for item in current["roles"])
+        self.profiles[profile] = current
+        self.audit_logger.write_event(
+            AdminAuditEvent(
+                actor=actor,
+                operation="admin",
+                profile=profile,
+                params={"action": "update", "updates": self._profile_payload(profile)},
+            )
+        )
+        self._emit_config_event(
+            entity_type="profile",
+            entity_id=profile,
+            action="updated",
+            actor=actor,
+            payload=self._profile_payload(profile),
+        )
+        return self._profile_payload(profile)
+
+    def admin_profile_delete(self, profile: str, roles: set[str], actor: str = "admin") -> None:
         """Execute admin profile delete."""
         self._require_admin(roles)
         if profile == "default":
             raise ValueError("Default profile cannot be deleted")
-        self.profiles.pop(profile, None)
+        removed = self.profiles.pop(profile, None)
+        if removed is None:
+            raise KeyError(profile)
+        self.audit_logger.write_event(
+            AdminAuditEvent(
+                actor=actor,
+                operation="admin",
+                profile=profile,
+                params={"action": "delete"},
+            )
+        )
+        self._emit_config_event(
+            entity_type="profile",
+            entity_id=profile,
+            action="deleted",
+            actor=actor,
+            payload={"profile": profile},
+        )
+
+    def users_list(self) -> list[dict[str, Any]]:
+        """Return all configured users."""
+        return [self.user_get(user_id) for user_id in sorted(self.users.keys())]
+
+    def user_get(self, user_id: str) -> dict[str, Any]:
+        """Return a configured user."""
+        record = self.users[user_id]
+        return {
+            "user_id": record.user_id,
+            "display_name": record.display_name,
+            "roles": sorted(record.roles),
+            "groups": sorted(record.groups),
+            "enabled": record.enabled,
+        }
+
+    def admin_user_create(
+        self,
+        user_id: str,
+        roles: set[str],
+        payload: dict[str, Any],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Create a user record."""
+        # Covers: CFG-08
+        self._require_admin(roles)
+        if user_id in self.users:
+            raise ValueError(f"User already exists: {user_id}")
+        record = UserRecord(
+            user_id=user_id,
+            display_name=str(payload.get("display_name", user_id)),
+            roles=set(str(item) for item in payload.get("roles", ["reader"])),
+            groups=set(str(item) for item in payload.get("groups", [])),
+            enabled=bool(payload.get("enabled", True)),
+        )
+        self.users[user_id] = record
+        self.audit_logger.write_event(
+            AdminAuditEvent(actor=actor, operation="admin", params={"action": "user_create", "user_id": user_id})
+        )
+        self._emit_config_event(
+            entity_type="user",
+            entity_id=user_id,
+            action="created",
+            actor=actor,
+            payload=self.user_get(user_id),
+        )
+        return self.user_get(user_id)
+
+    def admin_user_update(
+        self,
+        user_id: str,
+        roles: set[str],
+        payload: dict[str, Any],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Update a user record."""
+        self._require_admin(roles)
+        if user_id not in self.users:
+            raise KeyError(user_id)
+        record = self.users[user_id]
+        if "display_name" in payload:
+            record.display_name = str(payload["display_name"])
+        if "roles" in payload:
+            record.roles = set(str(item) for item in payload["roles"])
+        if "groups" in payload:
+            record.groups = set(str(item) for item in payload["groups"])
+        if "enabled" in payload:
+            record.enabled = bool(payload["enabled"])
+        self.audit_logger.write_event(
+            AdminAuditEvent(actor=actor, operation="admin", params={"action": "user_update", "user_id": user_id})
+        )
+        self._emit_config_event(
+            entity_type="user",
+            entity_id=user_id,
+            action="updated",
+            actor=actor,
+            payload=self.user_get(user_id),
+        )
+        return self.user_get(user_id)
+
+    def admin_user_delete(self, user_id: str, roles: set[str], actor: str = "admin") -> None:
+        """Delete a user record."""
+        self._require_admin(roles)
+        if self.users.pop(user_id, None) is None:
+            raise KeyError(user_id)
+        self.audit_logger.write_event(
+            AdminAuditEvent(actor=actor, operation="admin", params={"action": "user_delete", "user_id": user_id})
+        )
+        self._emit_config_event(
+            entity_type="user",
+            entity_id=user_id,
+            action="deleted",
+            actor=actor,
+            payload={"user_id": user_id},
+        )
+
+    def groups_list(self) -> list[dict[str, Any]]:
+        """Return all configured groups."""
+        return [self.group_get(group_id) for group_id in sorted(self.groups.keys())]
+
+    def group_get(self, group_id: str) -> dict[str, Any]:
+        """Return a configured group."""
+        record = self.groups[group_id]
+        return {
+            "group_id": record.group_id,
+            "roles": sorted(record.roles),
+            "members": sorted(record.members),
+        }
+
+    def admin_group_create(
+        self,
+        group_id: str,
+        roles: set[str],
+        payload: dict[str, Any],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Create a group record."""
+        # Covers: CFG-09
+        self._require_admin(roles)
+        if group_id in self.groups:
+            raise ValueError(f"Group already exists: {group_id}")
+        record = GroupRecord(
+            group_id=group_id,
+            roles=set(str(item) for item in payload.get("roles", [])),
+            members=set(str(item) for item in payload.get("members", [])),
+        )
+        self.groups[group_id] = record
+        self.audit_logger.write_event(
+            AdminAuditEvent(actor=actor, operation="admin", params={"action": "group_create", "group_id": group_id})
+        )
+        self._emit_config_event(
+            entity_type="group",
+            entity_id=group_id,
+            action="created",
+            actor=actor,
+            payload=self.group_get(group_id),
+        )
+        return self.group_get(group_id)
+
+    def admin_group_update(
+        self,
+        group_id: str,
+        roles: set[str],
+        payload: dict[str, Any],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Update a group record."""
+        self._require_admin(roles)
+        if group_id not in self.groups:
+            raise KeyError(group_id)
+        record = self.groups[group_id]
+        if "roles" in payload:
+            record.roles = set(str(item) for item in payload["roles"])
+        if "members" in payload:
+            record.members = set(str(item) for item in payload["members"])
+        self.audit_logger.write_event(
+            AdminAuditEvent(actor=actor, operation="admin", params={"action": "group_update", "group_id": group_id})
+        )
+        self._emit_config_event(
+            entity_type="group",
+            entity_id=group_id,
+            action="updated",
+            actor=actor,
+            payload=self.group_get(group_id),
+        )
+        return self.group_get(group_id)
+
+    def admin_group_delete(self, group_id: str, roles: set[str], actor: str = "admin") -> None:
+        """Delete a group record."""
+        self._require_admin(roles)
+        if self.groups.pop(group_id, None) is None:
+            raise KeyError(group_id)
+        self.audit_logger.write_event(
+            AdminAuditEvent(actor=actor, operation="admin", params={"action": "group_delete", "group_id": group_id})
+        )
+        self._emit_config_event(
+            entity_type="group",
+            entity_id=group_id,
+            action="deleted",
+            actor=actor,
+            payload={"group_id": group_id},
+        )
+
+    def api_keys_list(self) -> list[dict[str, Any]]:
+        """Return configured API keys without exposing full secrets."""
+        records: list[dict[str, Any]] = []
+        for key_id in sorted(self.api_keys.keys()):
+            record = self.api_keys[key_id]
+            records.append(
+                {
+                    "key_id": record.key_id,
+                    "label": record.label,
+                    "roles": sorted(record.roles),
+                    "capabilities": sorted(record.capabilities),
+                    "user_id": record.user_id,
+                    "revoked": record.revoked,
+                }
+            )
+        return records
+
+    def admin_api_key_create(
+        self,
+        roles: set[str],
+        payload: dict[str, Any],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Create an API key record and bind it into the active auth store."""
+        # Covers: CFG-10
+        self._require_admin(roles)
+        key_id = str(payload.get("key_id", uuid4().hex[:12]))
+        if key_id in self.api_keys:
+            raise ValueError(f"API key already exists: {key_id}")
+        token = str(payload.get("token", f"cd_{uuid4().hex}"))
+        key_roles = set(str(item) for item in payload.get("roles", ["reader"]))
+        record = ApiKeyRecord(
+            key_id=key_id,
+            token=token,
+            label=str(payload.get("label", key_id)),
+            roles=key_roles,
+            capabilities=set(str(item) for item in payload.get("capabilities", [])),
+            user_id=str(payload["user_id"]) if payload.get("user_id") else None,
+        )
+        self.api_keys[key_id] = record
+        self._auth_api_keys[token] = set(record.roles)
+        self.audit_logger.write_event(
+            AdminAuditEvent(actor=actor, operation="admin", params={"action": "api_key_create", "key_id": key_id})
+        )
+        created = {
+            "key_id": record.key_id,
+            "token": record.token,
+            "label": record.label,
+            "roles": sorted(record.roles),
+            "capabilities": sorted(record.capabilities),
+            "user_id": record.user_id,
+            "revoked": record.revoked,
+        }
+        self._emit_config_event(
+            entity_type="api_key",
+            entity_id=key_id,
+            action="created",
+            actor=actor,
+            payload={k: v for k, v in created.items() if k != "token"},
+        )
+        return created
+
+    def admin_api_key_revoke(self, key_id: str, roles: set[str], actor: str = "admin") -> dict[str, Any]:
+        """Revoke an API key record."""
+        self._require_admin(roles)
+        if key_id not in self.api_keys:
+            raise KeyError(key_id)
+        record = self.api_keys[key_id]
+        record.revoked = True
+        self._auth_api_keys.pop(record.token, None)
+        self.audit_logger.write_event(
+            AdminAuditEvent(actor=actor, operation="admin", params={"action": "api_key_revoke", "key_id": key_id})
+        )
+        result = {
+            "key_id": record.key_id,
+            "label": record.label,
+            "revoked": record.revoked,
+        }
+        self._emit_config_event(
+            entity_type="api_key",
+            entity_id=key_id,
+            action="revoked",
+            actor=actor,
+            payload=result,
+        )
+        return result
+
+    def a2a_config_events(self) -> list[dict[str, Any]]:
+        """Return emitted configuration events for the A2A interface."""
+        return [
+            {
+                "event_id": item.event_id,
+                "entity_type": item.entity_type,
+                "entity_id": item.entity_id,
+                "action": item.action,
+                "actor": item.actor,
+                "payload": item.payload,
+                "created_at": item.created_at.isoformat(),
+            }
+            for item in self.a2a_events
+        ]
 
     def collections_list(self, profile: str) -> list[str]:
         """Execute collections list."""

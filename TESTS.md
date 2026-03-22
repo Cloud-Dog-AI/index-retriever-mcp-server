@@ -402,7 +402,7 @@ Real services required. Tests cross-component interaction.
 
 ---
 
-## Application Tests (AT) — 6 tests
+## Application Tests (AT) — core and extended workflow tests
 
 End-to-end user workflows.
 
@@ -414,6 +414,7 @@ End-to-end user workflows.
 | AT1.4 | FullWorkflow_RetentionEnforcement | Ingest documents → run retention with age policy → verify old docs removed |
 | AT1.5 | FullWorkflow_MultiBackendSwitch | Create two profiles (Chroma, Qdrant) → ingest to both → search both → same contract |
 | AT1.6 | RuntimeMatrix_API_MCP_Transport | Local-docker/remote-runtime API + MCP transport workflow with live endpoints |
+| AT1.10 | AdminWebUIPlaywright | Browser-driven admin WebUI CRUD for profiles, users, groups, and API keys with RBAC denial verification |
 
 ---
 
@@ -504,8 +505,8 @@ Commands executed:
 
 ## Web UI + A2A Traceability (UI-P5-IDX-TST)
 
-Target app: `cloud-dog-ai-ui-monorepo/apps/index-retriever`  
-Execution mode: Playwright E2E/a11y against real API runtime; WebUI is API-only client.
+Target app: in-repo Admin WebUI served from `/admin/ui/*` by `index-retriever-mcp-server`  
+Execution mode: Playwright browser AT against a real HTTP API runtime; WebUI is API-only client.
 
 | UI Test ID | Requirement Mapping | Playwright Spec File | Test Type | Expected Outcome |
 |---|---|---|---|---|
@@ -519,6 +520,7 @@ Execution mode: Playwright E2E/a11y against real API runtime; WebUI is API-only 
 | UI-AT1.3 | FR-13, FR-16 | `apps/index-retriever/tests/e2e/multi-backend-profile-switch.spec.ts` | AT | Profile/backend switch workflow behaves consistently |
 | UI-AT1.4 | FR-16, FR-17 | `apps/index-retriever/tests/e2e/retention-and-delete-controls.spec.ts` | AT | Retention/delete actions require confirmation and succeed |
 | UI-AT1.5 | NFR WebUI usability/accessibility | `apps/index-retriever/tests/a11y.spec.ts` | AT/a11y | Zero critical accessibility violations on core routes |
+| UI-AT1.6 | CFG-07, CFG-11, CFG-13 | `tests/application/AT1_10/test_at1_10_admin_webui_playwright.py` | AT | Browser CRUD for profiles, users, groups, and API keys with admin/reader RBAC verification |
 
 Strict command set (when app is implemented):
 

@@ -7,7 +7,7 @@
 - an HTTP API, which is the canonical integration surface,
 - an MCP tool interface for agent-to-agent and tool-calling runtimes,
 - A2A-compatible endpoints for platform interoperability,
-- an external Admin WebUI that consumes the HTTP API.
+- an Admin WebUI served by this runtime that consumes the HTTP API only.
 
 The service owns the transport contracts, authentication and authorisation boundaries, tool catalogue, ingest and retrieval orchestration, audit hooks, and lightweight platform database state. It also delegates parser, OCR, table-extraction, and backend-capability planning to platform packages where appropriate.
 
@@ -24,9 +24,10 @@ This repository delivers and documents:
 - Vault-aware configuration loading,
 - database initialisation and health checks,
 - audit event emission,
+- an in-repo admin WebUI under `/admin/ui/*`,
 - containerised all-in-one runtime packaging.
 
-This repository does not ship an Admin WebUI application. The Admin WebUI described in requirements is an external consumer of the HTTP API and is not part of the runtime packaged here.
+This repository ships a lightweight Admin WebUI for profile, user, group, and API-key administration. The WebUI is intentionally thin and acts as a strict HTTP API client. It does not access DB, VDB, queue, or backend providers directly.
 
 ## 3. Architecture Summary
 
@@ -704,6 +705,7 @@ Examples of test-backed architecture claims:
 |---|---|
 | canonical API and MCP route contract | `IT1.1` to `IT1.18`, route-prefix strict runs in `TESTS.md` |
 | A2A auth parity | `IT1.18`, `UT1.38`, W14B strict evidence in `TESTS.md` |
+| admin WebUI API-only CRUD path | `AT1.10`, `IT1.22`, `UT1.44` |
 | DB startup and migration | `ST1.14`, `IT2.15` |
 | parser provider matrix | `IT2.7` to `IT2.14`, `AT2.3`, `PT1.3` |
 | six-backend VDB matrix | `CT1.1` to `CT1.4`, `IT2.1` to `IT2.6`, `AT2.1`, `AT2.2`, `AT2.5` |
@@ -714,7 +716,7 @@ Examples of test-backed architecture claims:
 
 External users should be aware of the following current boundaries:
 
-1. The Admin WebUI is not packaged in this repository.
+1. The packaged Admin WebUI currently covers profile, user, group, and API-key administration. Broader observability and document workflow screens remain outside this in-repo UI surface.
 2. The current service-core indexing and search path uses `InMemoryVdbAdapter`, not a live remote VDB client inside `IndexService`.
 3. The current service-core queue path uses synchronous in-process execution through `QueueEngine`.
 4. `ingest_reference` currently handles local path references directly; connector modules exist separately and are not yet the sole orchestrated path inside `IndexService`.

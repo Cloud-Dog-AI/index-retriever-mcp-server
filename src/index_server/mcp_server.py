@@ -117,6 +117,12 @@ def _required_roles_for_tool(tool_name: str) -> set[str]:
         "retrieve",
         "profiles_list",
         "profile_get",
+        "users_list",
+        "user_get",
+        "groups_list",
+        "group_get",
+        "api_keys_list",
+        "a2a_config_events",
         "collections_list",
         "collection_get",
     }:
@@ -228,6 +234,119 @@ def execute_tool(
         return {"profiles": service.profiles_list()}
     if tool_name == "profile_get":
         return {"profile": service.profile_get(str(arguments["profile"]))}
+    if tool_name == "admin_profile_create":
+        return {
+            "profile": service.admin_profile_create(
+                profile=str(arguments["profile"]),
+                roles=roles,
+                config=arguments.get("config") if isinstance(arguments.get("config"), dict) else None,
+                actor=str(arguments.get("actor", "mcp")),
+            ),
+            "status": "ok",
+        }
+    if tool_name == "admin_profile_update":
+        updates = arguments.get("config") if isinstance(arguments.get("config"), dict) else dict(arguments)
+        updates.pop("profile", None)
+        updates.pop("actor", None)
+        updates.pop("collection", None)
+        service.admin_profile_update(
+            profile=str(arguments["profile"]),
+            roles=roles,
+            updates=updates,
+            actor=str(arguments.get("actor", "mcp")),
+        )
+        return {"status": "ok"}
+    if tool_name == "admin_profile_delete":
+        service.admin_profile_delete(
+            profile=str(arguments["profile"]),
+            roles=roles,
+            actor=str(arguments.get("actor", "mcp")),
+        )
+        return {"status": "ok"}
+    if tool_name == "users_list":
+        return {"users": service.users_list()}
+    if tool_name == "user_get":
+        return {"user": service.user_get(str(arguments["user_id"]))}
+    if tool_name == "admin_user_create":
+        return {
+            "user": service.admin_user_create(
+                user_id=str(arguments["user_id"]),
+                roles=roles,
+                payload=arguments,
+                actor=str(arguments.get("actor", "mcp")),
+            ),
+            "status": "ok",
+        }
+    if tool_name == "admin_user_update":
+        return {
+            "user": service.admin_user_update(
+                user_id=str(arguments["user_id"]),
+                roles=roles,
+                payload=arguments,
+                actor=str(arguments.get("actor", "mcp")),
+            ),
+            "status": "ok",
+        }
+    if tool_name == "admin_user_delete":
+        service.admin_user_delete(
+            user_id=str(arguments["user_id"]),
+            roles=roles,
+            actor=str(arguments.get("actor", "mcp")),
+        )
+        return {"status": "ok"}
+    if tool_name == "groups_list":
+        return {"groups": service.groups_list()}
+    if tool_name == "group_get":
+        return {"group": service.group_get(str(arguments["group_id"]))}
+    if tool_name == "admin_group_create":
+        return {
+            "group": service.admin_group_create(
+                group_id=str(arguments["group_id"]),
+                roles=roles,
+                payload=arguments,
+                actor=str(arguments.get("actor", "mcp")),
+            ),
+            "status": "ok",
+        }
+    if tool_name == "admin_group_update":
+        return {
+            "group": service.admin_group_update(
+                group_id=str(arguments["group_id"]),
+                roles=roles,
+                payload=arguments,
+                actor=str(arguments.get("actor", "mcp")),
+            ),
+            "status": "ok",
+        }
+    if tool_name == "admin_group_delete":
+        service.admin_group_delete(
+            group_id=str(arguments["group_id"]),
+            roles=roles,
+            actor=str(arguments.get("actor", "mcp")),
+        )
+        return {"status": "ok"}
+    if tool_name == "api_keys_list":
+        return {"api_keys": service.api_keys_list()}
+    if tool_name == "admin_api_key_create":
+        return {
+            "api_key": service.admin_api_key_create(
+                roles=roles,
+                payload=arguments,
+                actor=str(arguments.get("actor", "mcp")),
+            ),
+            "status": "ok",
+        }
+    if tool_name == "admin_api_key_revoke":
+        return {
+            "api_key": service.admin_api_key_revoke(
+                key_id=str(arguments["key_id"]),
+                roles=roles,
+                actor=str(arguments.get("actor", "mcp")),
+            ),
+            "status": "ok",
+        }
+    if tool_name == "a2a_config_events":
+        return {"events": service.a2a_config_events()}
     if tool_name == "collections_list":
         return {"collections": service.collections_list(str(arguments.get("profile", "default")))}
     if tool_name == "admin_collection_create":
@@ -386,6 +505,9 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
     db_runtime = initialise_database()
     active_registry = registry or build_registry()
     auth = AuthMiddleware()
+    bind_auth_api_keys = getattr(active_service, "attach_auth_api_keys", None)
+    if callable(bind_auth_api_keys):
+        bind_auth_api_keys(auth.api_keys)
     app = _create_runtime_app(on_shutdown=shutdown_database)
 
     @app.get("/health")
