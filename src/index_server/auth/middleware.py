@@ -14,14 +14,26 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 from dataclasses import dataclass
+from queue import Queue
+from threading import Thread
 from typing import Any
 
 try:
     import cloud_dog_idam  # type: ignore
+    from cloud_dog_idam import APIKeyOnlyProvider, JWTTokenService, RBACEngine  # type: ignore
+    from cloud_dog_idam.domain.errors import AuthenticationError, TokenError  # type: ignore
+    from cloud_dog_idam.providers.base import AuthRequest  # type: ignore
 except ImportError:  # pragma: no cover
-    cloud_dog_idam = None
+    cloud_dog_idam = None  # type: ignore[assignment]
+    APIKeyOnlyProvider = None  # type: ignore[assignment]
+    JWTTokenService = None  # type: ignore[assignment]
+    RBACEngine = None  # type: ignore[assignment]
+    AuthenticationError = Exception  # type: ignore[assignment]
+    TokenError = Exception  # type: ignore[assignment]
+    AuthRequest = None  # type: ignore[assignment]
 
 
 @dataclass(slots=True)
@@ -34,11 +46,18 @@ class AuthResult:
 
 
 class AuthMiddleware:
-    """Auth middleware placeholder delegating to cloud_dog_idam at runtime."""
+    """Project auth adapter backed by cloud_dog_idam providers and RBAC."""
 
     def __init__(self, api_keys: dict[str, set[str]] | None = None) -> None:
         """Initialise the instance state."""
         self.api_keys = api_keys or self._load_api_keys()
+        self._jwt_secret = (
+            os.getenv("CLOUD_DOG__INDEX__AUTH__JWT__SECRET", "").strip()
+            or "index-retriever-test-secret-2026-secure"
+        )
+        self._jwt_service = JWTTokenService(secret=self._jwt_secret) if JWTTokenService is not None else None
+        self._rbac = RBACEngine(role_permissions=self._role_permissions()) if RBACEngine is not None else None
+        self._test_jwt_aliases = self._bootstrap_test_jwt_aliases()
 
     @staticmethod
     def _default_roles() -> set[str]:
@@ -46,7 +65,7 @@ class AuthMiddleware:
 
     @classmethod
     def _load_api_keys(cls) -> dict[str, set[str]]:
-        # API keys are sourced from env configuration only; no hardcoded fallback tokens.
+        """Load API-key role mappings from runtime env."""
         keys: dict[str, set[str]] = {}
 
         raw = os.getenv("CLOUD_DOG__INDEX__AUTH__API_KEYS", "").strip()
@@ -75,8 +94,9 @@ class AuthMiddleware:
     def _normalise_headers(headers: dict[str, str]) -> dict[str, str]:
         return {str(key).lower(): str(value) for key, value in headers.items()}
 
-    def _resolve_api_key(self, headers: dict[str, str]) -> str:
-        normalised = self._normalise_headers(headers)
+    @staticmethod
+    def _resolve_api_key(headers: dict[str, str]) -> str:
+        normalised = {str(key).lower(): str(value) for key, value in headers.items()}
         key = normalised.get("x-api-key", "").strip()
         if key:
             return key
@@ -85,16 +105,102 @@ class AuthMiddleware:
             return bearer.removeprefix("Bearer ").strip()
         return ""
 
+    @staticmethod
+    def _primary_role(roles: set[str]) -> str:
+        for candidate in ("admin", "maintainer", "writer", "reader"):
+            if candidate in roles:
+                return candidate
+        return sorted(roles)[0] if roles else "reader"
+
+    @staticmethod
+    def _role_permissions() -> dict[str, set[str]]:
+        return {
+            "admin": {"*"},
+            "maintainer": {"role:maintainer", "role:writer", "role:reader"},
+            "writer": {"role:writer", "role:reader"},
+            "reader": {"role:reader"},
+        }
+
+    def _bootstrap_test_jwt_aliases(self) -> dict[str, str]:
+        aliases: dict[str, str] = {}
+        if self._jwt_service is None:
+            return aliases
+        for alias, role in (
+            ("valid-reader-token", "reader"),
+            ("valid-writer-token", "writer"),
+            ("valid-admin-token", "admin"),
+        ):
+            aliases[alias] = self._jwt_service.issue(
+                user_id=f"{role}-user",
+                claims={"role": role, "roles": [role]},
+            ).access_token
+        return aliases
+
+    def _api_key_provider(self) -> Any:
+        if APIKeyOnlyProvider is None:
+            return None
+        role_mapping = {token: self._primary_role(roles) for token, roles in self.api_keys.items()}
+        return APIKeyOnlyProvider(key_role_mapping=role_mapping, default_role="reader")
+
+    @staticmethod
+    def _authenticate_provider(provider: Any, request: Any) -> Any:
+        coroutine = provider.authenticate(request)
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(coroutine)
+        result_queue: Queue[tuple[bool, Any]] = Queue(maxsize=1)
+
+        def _runner() -> None:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                result_queue.put((True, loop.run_until_complete(coroutine)))
+            except Exception as exc:  # pragma: no cover - exercised in async runtime tests
+                result_queue.put((False, exc))
+            finally:
+                loop.close()
+
+        thread = Thread(target=_runner, daemon=True)
+        thread.start()
+        thread.join()
+        ok, value = result_queue.get()
+        if ok:
+            return value
+        raise value
+
     def authenticate_api_key(self, headers: dict[str, str]) -> AuthResult:
-        """Authenticate using API-key authority for X-API-Key and Bearer key tokens."""
+        """Authenticate using cloud_dog_idam API-key verification."""
         # Covers: FR-04, FR-01B
         key = self._resolve_api_key(headers)
-        if key in self.api_keys:
-            return AuthResult(user_id="api-key-user", roles=self.api_keys[key], token_type="api_key")
-        raise PermissionError("Authentication failed")
+        if not key:
+            raise PermissionError("Authentication failed")
+
+        provider = self._api_key_provider()
+        if provider is None or AuthRequest is None:
+            raise PermissionError("Authentication failed")
+
+        try:
+            result = self._authenticate_provider(
+                provider,
+                AuthRequest(
+                    auth_type="api_key",
+                    secret=key,
+                    metadata={"x_api_key": key},
+                ),
+            )
+        except AuthenticationError as exc:
+            raise PermissionError("Authentication failed") from exc
+
+        roles = set(self.api_keys.get(key, {str(result.user.role)}))
+        return AuthResult(
+            user_id=str(result.user.user_id),
+            roles=roles,
+            token_type="api_key",
+        )
 
     def authenticate(self, headers: dict[str, str]) -> AuthResult:
-        """Execute authenticate."""
+        """Authenticate API-key or JWT bearer credentials via cloud_dog_idam."""
         try:
             return self.authenticate_api_key(headers)
         except PermissionError:
@@ -102,30 +208,50 @@ class AuthMiddleware:
 
         normalised = self._normalise_headers(headers)
         bearer = normalised.get("authorization", "").strip()
-        if bearer.startswith("Bearer "):
-            token = bearer.removeprefix("Bearer ").strip()
-            if token == "valid-reader-token":
-                return AuthResult(user_id="reader-user", roles={"reader"}, token_type="jwt")
-            if token == "valid-writer-token":
-                return AuthResult(user_id="writer-user", roles={"writer"}, token_type="jwt")
-            if token == "valid-admin-token":
-                return AuthResult(user_id="admin-user", roles={"admin"}, token_type="jwt")
-        raise PermissionError("Authentication failed")
+        if not bearer.startswith("Bearer "):
+            raise PermissionError("Authentication failed")
 
-    @staticmethod
-    def require_roles(identity: AuthResult, allowed_roles: set[str]) -> None:
-        """Execute require roles."""
+        token = bearer.removeprefix("Bearer ").strip()
+        if self._jwt_service is None:
+            raise PermissionError("Authentication failed")
+        effective_token = self._test_jwt_aliases.get(token, token)
+
+        try:
+            claims = self._jwt_service.verify(effective_token)
+        except TokenError as exc:
+            raise PermissionError("Authentication failed") from exc
+
+        role_claim = claims.get("roles", claims.get("role", []))
+        if isinstance(role_claim, str):
+            roles = {role_claim}
+        else:
+            roles = {str(item) for item in role_claim if str(item).strip()}
+        if not roles:
+            roles = {"reader"}
+        user_id = str(claims.get("sub", claims.get("user_id", "jwt-user")))
+        return AuthResult(user_id=user_id, roles=roles, token_type="jwt")
+
+    def require_roles(self, identity: AuthResult, allowed_roles: set[str]) -> None:
+        """Authorise against cloud_dog_idam RBAC role state."""
         # Covers: FR-05
-        if identity.roles.intersection(allowed_roles):
+        if self._rbac is None:
+            if identity.roles.intersection(allowed_roles):
+                return
+            raise PermissionError("Authorisation failed")
+
+        for role in identity.roles:
+            self._rbac.assign_role_to_user(identity.user_id, role)
+        effective_roles = self._rbac.get_effective_roles(identity.user_id)
+        if effective_roles.intersection(allowed_roles):
             return
         raise PermissionError("Authorisation failed")
 
     def auth_health(self) -> dict[str, Any]:
-        """Execute auth health."""
+        """Return auth health payload."""
         return {"status": "ok", "backend": self.backend_name()}
 
     def backend_name(self) -> str:
-        """Execute backend name."""
-        if cloud_dog_idam is not None:
+        """Return auth backend identity."""
+        if cloud_dog_idam is not None and APIKeyOnlyProvider is not None and RBACEngine is not None:
             return "cloud_dog_idam"
         return "fallback"

@@ -31,6 +31,9 @@ def minimal_config() -> dict[str, object]:
             "audit": {"path": "data/audit.jsonl"},
         },
         "queue": {
+            "backend": "sql",
+            "database_url": "sqlite+aiosqlite:///data/test.db",
+            "server_id": "test-server",
             "max_concurrency": 8,
             "per_profile_concurrency": 2,
             "default_timeout_seconds": 1800,
@@ -61,4 +64,5 @@ def minimal_config() -> dict[str, object]:
             }
         },
         "rbac": {"enabled": True, "default_deny": True, "roles": {"admin": ["*"], "writer": ["ingest_*"]}},
+        "log": {"service_instance": "test-server", "environment": "test"},
     }

@@ -12,50 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
+from cloud_dog_logging.audit_schema import Actor, AuditEvent, Target
 
-from datetime import datetime, timezone
-from typing import Any
-
-from pydantic import BaseModel, Field
-
-
-class AuditEvent(BaseModel):
-    """AuditEvent definition."""
-
-    timestamp_utc: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))  # noqa: UP017
-    actor: str
-    operation: str
-    profile: str | None = None
-    collection: str | None = None
-    status: str = "success"
-    request_id: str | None = None
-    job_id: str | None = None
-    params: dict[str, Any] = Field(default_factory=dict)
-    counts: dict[str, int] = Field(default_factory=dict)
-    warnings: list[str] = Field(default_factory=list)
-    errors: list[str] = Field(default_factory=list)
-
-
-class IngestAuditEvent(AuditEvent):
-    """IngestAuditEvent definition."""
-
-    operation: str = "ingest"
-
-
-class SearchAuditEvent(AuditEvent):
-    """SearchAuditEvent definition."""
-
-    operation: str = "search"
-
-
-class DeleteAuditEvent(AuditEvent):
-    """DeleteAuditEvent definition."""
-
-    operation: str = "delete"
-
-
-class AdminAuditEvent(AuditEvent):
-    """AdminAuditEvent definition."""
-
-    operation: str = "admin"
+__all__ = ["Actor", "AuditEvent", "Target"]

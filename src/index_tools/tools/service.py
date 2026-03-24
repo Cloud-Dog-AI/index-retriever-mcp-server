@@ -27,7 +27,6 @@ from typing import Any
 from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
-from index_tools.audit.events import AdminAuditEvent, IngestAuditEvent
 from index_tools.audit.logger import AuditLogger
 from index_tools.collections.manager import CollectionManager
 from index_tools.embeddings.adapter import EmbeddingAdapter
@@ -37,6 +36,19 @@ from index_tools.queue.engine import QueueEngine
 from index_tools.queue.models import JobRecord, JobStatus
 from index_tools.search.engine import SearchEngine
 from index_tools.vdb.adapters import InMemoryVdbAdapter
+
+try:
+    from cloud_dog_idam import APIKeyManager, GroupService, UserService
+    from cloud_dog_idam.domain.enums import UserStatus as IDAMUserStatus
+    from cloud_dog_idam.domain.models import Group as IDAMGroup
+    from cloud_dog_idam.domain.models import User as IDAMUser
+except ImportError:  # pragma: no cover
+    APIKeyManager = None  # type: ignore[assignment]
+    GroupService = None  # type: ignore[assignment]
+    UserService = None  # type: ignore[assignment]
+    IDAMUserStatus = None  # type: ignore[assignment]
+    IDAMGroup = None  # type: ignore[assignment]
+    IDAMUser = None  # type: ignore[assignment]
 
 try:
     from cloud_dog_vdb import ParserIngestionOptions, SearchRequest, ingest_document
@@ -208,6 +220,8 @@ class IndexService:
         embedding_provider: str | None = None,
         embedding_model: str | None = None,
         default_backend: str | None = None,
+        queue_database_url: str | None = None,
+        server_id: str | None = None,
     ) -> None:
         """Initialise the instance state."""
         resolved_provider = embedding_provider or _required_env(
@@ -227,8 +241,23 @@ class IndexService:
         self.vdb = InMemoryVdbAdapter()
         self.search_engine = SearchEngine(adapter=self.vdb)
         self.collection_manager = CollectionManager(adapter=self.vdb)
-        self.queue = QueueEngine()
-        self.audit_logger = AuditLogger(path=audit_path)
+        resolved_queue_database_url = queue_database_url or _resolve_queue_database_url(audit_path)
+        resolved_server_id = server_id or _resolve_server_id()
+        self.queue = QueueEngine(
+            database_url=resolved_queue_database_url,
+            server_id=resolved_server_id,
+            queue_name=_env_or_default("CLOUD_DOG__INDEX__QUEUE__NAME", "index-retriever"),
+            timeout_seconds=_env_int("CLOUD_DOG__INDEX__QUEUE__DEFAULT_TIMEOUT_SECONDS", default=1800),
+            retry_max_attempts=_env_int("CLOUD_DOG__INDEX__QUEUE__RETRY__MAX_ATTEMPTS", default=3),
+            retry_backoff_seconds=_env_float("CLOUD_DOG__INDEX__QUEUE__RETRY__BACKOFF_SECONDS", default=5.0),
+            redis_enabled=_env_bool("CLOUD_DOG__INDEX__QUEUE__REDIS__ENABLED", default=False),
+            redis_url=_env_or_default("CLOUD_DOG__INDEX__QUEUE__REDIS__URL", ""),
+        )
+        self.audit_logger = AuditLogger(
+            path=audit_path,
+            server_id=self.queue.server_id,
+            environment=_resolve_environment(),
+        )
         self.embedding_adapter = EmbeddingAdapter(provider=resolved_provider, model=resolved_model)
         self.profiles: dict[str, dict[str, Any]] = {
             "default": {
@@ -245,8 +274,13 @@ class IndexService:
         self.users: dict[str, UserRecord] = {}
         self.groups: dict[str, GroupRecord] = {}
         self.api_keys: dict[str, ApiKeyRecord] = {}
+        self._idam_users = UserService() if UserService is not None else None
+        self._idam_groups = GroupService() if GroupService is not None else None
+        self._idam_api_keys = APIKeyManager(default_prefix="cd_") if APIKeyManager is not None else None
+        self._idam_api_key_refs: dict[str, str] = {}
         self.a2a_events: list[ConfigEventRecord] = []
         self._auth_api_keys: dict[str, set[str]] = {}
+        self.queue.register_handler("ingest_text", self._process_ingest_text_job)
 
     @staticmethod
     def _collection_key(profile: str, collection: str) -> str:
@@ -262,12 +296,63 @@ class IndexService:
         """Bind the runtime auth API-key store so admin key CRUD updates auth immediately."""
         self._auth_api_keys = auth_api_keys
 
+    def _sync_idam_user(self, user_id: str) -> None:
+        if self._idam_users is None or IDAMUser is None or IDAMUserStatus is None:
+            return
+        record = self.users[user_id]
+        existing = self._idam_users.get(user_id)
+        primary_role = sorted(record.roles)[0] if record.roles else "reader"
+        status = IDAMUserStatus.ACTIVE if record.enabled else IDAMUserStatus.DISABLED
+        if existing is None:
+            self._idam_users.create(
+                IDAMUser(
+                    user_id=user_id,
+                    username=user_id,
+                    display_name=record.display_name,
+                    role=primary_role,
+                    status=status,
+                    email="",
+                )
+            )
+            return
+        self._idam_users.update(
+            user_id,
+            username=user_id,
+            display_name=record.display_name,
+            role=primary_role,
+            status=status,
+        )
+
+    def _sync_idam_group(self, group_id: str) -> None:
+        if self._idam_groups is None or IDAMGroup is None:
+            return
+        record = self.groups[group_id]
+        known_ids = {item.group_id for item in self._idam_groups.list()}
+        if group_id not in known_ids:
+            self._idam_groups.create(
+                IDAMGroup(
+                    group_id=group_id,
+                    name=group_id,
+                    description=",".join(sorted(record.roles)),
+                )
+            )
+        for member in sorted(record.members):
+            self._idam_groups.add_member(group_id, member)
+
     def _profile_payload(self, profile: str) -> dict[str, Any]:
         payload = dict(self.profiles[profile])
         roles = payload.get("roles")
         if isinstance(roles, set):
             payload["roles"] = sorted(roles)
         return payload
+
+    @staticmethod
+    def _serialise_profile_payload(payload: dict[str, Any]) -> dict[str, Any]:
+        output = dict(payload)
+        roles = output.get("roles")
+        if isinstance(roles, set):
+            output["roles"] = sorted(roles)
+        return output
 
     def _emit_config_event(
         self,
@@ -288,6 +373,68 @@ class IndexService:
                 payload=payload,
                 created_at=datetime.now(UTC),
             )
+        )
+
+    def _process_ingest_text_job(self, job: JobRecord) -> None:
+        """Execute the ingest pipeline for a queued job record."""
+        payload = dict(job.payload)
+        profile = str(payload["profile"])
+        collection = str(payload["collection"])
+        text = str(payload["text"])
+        source = str(payload["source"])
+        actor = str(payload.get("actor", "system"))
+        metadata = payload.get("metadata")
+        created_at_raw = str(payload.get("created_at", "")).strip()
+        created_at = datetime.fromisoformat(created_at_raw) if created_at_raw else None
+
+        collection_key = self._collection_key(profile, collection)
+        doc_id = str(uuid4())
+        chunks = token_chunks(text, chunk_size=64, chunk_overlap=8)
+        if not chunks:
+            chunks = [text]
+        vectors = self.embedding_adapter.embed(chunks)
+        document_metadata = build_metadata(
+            source=source,
+            content=text.encode(),
+            profile=profile,
+            collection=collection,
+        )
+        if isinstance(metadata, dict):
+            document_metadata.update(metadata)
+        document_metadata.setdefault("source_uri", source)
+        document_metadata.setdefault("filename", _infer_filename(str(document_metadata["source_uri"])))
+        document_metadata.setdefault("mime_type", _infer_mime_type(str(document_metadata["filename"])))
+        if created_at is not None:
+            document_metadata["created_at"] = created_at.isoformat()
+        else:
+            document_metadata["created_at"] = datetime.now(timezone.utc).isoformat()  # noqa: UP017
+
+        self.vdb.upsert(
+            collection=collection_key,
+            doc_id=doc_id,
+            chunks=chunks,
+            vectors=vectors,
+            metadata=document_metadata,
+        )
+        created = created_at or datetime.now(timezone.utc)  # noqa: UP017
+        self.documents[doc_id] = DocumentRecord(
+            doc_id=doc_id,
+            profile=profile,
+            collection=collection,
+            source=source,
+            text=text,
+            metadata=document_metadata,
+            created_at=created,
+        )
+
+        self.audit_logger.log_ingest(
+            actor=actor,
+            profile=profile,
+            collection=collection,
+            job_id=job.job_id,
+            source=source,
+            metadata=metadata,
+            chunk_count=len(chunks),
         )
 
     def profiles_list(self) -> list[str]:
@@ -322,13 +469,15 @@ class IndexService:
         elif "roles" not in payload:
             payload["roles"] = {"reader", "writer", "maintainer"}
         self.profiles[profile] = payload
-        self.audit_logger.write_event(
-            AdminAuditEvent(
-                actor=actor,
-                operation="admin",
-                profile=profile,
-                params={"action": "create", "config": self._profile_payload(profile)},
-            )
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="create",
+            target_type="profile",
+            target_id=profile,
+            target_name=profile,
+            new_value=self._profile_payload(profile),
+            profile=profile,
         )
         self._emit_config_event(
             entity_type="profile",
@@ -352,17 +501,21 @@ class IndexService:
         if profile not in self.profiles:
             raise KeyError(profile)
         current = dict(self.profiles[profile])
+        prior_payload = self._profile_payload(profile)
         current.update(dict(updates))
         if "roles" in current and isinstance(current["roles"], list):
             current["roles"] = set(str(item) for item in current["roles"])
         self.profiles[profile] = current
-        self.audit_logger.write_event(
-            AdminAuditEvent(
-                actor=actor,
-                operation="admin",
-                profile=profile,
-                params={"action": "update", "updates": self._profile_payload(profile)},
-            )
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="update",
+            target_type="profile",
+            target_id=profile,
+            target_name=profile,
+            prior_value=prior_payload,
+            new_value=self._profile_payload(profile),
+            profile=profile,
         )
         self._emit_config_event(
             entity_type="profile",
@@ -381,13 +534,15 @@ class IndexService:
         removed = self.profiles.pop(profile, None)
         if removed is None:
             raise KeyError(profile)
-        self.audit_logger.write_event(
-            AdminAuditEvent(
-                actor=actor,
-                operation="admin",
-                profile=profile,
-                params={"action": "delete"},
-            )
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="delete",
+            target_type="profile",
+            target_id=profile,
+            target_name=profile,
+            prior_value=self._serialise_profile_payload(removed),
+            profile=profile,
         )
         self._emit_config_event(
             entity_type="profile",
@@ -432,8 +587,15 @@ class IndexService:
             enabled=bool(payload.get("enabled", True)),
         )
         self.users[user_id] = record
-        self.audit_logger.write_event(
-            AdminAuditEvent(actor=actor, operation="admin", params={"action": "user_create", "user_id": user_id})
+        self._sync_idam_user(user_id)
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="create",
+            target_type="user",
+            target_id=user_id,
+            target_name=user_id,
+            new_value=self.user_get(user_id),
         )
         self._emit_config_event(
             entity_type="user",
@@ -456,6 +618,7 @@ class IndexService:
         if user_id not in self.users:
             raise KeyError(user_id)
         record = self.users[user_id]
+        prior_value = self.user_get(user_id)
         if "display_name" in payload:
             record.display_name = str(payload["display_name"])
         if "roles" in payload:
@@ -464,8 +627,16 @@ class IndexService:
             record.groups = set(str(item) for item in payload["groups"])
         if "enabled" in payload:
             record.enabled = bool(payload["enabled"])
-        self.audit_logger.write_event(
-            AdminAuditEvent(actor=actor, operation="admin", params={"action": "user_update", "user_id": user_id})
+        self._sync_idam_user(user_id)
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="update",
+            target_type="user",
+            target_id=user_id,
+            target_name=user_id,
+            prior_value=prior_value,
+            new_value=self.user_get(user_id),
         )
         self._emit_config_event(
             entity_type="user",
@@ -479,10 +650,19 @@ class IndexService:
     def admin_user_delete(self, user_id: str, roles: set[str], actor: str = "admin") -> None:
         """Delete a user record."""
         self._require_admin(roles)
+        prior_value = self.user_get(user_id)
         if self.users.pop(user_id, None) is None:
             raise KeyError(user_id)
-        self.audit_logger.write_event(
-            AdminAuditEvent(actor=actor, operation="admin", params={"action": "user_delete", "user_id": user_id})
+        if self._idam_users is not None:
+            self._idam_users.disable(user_id)
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="delete",
+            target_type="user",
+            target_id=user_id,
+            target_name=user_id,
+            prior_value=prior_value,
         )
         self._emit_config_event(
             entity_type="user",
@@ -523,8 +703,15 @@ class IndexService:
             members=set(str(item) for item in payload.get("members", [])),
         )
         self.groups[group_id] = record
-        self.audit_logger.write_event(
-            AdminAuditEvent(actor=actor, operation="admin", params={"action": "group_create", "group_id": group_id})
+        self._sync_idam_group(group_id)
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="create",
+            target_type="group",
+            target_id=group_id,
+            target_name=group_id,
+            new_value=self.group_get(group_id),
         )
         self._emit_config_event(
             entity_type="group",
@@ -547,12 +734,21 @@ class IndexService:
         if group_id not in self.groups:
             raise KeyError(group_id)
         record = self.groups[group_id]
+        prior_value = self.group_get(group_id)
         if "roles" in payload:
             record.roles = set(str(item) for item in payload["roles"])
         if "members" in payload:
             record.members = set(str(item) for item in payload["members"])
-        self.audit_logger.write_event(
-            AdminAuditEvent(actor=actor, operation="admin", params={"action": "group_update", "group_id": group_id})
+        self._sync_idam_group(group_id)
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="update",
+            target_type="group",
+            target_id=group_id,
+            target_name=group_id,
+            prior_value=prior_value,
+            new_value=self.group_get(group_id),
         )
         self._emit_config_event(
             entity_type="group",
@@ -566,10 +762,17 @@ class IndexService:
     def admin_group_delete(self, group_id: str, roles: set[str], actor: str = "admin") -> None:
         """Delete a group record."""
         self._require_admin(roles)
+        prior_value = self.group_get(group_id)
         if self.groups.pop(group_id, None) is None:
             raise KeyError(group_id)
-        self.audit_logger.write_event(
-            AdminAuditEvent(actor=actor, operation="admin", params={"action": "group_delete", "group_id": group_id})
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="delete",
+            target_type="group",
+            target_id=group_id,
+            target_name=group_id,
+            prior_value=prior_value,
         )
         self._emit_config_event(
             entity_type="group",
@@ -608,7 +811,15 @@ class IndexService:
         key_id = str(payload.get("key_id", uuid4().hex[:12]))
         if key_id in self.api_keys:
             raise ValueError(f"API key already exists: {key_id}")
-        token = str(payload.get("token", f"cd_{uuid4().hex}"))
+        token = str(payload.get("token", ""))
+        idam_key_id = ""
+        if self._idam_api_keys is not None:
+            owner_id = str(payload.get("user_id") or actor or "api-key-owner")
+            generated_token, metadata = self._idam_api_keys.generate(owner_id)
+            token = token or generated_token
+            idam_key_id = metadata.api_key_id
+        if not token:
+            token = f"cd_{uuid4().hex}"
         key_roles = set(str(item) for item in payload.get("roles", ["reader"]))
         record = ApiKeyRecord(
             key_id=key_id,
@@ -619,10 +830,9 @@ class IndexService:
             user_id=str(payload["user_id"]) if payload.get("user_id") else None,
         )
         self.api_keys[key_id] = record
+        if idam_key_id:
+            self._idam_api_key_refs[key_id] = idam_key_id
         self._auth_api_keys[token] = set(record.roles)
-        self.audit_logger.write_event(
-            AdminAuditEvent(actor=actor, operation="admin", params={"action": "api_key_create", "key_id": key_id})
-        )
         created = {
             "key_id": record.key_id,
             "token": record.token,
@@ -632,6 +842,16 @@ class IndexService:
             "user_id": record.user_id,
             "revoked": record.revoked,
         }
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="create",
+            target_type="api_key",
+            target_id=key_id,
+            target_name=record.label,
+            new_value={k: v for k, v in created.items() if k != "token"},
+            user_id=record.user_id,
+        )
         self._emit_config_event(
             entity_type="api_key",
             entity_id=key_id,
@@ -648,15 +868,33 @@ class IndexService:
             raise KeyError(key_id)
         record = self.api_keys[key_id]
         record.revoked = True
+        idam_key_id = self._idam_api_key_refs.get(key_id, "")
+        if self._idam_api_keys is not None and idam_key_id:
+            self._idam_api_keys.revoke(idam_key_id)
         self._auth_api_keys.pop(record.token, None)
-        self.audit_logger.write_event(
-            AdminAuditEvent(actor=actor, operation="admin", params={"action": "api_key_revoke", "key_id": key_id})
-        )
         result = {
             "key_id": record.key_id,
             "label": record.label,
             "revoked": record.revoked,
         }
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="revoke",
+            target_type="api_key",
+            target_id=key_id,
+            target_name=record.label,
+            prior_value={
+                "key_id": record.key_id,
+                "label": record.label,
+                "roles": sorted(record.roles),
+                "capabilities": sorted(record.capabilities),
+                "user_id": record.user_id,
+                "revoked": False,
+            },
+            new_value=result,
+            user_id=record.user_id,
+        )
         self._emit_config_event(
             entity_type="api_key",
             entity_id=key_id,
@@ -753,72 +991,29 @@ class IndexService:
         if request_key in self.idempotency:
             return self.idempotency[request_key]
 
-        job_id = str(uuid4())
-        job = JobRecord(
-            job_id=job_id,
-            profile=profile,
-            collection=collection,
-            job_type="ingest_text",
-            idempotency_key=request_key,
+        queued_job = self.queue.enqueue(
+            JobRecord(
+                job_id=str(uuid4()),
+                profile=profile,
+                collection=collection,
+                job_type="ingest_text",
+                idempotency_key=request_key,
+                server_id=self.queue.server_id,
+            ),
+            payload={
+                "profile": profile,
+                "collection": collection,
+                "text": text,
+                "source": source,
+                "actor": actor,
+                "metadata": metadata or {},
+                "created_at": created_at.isoformat() if created_at is not None else "",
+            },
+            actor=actor,
         )
-        self.queue.enqueue(job)
-
-        def _handler(_: JobRecord) -> None:
-            """Internal helper to handler."""
-            doc_id = str(uuid4())
-            chunks = token_chunks(text, chunk_size=64, chunk_overlap=8)
-            if not chunks:
-                chunks = [text]
-            vectors = self.embedding_adapter.embed(chunks)
-            document_metadata = build_metadata(
-                source=source,
-                content=text.encode(),
-                profile=profile,
-                collection=collection,
-            )
-            if metadata:
-                document_metadata.update(metadata)
-            document_metadata.setdefault("source_uri", source)
-            document_metadata.setdefault("filename", _infer_filename(str(document_metadata["source_uri"])))
-            document_metadata.setdefault("mime_type", _infer_mime_type(str(document_metadata["filename"])))
-            if created_at is not None:
-                document_metadata["created_at"] = created_at.isoformat()
-            else:
-                document_metadata["created_at"] = datetime.now(timezone.utc).isoformat()  # noqa: UP017
-
-            self.vdb.upsert(
-                collection=collection_key,
-                doc_id=doc_id,
-                chunks=chunks,
-                vectors=vectors,
-                metadata=document_metadata,
-            )
-            created = created_at or datetime.now(timezone.utc)  # noqa: UP017
-            self.documents[doc_id] = DocumentRecord(
-                doc_id=doc_id,
-                profile=profile,
-                collection=collection,
-                source=source,
-                text=text,
-                metadata=document_metadata,
-                created_at=created,
-            )
-
-            self.audit_logger.write_event(
-                IngestAuditEvent(
-                    actor=actor,
-                    profile=profile,
-                    collection=collection,
-                    job_id=job_id,
-                    params={"source": source, "metadata": metadata or {}},
-                    counts={"docs": 1, "chunks": len(chunks)},
-                )
-            )
-
-        self._job_handlers[job_id] = _handler
-        self.queue.run(job_id=job_id, handler=_handler)
-        self.idempotency[request_key] = job_id
-        return job_id
+        self.queue.run(job_id=queued_job.job_id)
+        self.idempotency[request_key] = queued_job.job_id
+        return queued_job.job_id
 
     def ingest_reference(self, profile: str, collection: str, path: str, actor: str) -> str:
         """Execute ingest reference."""
@@ -973,9 +1168,9 @@ class IndexService:
         doc_count = len([d for d in self.documents.values() if d.profile == profile and d.collection == collection])
         return {"documents": doc_count}
 
-    def job_list(self) -> list[JobRecord]:
+    def job_list(self, limit: int | None = None) -> list[JobRecord]:
         """Execute job list."""
-        return self.queue.list_jobs()
+        return self.queue.list_jobs(limit=limit)
 
     def job_get(self, job_id: str) -> JobRecord:
         """Execute job get."""
@@ -987,35 +1182,21 @@ class IndexService:
 
     def job_cancel(self, job_id: str) -> JobRecord:
         """Execute job cancel."""
-        job = self.queue.get(job_id)
-        job.status = JobStatus.cancelled
-        return job
+        return self.queue.cancel(job_id)
 
     def job_retry(self, job_id: str) -> JobRecord:
         """Execute job retry."""
-        job = self.queue.get(job_id)
-        if job.status is JobStatus.failed:
-            job.status = JobStatus.queued
-            handler = self._job_handlers.get(job_id)
-            if callable(handler):
-                _ = self.queue.run(job_id=job_id, handler=handler)
+        job = self.queue.retry(job_id)
+        if job.status is JobStatus.queued:
+            try:
+                return self.queue.run(job_id=job_id)
+            except RuntimeError:
+                return self.queue.get(job_id)
         return job
 
-    def queue_status(self) -> dict[str, int]:
+    def queue_status(self) -> dict[str, Any]:
         """Execute queue status."""
-        jobs = self.queue.list_jobs()
-        total = len(jobs)
-        running = len([j for j in jobs if j.status is JobStatus.running])
-        failed = len([j for j in jobs if j.status is JobStatus.failed])
-        queue_depth = len([j for j in jobs if j.status is JobStatus.queued])
-        return {
-            "total": total,
-            "running": running,
-            "failed": failed,
-            "queue_depth": queue_depth,
-            "active_jobs": running,
-            "worker_count": 1,
-        }
+        return self.queue.queue_status()
 
     def backend_health_check(self) -> dict[str, str]:
         """Execute backend health check."""
@@ -1392,3 +1573,57 @@ def _required_env(*keys: str) -> str:
         if value:
             return value
     raise RuntimeError(f"Missing required configuration: {', '.join(keys)}")
+
+
+def _resolve_queue_database_url(audit_path: str) -> str:
+    """Resolve the queue database URL, defaulting to a per-instance SQLite file."""
+    for key in ("INDEX_RETRIEVER_DB_URL", "CLOUD_DOG__INDEX__DB__URL", "DB_URL"):
+        value = os.getenv(key, "").strip()
+        if value:
+            return value
+    base_path = Path(audit_path).with_suffix(".queue.db")
+    return f"sqlite+aiosqlite:///{base_path}"
+
+
+def _resolve_server_id() -> str:
+    """Resolve the queue worker identity from runtime configuration."""
+    for key in ("INDEX_RETRIEVER_SERVER_ID", "CLOUD_DOG__INDEX__SERVER_ID", "HOSTNAME"):
+        value = os.getenv(key, "").strip()
+        if value:
+            return value
+    return "index-retriever-local"
+
+
+def _resolve_environment() -> str:
+    """Resolve the runtime environment name for structured audit events."""
+    for key in ("CLOUD_DOG_ENVIRONMENT", "ENVIRONMENT", "TEST_ENV_TIER"):
+        value = os.getenv(key, "").strip()
+        if value:
+            return value.lower()
+    return "dev"
+
+
+def _env_or_default(key: str, default: str) -> str:
+    """Return the configured string value or the supplied default."""
+    value = os.getenv(key, "").strip()
+    return value or default
+
+
+def _env_int(key: str, *, default: int) -> int:
+    """Return the configured integer value or the supplied default."""
+    value = os.getenv(key, "").strip()
+    return int(value) if value else default
+
+
+def _env_float(key: str, *, default: float) -> float:
+    """Return the configured float value or the supplied default."""
+    value = os.getenv(key, "").strip()
+    return float(value) if value else default
+
+
+def _env_bool(key: str, *, default: bool) -> bool:
+    """Return the configured boolean value or the supplied default."""
+    value = os.getenv(key, "").strip()
+    if not value:
+        return default
+    return value.lower() in {"1", "true", "yes", "on"}

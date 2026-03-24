@@ -18,9 +18,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
+from cloud_dog_logging.audit_schema import Actor, Target
 
-from index_tools.audit import logger as audit_logger_module
-from index_tools.audit.events import IngestAuditEvent
 from index_tools.audit.logger import AuditLogger
 from index_tools.collections.manager import CollectionManager
 from index_tools.collections.schema import CollectionSchema
@@ -99,8 +98,8 @@ def test_lifecycle_chunking_scope_and_rerank() -> None:
     assert [row["score"] for row in ranked[:2]] == [5, "1.0"]
 
 
-def test_queue_engine_and_redis_bridge_paths(monkeypatch: pytest.MonkeyPatch) -> None:
-    engine = QueueEngine()
+def test_queue_engine_and_redis_bridge_paths(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    engine = QueueEngine(database_url=f"sqlite+aiosqlite:///{tmp_path / 'ut1_32_jobs.db'}", server_id="ut1-32")
     job = JobRecord(job_id="j1", profile="default", collection="c", job_type="ingest_text", idempotency_key="k")
     engine.enqueue(job)
 
@@ -126,25 +125,61 @@ def test_queue_engine_and_redis_bridge_paths(monkeypatch: pytest.MonkeyPatch) ->
     assert RedisBridge(enabled=True, url="redis://local").status() == "enabled"
 
 
-def test_audit_logger_backend_name_and_write(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_audit_logger_backend_name_and_write(tmp_path: Path) -> None:
     out = tmp_path / "audit.jsonl"
-    logger = AuditLogger(path=out)
-    event = IngestAuditEvent(
-        actor="tester",
-        profile="default",
-        collection="c",
-        job_id="job1",
-        params={"api_key": "secret", "nested": {"password": "x"}},
-        counts={"docs": 1, "chunks": 1},
+    logger = AuditLogger(path=out, server_id="ut-audit")
+    event = logger.build_event(
+        event_type="tool.call",
+        actor=Actor(type="user", id="tester", roles=["writer"]),
+        action="execute",
+        outcome="success",
+        target=Target(type="collection", id="c", name="c"),
+        details={"api_key": "secret", "nested": {"password": "x"}},
     )
     logger.write_event(event)
     content = out.read_text(encoding="utf-8")
-    assert "[REDACTED]" in content
-
-    monkeypatch.setattr(audit_logger_module, "cloud_dog_logging", None)
-    assert logger.get_backend_name() == "jsonl-fallback"
-    monkeypatch.setattr(audit_logger_module, "cloud_dog_logging", object())
+    assert "REDACTED" in content
+    assert '"service_instance": "ut-audit"' in content
+    assert '"correlation_id":' in content
+    assert '"environment":' in content
+    assert '"actor": {"type": "user", "id": "tester", "roles": ["writer"]}' in content
     assert logger.get_backend_name() == "cloud_dog_logging"
+
+
+def test_audit_logger_admin_and_security_helpers(tmp_path: Path) -> None:
+    out = tmp_path / "audit-admin.jsonl"
+    logger = AuditLogger(path=out, server_id="ut-admin")
+
+    logger.log_admin_action(
+        actor="admin-user",
+        roles={"admin"},
+        action="create",
+        target_type="profile",
+        target_id="alpha",
+        new_value={"enabled": True},
+    )
+    logger.log_security_event(
+        actor="reader-user",
+        action="authenticate",
+        target_type="endpoint",
+        target_id="/admin/profiles",
+        outcome="success",
+        roles={"reader"},
+        ip="127.0.0.1",
+        user_agent="pytest",
+        auth_mechanism="api_key",
+    )
+
+    rows = out.read_text(encoding="utf-8").splitlines()
+    assert len(rows) == 2
+    admin_row, auth_row = rows
+    assert '"event_type": "admin.create"' in admin_row
+    assert '"service_instance": "ut-admin"' in admin_row
+    assert '"correlation_id":' in admin_row
+    assert '"target": {"type": "profile", "id": "alpha"}' in admin_row
+    assert '"event_type": "security.authenticate"' in auth_row
+    assert '"ip": "127.0.0.1"' in auth_row
+    assert '"user_agent": "pytest"' in auth_row
 
 
 def test_rbac_backend_name_and_matching(monkeypatch: pytest.MonkeyPatch) -> None:

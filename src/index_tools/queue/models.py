@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -25,6 +26,8 @@ class JobStatus(str, Enum):  # noqa: UP042
 
     queued = "queued"
     running = "running"
+    retry_wait = "retry_wait"
+    timeout = "timeout"
     succeeded = "succeeded"
     failed = "failed"
     cancelled = "cancelled"
@@ -40,4 +43,6 @@ class JobRecord(BaseModel):
     status: JobStatus = JobStatus.queued
     ordering_key: str | None = None
     idempotency_key: str | None = None
+    payload: dict[str, Any] = Field(default_factory=dict)
+    server_id: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))  # noqa: UP017

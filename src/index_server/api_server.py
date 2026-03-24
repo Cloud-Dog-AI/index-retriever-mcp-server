@@ -18,9 +18,10 @@ import os
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from typing import Any
-from uuid import uuid4
 
 from cloud_dog_api_kit import LifecycleHooks, create_app  # type: ignore
+from cloud_dog_logging.correlation import get_correlation_id as get_logging_correlation_id
+from cloud_dog_logging.correlation import set_correlation_id as set_logging_correlation_id
 from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 
@@ -111,7 +112,7 @@ def build_health_payload(
     db_runtime: PlatformDatabaseRuntime | None = None,
 ) -> dict[str, Any]:
     """Execute build health payload."""
-    request_id = correlation_id or str(uuid4())
+    request_id = correlation_id or get_logging_correlation_id()
     active_service = service or IndexService(audit_path=_api_audit_path())
     db_probe = database_health(db_runtime)
     return {
@@ -177,39 +178,131 @@ def build_api_app(service: IndexService | None = None) -> Any:
     registry = build_registry()
     app = _create_runtime_app(on_shutdown=shutdown_database)
 
-    def _auth_or_raise(headers: dict[str, str]) -> Any:
-        """Internal helper to auth or raise."""
-        try:
-            return auth.authenticate(headers)
-        except PermissionError as exc:
-            raise HTTPException(status_code=401, detail=str(exc)) from exc
+    def _sync_logging_correlation(request: Request) -> str:
+        correlation_id = str(getattr(request.state, "correlation_id", "") or "").strip()
+        if not correlation_id:
+            correlation_id = request.headers.get("x-correlation-id", "").strip()
+        if correlation_id:
+            set_logging_correlation_id(correlation_id)
+        return get_logging_correlation_id()
 
-    def _require_or_raise(identity: Any, roles: set[str]) -> None:
+    def _request_ip(request: Request) -> str | None:
+        client = getattr(request, "client", None)
+        host = getattr(client, "host", None)
+        return str(host) if host else None
+
+    def _request_user_agent(request: Request) -> str | None:
+        user_agent = request.headers.get("user-agent", "").strip()
+        return user_agent or None
+
+    def _log_auth_event(
+        request: Request,
+        *,
+        actor: str,
+        outcome: str,
+        action: str,
+        roles: set[str] | None = None,
+        auth_mechanism: str = "",
+        reason: str = "",
+        required_roles: str = "",
+    ) -> None:
+        active_service.audit_logger.log_security_event(
+            actor=actor,
+            action=action,
+            target_type="endpoint",
+            target_id=request.url.path,
+            outcome=outcome,
+            roles=roles,
+            actor_type="user" if actor != "anonymous" else "system",
+            ip=_request_ip(request),
+            user_agent=_request_user_agent(request),
+            method=request.method,
+            auth_mechanism=auth_mechanism,
+            reason=reason,
+            required_roles=required_roles,
+        )
+
+    def _auth_or_raise(request: Request, headers: dict[str, str]) -> Any:
+        """Internal helper to auth or raise."""
+        _sync_logging_correlation(request)
+        try:
+            identity = auth.authenticate(headers)
+        except PermissionError as exc:
+            _log_auth_event(
+                request,
+                actor="anonymous",
+                outcome="failure",
+                action="authenticate",
+                auth_mechanism="api_key_or_jwt",
+                reason=str(exc),
+            )
+            raise HTTPException(status_code=401, detail=str(exc)) from exc
+        _log_auth_event(
+            request,
+            actor=identity.user_id,
+            outcome="success",
+            action="authenticate",
+            roles=identity.roles,
+            auth_mechanism=identity.token_type,
+        )
+        return identity
+
+    def _require_or_raise(request: Request, identity: Any, roles: set[str]) -> None:
         """Internal helper to require or raise."""
         try:
             auth.require_roles(identity, roles)
         except PermissionError as exc:
+            _log_auth_event(
+                request,
+                actor=identity.user_id,
+                outcome="denied",
+                action="authorise",
+                roles=identity.roles,
+                auth_mechanism=identity.token_type,
+                reason=str(exc),
+                required_roles=",".join(sorted(roles)),
+            )
             raise HTTPException(status_code=403, detail=str(exc)) from exc
 
-    def _a2a_auth_or_raise(headers: dict[str, str]) -> Any:
+    def _a2a_auth_or_raise(request: Request, headers: dict[str, str]) -> Any:
         """Enforce A2A auth contract using shared API-key authority."""
         # Covers: FR-01B
+        _sync_logging_correlation(request)
         try:
-            return auth.authenticate_api_key(headers)
+            identity = auth.authenticate_api_key(headers)
         except PermissionError as exc:
+            _log_auth_event(
+                request,
+                actor="anonymous",
+                outcome="failure",
+                action="authenticate",
+                auth_mechanism="api_key",
+                reason=str(exc),
+            )
             raise HTTPException(status_code=401, detail=str(exc)) from exc
+        _log_auth_event(
+            request,
+            actor=identity.user_id,
+            outcome="success",
+            action="authenticate",
+            roles=identity.roles,
+            auth_mechanism=identity.token_type,
+        )
+        return identity
 
     def _headers_from_request(request: Request) -> dict[str, str]:
         """Internal helper to headers from request."""
+        _sync_logging_correlation(request)
         return {k.lower(): v for k, v in request.headers.items()}
 
-    def health() -> dict[str, Any]:
+    def health(request: Request = None) -> dict[str, Any]:
         """Execute health."""
-        return build_health_payload(active_service, db_runtime=db_runtime)
+        correlation_id = _sync_logging_correlation(request) if request is not None else get_logging_correlation_id()
+        return build_health_payload(active_service, correlation_id=correlation_id, db_runtime=db_runtime)
 
     def a2a_root(request: Request) -> dict[str, Any]:
         """Execute a2a root."""
-        _ = _a2a_auth_or_raise(_headers_from_request(request))
+        _ = _a2a_auth_or_raise(request, _headers_from_request(request))
         return {
             "status": "ok",
             "service": "index-retriever-a2a",
@@ -219,12 +312,12 @@ def build_api_app(service: IndexService | None = None) -> Any:
 
     def a2a_health(request: Request) -> dict[str, Any]:
         """Execute a2a health."""
-        _ = _a2a_auth_or_raise(_headers_from_request(request))
-        return build_health_payload(active_service, db_runtime=db_runtime)
+        _ = _a2a_auth_or_raise(request, _headers_from_request(request))
+        return build_health_payload(active_service, correlation_id=get_logging_correlation_id(), db_runtime=db_runtime)
 
     def a2a_events(request: Request) -> dict[str, Any]:
         """Expose configuration change events via the A2A interface."""
-        _ = _a2a_auth_or_raise(_headers_from_request(request))
+        _ = _a2a_auth_or_raise(request, _headers_from_request(request))
         return {"events": active_service.a2a_config_events()}
 
     def admin_ui_root() -> RedirectResponse:
@@ -249,15 +342,15 @@ def build_api_app(service: IndexService | None = None) -> Any:
 
     def list_tools(request: Request) -> list[dict[str, Any]]:
         """Execute list tools."""
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
         return registry.list_tools()
 
     def call_tool(tool_name: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         """Execute call tool."""
         # Covers: FR-17
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
         arguments = dict(payload)
         arguments.setdefault("actor", identity.user_id)
         try:
@@ -276,8 +369,8 @@ def build_api_app(service: IndexService | None = None) -> Any:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     def admin_profiles_list(request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
         profiles = [
             active_service.profile_get(profile) | {"profile": profile}
             for profile in active_service.profiles_list()
@@ -285,8 +378,8 @@ def build_api_app(service: IndexService | None = None) -> Any:
         return {"profiles": profiles}
 
     def admin_profiles_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
         profile_name = str(payload["profile"])
         config = payload.get("config") if isinstance(payload.get("config"), dict) else payload.get("profile_config", {})
         profile = active_service.admin_profile_create(
@@ -298,13 +391,13 @@ def build_api_app(service: IndexService | None = None) -> Any:
         return {"profile": profile_name, "config": profile}
 
     def admin_profiles_get(profile_id: str, request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
         return {"profile": profile_id, "config": active_service.profile_get(profile_id)}
 
     def admin_profiles_update(profile_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
         updates = payload.get("config") if isinstance(payload.get("config"), dict) else payload
         if not isinstance(updates, dict):
             raise HTTPException(status_code=400, detail="Invalid profile payload")
@@ -317,19 +410,19 @@ def build_api_app(service: IndexService | None = None) -> Any:
         return {"profile": profile_id, "config": profile}
 
     def admin_profiles_delete(profile_id: str, request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
         active_service.admin_profile_delete(profile=profile_id, roles=identity.roles, actor=identity.user_id)
         return {"status": "ok", "profile": profile_id}
 
     def admin_users_list(request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
         return {"users": active_service.users_list()}
 
     def admin_users_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
         user_id = str(payload["user_id"])
         return {
             "user": active_service.admin_user_create(
@@ -341,13 +434,13 @@ def build_api_app(service: IndexService | None = None) -> Any:
         }
 
     def admin_users_get(user_id: str, request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
         return {"user": active_service.user_get(user_id)}
 
     def admin_users_update(user_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
         return {
             "user": active_service.admin_user_update(
                 user_id=user_id,
@@ -358,19 +451,19 @@ def build_api_app(service: IndexService | None = None) -> Any:
         }
 
     def admin_users_delete(user_id: str, request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
         active_service.admin_user_delete(user_id=user_id, roles=identity.roles, actor=identity.user_id)
         return {"status": "ok", "user_id": user_id}
 
     def admin_groups_list(request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
         return {"groups": active_service.groups_list()}
 
     def admin_groups_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
         group_id = str(payload["group_id"])
         return {
             "group": active_service.admin_group_create(
@@ -382,13 +475,13 @@ def build_api_app(service: IndexService | None = None) -> Any:
         }
 
     def admin_groups_get(group_id: str, request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
         return {"group": active_service.group_get(group_id)}
 
     def admin_groups_update(group_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
         return {
             "group": active_service.admin_group_update(
                 group_id=group_id,
@@ -399,19 +492,19 @@ def build_api_app(service: IndexService | None = None) -> Any:
         }
 
     def admin_groups_delete(group_id: str, request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
         active_service.admin_group_delete(group_id=group_id, roles=identity.roles, actor=identity.user_id)
         return {"status": "ok", "group_id": group_id}
 
     def admin_api_keys_list(request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"reader", "writer", "maintainer", "admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
         return {"api_keys": active_service.api_keys_list()}
 
     def admin_api_keys_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
         return {
             "api_key": active_service.admin_api_key_create(
                 roles=identity.roles,
@@ -421,8 +514,8 @@ def build_api_app(service: IndexService | None = None) -> Any:
         }
 
     def admin_api_keys_delete(key_id: str, request: Request) -> dict[str, Any]:
-        identity = _auth_or_raise(_headers_from_request(request))
-        _require_or_raise(identity, {"admin"})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
         return {
             "api_key": active_service.admin_api_key_revoke(
                 key_id=key_id,

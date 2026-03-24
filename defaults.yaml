@@ -23,6 +23,9 @@ storage:
     path: "${AUDIT_LOG_PATH:./logs/audit.log}"
 
 queue:
+  backend: "${CLOUD_DOG__INDEX__QUEUE__BACKEND:sql}"
+  database_url: "${INDEX_RETRIEVER_DB_URL:${DB_URL:sqlite+aiosqlite:///./data/index_retriever.db}}"
+  server_id: "${INDEX_RETRIEVER_SERVER_ID:${HOSTNAME:index-retriever-local}}"
   max_concurrency: 8
   per_profile_concurrency: 2
   default_timeout_seconds: 1800

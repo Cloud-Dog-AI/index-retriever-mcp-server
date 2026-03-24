@@ -92,6 +92,9 @@ class RedisConfig(BaseModel):
 class QueueConfig(BaseModel):
     """QueueConfig definition."""
 
+    backend: str = "sql"
+    database_url: str = ""
+    server_id: str = "index-retriever-local"
     max_concurrency: int = 8
     per_profile_concurrency: int = 2
     default_timeout_seconds: int = 1800
@@ -187,6 +190,13 @@ class RbacConfig(BaseModel):
     roles: dict[str, list[str]] = Field(default_factory=dict)
 
 
+class LogConfig(BaseModel):
+    """LogConfig definition."""
+
+    service_instance: str = "index-retriever-local"
+    environment: str = "dev"
+
+
 class GlobalConfig(BaseModel):
     """GlobalConfig definition."""
 
@@ -196,6 +206,7 @@ class GlobalConfig(BaseModel):
     queue: QueueConfig = Field(default_factory=QueueConfig)
     profiles: dict[str, ProfileConfig]
     rbac: RbacConfig = Field(default_factory=RbacConfig)
+    log: LogConfig = Field(default_factory=LogConfig)
 
     @classmethod
     def from_mapping(cls, value: dict[str, Any]) -> GlobalConfig:

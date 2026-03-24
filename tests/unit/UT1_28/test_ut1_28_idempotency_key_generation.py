@@ -16,7 +16,7 @@ from index_tools.queue.engine import QueueEngine
 
 
 def test_idempotency_key_generation() -> None:
-    engine = QueueEngine()
+    engine = QueueEngine(database_url="sqlite+aiosqlite:///tmp/ut1_28_jobs.db", server_id="ut1-28")
     key1 = engine.generate_idempotency_key("default", "kb", "source")
     key2 = engine.generate_idempotency_key("default", "kb", "source")
     assert key1 == key2

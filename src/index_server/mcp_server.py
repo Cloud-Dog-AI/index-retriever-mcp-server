@@ -27,6 +27,8 @@ from cloud_dog_api_kit import (  # type: ignore
     create_app,
     register_mcp_contract,
 )
+from cloud_dog_logging.correlation import get_correlation_id as get_logging_correlation_id
+from cloud_dog_logging.correlation import set_correlation_id as set_logging_correlation_id
 from fastapi import Request
 
 from index_server.auth.middleware import AuthMiddleware
@@ -510,9 +512,55 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
         bind_auth_api_keys(auth.api_keys)
     app = _create_runtime_app(on_shutdown=shutdown_database)
 
+    def _sync_logging_correlation(request: Request) -> str:
+        correlation_id = str(getattr(request.state, "correlation_id", "") or "").strip()
+        if not correlation_id:
+            correlation_id = request.headers.get("x-correlation-id", "").strip()
+        if correlation_id:
+            set_logging_correlation_id(correlation_id)
+        return get_logging_correlation_id()
+
+    def _request_ip(request: Request) -> str | None:
+        client = getattr(request, "client", None)
+        host = getattr(client, "host", None)
+        return str(host) if host else None
+
+    def _request_user_agent(request: Request) -> str | None:
+        user_agent = request.headers.get("user-agent", "").strip()
+        return user_agent or None
+
+    def _log_auth_event(
+        request: Request,
+        *,
+        actor: str,
+        outcome: str,
+        action: str,
+        roles: set[str] | None = None,
+        auth_mechanism: str = "",
+        reason: str = "",
+        required_roles: str = "",
+    ) -> None:
+        active_service.audit_logger.log_security_event(
+            actor=actor,
+            action=action,
+            target_type="mcp_endpoint",
+            target_id=request.url.path,
+            outcome=outcome,
+            roles=roles,
+            actor_type="user" if actor != "anonymous" else "system",
+            ip=_request_ip(request),
+            user_agent=_request_user_agent(request),
+            method=request.method,
+            auth_mechanism=auth_mechanism,
+            reason=reason,
+            required_roles=required_roles,
+        )
+
     @app.get("/health")
-    def health() -> dict[str, str]:
+    def health(request: Request = None) -> dict[str, str]:
         """Execute health."""
+        if request is not None:
+            _sync_logging_correlation(request)
         _ = database_health(db_runtime)
         return {"status": "ok"}
 
@@ -520,11 +568,28 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
         """Build an auth-enforcing handler for a single tool."""
 
         def handler(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+            _sync_logging_correlation(request)
             headers = {k.lower(): v for k, v in request.headers.items()}
             try:
                 identity = auth.authenticate(headers)
             except PermissionError as exc:
+                _log_auth_event(
+                    request,
+                    actor="anonymous",
+                    outcome="failure",
+                    action="authenticate",
+                    auth_mechanism="api_key_or_jwt",
+                    reason=str(exc),
+                )
                 raise UnauthenticatedError(message=str(exc)) from exc
+            _log_auth_event(
+                request,
+                actor=identity.user_id,
+                outcome="success",
+                action="authenticate",
+                roles=identity.roles,
+                auth_mechanism=identity.token_type,
+            )
             arguments = dict(payload)
             arguments.setdefault("actor", identity.user_id)
             try:
@@ -536,6 +601,16 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
                     identity_roles=identity.roles,
                 )
             except PermissionError as exc:
+                _log_auth_event(
+                    request,
+                    actor=identity.user_id,
+                    outcome="denied",
+                    action="authorise",
+                    roles=identity.roles,
+                    auth_mechanism=identity.token_type,
+                    reason=str(exc),
+                    required_roles=",".join(sorted(_required_roles_for_tool(tool_name))),
+                )
                 raise UnauthorisedError(message=str(exc)) from exc
             except (KeyError, ValueError) as exc:
                 from cloud_dog_api_kit import ValidationError as APIValidationError

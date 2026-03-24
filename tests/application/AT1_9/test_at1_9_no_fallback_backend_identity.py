@@ -27,7 +27,10 @@ def _assert_no_fallback_backends(live_service: LiveIndexRuntime, tmp_path: Path)
     auth = AuthMiddleware()
     assert auth.backend_name() != "fallback"
 
-    queue = QueueEngine()
+    queue = QueueEngine(
+        database_url=f"sqlite+aiosqlite:///{tmp_path / 'at1_9_jobs.db'}",
+        server_id="at1-9",
+    )
     assert queue.backend_name() != "fallback"
 
     audit = AuditLogger(path=tmp_path / "audit-backend-identity.jsonl")

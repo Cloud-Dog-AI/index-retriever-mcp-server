@@ -51,14 +51,14 @@ At a high level, the service is split into four layers:
 
 4. **Runtime state layer**
    - lightweight service-owned relational state
-   - in-process queue fallback
+   - `cloud_dog_jobs` managed queue state
    - in-process vector storage fallback
    - append-only audit logging
 
 The most important architectural detail for external users is this:
 
 - The **public contracts are stable and multi-backend aware**.
-- The **core in-repo runtime path currently uses an in-memory VDB adapter and an in-process queue fallback** for deterministic local and test behaviour.
+- The **core in-repo runtime path currently uses an in-memory VDB adapter and a persisted `cloud_dog_jobs` queue backend** for deterministic local and test behaviour.
 - The **parser, OCR, table, and capability-planning paths are already delegated to platform packages and are validated against live matrices in the test suite**.
 
 ## 4. System Context
@@ -191,7 +191,7 @@ graph TB
     end
 
     subgraph Runtime State
-        QUEUE[QueueEngine]
+        QUEUE[QueueEngine<br/>cloud_dog_jobs backend]
         VDB[InMemoryVdbAdapter]
         AUDIT[AuditLogger]
         DBRT[PlatformDatabaseRuntime]
@@ -524,7 +524,7 @@ The service uses platform package entry points for:
 - table extraction flows,
 - backend capability planning.
 
-This means the parsing plane is already externalised even though the primary search and queue runtime in this repository is still local and in-process.
+This means the parsing plane is already externalised even though the primary search runtime in this repository is still local and in-process.
 
 ### 11.2 Delivered parser-facing operations
 
@@ -616,23 +616,24 @@ through `AT2.4`.
 
 ## 13. Queue and Job Architecture
 
-`QueueEngine` currently provides the in-process queue fallback used by the service core.
+`QueueEngine` now fronts the persisted `cloud_dog_jobs` backend used by the service core.
 
 Delivered behaviour:
 
 - job enqueue,
 - job lookup,
 - job listing,
-- synchronous execution,
-- retry hook support,
+- managed execution against SQL or Redis queue storage,
+- worker identity via `server_id`,
+- timeout and retry handling,
 - idempotency key generation.
 
-When `cloud_dog_jobs` is importable, queue health can report that backend name. The current service implementation, however, still executes jobs synchronously in-process for deterministic behaviour.
+The service still drains the queue inline for deterministic local execution, but the job state itself is persisted through `cloud_dog_jobs` and survives process hand-off.
 
 For external users, this means:
 
 - the API and tool contracts for jobs are stable,
-- the current default runtime is not a distributed worker topology,
+- the current default runtime is single-service but queue-persistent,
 - queue semantics can evolve behind the same external tool contract.
 
 ## 14. Configuration and Secret Resolution
@@ -718,7 +719,7 @@ External users should be aware of the following current boundaries:
 
 1. The packaged Admin WebUI currently covers profile, user, group, and API-key administration. Broader observability and document workflow screens remain outside this in-repo UI surface.
 2. The current service-core indexing and search path uses `InMemoryVdbAdapter`, not a live remote VDB client inside `IndexService`.
-3. The current service-core queue path uses synchronous in-process execution through `QueueEngine`.
+3. The current service-core queue path persists jobs through `cloud_dog_jobs` and drains them inline through `QueueEngine`; it is not yet a separate long-running worker deployment.
 4. `ingest_reference` currently handles local path references directly; connector modules exist separately and are not yet the sole orchestrated path inside `IndexService`.
 5. The relational schema owned by this repository is intentionally small and does not currently act as the primary document or job store.
 

@@ -355,6 +355,7 @@ Mocking allowed. No external services required.
 | UT1.41 | FTPConnector | FTP fetch-plan parsing and connection/auth/not-found error mapping | FR-08, FR-09 |
 | UT1.42 | GDriveConnector | Google Drive reference parsing and HTTP auth/not-found error mapping | FR-08, FR-09 |
 | UT1.43 | EmbeddingDimensionValidation | Enforces embedding dimension consistency and mismatch rejection | R-EMBED-02 |
+| UT1.45 | JobsMigrationLifecycle | SQL-backed queue lifecycle, retry, timeout, and server identity coverage | FR-07 |
 
 ---
 
@@ -374,7 +375,7 @@ Real DB and VDB required. No mocking of backends.
 | ST1.8 | DeleteByID | Delete document by ID; verify removed from VDB and metadata DB |
 | ST1.9 | DeleteByFilter | Delete by metadata filter; verify correct documents removed |
 | ST1.10 | RetentionCleanup | Retention job removes old documents per policy |
-| ST1.11 | JobEnqueueExecute | Job enqueued via `cloud_dog_jobs`; worker executes ingest pipeline |
+| ST1.11 | JobEnqueueExecute | Job enqueued via `cloud_dog_jobs`; inline worker execution persists state and completes ingest pipeline |
 | ST1.12 | AuditLogPersistence | Audit events persisted to JSONL file with correct format |
 
 ---
@@ -398,7 +399,7 @@ Real services required. Tests cross-component interaction.
 | IT1.11 | EmbeddingProviderOllama | Embedding via Ollama returns correct dimension vectors | `cloud_dog_llm` + Ollama |
 | IT1.12 | StreamingIngestSSE | SSE ingest stream indexes events in order | FastAPI + SSE + VDB |
 | IT1.20 | JobManagementTools | `job_list`, `job_cancel`, `job_retry`, `queue_status` contract and schema checks | FR-07 |
-| IT1.21 | CollectionRBAC | Collection-level role ACL enforced for authorized vs unauthorized calls | FR-05 |
+| IT1.21 | JobsMigrationConcurrencyRecovery | Shared SQL queue supports concurrent claims and recovery by a new worker identity | FR-07 |
 
 ---
 

@@ -12,13 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from index_tools.audit.events import AuditEvent
+from index_tools.audit.events import Actor, AuditEvent, Target
 
 
 def test_audit_event_shape() -> None:
     # Covers: FR-06
-    event = AuditEvent(actor="user", operation="ingest", profile="default", collection="kb")
-    payload = event.model_dump()
-    assert payload["actor"] == "user"
-    assert payload["operation"] == "ingest"
-    assert payload["timestamp_utc"] is not None
+    event = AuditEvent(
+        event_type="tool.call",
+        actor=Actor(type="user", id="user-1", roles=["writer"]),
+        action="execute",
+        outcome="success",
+        correlation_id="ut1-7-correlation",
+        service="index-retriever-mcp-server",
+        service_instance="ut1-7",
+        environment="test",
+        target=Target(type="collection", id="kb", name="kb"),
+        details={"tool": "ingest_text", "profile": "default"},
+    )
+    payload = event.to_dict()
+    assert payload["actor"]["id"] == "user-1"
+    assert payload["action"] == "execute"
+    assert payload["correlation_id"] == "ut1-7-correlation"
+    assert payload["timestamp"] is not None
