@@ -51,13 +51,13 @@ class AuthMiddleware:
     def __init__(self, api_keys: dict[str, set[str]] | None = None) -> None:
         """Initialise the instance state."""
         self.api_keys = api_keys or self._load_api_keys()
-        self._jwt_secret = (
-            os.getenv("CLOUD_DOG__INDEX__AUTH__JWT__SECRET", "").strip()
-            or "index-retriever-test-secret-2026-secure"
+        self._jwt_secret = os.getenv("CLOUD_DOG__INDEX__AUTH__JWT__SECRET", "").strip()
+        self._jwt_service = (
+            JWTTokenService(secret=self._jwt_secret)
+            if JWTTokenService is not None and self._jwt_secret
+            else None
         )
-        self._jwt_service = JWTTokenService(secret=self._jwt_secret) if JWTTokenService is not None else None
         self._rbac = RBACEngine(role_permissions=self._role_permissions()) if RBACEngine is not None else None
-        self._test_jwt_aliases = self._bootstrap_test_jwt_aliases()
 
     @staticmethod
     def _default_roles() -> set[str]:
@@ -120,21 +120,6 @@ class AuthMiddleware:
             "writer": {"role:writer", "role:reader"},
             "reader": {"role:reader"},
         }
-
-    def _bootstrap_test_jwt_aliases(self) -> dict[str, str]:
-        aliases: dict[str, str] = {}
-        if self._jwt_service is None:
-            return aliases
-        for alias, role in (
-            ("valid-reader-token", "reader"),
-            ("valid-writer-token", "writer"),
-            ("valid-admin-token", "admin"),
-        ):
-            aliases[alias] = self._jwt_service.issue(
-                user_id=f"{role}-user",
-                claims={"role": role, "roles": [role]},
-            ).access_token
-        return aliases
 
     def _api_key_provider(self) -> Any:
         if APIKeyOnlyProvider is None:
@@ -214,10 +199,9 @@ class AuthMiddleware:
         token = bearer.removeprefix("Bearer ").strip()
         if self._jwt_service is None:
             raise PermissionError("Authentication failed")
-        effective_token = self._test_jwt_aliases.get(token, token)
 
         try:
-            claims = self._jwt_service.verify(effective_token)
+            claims = self._jwt_service.verify(token)
         except TokenError as exc:
             raise PermissionError("Authentication failed") from exc
 

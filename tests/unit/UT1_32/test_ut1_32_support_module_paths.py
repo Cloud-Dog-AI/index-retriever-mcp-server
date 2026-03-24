@@ -19,6 +19,7 @@ from pathlib import Path
 
 import pytest
 from cloud_dog_logging.audit_schema import Actor, Target
+from sqlalchemy.exc import OperationalError
 
 from index_tools.audit.logger import AuditLogger
 from index_tools.collections.manager import CollectionManager
@@ -123,6 +124,32 @@ def test_queue_engine_and_redis_bridge_paths(monkeypatch: pytest.MonkeyPatch, tm
 
     assert RedisBridge(enabled=False).status() == "disabled"
     assert RedisBridge(enabled=True, url="redis://local").status() == "enabled"
+
+
+def test_queue_engine_recovers_from_existing_table_startup_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    class DummyBackend:
+        def __init__(self, database_url: str) -> None:
+            calls.append(database_url)
+            if len([entry for entry in calls if str(entry).startswith("sqlite:")]) == 1:
+                raise OperationalError("CREATE TABLE job_callbacks", {}, Exception("table job_callbacks already exists"))
+            self.database_url = database_url
+
+    monkeypatch.setattr(queue_engine_module, "_ensure_sqlite_queue_schema", lambda database_url: calls.append("ensure"))
+    monkeypatch.setattr(queue_engine_module, "SQLQueueBackend", DummyBackend)
+    monkeypatch.setattr(queue_engine_module, "JobQueue", lambda backend: {"backend": backend})
+    monkeypatch.setattr(queue_engine_module, "cloud_dog_jobs", object())
+
+    engine = QueueEngine(database_url="sqlite+aiosqlite:////tmp/ut1_32_existing.db", server_id="ut1-32-existing")
+
+    assert calls == [
+        "ensure",
+        "sqlite:////tmp/ut1_32_existing.db",
+        "ensure",
+        "sqlite:////tmp/ut1_32_existing.db",
+    ]
+    assert engine.backend_name() == "cloud_dog_jobs"
 
 
 def test_audit_logger_backend_name_and_write(tmp_path: Path) -> None:

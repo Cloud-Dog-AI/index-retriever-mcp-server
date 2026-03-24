@@ -16,13 +16,14 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import TimeoutError as FuturesTimeout
 from datetime import UTC, datetime
 from hashlib import sha256
 from typing import Any
 
 from index_tools.queue.models import JobRecord, JobStatus
+from sqlalchemy import MetaData, create_engine
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.schema import CreateTable
 
 try:
     import cloud_dog_jobs  # type: ignore
@@ -30,6 +31,12 @@ try:
     from cloud_dog_jobs.backends.redis_backend import RedisQueueBackend  # type: ignore
     from cloud_dog_jobs.domain.enums import JobStatus as PlatformJobStatus  # type: ignore
     from cloud_dog_jobs.domain.models import Job  # type: ignore
+    from cloud_dog_jobs.storage.sqlalchemy.models import (  # type: ignore
+        build_job_call_logs_table,
+        build_job_callbacks_table,
+        build_job_deliveries_table,
+        build_jobs_table,
+    )
 except ImportError:  # pragma: no cover
     cloud_dog_jobs = None
     JobQueue = None  # type: ignore[assignment]
@@ -37,6 +44,51 @@ except ImportError:  # pragma: no cover
     RedisQueueBackend = None  # type: ignore[assignment]
     PlatformJobStatus = None  # type: ignore[assignment]
     Job = None  # type: ignore[assignment]
+    build_jobs_table = None  # type: ignore[assignment]
+    build_job_call_logs_table = None  # type: ignore[assignment]
+    build_job_deliveries_table = None  # type: ignore[assignment]
+    build_job_callbacks_table = None  # type: ignore[assignment]
+
+
+def _is_sqlite_database_url(database_url: str) -> bool:
+    """Return whether the normalised queue database URL targets SQLite."""
+    return database_url.startswith("sqlite://")
+
+
+def _queue_schema_builders() -> tuple[Callable[[MetaData], Any], ...]:
+    """Return queue table builders available from cloud_dog_jobs."""
+    builders = (
+        build_jobs_table,
+        build_job_call_logs_table,
+        build_job_deliveries_table,
+        build_job_callbacks_table,
+    )
+    return tuple(builder for builder in builders if callable(builder))
+
+
+def _ensure_sqlite_queue_schema(database_url: str) -> None:
+    """Create queue tables with IF NOT EXISTS semantics for SQLite startup safety."""
+    if not database_url or not _is_sqlite_database_url(database_url):
+        return
+    builders = _queue_schema_builders()
+    if not builders:
+        return
+
+    engine = create_engine(database_url, future=True)
+    try:
+        metadata = MetaData()
+        tables = [builder(metadata) for builder in builders]
+        with engine.begin() as conn:
+            for table in tables:
+                conn.execute(CreateTable(table, if_not_exists=True))
+    finally:
+        engine.dispose()
+
+
+def _is_existing_table_error(exc: OperationalError) -> bool:
+    """Return whether an OperationalError matches the SQLite existing-table failure."""
+    message = str(exc).lower()
+    return "already exists" in message and "table" in message
 
 
 class QueueEngine:
@@ -81,7 +133,14 @@ class QueueEngine:
                 self._backend = RedisQueueBackend(resolved_redis_url, key_prefix=key_prefix)
                 self._backend_kind = "redis"
             elif self._database_url and SQLQueueBackend is not None:
-                self._backend = SQLQueueBackend(self._database_url)
+                _ensure_sqlite_queue_schema(self._database_url)
+                try:
+                    self._backend = SQLQueueBackend(self._database_url)
+                except OperationalError as exc:
+                    if not _is_existing_table_error(exc):
+                        raise
+                    _ensure_sqlite_queue_schema(self._database_url)
+                    self._backend = SQLQueueBackend(self._database_url)
                 self._backend_kind = "sql"
             if self._backend is not None and JobQueue is not None:
                 self._job_queue = JobQueue(self._backend)
@@ -202,12 +261,11 @@ class QueueEngine:
         if self._timeout_seconds <= 0:
             self._dispatch(job)
             return
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(self._dispatch, job)
-            try:
-                future.result(timeout=float(self._timeout_seconds))
-            except FuturesTimeout as exc:  # pragma: no cover - timing dependent
-                raise TimeoutError(f"Job timed out after {self._timeout_seconds}s") from exc
+        started = time.monotonic()
+        self._dispatch(job)
+        elapsed = time.monotonic() - started
+        if elapsed > float(self._timeout_seconds):  # pragma: no cover - timing dependent
+            raise TimeoutError(f"Job timed out after {self._timeout_seconds}s")
 
     def _mark_retry_wait(self, job_id: str) -> None:
         if self._backend is None or PlatformJobStatus is None:
