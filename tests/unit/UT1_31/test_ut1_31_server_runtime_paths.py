@@ -34,6 +34,44 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     app = api_server.build_api_app(service=service)
     client = TestClient(app)
 
+    runtime_config = client.get("/runtime-config.js")
+    assert runtime_config.status_code == 200
+    assert "window.__RUNTIME_CONFIG__" in runtime_config.text
+    assert "API_BASE_URL" in runtime_config.text
+
+    root = client.get("/")
+    assert root.status_code == 200
+    assert "id=\"root\"" in root.text
+
+    dashboard = client.get("/dashboard")
+    assert dashboard.status_code == 200
+    assert "id=\"root\"" in dashboard.text
+
+    legacy_ui = client.get("/admin/ui")
+    assert legacy_ui.status_code == 200
+    assert "Profile management" in legacy_ui.text
+    assert 'data-testid="profile-create"' in legacy_ui.text
+
+    legacy_profiles = client.get("/admin/ui/profiles")
+    assert legacy_profiles.status_code == 200
+    assert "Profile management" in legacy_profiles.text
+    assert 'data-testid="profile-roles"' in legacy_profiles.text
+
+    legacy_security = client.get("/admin/ui/security")
+    assert legacy_security.status_code == 200
+    assert "Identity and key control" in legacy_security.text
+    assert 'data-testid="user-create"' in legacy_security.text
+    assert 'data-testid="group-create"' in legacy_security.text
+    assert 'data-testid="api-key-create"' in legacy_security.text
+
+    legacy_js = client.get("/admin/ui/app.js")
+    assert legacy_js.status_code == 200
+    assert "function createProfile" in legacy_js.text
+
+    legacy_css = client.get("/admin/ui/styles.css")
+    assert legacy_css.status_code == 200
+    assert ".hero" in legacy_css.text
+
     health = client.get("/health")
     assert health.status_code == 200
     assert health.json()["status"] == "ok"

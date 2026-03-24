@@ -34,6 +34,7 @@ RUN pip install --no-cache-dir \
 
 COPY pyproject.toml README.md ./
 COPY src/ ./src/
+COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     pip install --no-cache-dir \
       --trusted-host pypi.cloud-dog.net \
@@ -67,6 +68,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 COPY pyproject.toml README.md ./
 COPY src/ ./src/
+COPY ui/ ./ui/
 COPY database/ ./database/
 COPY defaults.yaml server_control.sh docker-entrypoint.sh healthcheck.sh ./
 

@@ -15,15 +15,18 @@
 from __future__ import annotations
 
 import os
+import json
 from collections.abc import Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from cloud_dog_api_kit import LifecycleHooks, create_app  # type: ignore
 from cloud_dog_logging.correlation import get_correlation_id as get_logging_correlation_id
 from cloud_dog_logging.correlation import set_correlation_id as set_logging_correlation_id
 from fastapi import HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 from index_server.admin_ui import admin_ui_script, admin_ui_styles, profiles_page, security_page
 from index_server.auth.middleware import AuthMiddleware
@@ -39,6 +42,18 @@ from index_tools.tools.service import IndexService
 _CANONICAL_API_BASE_PATH = "/app/v1"
 _LEGACY_API_BASE_PATH = "/api/v1"
 _CANONICAL_A2A_BASE_PATH = "/a2a"
+_SPA_RESERVED_PREFIXES = (
+    "api",
+    "app",
+    "a2a",
+    "mcp",
+    "admin",
+    "assets",
+    "health",
+    "runtime-config.js",
+    "docs",
+    "openapi.json",
+)
 
 
 def _api_audit_path() -> str:
@@ -49,6 +64,56 @@ def _api_audit_path() -> str:
         or os.getenv("AUDIT_LOG_PATH", "").strip()
         or "logs/index-retriever-audit-api.jsonl"
     )
+
+
+def _ui_dist_dir() -> Path:
+    """Resolve the built SPA distribution directory."""
+    return Path(__file__).resolve().parents[2] / "ui" / "dist"
+
+
+def _ui_assets_dir() -> Path:
+    """Resolve the built SPA assets directory."""
+    return _ui_dist_dir() / "assets"
+
+
+def _ui_index_path() -> Path:
+    """Resolve the built SPA index file."""
+    return _ui_dist_dir() / "index.html"
+
+
+def _runtime_config_payload() -> dict[str, str]:
+    """Build runtime config for the SPA bootstrap."""
+    return {
+        "ENV": os.getenv("CLOUD_DOG_ENVIRONMENT", "dev"),
+        "API_BASE_URL": os.getenv("CLOUD_DOG__INDEX__UI__API_BASE_URL", "").strip() or "${window.location.origin}",
+        "AUTH_MODE": os.getenv("CLOUD_DOG__INDEX__UI__AUTH_MODE", "api_key"),
+        "APP_VERSION": os.getenv("CLOUD_DOG__INDEX__UI__APP_VERSION", "dev"),
+        "DEFAULT_PROFILE": os.getenv("CLOUD_DOG__INDEX__UI__DEFAULT_PROFILE", "default"),
+        "DEFAULT_COLLECTION": os.getenv("CLOUD_DOG__INDEX__UI__DEFAULT_COLLECTION", "w12_documents"),
+    }
+
+
+def _runtime_config_response() -> Response:
+    """Render the runtime config bootstrap script."""
+    payload = _runtime_config_payload()
+    api_base_value = payload["API_BASE_URL"]
+    api_base_js = "`" + api_base_value + "`" if api_base_value.startswith("${") else json.dumps(api_base_value)
+    lines = [
+        "window.__RUNTIME_CONFIG__ = {",
+        f'  ENV: {json.dumps(payload["ENV"])},',
+        f"  API_BASE_URL: {api_base_js},",
+        f'  AUTH_MODE: {json.dumps(payload["AUTH_MODE"])},',
+        f'  APP_VERSION: {json.dumps(payload["APP_VERSION"])},',
+        f'  DEFAULT_PROFILE: {json.dumps(payload["DEFAULT_PROFILE"])},',
+        f'  DEFAULT_COLLECTION: {json.dumps(payload["DEFAULT_COLLECTION"])}',
+        "};",
+    ]
+    return Response(content="\n".join(lines), media_type="application/javascript")
+
+
+def _spa_not_built_response() -> HTMLResponse:
+    """Return a stable 503 response when the SPA bundle is unavailable."""
+    return HTMLResponse(content="<h1>UI not built</h1>", status_code=503)
 
 
 def _maybe_disable_timeout_middleware(app: Any) -> Any:
@@ -320,25 +385,44 @@ def build_api_app(service: IndexService | None = None) -> Any:
         _ = _a2a_auth_or_raise(request, _headers_from_request(request))
         return {"events": active_service.a2a_config_events()}
 
-    def admin_ui_root() -> RedirectResponse:
-        """Redirect to the default admin UI page."""
-        return RedirectResponse(url="/admin/ui/profiles", status_code=307)
+    def runtime_config() -> Response:
+        """Serve the runtime config bootstrap for the SPA."""
+        return _runtime_config_response()
+
+    def admin_ui_root() -> HTMLResponse:
+        """Serve the legacy admin UI root while parity work remains incomplete."""
+        return HTMLResponse(content=profiles_page())
 
     def admin_ui_profiles() -> HTMLResponse:
-        """Serve the profile-management WebUI."""
-        return HTMLResponse(profiles_page())
+        """Serve the legacy profile management page."""
+        return HTMLResponse(content=profiles_page())
 
     def admin_ui_security() -> HTMLResponse:
-        """Serve the security-management WebUI."""
-        return HTMLResponse(security_page())
+        """Serve the legacy security management page."""
+        return HTMLResponse(content=security_page())
 
-    def admin_ui_js() -> PlainTextResponse:
-        """Serve the shared admin UI JavaScript bundle."""
-        return PlainTextResponse(admin_ui_script(), media_type="application/javascript")
+    def admin_ui_app_js() -> Response:
+        """Serve the legacy admin UI client script."""
+        return Response(content=admin_ui_script(), media_type="application/javascript")
 
-    def admin_ui_css() -> PlainTextResponse:
-        """Serve the shared admin UI stylesheet."""
-        return PlainTextResponse(admin_ui_styles(), media_type="text/css")
+    def admin_ui_styles_css() -> Response:
+        """Serve the legacy admin UI stylesheet."""
+        return Response(content=admin_ui_styles(), media_type="text/css")
+
+    def spa_index() -> Response:
+        """Serve the SPA entrypoint."""
+        index_path = _ui_index_path()
+        if not index_path.exists():
+            return _spa_not_built_response()
+        return FileResponse(index_path)
+
+    def spa_fallback(path: str) -> Response:
+        """Serve the SPA entrypoint for client-routed paths."""
+        if path.startswith(_SPA_RESERVED_PREFIXES):
+            raise HTTPException(status_code=404, detail="Not found")
+        if "." in path.rsplit("/", 1)[-1]:
+            raise HTTPException(status_code=404, detail="Not found")
+        return spa_index()
 
     def list_tools(request: Request) -> list[dict[str, Any]]:
         """Execute list tools."""
@@ -524,6 +608,11 @@ def build_api_app(service: IndexService | None = None) -> Any:
             )
         }
 
+    assets_dir = _ui_assets_dir()
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="ui-assets")
+
+    app.get("/runtime-config.js")(runtime_config)
     app.get("/health")(health)
     app.get("/api/health")(health)
     app.get(f"{_CANONICAL_API_BASE_PATH}/health")(health)
@@ -533,8 +622,8 @@ def build_api_app(service: IndexService | None = None) -> Any:
     app.get("/admin/ui")(admin_ui_root)
     app.get("/admin/ui/profiles")(admin_ui_profiles)
     app.get("/admin/ui/security")(admin_ui_security)
-    app.get("/admin/ui/app.js")(admin_ui_js)
-    app.get("/admin/ui/styles.css")(admin_ui_css)
+    app.get("/admin/ui/app.js")(admin_ui_app_js)
+    app.get("/admin/ui/styles.css")(admin_ui_styles_css)
     for base_path in (_CANONICAL_API_BASE_PATH, _LEGACY_API_BASE_PATH):
         app.get(f"{base_path}/tools")(list_tools)
         app.post(f"{base_path}/tools/{{tool_name}}")(call_tool)
@@ -557,6 +646,8 @@ def build_api_app(service: IndexService | None = None) -> Any:
     app.get("/admin/api-keys")(admin_api_keys_list)
     app.post("/admin/api-keys")(admin_api_keys_create)
     app.delete("/admin/api-keys/{key_id}")(admin_api_keys_delete)
+    app.get("/")(spa_index)
+    app.get("/{path:path}")(spa_fallback)
 
     app.state.db_runtime = db_runtime
 
