@@ -182,6 +182,80 @@ def test_audit_logger_admin_and_security_helpers(tmp_path: Path) -> None:
     assert '"user_agent": "pytest"' in auth_row
 
 
+def test_audit_logger_security_helper_supports_legacy_actor_signature(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    out = tmp_path / "audit-legacy-actor.jsonl"
+    logger = AuditLogger(path=out, server_id="ut-legacy")
+    captured: dict[str, object] = {}
+
+    class LegacyActor:
+        def __init__(self, *, type: str, id: str, roles: list[str] | None = None) -> None:
+            self.type = type
+            self.id = id
+            self.roles = roles
+
+    def capture_log_security(**kwargs: object) -> None:
+        captured.update(kwargs)
+
+    monkeypatch.setattr("index_tools.audit.logger.Actor", LegacyActor)
+    monkeypatch.setattr(logger._platform, "log_security", capture_log_security)
+
+    logger.log_security_event(
+        actor="reader-user",
+        action="authenticate",
+        target_type="endpoint",
+        target_id="/a2a/health",
+        outcome="success",
+        roles={"reader"},
+        ip="127.0.0.1",
+        user_agent="pytest",
+        auth_mechanism="api_key",
+    )
+
+    actor = captured["actor"]
+    assert isinstance(actor, LegacyActor)
+    assert actor.id == "reader-user"
+    assert actor.roles == ["reader"]
+    assert captured["outcome"] == "success"
+
+
+def test_audit_logger_security_helper_supports_legacy_target_signature(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    out = tmp_path / "audit-legacy-target.jsonl"
+    logger = AuditLogger(path=out, server_id="ut-legacy-target")
+    captured: dict[str, object] = {}
+
+    class LegacyTarget:
+        def __init__(self, *, type: str, id: str) -> None:
+            self.type = type
+            self.id = id
+
+    def capture_log_security(**kwargs: object) -> None:
+        captured.update(kwargs)
+
+    monkeypatch.setattr("index_tools.audit.logger.Target", LegacyTarget)
+    monkeypatch.setattr(logger._platform, "log_security", capture_log_security)
+
+    logger.log_security_event(
+        actor="reader-user",
+        action="authenticate",
+        target_type="endpoint",
+        target_id="/a2a/health",
+        outcome="success",
+        roles={"reader"},
+        auth_mechanism="api_key",
+    )
+
+    target = captured["target"]
+    assert isinstance(target, LegacyTarget)
+    assert target.type == "endpoint"
+    assert target.id == "/a2a/health"
+
+
 def test_rbac_backend_name_and_matching(monkeypatch: pytest.MonkeyPatch) -> None:
     auth = RbacAuthoriser(role_actions={"writer": ["ingest_*"]}, default_deny=True)
     subject = Subject(user_id="u1", roles={"writer"})

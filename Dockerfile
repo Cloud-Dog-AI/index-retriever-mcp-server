@@ -89,7 +89,7 @@ ENV PYTHONUNBUFFERED=1 \
     CLOUD_DOG__INDEX__VDB__PROVIDER=chroma \
     CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=ollama \
     CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text \
-    CLOUD_DOG__INDEX__DB__URL=sqlite+aiosqlite:///app/data/index_retriever.db
+    CLOUD_DOG__INDEX__DB__URL=sqlite+aiosqlite:////app/data/index_retriever.db
 
 EXPOSE 8080 8081 8082 8083 8686 8687
 

@@ -86,9 +86,9 @@ QDRANT_URL=http://vdb1.app.vpc0.cloud-dog.net:6333
 INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS=qdrant
 
 # ---- storage/queue ----
-DB_URL=sqlite+aiosqlite:///app/data/index-retriever-preprod.db
-INDEX_RETRIEVER_DB_URL=sqlite+aiosqlite:///app/data/index-retriever-preprod.db
-CLOUD_DOG__INDEX__DB__URL=sqlite+aiosqlite:///app/data/index-retriever-preprod.db
+DB_URL=sqlite+aiosqlite:////app/data/index-retriever-preprod.db
+INDEX_RETRIEVER_DB_URL=sqlite+aiosqlite:////app/data/index-retriever-preprod.db
+CLOUD_DOG__INDEX__DB__URL=sqlite+aiosqlite:////app/data/index-retriever-preprod.db
 
 # ---- audit paths ----
 CLOUD_DOG__INDEX__API_AUDIT_PATH=/app/logs/index-retriever-audit-api.jsonl
@@ -109,4 +109,4 @@ INDEX_RETRIEVER_LIVE_USE_VAULT_FALLBACK=true
 NO_PROXY=127.0.0.1,localhost,.cloud-dog.net
 
 CLOUD_DOG__DB__DIALECT=sqlite
-CLOUD_DOG__DB__DATABASE=./data/index-retriever-preprod.db
+CLOUD_DOG__DB__DATABASE=/app/data/index-retriever-preprod.db

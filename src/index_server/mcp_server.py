@@ -540,7 +540,11 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
         reason: str = "",
         required_roles: str = "",
     ) -> None:
-        active_service.audit_logger.log_security_event(
+        audit_logger = getattr(active_service, "audit_logger", None)
+        log_security_event = getattr(audit_logger, "log_security_event", None)
+        if not callable(log_security_event):
+            return
+        log_security_event(
             actor=actor,
             action=action,
             target_type="mcp_endpoint",

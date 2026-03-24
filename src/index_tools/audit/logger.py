@@ -19,13 +19,21 @@ from typing import Any
 
 from cloud_dog_logging.audit_logger import AuditLogger as PlatformAuditLogger
 from cloud_dog_logging.audit_schema import Actor, AuditEvent, Target
-from cloud_dog_logging.correlation import (
-    get_correlation_id,
-    set_environment,
-    set_service_instance,
-    set_service_name,
-)
+from cloud_dog_logging.correlation import get_correlation_id, set_service_name
 from cloud_dog_logging.sinks.file_sink import FileSink
+
+try:
+    from cloud_dog_logging.correlation import set_environment
+except ImportError:  # pragma: no cover - compatibility for older platform wheels
+    def set_environment(_value: str) -> None:
+        """Fallback no-op when platform correlation context lacks environment support."""
+
+
+try:
+    from cloud_dog_logging.correlation import set_service_instance
+except ImportError:  # pragma: no cover - compatibility for older platform wheels
+    def set_service_instance(_value: str) -> None:
+        """Fallback no-op when platform correlation context lacks service-instance support."""
 
 
 REDACT_KEYS = {
@@ -92,17 +100,29 @@ class AuditLogger:
     ) -> Actor:
         resolved_type = actor_type or ("system" if actor.strip().lower() in {"system", "service"} else "user")
         role_list = sorted(str(item) for item in roles) if roles else None
-        return Actor(
-            type=resolved_type,
-            id=actor or "unknown",
-            roles=role_list,
-            ip=ip,
-            user_agent=user_agent,
-        )
+        actor_kwargs: dict[str, Any] = {
+            "type": resolved_type,
+            "id": actor or "unknown",
+            "roles": role_list,
+            "ip": ip,
+            "user_agent": user_agent,
+        }
+        try:
+            return Actor(**actor_kwargs)
+        except TypeError:
+            # Older cloud_dog_logging wheels do not expose ip/user_agent on Actor.
+            actor_kwargs.pop("ip", None)
+            actor_kwargs.pop("user_agent", None)
+            return Actor(**actor_kwargs)
 
     @staticmethod
     def _target(target_type: str, target_id: str, *, target_name: str | None = None) -> Target:
-        return Target(type=target_type, id=target_id, name=target_name)
+        target_kwargs: dict[str, Any] = {"type": target_type, "id": target_id, "name": target_name}
+        try:
+            return Target(**target_kwargs)
+        except TypeError:
+            target_kwargs.pop("name", None)
+            return Target(**target_kwargs)
 
     def write_event(self, event: AuditEvent) -> None:
         """Emit a platform audit event via the configured platform sink."""
