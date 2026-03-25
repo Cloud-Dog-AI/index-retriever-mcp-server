@@ -21,8 +21,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from cloud_dog_api_kit import LifecycleHooks, create_app  # type: ignore
+from cloud_dog_api_kit import LifecycleHooks, create_app, create_health_router  # type: ignore
 import cloud_dog_idam  # type: ignore
+from cloud_dog_logging import setup_logging  # type: ignore
 from cloud_dog_logging.correlation import get_correlation_id as get_logging_correlation_id
 from cloud_dog_logging.correlation import set_correlation_id as set_logging_correlation_id
 from fastapi import HTTPException, Request
@@ -232,9 +233,30 @@ def handle_ingest_text(
     return {"job_id": job_id}
 
 
+def _init_platform_logging() -> None:
+    """Initialise cloud_dog_logging so structured JSON logging, correlation IDs and rotation are active."""
+    from cloud_dog_config import load_config
+    import socket
+    config = load_config(unresolved_policy="warn")
+    log_config = {
+        "service_name": str(config.get("service.name", "index-retriever-mcp-server")),
+        "service_instance": str(config.get("service.server_id", "")).strip() or socket.gethostname(),
+        "environment": str(config.get("service.environment", "dev")),
+        "log": {
+            "level": str(config.get("log.level", "INFO")),
+            "format": str(config.get("log.format", "json")),
+            "console": True,
+            "app_log": config.get("log.app_log"),
+            "audit_log": config.get("log.audit_log"),
+        },
+    }
+    setup_logging(log_config)
+
+
 def build_api_app(service: IndexService | None = None) -> Any:
     """Execute build api app."""
     # Covers: FR-01, FR-01A, FR-17
+    _init_platform_logging()
     if cloud_dog_idam is None:  # pragma: no cover - platform package is mandatory
         raise RuntimeError("cloud_dog_idam is required")
     active_service = service or IndexService(audit_path=_api_audit_path())
@@ -622,9 +644,32 @@ def build_api_app(service: IndexService | None = None) -> Any:
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="ui-assets")
 
     app.get("/runtime-config.js")(runtime_config)
-    app.get("/health")(health)
-    app.get("/api/health")(health)
-    app.get(f"{_CANONICAL_API_BASE_PATH}/health")(health)
+
+    # Platform health endpoints via create_health_router().
+    async def _db_probe() -> dict:
+        probe = database_health(db_runtime)
+        s = str(probe.get("status") or "")
+        return {"status": "ok" if s in {"ok", ""} else "error", **probe}
+
+    async def _vdb_probe() -> dict:
+        result = active_service.backend_health_check()
+        return {"status": "ok" if result else "error", "detail": result}
+
+    async def _embedding_probe() -> dict:
+        result = active_service.embedding_health_check()
+        return {"status": "ok" if result else "error", "detail": result}
+
+    _health_paths = {"/health", "/ready", "/live", "/status"}
+    app.router.routes = [
+        r for r in app.router.routes if getattr(r, "path", None) not in _health_paths
+    ]
+    _hr = create_health_router(
+        application_name="index-retriever-mcp-server",
+        version="0.1.0",
+        checks={"db": _db_probe, "vdb": _vdb_probe, "embedding": _embedding_probe},
+    )
+    app.include_router(_hr)
+
     app.get(_CANONICAL_A2A_BASE_PATH)(a2a_root)
     app.get(f"{_CANONICAL_A2A_BASE_PATH}/health")(a2a_health)
     app.get(f"{_CANONICAL_A2A_BASE_PATH}/events")(a2a_events)
