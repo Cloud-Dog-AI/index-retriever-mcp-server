@@ -223,8 +223,8 @@ def test_mcp_health_and_main_module_paths(monkeypatch: pytest.MonkeyPatch, servi
 
 def test_auth_connector_registry_and_embedding_branches(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     monkeypatch.setattr(auth_middleware_mod, "cloud_dog_idam", None)
-    auth = AuthMiddleware()
-    assert auth.auth_health()["backend"] == "fallback"
+    with pytest.raises(RuntimeError, match="cloud_dog_idam is required"):
+        AuthMiddleware()
 
     payload = tmp_path / "payload.txt"
     payload.write_text("content", encoding="utf-8")

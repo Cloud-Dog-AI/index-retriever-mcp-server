@@ -22,4 +22,4 @@ def test_uk_english_compliance() -> None:
         "Authentication failed",
     ]
     assert all("Authorisation" in msg or "Authentication" in msg for msg in error_messages)
-    assert middleware.backend_name() in {"cloud_dog_idam", "fallback"}
+    assert middleware.backend_name() == "cloud_dog_idam"

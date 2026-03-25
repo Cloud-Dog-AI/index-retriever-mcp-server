@@ -117,10 +117,11 @@ def test_queue_engine_and_redis_bridge_paths(monkeypatch: pytest.MonkeyPatch, tm
         engine.run("j2", lambda _: (_ for _ in ()).throw(RuntimeError("boom")))
     assert engine.get("j2").status is JobStatus.failed
 
-    monkeypatch.setattr(queue_engine_module, "cloud_dog_jobs", None)
-    assert engine.backend_name() == "fallback"
-    monkeypatch.setattr(queue_engine_module, "cloud_dog_jobs", object())
     assert engine.backend_name() == "cloud_dog_jobs"
+    monkeypatch.setattr(queue_engine_module, "cloud_dog_jobs", None)
+    with pytest.raises(RuntimeError, match="cloud_dog_jobs is required"):
+        QueueEngine(database_url=f"sqlite+aiosqlite:///{tmp_path / 'ut1_32_jobs_missing.db'}", server_id="ut1-32-missing")
+    monkeypatch.setattr(queue_engine_module, "cloud_dog_jobs", object())
 
     assert RedisBridge(enabled=False).status() == "disabled"
     assert RedisBridge(enabled=True, url="redis://local").status() == "enabled"

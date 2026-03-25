@@ -92,7 +92,7 @@ def _is_existing_table_error(exc: OperationalError) -> bool:
 
 
 class QueueEngine:
-    """Queue facade backed by cloud_dog_jobs with a local fallback."""
+    """Queue facade backed by cloud_dog_jobs."""
     # Covers: FR-07
 
     def __init__(
@@ -109,7 +109,15 @@ class QueueEngine:
         redis_key_prefix: str | None = None,
     ) -> None:
         """Initialise the instance state."""
-        self._jobs: dict[str, JobRecord] = {}
+        if (
+            cloud_dog_jobs is None
+            or JobQueue is None
+            or SQLQueueBackend is None
+            or RedisQueueBackend is None
+            or PlatformJobStatus is None
+            or Job is None
+        ):
+            raise RuntimeError("cloud_dog_jobs is required for index-retriever jobs")
         self._handlers: dict[str, Callable[[JobRecord], None]] = {}
         self._job_callbacks: dict[str, Callable[[JobRecord], None]] = {}
         self._attempts: dict[str, int] = {}
@@ -125,25 +133,21 @@ class QueueEngine:
         resolved_redis_url = redis_url or ""
         self._backend = None
         self._job_queue = None
-        self._backend_kind = "fallback"
-
-        if cloud_dog_jobs is not None:
-            if redis_flag and resolved_redis_url and RedisQueueBackend is not None:
-                key_prefix = redis_key_prefix or f"index-retriever:{self.server_id}"
-                self._backend = RedisQueueBackend(resolved_redis_url, key_prefix=key_prefix)
-                self._backend_kind = "redis"
-            elif self._database_url and SQLQueueBackend is not None:
+        if redis_flag and resolved_redis_url:
+            key_prefix = redis_key_prefix or f"index-retriever:{self.server_id}"
+            self._backend = RedisQueueBackend(resolved_redis_url, key_prefix=key_prefix)
+        elif self._database_url:
+            _ensure_sqlite_queue_schema(self._database_url)
+            try:
+                self._backend = SQLQueueBackend(self._database_url)
+            except OperationalError as exc:
+                if not _is_existing_table_error(exc):
+                    raise
                 _ensure_sqlite_queue_schema(self._database_url)
-                try:
-                    self._backend = SQLQueueBackend(self._database_url)
-                except OperationalError as exc:
-                    if not _is_existing_table_error(exc):
-                        raise
-                    _ensure_sqlite_queue_schema(self._database_url)
-                    self._backend = SQLQueueBackend(self._database_url)
-                self._backend_kind = "sql"
-            if self._backend is not None and JobQueue is not None:
-                self._job_queue = JobQueue(self._backend)
+                self._backend = SQLQueueBackend(self._database_url)
+        else:
+            raise ValueError("QueueEngine requires either queue database_url or enabled redis_url")
+        self._job_queue = JobQueue(self._backend)
 
     @staticmethod
     def _normalise_database_url(database_url: str | None) -> str:
@@ -174,10 +178,6 @@ class QueueEngine:
         priority: int = 0,
     ) -> JobRecord:
         """Persist a queued job."""
-        if self._backend is None or Job is None or PlatformJobStatus is None:
-            self._jobs[job.job_id] = job
-            return job
-
         payload_data = dict(payload or job.payload)
         payload_data.setdefault("profile", job.profile)
         payload_data.setdefault("collection", job.collection)
@@ -223,14 +223,10 @@ class QueueEngine:
         )
 
     def _backend_job(self, job_id: str) -> Any:
-        if self._backend is None:
-            return None
         return self._backend.get(job_id)
 
     def get(self, job_id: str) -> JobRecord:
         """Execute get."""
-        if self._backend is None:
-            return self._jobs[job_id]
         job = self._backend_job(job_id)
         if job is None:
             raise KeyError(job_id)
@@ -238,11 +234,8 @@ class QueueEngine:
 
     def list_jobs(self, limit: int | None = None) -> list[JobRecord]:
         """Execute list jobs."""
-        if self._backend is None:
-            jobs = [self._jobs[job_id] for job_id in sorted(self._jobs.keys())]
-        else:
-            jobs = [self._adapt_job(job) for job in self._backend.all_jobs()]
-            jobs.sort(key=lambda item: (item.created_at, item.job_id), reverse=True)
+        jobs = [self._adapt_job(job) for job in self._backend.all_jobs()]
+        jobs.sort(key=lambda item: (item.created_at, item.job_id), reverse=True)
         if limit is None:
             return jobs
         return jobs[: max(0, int(limit))]
@@ -268,15 +261,11 @@ class QueueEngine:
             raise TimeoutError(f"Job timed out after {self._timeout_seconds}s")
 
     def _mark_retry_wait(self, job_id: str) -> None:
-        if self._backend is None or PlatformJobStatus is None:
-            return
         _ = self._backend.update_status(job_id, PlatformJobStatus.RETRY_WAIT.value)
         time.sleep(max(0.0, self._retry_backoff_seconds))
         _ = self._backend.update_status(job_id, PlatformJobStatus.QUEUED.value)
 
     def _execute_backend_job(self, job_id: str) -> JobRecord:
-        if self._backend is None or PlatformJobStatus is None:
-            raise KeyError(job_id)
         attempts = self._attempts.get(job_id, 0) + 1
         self._attempts[job_id] = attempts
         queued_job = self._backend_job(job_id)
@@ -306,15 +295,6 @@ class QueueEngine:
 
     def process_available(self, limit: int = 1) -> int:
         """Process the next available queued jobs."""
-        if self._backend is None:
-            processed = 0
-            for job in self.list_jobs(limit=max(1, int(limit))):
-                if job.status is not JobStatus.queued:
-                    continue
-                _ = self.run(job.job_id)
-                processed += 1
-            return processed
-
         processed = 0
         for queued_job in self._backend.dequeue(limit=max(1, int(limit))):
             if not self._backend.claim(queued_job.job_id, self.server_id, self._worker_id):
@@ -327,16 +307,6 @@ class QueueEngine:
         """Execute run."""
         if handler is not None:
             self._job_callbacks[job_id] = handler
-        if self._backend is None:
-            job = self._jobs[job_id]
-            job.status = JobStatus.running
-            try:
-                self._dispatch(job)
-                job.status = JobStatus.succeeded
-            except Exception:
-                job.status = JobStatus.failed
-                raise
-            return job
 
         while True:
             current = self.get(job_id)
@@ -367,44 +337,18 @@ class QueueEngine:
     def retry(self, job_id: str) -> JobRecord:
         """Reset a failed job back to queued state."""
         job = self.get(job_id)
-        if self._backend is None:
-            if job.status in {JobStatus.failed, JobStatus.timeout, JobStatus.cancelled}:
-                job.status = JobStatus.queued
-                self._attempts[job_id] = 0
-            return job
-        if job.status in {JobStatus.failed, JobStatus.timeout, JobStatus.cancelled} and PlatformJobStatus is not None:
+        if job.status in {JobStatus.failed, JobStatus.timeout, JobStatus.cancelled}:
             _ = self._backend.update_status(job_id, PlatformJobStatus.QUEUED.value)
             self._attempts[job_id] = 0
         return self.get(job_id)
 
     def cancel(self, job_id: str) -> JobRecord:
         """Cancel a queued or completed job."""
-        if self._backend is None:
-            job = self._jobs[job_id]
-            job.status = JobStatus.cancelled
-            return job
-        if PlatformJobStatus is not None:
-            _ = self._backend.update_status(job_id, PlatformJobStatus.CANCELLED.value)
+        _ = self._backend.update_status(job_id, PlatformJobStatus.CANCELLED.value)
         return self.get(job_id)
 
     def queue_status(self) -> dict[str, Any]:
         """Return queue counters and backend identity."""
-        if self._backend is None:
-            jobs = self.list_jobs()
-            running = len([job for job in jobs if job.status is JobStatus.running])
-            failed = len([job for job in jobs if job.status is JobStatus.failed])
-            queued = len([job for job in jobs if job.status is JobStatus.queued])
-            return {
-                "backend": "fallback",
-                "server_id": self.server_id,
-                "total": len(jobs),
-                "running": running,
-                "failed": failed,
-                "queue_depth": queued,
-                "active_jobs": running,
-                "worker_count": 1,
-                "backend_healthy": True,
-            }
         counts = dict(self._backend.get_queue_status())
         return {
             "backend": self.backend_name(),
@@ -426,6 +370,4 @@ class QueueEngine:
 
     def backend_name(self) -> str:
         """Execute backend name."""
-        if cloud_dog_jobs is not None and self._backend is not None:
-            return "cloud_dog_jobs"
-        return "fallback"
+        return "cloud_dog_jobs"

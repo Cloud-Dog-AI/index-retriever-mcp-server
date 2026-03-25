@@ -47,6 +47,10 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     assert dashboard.status_code == 200
     assert "id=\"root\"" in dashboard.text
 
+    login = client.get("/login")
+    assert login.status_code == 200
+    assert "id=\"root\"" in login.text
+
     legacy_ui = client.get("/admin/ui")
     assert legacy_ui.status_code == 200
     assert "Profile management" in legacy_ui.text
@@ -89,6 +93,23 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
 
     unauth = client.get(api_tools_path())
     assert unauth.status_code == 401
+    assert unauth.headers["content-type"].startswith("application/json")
+    assert "Authentication failed" in unauth.text
+
+    legacy_unauth = client.get("/api/v1/tools")
+    assert legacy_unauth.status_code == 401
+    assert legacy_unauth.headers["content-type"].startswith("application/json")
+    assert "Authentication failed" in legacy_unauth.text
+
+    admin_unauth = client.get("/admin/profiles")
+    assert admin_unauth.status_code == 401
+    assert admin_unauth.headers["content-type"].startswith("application/json")
+    assert "Authentication failed" in admin_unauth.text
+
+    unknown_legacy_api = client.get("/api/v1/profiles")
+    assert unknown_legacy_api.status_code == 404
+    assert unknown_legacy_api.headers["content-type"].startswith("application/json")
+    assert unknown_legacy_api.json() == {"detail": "Not found"}
 
     tools = client.get(api_tools_path(), headers={"x-api-key": "test-api-key"})
     assert tools.status_code == 200

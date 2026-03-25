@@ -53,3 +53,6 @@ tmp/
 docker-build.log
 *.log
 env-*-secrets
+database/
+ui/dist/
+*.pid

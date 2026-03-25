@@ -25,7 +25,7 @@ try:
     import cloud_dog_idam  # type: ignore
     from cloud_dog_idam import APIKeyOnlyProvider, JWTTokenService, RBACEngine  # type: ignore
     from cloud_dog_idam.domain.errors import AuthenticationError, TokenError  # type: ignore
-    from cloud_dog_idam.providers.base import AuthRequest  # type: ignore
+    from cloud_dog_idam.domain.models import AuthRequest  # type: ignore
 except ImportError:  # pragma: no cover
     cloud_dog_idam = None  # type: ignore[assignment]
     APIKeyOnlyProvider = None  # type: ignore[assignment]
@@ -50,14 +50,26 @@ class AuthMiddleware:
 
     def __init__(self, api_keys: dict[str, set[str]] | None = None) -> None:
         """Initialise the instance state."""
+        if (
+            cloud_dog_idam is None
+            or APIKeyOnlyProvider is None
+            or RBACEngine is None
+            or AuthRequest is None
+        ):
+            raise RuntimeError("cloud_dog_idam is required for index-retriever auth")
         self.api_keys = api_keys or self._load_api_keys()
         self._jwt_secret = os.getenv("CLOUD_DOG__INDEX__AUTH__JWT__SECRET", "").strip()
-        self._jwt_service = (
-            JWTTokenService(secret=self._jwt_secret)
-            if JWTTokenService is not None and self._jwt_secret
-            else None
+        self._jwt_service = JWTTokenService(secret=self._jwt_secret) if self._jwt_secret else None
+        self._rbac = RBACEngine(role_permissions=self._role_permissions())
+        self._provider = APIKeyOnlyProvider.from_config(
+            {
+                "keys": [
+                    {"key": token, "role": self._primary_role(roles)}
+                    for token, roles in self.api_keys.items()
+                ],
+                "default_role": "reader",
+            }
         )
-        self._rbac = RBACEngine(role_permissions=self._role_permissions()) if RBACEngine is not None else None
 
     @staticmethod
     def _default_roles() -> set[str]:
@@ -121,12 +133,6 @@ class AuthMiddleware:
             "reader": {"role:reader"},
         }
 
-    def _api_key_provider(self) -> Any:
-        if APIKeyOnlyProvider is None:
-            return None
-        role_mapping = {token: self._primary_role(roles) for token, roles in self.api_keys.items()}
-        return APIKeyOnlyProvider(key_role_mapping=role_mapping, default_role="reader")
-
     @staticmethod
     def _authenticate_provider(provider: Any, request: Any) -> Any:
         coroutine = provider.authenticate(request)
@@ -161,13 +167,9 @@ class AuthMiddleware:
         if not key:
             raise PermissionError("Authentication failed")
 
-        provider = self._api_key_provider()
-        if provider is None or AuthRequest is None:
-            raise PermissionError("Authentication failed")
-
         try:
             result = self._authenticate_provider(
-                provider,
+                self._provider,
                 AuthRequest(
                     auth_type="api_key",
                     secret=key,
@@ -218,11 +220,6 @@ class AuthMiddleware:
     def require_roles(self, identity: AuthResult, allowed_roles: set[str]) -> None:
         """Authorise against cloud_dog_idam RBAC role state."""
         # Covers: FR-05
-        if self._rbac is None:
-            if identity.roles.intersection(allowed_roles):
-                return
-            raise PermissionError("Authorisation failed")
-
         for role in identity.roles:
             self._rbac.assign_role_to_user(identity.user_id, role)
         effective_roles = self._rbac.get_effective_roles(identity.user_id)
@@ -236,6 +233,4 @@ class AuthMiddleware:
 
     def backend_name(self) -> str:
         """Return auth backend identity."""
-        if cloud_dog_idam is not None and APIKeyOnlyProvider is not None and RBACEngine is not None:
-            return "cloud_dog_idam"
-        return "fallback"
+        return "cloud_dog_idam"

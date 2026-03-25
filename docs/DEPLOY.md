@@ -114,3 +114,25 @@ Expected payload includes:
   - MCP: `CLOUD_DOG__INDEX__MCP_AUDIT_PATH` (fallback `logs/index-retriever-audit-mcp.jsonl`)
 - Test and agent evidence: `working/`
 - Operational diagnostics: `server_control.sh --env <env-file> status all`
+
+## Preprod Deployment Reference
+
+### Terraform
+
+- Terraform root: `/opt/iac/cloud-dog-repo/terraform/server0.viewdeck.com/60 Cloud-Dog AI Containers`
+- Public hostname: `https://indexretriever0.cloud-dog.net`
+- Container name: `indexretriever0.app.vpc0.cloud-dog.net`
+
+### Health Verification
+
+```bash
+curl -sk https://indexretriever0.cloud-dog.net/health
+curl -sk https://indexretriever0.cloud-dog.net/login
+```
+
+### Rollback
+
+1. Identify the last known good registry tag or digest.
+2. Update the deployment target back to that tag or digest.
+3. Re-apply Terraform or re-run the deployment workflow for this service.
+4. Re-check `/health`, the public login route, and any project-specific API or MCP health endpoints.
