@@ -27,6 +27,7 @@ from cloud_dog_api_kit import (  # type: ignore
     create_app,
     register_mcp_contract,
 )
+import cloud_dog_idam  # type: ignore
 from cloud_dog_logging.correlation import get_correlation_id as get_logging_correlation_id
 from cloud_dog_logging.correlation import set_correlation_id as set_logging_correlation_id
 from fastapi import Request
@@ -503,10 +504,14 @@ def execute_tool(
 
 def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | None = None) -> Any:
     """Execute build mcp app."""
+    if cloud_dog_idam is None:  # pragma: no cover - platform package is mandatory
+        raise RuntimeError("cloud_dog_idam is required")
     active_service = service or IndexService(audit_path=_mcp_audit_path())
     db_runtime = initialise_database()
     active_registry = registry or build_registry()
     auth = AuthMiddleware()
+    if auth.backend_name() != "cloud_dog_idam":
+        raise RuntimeError("cloud_dog_idam auth backend is required")
     bind_auth_api_keys = getattr(active_service, "attach_auth_api_keys", None)
     if callable(bind_auth_api_keys):
         bind_auth_api_keys(auth.api_keys)

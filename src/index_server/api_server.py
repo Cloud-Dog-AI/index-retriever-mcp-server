@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from cloud_dog_api_kit import LifecycleHooks, create_app  # type: ignore
+import cloud_dog_idam  # type: ignore
 from cloud_dog_logging.correlation import get_correlation_id as get_logging_correlation_id
 from cloud_dog_logging.correlation import set_correlation_id as set_logging_correlation_id
 from fastapi import HTTPException, Request
@@ -234,9 +235,13 @@ def handle_ingest_text(
 def build_api_app(service: IndexService | None = None) -> Any:
     """Execute build api app."""
     # Covers: FR-01, FR-01A, FR-17
+    if cloud_dog_idam is None:  # pragma: no cover - platform package is mandatory
+        raise RuntimeError("cloud_dog_idam is required")
     active_service = service or IndexService(audit_path=_api_audit_path())
     db_runtime = initialise_database()
     auth = AuthMiddleware()
+    if auth.backend_name() != "cloud_dog_idam":
+        raise RuntimeError("cloud_dog_idam auth backend is required")
     bind_auth_api_keys = getattr(active_service, "attach_auth_api_keys", None)
     if callable(bind_auth_api_keys):
         bind_auth_api_keys(auth.api_keys)
