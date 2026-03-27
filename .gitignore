@@ -56,3 +56,8 @@ env-*-secrets
 database/
 ui/dist/
 *.pid
+storage/
+node_modules
+*.pyc
+.terraform
+*.tfstate
