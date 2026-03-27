@@ -103,17 +103,20 @@ def _runtime_config_response() -> Response:
     """Render the runtime config bootstrap script."""
     payload = _runtime_config_payload()
     api_base_value = payload["API_BASE_URL"]
-    api_base_js = "`" + api_base_value + "`" if api_base_value.startswith("${") else json.dumps(api_base_value)
-    lines = [
-        "window.__RUNTIME_CONFIG__ = {",
-        f'  ENV: {json.dumps(payload["ENV"])},',
-        f"  API_BASE_URL: {api_base_js},",
-        f'  AUTH_MODE: {json.dumps(payload["AUTH_MODE"])},',
-        f'  APP_VERSION: {json.dumps(payload["APP_VERSION"])},',
-        f'  DEFAULT_PROFILE: {json.dumps(payload["DEFAULT_PROFILE"])},',
-        f'  DEFAULT_COLLECTION: {json.dumps(payload["DEFAULT_COLLECTION"])}',
-        "};",
-    ]
+    uses_js_expr = api_base_value.startswith("${")
+    runtime = {
+        "ENV": payload["ENV"],
+        "API_BASE_URL": "" if uses_js_expr else api_base_value,
+        "AUTH_MODE": payload["AUTH_MODE"],
+        "APP_VERSION": payload["APP_VERSION"],
+        "DEFAULT_PROFILE": payload["DEFAULT_PROFILE"],
+        "DEFAULT_COLLECTION": payload["DEFAULT_COLLECTION"],
+    }
+    lines = [f"window.__RUNTIME_CONFIG__ = {json.dumps(runtime)};"]
+    if uses_js_expr:
+        lines.append(
+            f'window.__RUNTIME_CONFIG__["API_BASE_URL"] = `{api_base_value}`;'
+        )
     return Response(content="\n".join(lines), media_type="application/javascript")
 
 
