@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -312,9 +313,13 @@ def test_handlers_and_config_paths() -> None:
 
     cfg = minimal_config()
     model = bind_model(cfg)
-    assert model.server.http.port == 8686
-    merged = get_config(defaults_layer=minimal_config(), config_layer={"server": {"http": {"port": 2}}})
-    assert merged.server.http.port == 2
+    assert model.api_server.port == int(os.environ["CLOUD_DOG__API_SERVER__PORT"])
+    assert model.web_server.port == int(os.environ["CLOUD_DOG__WEB_SERVER__PORT"])
+    assert model.mcp_server.port == int(os.environ["CLOUD_DOG__MCP_SERVER__PORT"])
+    assert model.a2a_server.port == int(os.environ["CLOUD_DOG__A2A_SERVER__PORT"])
+    merged_port = int(os.environ["CLOUD_DOG__API_SERVER__PORT"]) + 9
+    merged = get_config(defaults_layer=minimal_config(), config_layer={"api_server": {"port": merged_port}})
+    assert merged.api_server.port == merged_port
 
     manager = CollectionManager()
     manager.create("alpha")

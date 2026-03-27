@@ -77,6 +77,13 @@ def _env(*keys: str, default: str = "") -> str:
     return default
 
 
+def _http_endpoint(host: str, port: str, *, scheme: str = "http") -> str:
+    """Compose an endpoint without inventing a fallback port."""
+    if not host:
+        return ""
+    return f"{scheme}://{host}:{port}" if port else f"{scheme}://{host}"
+
+
 def _infer_filename(source_uri: str) -> str:
     parsed = urlparse(source_uri)
     candidate = parsed.path if parsed.scheme else source_uri
@@ -181,9 +188,9 @@ def _qdrant_url_from_env() -> str:
     host = _env("CLOUD_DOG__INDEX__VDB__HOST", "QDRANT_HOST")
     if not host:
         return ""
-    port = _env("CLOUD_DOG__INDEX__VDB__PORT", "QDRANT_PORT", default="6333")
+    port = _env("CLOUD_DOG__INDEX__VDB__PORT", "QDRANT_PORT")
     scheme = _env("CLOUD_DOG__INDEX__VDB__QDRANT_SCHEME", "QDRANT_SCHEME", default="http")
-    return f"{scheme}://{host}:{port}"
+    return _http_endpoint(host, port, scheme=scheme)
 
 
 def _qdrant_url_from_vault(raw: dict[str, Any]) -> str:
@@ -193,9 +200,9 @@ def _qdrant_url_from_vault(raw: dict[str, Any]) -> str:
     host = str(raw.get("host", ""))
     if not host:
         return ""
-    port = str(raw.get("port", "6333") or "6333")
+    port = str(raw.get("port", "") or "")
     scheme = str(raw.get("scheme", "http") or "http")
-    return f"{scheme}://{host}:{port}"
+    return _http_endpoint(host, port, scheme=scheme)
 
 
 def _infinity_url_from_env() -> str:
@@ -205,9 +212,9 @@ def _infinity_url_from_env() -> str:
     host = _env("CLOUD_DOG__INDEX__VDB__INFINITY_HOST", "INFINITY_HOST")
     if not host:
         return ""
-    port = _env("CLOUD_DOG__INDEX__VDB__INFINITY_PORT", "INFINITY_PORT", default="8080")
+    port = _env("CLOUD_DOG__INDEX__VDB__INFINITY_PORT", "INFINITY_PORT")
     scheme = _env("CLOUD_DOG__INDEX__VDB__INFINITY_SCHEME", "INFINITY_SCHEME", default="http")
-    return f"{scheme}://{host}:{port}"
+    return _http_endpoint(host, port, scheme=scheme)
 
 
 def _infinity_url_from_vault(raw: dict[str, Any]) -> str:
@@ -217,8 +224,8 @@ def _infinity_url_from_vault(raw: dict[str, Any]) -> str:
     host = str(raw.get("host", ""))
     if not host:
         return ""
-    port = str(raw.get("port", raw.get("client_port", "8080")) or "8080")
-    return f"http://{host}:{port}"
+    port = str(raw.get("port", raw.get("client_port", "")) or "")
+    return _http_endpoint(host, port)
 
 
 def _opensearch_url_from_env() -> str:
@@ -228,8 +235,8 @@ def _opensearch_url_from_env() -> str:
     host = _env("CLOUD_DOG__INDEX__VDB__OPENSEARCH_HOST", "OPENSEARCH_HOST")
     if not host:
         return ""
-    port = _env("CLOUD_DOG__INDEX__VDB__OPENSEARCH_PORT", "OPENSEARCH_PORT", default="9200")
-    return f"http://{host}:{port}"
+    port = _env("CLOUD_DOG__INDEX__VDB__OPENSEARCH_PORT", "OPENSEARCH_PORT")
+    return _http_endpoint(host, port)
 
 
 def _opensearch_url_from_vault(raw: dict[str, Any]) -> str:
@@ -239,8 +246,8 @@ def _opensearch_url_from_vault(raw: dict[str, Any]) -> str:
     host = str(raw.get("host", ""))
     if not host:
         return ""
-    port = str(raw.get("port", "9200") or "9200")
-    return f"http://{host}:{port}"
+    port = str(raw.get("port", "") or "")
+    return _http_endpoint(host, port)
 
 
 def _weaviate_url_from_env() -> str:
@@ -250,9 +257,9 @@ def _weaviate_url_from_env() -> str:
     host = _env("CLOUD_DOG__INDEX__VDB__WEAVIATE_HOST", "WEAVIATE_HOST")
     if not host:
         return ""
-    port = _env("CLOUD_DOG__INDEX__VDB__WEAVIATE_PORT", "WEAVIATE_PORT", default="8080")
+    port = _env("CLOUD_DOG__INDEX__VDB__WEAVIATE_PORT", "WEAVIATE_PORT")
     scheme = _env("CLOUD_DOG__INDEX__VDB__WEAVIATE_SCHEME", "WEAVIATE_SCHEME", default="http")
-    return f"{scheme}://{host}:{port}"
+    return _http_endpoint(host, port, scheme=scheme)
 
 
 def _weaviate_url_from_vault(raw: dict[str, Any]) -> str:
@@ -262,9 +269,9 @@ def _weaviate_url_from_vault(raw: dict[str, Any]) -> str:
     host = str(raw.get("host", ""))
     if not host:
         return ""
-    port = str(raw.get("port", "8080") or "8080")
+    port = str(raw.get("port", "") or "")
     scheme = str(raw.get("scheme", "http") or "http")
-    return f"{scheme}://{host}:{port}"
+    return _http_endpoint(host, port, scheme=scheme)
 
 
 def _pgvector_uri_from_env() -> str:

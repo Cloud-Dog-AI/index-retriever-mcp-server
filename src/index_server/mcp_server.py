@@ -25,6 +25,7 @@ from cloud_dog_api_kit import (  # type: ignore
     UnauthenticatedError,
     UnauthorisedError,
     create_app,
+    create_health_router,
     register_mcp_contract,
 )
 import cloud_dog_idam  # type: ignore
@@ -33,6 +34,7 @@ from cloud_dog_logging.correlation import set_correlation_id as set_logging_corr
 from fastapi import Request
 
 from index_server.auth.middleware import AuthMiddleware
+from index_server.runtime_config import resolve_server_binding
 from index_tools.db import database_health, initialise_database, shutdown_database
 from index_tools.tools.registry import ToolRegistry, build_default_tool_registry
 from index_tools.tools.service import IndexService
@@ -128,8 +130,12 @@ def _required_roles_for_tool(tool_name: str) -> set[str]:
         "a2a_config_events",
         "collections_list",
         "collection_get",
+        "source_configs_list",
+        "source_config_get",
     }:
         return {"reader", "writer", "maintainer", "admin"}
+    if tool_name == "rbac_bindings_list":
+        return {"admin"}
     if tool_name.startswith("job_") or tool_name == "queue_status":
         return {"writer", "maintainer", "admin"}
     if tool_name in {"delete_by_id", "delete_by_filter", "retention_run", "reindex_run"}:
@@ -352,6 +358,13 @@ def execute_tool(
         return {"events": service.a2a_config_events()}
     if tool_name == "collections_list":
         return {"collections": service.collections_list(str(arguments.get("profile", "default")))}
+    if tool_name == "collection_get":
+        return {
+            "collection": service.collection_get(
+                str(arguments.get("profile", "default")),
+                str(arguments["collection"]),
+            )
+        }
     if tool_name == "admin_collection_create":
         requested_roles = arguments.get("allowed_roles")
         allowed_roles = set(requested_roles) if isinstance(requested_roles, list) else None
@@ -360,7 +373,9 @@ def execute_tool(
                 profile=str(arguments.get("profile", "default")),
                 collection=str(arguments["collection"]),
                 roles=roles,
+                payload=arguments,
                 allowed_roles=allowed_roles,
+                actor=str(arguments.get("actor", "mcp")),
             )
         except TypeError:
             service.admin_collection_create(
@@ -369,13 +384,97 @@ def execute_tool(
                 roles=roles,
             )
         return {"status": "ok"}
+    if tool_name == "admin_collection_update":
+        return {
+            "collection": service.admin_collection_update(
+                profile=str(arguments.get("profile", "default")),
+                collection=str(arguments["collection"]),
+                roles=roles,
+                updates=dict(arguments),
+                actor=str(arguments.get("actor", "mcp")),
+            ),
+            "status": "ok",
+        }
     if tool_name == "admin_collection_delete":
         service.admin_collection_delete(
             profile=str(arguments.get("profile", "default")),
             collection=str(arguments["collection"]),
             roles=roles,
+            actor=str(arguments.get("actor", "mcp")),
         )
         return {"status": "ok"}
+    if tool_name == "source_configs_list":
+        return {"source_configs": service.source_configs_list()}
+    if tool_name == "source_config_get":
+        return {"source_config": service.source_config_get(str(arguments["source_id"]))}
+    if tool_name == "admin_source_config_create":
+        return {
+            "source_config": service.admin_source_config_create(
+                source_id=str(arguments["source_id"]),
+                roles=roles,
+                payload=arguments,
+                actor=str(arguments.get("actor", "mcp")),
+            ),
+            "status": "ok",
+        }
+    if tool_name == "admin_source_config_update":
+        return {
+            "source_config": service.admin_source_config_update(
+                source_id=str(arguments["source_id"]),
+                roles=roles,
+                payload=arguments,
+                actor=str(arguments.get("actor", "mcp")),
+            ),
+            "status": "ok",
+        }
+    if tool_name == "admin_source_config_delete":
+        service.admin_source_config_delete(
+            source_id=str(arguments["source_id"]),
+            roles=roles,
+            actor=str(arguments.get("actor", "mcp")),
+        )
+        return {"status": "ok"}
+    if tool_name == "rbac_bindings_list":
+        return {"bindings": service.rbac_bindings_list()}
+    if tool_name == "admin_rbac_bind":
+        return {
+            "binding": service.admin_rbac_bind(
+                entity_type=str(arguments["entity_type"]),
+                entity_id=str(arguments["entity_id"]),
+                role=str(arguments["role"]),
+                roles=roles,
+                actor=str(arguments.get("actor", "mcp")),
+            ),
+            "status": "ok",
+        }
+    if tool_name == "admin_rbac_unbind":
+        return {
+            "binding": service.admin_rbac_unbind(
+                entity_type=str(arguments["entity_type"]),
+                entity_id=str(arguments["entity_id"]),
+                role=str(arguments["role"]),
+                roles=roles,
+                actor=str(arguments.get("actor", "mcp")),
+            ),
+            "status": "ok",
+        }
+    if tool_name == "ingest_upload":
+        _enforce_collection_acl(service, roles, arguments)
+        payload = arguments.get("content", "")
+        if isinstance(payload, str):
+            content = payload.encode("utf-8")
+        elif isinstance(payload, bytes):
+            content = payload
+        else:
+            raise ValueError("content must be a string or bytes payload")
+        return service.ingest_upload(
+            profile=str(arguments["profile"]),
+            collection=str(arguments["collection"]),
+            filename=str(arguments["filename"]),
+            content=content,
+            actor=str(arguments.get("actor", "mcp")),
+            metadata=arguments.get("metadata") if isinstance(arguments.get("metadata"), dict) else None,
+        )
     if tool_name == "ingest_text":
         _enforce_collection_acl(service, roles, arguments)
         ingest_result = service.ingest_text(
@@ -504,6 +603,12 @@ def execute_tool(
 
 def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | None = None) -> Any:
     """Execute build mcp app."""
+    # Ensure platform config is loaded for this process.
+    from cloud_dog_config import load_config  # type: ignore
+    try:
+        load_config(unresolved_policy="warn")
+    except Exception:
+        pass  # Config may already be loaded
     if cloud_dog_idam is None:  # pragma: no cover - platform package is mandatory
         raise RuntimeError("cloud_dog_idam is required")
     active_service = service or IndexService(audit_path=_mcp_audit_path())
@@ -565,13 +670,15 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
             required_roles=required_roles,
         )
 
-    @app.get("/health")
-    def health(request: Request = None) -> dict[str, str]:
-        """Execute health."""
-        if request is not None:
-            _sync_logging_correlation(request)
-        _ = database_health(db_runtime)
-        return {"status": "ok"}
+    # Platform health via create_health_router().
+    _health_paths = {"/health", "/ready", "/live", "/status"}
+    app.router.routes = [
+        r for r in app.router.routes if getattr(r, "path", None) not in _health_paths
+    ]
+    app.include_router(create_health_router(
+        application_name="index-retriever-mcp-server",
+        version="0.1.0",
+    ))
 
     def _make_tool_handler(tool_name: str) -> Any:
         """Build an auth-enforcing handler for a single tool."""
@@ -658,9 +765,8 @@ def run_mcp_server() -> None:
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("uvicorn is required to run MCP server") from exc
 
-    host = os.getenv("CLOUD_DOG__INDEX__MCP_SERVER__HOST", "0.0.0.0")
-    port = int(os.getenv("CLOUD_DOG__INDEX__MCP_SERVER__PORT", "8687"))
-    uvicorn.run(app, host=host, port=port, log_level="info")
+    binding = resolve_server_binding("mcp_server")
+    uvicorn.run(app, host=binding.host, port=binding.port, log_level="info")
 
 
 if __name__ == "__main__":

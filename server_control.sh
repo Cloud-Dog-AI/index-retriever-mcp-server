@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # index-retriever-mcp-server — Server control script
-# Usage: ./server_control.sh --env tests/env-UT {start|stop|restart|status} {api|mcp|all}
+# Usage: ./server_control.sh --env tests/env-UT {start|stop|restart|status} {api|web|mcp|a2a|all}
 
 set -euo pipefail
 
@@ -60,7 +60,9 @@ TARGET="${2:-all}"
 # Module names are defined by the final server implementation.
 declare -A MODULES=(
   [api]="index_server.api_server"
+  [web]="index_server.web_server"
   [mcp]="index_server.mcp_server"
+  [a2a]="index_server.a2a_server"
 )
 
 start_server() {
@@ -129,7 +131,7 @@ status_server() {
 }
 
 if [[ "${TARGET}" == "all" ]]; then
-  TARGETS=(api mcp)
+  TARGETS=(api web mcp a2a)
 else
   TARGETS=("${TARGET}")
 fi
@@ -141,7 +143,7 @@ for server in "${TARGETS[@]}"; do
     restart) stop_server "${server}"; sleep 1; start_server "${server}" ;;
     status) status_server "${server}" ;;
     *)
-      echo "Usage: $0 [--env <file>] {start|stop|restart|status} {api|mcp|all}" >&2
+      echo "Usage: $0 [--env <file>] {start|stop|restart|status} {api|web|mcp|a2a|all}" >&2
       exit 1
       ;;
   esac

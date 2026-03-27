@@ -19,26 +19,17 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
-class HttpServerConfig(BaseModel):
-    """HttpServerConfig definition."""
+class ServerEndpointConfig(BaseModel):
+    """Server endpoint host/port definition."""
 
     host: str = "0.0.0.0"
-    port: int = 8686
+    port: int
 
 
-class McpServerConfig(BaseModel):
-    """McpServerConfig definition."""
+class McpServerConfig(ServerEndpointConfig):
+    """MCP server host/port/transport definition."""
 
-    enabled: bool = True
-    host: str = "0.0.0.0"
-    port: int = 8687
-
-
-class ServerConfig(BaseModel):
-    """ServerConfig definition."""
-
-    http: HttpServerConfig = Field(default_factory=HttpServerConfig)
-    mcp: McpServerConfig = Field(default_factory=McpServerConfig)
+    transport: str = "streamable-http"
 
 
 class JwtConfig(BaseModel):
@@ -200,7 +191,10 @@ class LogConfig(BaseModel):
 class GlobalConfig(BaseModel):
     """GlobalConfig definition."""
 
-    server: ServerConfig
+    api_server: ServerEndpointConfig
+    web_server: ServerEndpointConfig
+    mcp_server: McpServerConfig
+    a2a_server: ServerEndpointConfig
     auth: AuthConfig
     storage: StorageConfig
     queue: QueueConfig = Field(default_factory=QueueConfig)

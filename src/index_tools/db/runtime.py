@@ -59,10 +59,13 @@ def _default_sqlite_path() -> str:
 
 
 def _env_value(*names: str) -> str | None:
+    from cloud_dog_config import get_config  # type: ignore
     for name in names:
-        value = os.getenv(name, "").strip()
-        if value:
-            return value
+        cfg_val = get_config(name)
+        if cfg_val is not None:
+            value = str(cfg_val).strip()
+            if value:
+                return value
     return None
 
 

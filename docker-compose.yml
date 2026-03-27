@@ -12,14 +12,14 @@ services:
     env_file:
       - ${ENV_FILE:-.env}
     environment:
-      - CLOUD_DOG__INDEX__API_SERVER__PORT=8686
-      - CLOUD_DOG__INDEX__API_SERVER__HOST=0.0.0.0
+      - CLOUD_DOG__API_SERVER__PORT=${CLOUD_DOG__API_SERVER__PORT}
+      - CLOUD_DOG__API_SERVER__HOST=${CLOUD_DOG__API_SERVER__HOST}
     volumes:
       - ./logs:/app/logs
       - ./data:/app/data
       - ./certs:/app/certs
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8686/health"]
+      test: ["CMD", "/app/healthcheck.sh"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -37,8 +37,8 @@ services:
     env_file:
       - ${ENV_FILE:-.env}
     environment:
-      - CLOUD_DOG__INDEX__MCP_SERVER__PORT=8687
-      - CLOUD_DOG__INDEX__MCP_SERVER__HOST=0.0.0.0
+      - CLOUD_DOG__MCP_SERVER__PORT=${CLOUD_DOG__MCP_SERVER__PORT}
+      - CLOUD_DOG__MCP_SERVER__HOST=${CLOUD_DOG__MCP_SERVER__HOST}
     volumes:
       - ./logs:/app/logs
       - ./certs:/app/certs

@@ -50,3 +50,13 @@ def test_api_key_env_mapping_parses_roles_and_skips_empty(monkeypatch: pytest.Mo
 
     assert scoped.roles == {"reader", "writer"}
     assert bare.roles == {"admin", "maintainer", "writer", "reader"}
+
+
+def test_auth_middleware_refreshes_provider_after_runtime_key_update() -> None:
+    auth = AuthMiddleware(api_keys={"bootstrap-key": {"admin"}})
+    auth.api_keys["fresh-key"] = {"admin"}
+
+    refreshed = auth.authenticate_api_key({"x-api-key": "fresh-key"})
+
+    assert refreshed.token_type == "api_key"
+    assert refreshed.roles == {"admin"}

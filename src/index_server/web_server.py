@@ -12,15 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Web server entrypoint for SPA and legacy admin UI delivery."""
+
 from __future__ import annotations
 
 from index_server.api_server import build_api_app
+from index_server.runtime_config import resolve_server_binding
 
 
-def main() -> object:
-    """Bootstrap the API app."""
+def build_web_app() -> object:
+    """Build the web server app."""
     return build_api_app()
 
 
+def run_web_server() -> None:
+    """Run the web server on the configured host/port."""
+    app = build_web_app()
+    try:
+        import uvicorn
+    except ImportError as exc:  # pragma: no cover
+        raise RuntimeError("uvicorn is required to run Web server") from exc
+
+    binding = resolve_server_binding("web_server")
+    uvicorn.run(app, host=binding.host, port=binding.port, log_level="info")
+
+
 if __name__ == "__main__":
-    main()
+    run_web_server()

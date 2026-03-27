@@ -20,4 +20,4 @@ from index_tools.config.loader import bind_model
 
 def test_invalid_config_rejected() -> None:
     with pytest.raises(ValidationError):
-        bind_model({"server": {}})
+        bind_model({})

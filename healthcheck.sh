@@ -15,4 +15,13 @@
 
 # index-retriever-mcp-server — Docker Health Check (PS-91)
 set -euo pipefail
-curl -fsS "http://127.0.0.1:${CLOUD_DOG__INDEX__API_SERVER__PORT:-8686}/health" >/dev/null
+PYTHON_BIN="python3"
+if [[ -x "/app/.venv/bin/python" ]]; then
+  PYTHON_BIN="/app/.venv/bin/python"
+fi
+API_PORT="$("${PYTHON_BIN}" - <<'PY'
+from index_server.runtime_config import resolve_server_binding
+print(resolve_server_binding("api_server").port)
+PY
+)"
+curl -fsS "http://127.0.0.1:${API_PORT}/health" >/dev/null

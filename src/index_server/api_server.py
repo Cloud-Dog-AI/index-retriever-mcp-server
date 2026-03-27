@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import os
 import json
+import secrets
+import time
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -26,13 +28,14 @@ import cloud_dog_idam  # type: ignore
 from cloud_dog_logging import setup_logging  # type: ignore
 from cloud_dog_logging.correlation import get_correlation_id as get_logging_correlation_id
 from cloud_dog_logging.correlation import set_correlation_id as set_logging_correlation_id
-from fastapi import HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
+from fastapi import File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from index_server.admin_ui import admin_ui_script, admin_ui_styles, profiles_page, security_page
 from index_server.auth.middleware import AuthMiddleware
 from index_server.mcp_server import build_registry, execute_tool
+from index_server.runtime_config import resolve_server_binding
 from index_tools.db import (
     PlatformDatabaseRuntime,
     database_health,
@@ -85,13 +88,14 @@ def _ui_index_path() -> Path:
 
 def _runtime_config_payload() -> dict[str, str]:
     """Build runtime config for the SPA bootstrap."""
+    from cloud_dog_config import get_config  # type: ignore
     return {
-        "ENV": os.getenv("CLOUD_DOG_ENVIRONMENT", "dev"),
-        "API_BASE_URL": os.getenv("CLOUD_DOG__INDEX__UI__API_BASE_URL", "").strip() or "${window.location.origin}",
-        "AUTH_MODE": os.getenv("CLOUD_DOG__INDEX__UI__AUTH_MODE", "api_key"),
-        "APP_VERSION": os.getenv("CLOUD_DOG__INDEX__UI__APP_VERSION", "dev"),
-        "DEFAULT_PROFILE": os.getenv("CLOUD_DOG__INDEX__UI__DEFAULT_PROFILE", "default"),
-        "DEFAULT_COLLECTION": os.getenv("CLOUD_DOG__INDEX__UI__DEFAULT_COLLECTION", "w12_documents"),
+        "ENV": str(get_config("service.environment") or "dev"),
+        "API_BASE_URL": str(get_config("index.ui.api_base_url") or "").strip() or "${window.location.origin}",
+        "AUTH_MODE": str(get_config("index.ui.auth_mode") or "cookie"),
+        "APP_VERSION": str(get_config("index.ui.app_version") or "dev"),
+        "DEFAULT_PROFILE": str(get_config("index.ui.default_profile") or "default"),
+        "DEFAULT_COLLECTION": str(get_config("index.ui.default_collection") or "w12_documents"),
     }
 
 
@@ -269,6 +273,52 @@ def build_api_app(service: IndexService | None = None) -> Any:
         bind_auth_api_keys(auth.api_keys)
     registry = build_registry()
     app = _create_runtime_app(on_shutdown=shutdown_database)
+
+    # In-memory token session store (no itsdangerous dependency).
+    _sessions: dict[str, dict] = {}
+    _admin_username = os.environ.get("CLOUD_DOG_WEB_LOGIN_USERNAME", "admin")
+    _admin_password = os.environ.get("CLOUD_DOG_WEB_LOGIN_PASSWORD", "")
+    _cookie_name = "index_web_session"
+
+    def _get_session(request: Request) -> dict | None:
+        token = request.cookies.get(_cookie_name)
+        if token and token in _sessions:
+            sess = _sessions[token]
+            if time.time() - sess.get("_created", 0) < 3600:
+                return sess
+            del _sessions[token]
+        return None
+
+    @app.post("/auth/login")
+    async def auth_login(request: Request) -> JSONResponse:
+        body = await request.json()
+        username = str(body.get("username", "")).strip()
+        password = str(body.get("password", "")).strip()
+        if not username or not password:
+            raise HTTPException(status_code=400, detail="Username and password required")
+        if username != _admin_username or password != _admin_password:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        token = secrets.token_urlsafe(32)
+        _sessions[token] = {"user": username, "user_id": "1", "role": "admin", "_created": time.time()}
+        resp = JSONResponse({"user": {"id": "1", "displayName": username, "email": None, "roles": ["admin"], "permissions": ["*"]}})
+        resp.set_cookie(_cookie_name, token, httponly=True, samesite="lax", max_age=3600, path="/")
+        return resp
+
+    @app.get("/auth/me")
+    async def auth_me(request: Request) -> JSONResponse:
+        sess = _get_session(request)
+        if not sess:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        return JSONResponse({"user": {"id": sess["user_id"], "displayName": sess["user"], "email": None, "roles": [sess["role"]], "permissions": ["*"]}})
+
+    @app.post("/auth/logout")
+    async def auth_logout(request: Request) -> JSONResponse:
+        token = request.cookies.get(_cookie_name)
+        if token:
+            _sessions.pop(token, None)
+        resp = JSONResponse({"ok": True})
+        resp.delete_cookie(_cookie_name, path="/")
+        return resp
 
     def _sync_logging_correlation(request: Request) -> str:
         correlation_id = str(getattr(request.state, "correlation_id", "") or "").strip()
@@ -639,6 +689,161 @@ def build_api_app(service: IndexService | None = None) -> Any:
             )
         }
 
+    def admin_collections_list(profile: str = "default", request: Request = None) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        collections = [
+            active_service.collection_get(profile, collection)
+            for collection in active_service.collections_list(profile)
+        ]
+        return {"collections": collections}
+
+    def admin_collections_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
+        profile = str(payload.get("profile", "default"))
+        collection = str(payload["collection"])
+        active_service.admin_collection_create(
+            profile=profile,
+            collection=collection,
+            roles=identity.roles,
+            payload=payload,
+            allowed_roles=set(payload.get("allowed_roles", [])) if isinstance(payload.get("allowed_roles"), list) else None,
+            actor=identity.user_id,
+        )
+        return {"collection": active_service.collection_get(profile, collection)}
+
+    def admin_collections_get(collection_id: str, profile: str = "default", request: Request = None) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        return {"collection": active_service.collection_get(profile, collection_id)}
+
+    def admin_collections_update(collection_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
+        profile = str(payload.get("profile", "default"))
+        updated = active_service.admin_collection_update(
+            profile=profile,
+            collection=collection_id,
+            roles=identity.roles,
+            updates=payload,
+            actor=identity.user_id,
+        )
+        return {"collection": updated}
+
+    def admin_collections_delete(collection_id: str, profile: str = "default", request: Request = None) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
+        active_service.admin_collection_delete(
+            profile=profile,
+            collection=collection_id,
+            roles=identity.roles,
+            actor=identity.user_id,
+        )
+        return {"status": "ok", "collection": collection_id, "profile": profile}
+
+    def admin_source_configs_list(request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        return {"source_configs": active_service.source_configs_list()}
+
+    def admin_source_configs_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
+        source_id = str(payload["source_id"])
+        return {
+            "source_config": active_service.admin_source_config_create(
+                source_id=source_id,
+                roles=identity.roles,
+                payload=payload,
+                actor=identity.user_id,
+            )
+        }
+
+    def admin_source_configs_get(source_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        return {"source_config": active_service.source_config_get(source_id)}
+
+    def admin_source_configs_update(source_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
+        return {
+            "source_config": active_service.admin_source_config_update(
+                source_id=source_id,
+                roles=identity.roles,
+                payload=payload,
+                actor=identity.user_id,
+            )
+        }
+
+    def admin_source_configs_delete(source_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
+        active_service.admin_source_config_delete(
+            source_id=source_id,
+            roles=identity.roles,
+            actor=identity.user_id,
+        )
+        return {"status": "ok", "source_id": source_id}
+
+    def admin_rbac_bindings_list(request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
+        return {"bindings": active_service.rbac_bindings_list()}
+
+    def admin_rbac_bindings_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
+        return {
+            "binding": active_service.admin_rbac_bind(
+                entity_type=str(payload["entity_type"]),
+                entity_id=str(payload["entity_id"]),
+                role=str(payload["role"]),
+                roles=identity.roles,
+                actor=identity.user_id,
+            )
+        }
+
+    def admin_rbac_bindings_delete(entity_type: str, entity_id: str, role: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
+        return {
+            "binding": active_service.admin_rbac_unbind(
+                entity_type=entity_type,
+                entity_id=entity_id,
+                role=role,
+                roles=identity.roles,
+                actor=identity.user_id,
+            )
+        }
+
+    async def upload_ingest(
+        request: Request,
+        profile: str = Form(...),
+        collection: str = Form(...),
+        metadata_json: str = Form(default="{}"),
+        upload: UploadFile = File(...),
+    ) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"writer", "maintainer", "admin"})
+        try:
+            parsed_metadata = json.loads(metadata_json or "{}")
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=400, detail="metadata_json must be valid JSON") from exc
+        if not isinstance(parsed_metadata, dict):
+            raise HTTPException(status_code=400, detail="metadata_json must decode to an object")
+        payload = await upload.read()
+        result = active_service.ingest_upload(
+            profile=profile,
+            collection=collection,
+            filename=str(upload.filename or "upload.bin"),
+            content=payload,
+            actor=identity.user_id,
+            metadata=parsed_metadata,
+        )
+        return result
+
     assets_dir = _ui_assets_dir()
     if assets_dir.exists():
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="ui-assets")
@@ -669,6 +874,8 @@ def build_api_app(service: IndexService | None = None) -> Any:
         checks={"db": _db_probe, "vdb": _vdb_probe, "embedding": _embedding_probe},
     )
     app.include_router(_hr)
+    for base_path in (_CANONICAL_API_BASE_PATH, _LEGACY_API_BASE_PATH):
+        app.get(f"{base_path}/health")(health)
 
     app.get(_CANONICAL_A2A_BASE_PATH)(a2a_root)
     app.get(f"{_CANONICAL_A2A_BASE_PATH}/health")(a2a_health)
@@ -681,6 +888,8 @@ def build_api_app(service: IndexService | None = None) -> Any:
     for base_path in (_CANONICAL_API_BASE_PATH, _LEGACY_API_BASE_PATH):
         app.get(f"{base_path}/tools")(list_tools)
         app.post(f"{base_path}/tools/{{tool_name}}")(call_tool)
+        # Read-only status tools accept GET (REST convention for status endpoints).
+        app.get(f"{base_path}/tools/{{tool_name}}")(call_tool)
 
     app.get("/admin/profiles")(admin_profiles_list)
     app.post("/admin/profiles")(admin_profiles_create)
@@ -700,6 +909,21 @@ def build_api_app(service: IndexService | None = None) -> Any:
     app.get("/admin/api-keys")(admin_api_keys_list)
     app.post("/admin/api-keys")(admin_api_keys_create)
     app.delete("/admin/api-keys/{key_id}")(admin_api_keys_delete)
+    app.get("/admin/collections")(admin_collections_list)
+    app.post("/admin/collections")(admin_collections_create)
+    app.get("/admin/collections/{collection_id}")(admin_collections_get)
+    app.put("/admin/collections/{collection_id}")(admin_collections_update)
+    app.delete("/admin/collections/{collection_id}")(admin_collections_delete)
+    app.get("/admin/source-configs")(admin_source_configs_list)
+    app.post("/admin/source-configs")(admin_source_configs_create)
+    app.get("/admin/source-configs/{source_id}")(admin_source_configs_get)
+    app.put("/admin/source-configs/{source_id}")(admin_source_configs_update)
+    app.delete("/admin/source-configs/{source_id}")(admin_source_configs_delete)
+    app.get("/admin/rbac-bindings")(admin_rbac_bindings_list)
+    app.post("/admin/rbac-bindings")(admin_rbac_bindings_create)
+    app.delete("/admin/rbac-bindings/{entity_type}/{entity_id}/{role}")(admin_rbac_bindings_delete)
+    for base_path in (_CANONICAL_API_BASE_PATH, _LEGACY_API_BASE_PATH):
+        app.post(f"{base_path}/upload")(upload_ingest)
     app.get("/")(spa_index)
     app.get("/{path:path}")(spa_fallback)
 
@@ -716,9 +940,8 @@ def run_api_server() -> None:
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("uvicorn is required to run API server") from exc
 
-    host = os.getenv("CLOUD_DOG__INDEX__API_SERVER__HOST", "0.0.0.0")
-    port = int(os.getenv("CLOUD_DOG__INDEX__API_SERVER__PORT", "8686"))
-    uvicorn.run(app, host=host, port=port, log_level="info")
+    binding = resolve_server_binding("api_server")
+    uvicorn.run(app, host=binding.host, port=binding.port, log_level="info")
 
 
 if __name__ == "__main__":

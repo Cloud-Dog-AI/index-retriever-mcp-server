@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 from index_tools.config.loader import merge_config_layers
 
 
 def test_config_loader_precedence() -> None:
-    defaults = {"server": {"http": {"port": 8686}}}
-    config = {"server": {"http": {"port": 8688}}}
-    dot_env = {"server": {"http": {"port": 8689}}}
-    env = {"server": {"http": {"port": 8690}}}
+    base_port = int(os.environ["CLOUD_DOG__API_SERVER__PORT"])
+    defaults = {"api_server": {"port": base_port}}
+    config = {"api_server": {"port": base_port + 1}}
+    dot_env = {"api_server": {"port": base_port + 2}}
+    env = {"api_server": {"port": base_port + 3}}
     merged = merge_config_layers(defaults, config, dot_env, env)
-    assert merged["server"]["http"]["port"] == 8690
+    assert merged["api_server"]["port"] == base_port + 3

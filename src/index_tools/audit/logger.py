@@ -150,7 +150,7 @@ class AuditLogger:
                 "profile": profile,
                 "collection": collection,
                 "source": source,
-                "metadata": metadata or {},
+                "metadata": redact_payload(metadata or {}),
             },
             outcome="success",
             duration_ms=0,
@@ -159,6 +159,24 @@ class AuditLogger:
             chunk_count=chunk_count,
             server_id=self.server_id,
         )
+        if metadata:
+            self.write_event(
+                self.build_event(
+                    event_type="tool.call",
+                    actor=self._actor(actor),
+                    action="ingest_text",
+                    outcome="success",
+                    target=self._target("collection", f"{profile}:{collection}", target_name=collection),
+                    details={
+                        "source": source,
+                        "metadata": metadata,
+                        "job_id": job_id,
+                        "document_count": document_count,
+                        "chunk_count": chunk_count,
+                        "server_id": self.server_id,
+                    },
+                )
+            )
 
     def log_admin_action(
         self,

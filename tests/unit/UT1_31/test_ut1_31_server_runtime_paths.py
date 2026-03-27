@@ -16,14 +16,16 @@ from __future__ import annotations
 
 import runpy
 import sys
+import os
 from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
-from index_server import api_server, mcp_server
+from index_server import a2a_server, api_server, mcp_server, web_server
 from index_server.admin.endpoints import collection_create
 from index_server.main import main
+from index_server.runtime_config import ServerBinding
 from index_server.streaming import ingest_stream_close, ingest_stream_event, ingest_stream_open
 from index_tools.tools.service import IndexService
 from tests.http_paths import api_tools_path, mcp_tools_path
@@ -79,6 +81,9 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     health = client.get("/health")
     assert health.status_code == 200
     assert health.json()["status"] == "ok"
+    namespaced_health = client.get("/app/v1/health")
+    assert namespaced_health.status_code == 200
+    assert namespaced_health.json()["status"] == "ok"
 
     a2a_unauth = client.get("/a2a/health")
     assert a2a_unauth.status_code == 401
@@ -164,12 +169,20 @@ def test_api_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     sentinel_app = object()
     monkeypatch.setattr(api_server, "build_api_app", lambda: sentinel_app)
+    monkeypatch.setattr(
+        api_server,
+        "resolve_server_binding",
+        lambda _name: ServerBinding(host="127.0.0.1", port=int(os.environ["CLOUD_DOG__API_SERVER__PORT"])),
+    )
     monkeypatch.setitem(sys.modules, "uvicorn", fake_uvicorn)
-    monkeypatch.setenv("CLOUD_DOG__INDEX__API_SERVER__HOST", "127.0.0.1")
-    monkeypatch.setenv("CLOUD_DOG__INDEX__API_SERVER__PORT", "9696")
 
     api_server.run_api_server()
-    assert captured == {"app": sentinel_app, "host": "127.0.0.1", "port": 9696, "log_level": "info"}
+    assert captured == {
+        "app": sentinel_app,
+        "host": "127.0.0.1",
+        "port": int(os.environ["CLOUD_DOG__API_SERVER__PORT"]),
+        "log_level": "info",
+    }
 
 
 def test_mcp_app_and_execute_tool_paths(service: IndexService) -> None:
@@ -272,12 +285,20 @@ def test_mcp_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     sentinel_app = object()
     monkeypatch.setattr(mcp_server, "build_mcp_app", lambda: sentinel_app)
+    monkeypatch.setattr(
+        mcp_server,
+        "resolve_server_binding",
+        lambda _name: ServerBinding(host="127.0.0.1", port=int(os.environ["CLOUD_DOG__MCP_SERVER__PORT"])),
+    )
     monkeypatch.setitem(sys.modules, "uvicorn", fake_uvicorn)
-    monkeypatch.setenv("CLOUD_DOG__INDEX__MCP_SERVER__HOST", "127.0.0.1")
-    monkeypatch.setenv("CLOUD_DOG__INDEX__MCP_SERVER__PORT", "9797")
 
     mcp_server.run_mcp_server()
-    assert captured == {"app": sentinel_app, "host": "127.0.0.1", "port": 9797, "log_level": "info"}
+    assert captured == {
+        "app": sentinel_app,
+        "host": "127.0.0.1",
+        "port": int(os.environ["CLOUD_DOG__MCP_SERVER__PORT"]),
+        "log_level": "info",
+    }
 
 
 def test_entrypoint_and_streaming_wrappers(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
@@ -300,3 +321,53 @@ def test_entrypoint_and_streaming_wrappers(monkeypatch: pytest.MonkeyPatch, serv
 def test_admin_collection_create_endpoint(service: IndexService) -> None:
     response = collection_create(service, profile="default", collection="ut_collection", roles={"admin"})
     assert response == {"status": "created", "collection": "ut_collection"}
+
+
+def test_web_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+    fake_uvicorn = SimpleNamespace(
+        run=lambda app, host, port, log_level: captured.update(
+            {"app": app, "host": host, "port": port, "log_level": log_level}
+        )
+    )
+    sentinel_app = object()
+    monkeypatch.setattr(web_server, "build_web_app", lambda: sentinel_app)
+    monkeypatch.setattr(
+        web_server,
+        "resolve_server_binding",
+        lambda _name: ServerBinding(host="127.0.0.1", port=int(os.environ["CLOUD_DOG__WEB_SERVER__PORT"])),
+    )
+    monkeypatch.setitem(sys.modules, "uvicorn", fake_uvicorn)
+
+    web_server.run_web_server()
+    assert captured == {
+        "app": sentinel_app,
+        "host": "127.0.0.1",
+        "port": int(os.environ["CLOUD_DOG__WEB_SERVER__PORT"]),
+        "log_level": "info",
+    }
+
+
+def test_a2a_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+    fake_uvicorn = SimpleNamespace(
+        run=lambda app, host, port, log_level: captured.update(
+            {"app": app, "host": host, "port": port, "log_level": log_level}
+        )
+    )
+    sentinel_app = object()
+    monkeypatch.setattr(a2a_server, "build_a2a_app", lambda: sentinel_app)
+    monkeypatch.setattr(
+        a2a_server,
+        "resolve_server_binding",
+        lambda _name: ServerBinding(host="127.0.0.1", port=int(os.environ["CLOUD_DOG__A2A_SERVER__PORT"])),
+    )
+    monkeypatch.setitem(sys.modules, "uvicorn", fake_uvicorn)
+
+    a2a_server.run_a2a_server()
+    assert captured == {
+        "app": sentinel_app,
+        "host": "127.0.0.1",
+        "port": int(os.environ["CLOUD_DOG__A2A_SERVER__PORT"]),
+        "log_level": "info",
+    }

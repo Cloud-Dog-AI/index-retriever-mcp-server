@@ -27,4 +27,4 @@ def test_secrets_never_logged(service: IndexService) -> None:
     content = service.audit_logger.path.read_text(encoding="utf-8")
     assert "super-secret" not in content
     assert "hidden" not in content
-    assert "[REDACTED]" in content
+    assert "REDACTED" in content

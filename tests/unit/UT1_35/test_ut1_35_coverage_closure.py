@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import runpy
 import sys
+import os
 from types import SimpleNamespace
 
 import pytest
@@ -105,15 +106,10 @@ def test_api_require_roles_http403_branch(monkeypatch: pytest.MonkeyPatch, servi
         staticmethod(lambda _identity, _allowed: (_ for _ in ()).throw(PermissionError("denied"))),
     )
     app = api_server.build_api_app(service=service)
-    local_health = next(
-        route.endpoint
-        for route in app.router.routes
-        if getattr(route, "path", "") == "/health"
-        and getattr(getattr(route, "endpoint", None), "__qualname__", "").endswith("build_api_app.<locals>.health")
-    )
-    assert local_health()["status"] == "ok"
-
     client = TestClient(app)
+    local_health = client.get("/health")
+    assert local_health.status_code == 200
+    assert local_health.json()["status"] == "ok"
     response = client.get(api_tools_path(), headers={"x-api-key": "test-api-key"})
     assert response.status_code == 403
     assert "denied" in response.text
@@ -127,9 +123,9 @@ def test_api_main_module_branch(monkeypatch: pytest.MonkeyPatch) -> None:
         )
     )
     monkeypatch.setitem(sys.modules, "uvicorn", fake_uvicorn)
-    monkeypatch.setenv("CLOUD_DOG__INDEX__API_SERVER__PORT", "8686")
+    monkeypatch.setenv("CLOUD_DOG__API_SERVER__PORT", os.environ["CLOUD_DOG__API_SERVER__PORT"])
     runpy.run_module("index_server.api_server", run_name="__main__", alter_sys=True)
-    assert captured["port"] == 8686
+    assert captured["port"] == int(os.environ["CLOUD_DOG__API_SERVER__PORT"])
 
 
 def test_mcp_role_mapping_and_execute_paths(service, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -216,9 +212,9 @@ def test_mcp_health_and_main_module_paths(monkeypatch: pytest.MonkeyPatch, servi
         )
     )
     monkeypatch.setitem(sys.modules, "uvicorn", fake_uvicorn)
-    monkeypatch.setenv("CLOUD_DOG__INDEX__MCP_SERVER__PORT", "8687")
+    monkeypatch.setenv("CLOUD_DOG__MCP_SERVER__PORT", os.environ["CLOUD_DOG__MCP_SERVER__PORT"])
     runpy.run_module("index_server.mcp_server", run_name="__main__", alter_sys=True)
-    assert captured["port"] == 8687
+    assert captured["port"] == int(os.environ["CLOUD_DOG__MCP_SERVER__PORT"])
 
 
 def test_auth_connector_registry_and_embedding_branches(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:

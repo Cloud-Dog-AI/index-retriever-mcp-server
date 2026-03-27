@@ -58,18 +58,12 @@ class AuthMiddleware:
         ):
             raise RuntimeError("cloud_dog_idam is required for index-retriever auth")
         self.api_keys = api_keys or self._load_api_keys()
-        self._jwt_secret = os.getenv("CLOUD_DOG__INDEX__AUTH__JWT__SECRET", "").strip()
+        from cloud_dog_config import get_config  # type: ignore
+        self._jwt_secret = str(get_config("index.auth.jwt.secret") or "").strip()
         self._jwt_service = JWTTokenService(secret=self._jwt_secret) if self._jwt_secret else None
         self._rbac = RBACEngine(role_permissions=self._role_permissions())
-        self._provider = APIKeyOnlyProvider.from_config(
-            {
-                "keys": [
-                    {"key": token, "role": self._primary_role(roles)}
-                    for token, roles in self.api_keys.items()
-                ],
-                "default_role": "reader",
-            }
-        )
+        self._provider_signature: tuple[tuple[str, tuple[str, ...]], ...] = ()
+        self._provider = self._build_api_key_provider()
 
     @staticmethod
     def _default_roles() -> set[str]:
@@ -80,7 +74,8 @@ class AuthMiddleware:
         """Load API-key role mappings from runtime env."""
         keys: dict[str, set[str]] = {}
 
-        raw = os.getenv("CLOUD_DOG__INDEX__AUTH__API_KEYS", "").strip()
+        from cloud_dog_config import get_config  # type: ignore
+        raw = str(get_config("index.auth.api_keys") or "").strip()
         if raw:
             for entry in raw.split(","):
                 token = entry.strip()
@@ -96,7 +91,7 @@ class AuthMiddleware:
                 if token:
                     keys[token] = roles
 
-        a2a_key = os.getenv("TEST_A2A_API_KEY", "").strip()
+        a2a_key = str(get_config("test.a2a_api_key") or "").strip()
         if a2a_key:
             keys[a2a_key] = cls._default_roles()
 
@@ -133,6 +128,28 @@ class AuthMiddleware:
             "reader": {"role:reader"},
         }
 
+    def _api_key_signature(self) -> tuple[tuple[str, tuple[str, ...]], ...]:
+        """Return a stable signature of the active API-key mapping."""
+        return tuple(sorted((token, tuple(sorted(roles))) for token, roles in self.api_keys.items()))
+
+    def _build_api_key_provider(self) -> Any:
+        """Build a fresh cloud_dog_idam API-key provider from the current key map."""
+        self._provider_signature = self._api_key_signature()
+        return APIKeyOnlyProvider.from_config(
+            {
+                "keys": [
+                    {"key": token, "role": self._primary_role(roles)}
+                    for token, roles in self.api_keys.items()
+                ],
+                "default_role": "reader",
+            }
+        )
+
+    def _refresh_api_key_provider_if_needed(self) -> None:
+        """Refresh the provider when admin CRUD mutates the shared API-key store."""
+        if self._api_key_signature() != self._provider_signature:
+            self._provider = self._build_api_key_provider()
+
     @staticmethod
     def _authenticate_provider(provider: Any, request: Any) -> Any:
         coroutine = provider.authenticate(request)
@@ -166,6 +183,7 @@ class AuthMiddleware:
         key = self._resolve_api_key(headers)
         if not key:
             raise PermissionError("Authentication failed")
+        self._refresh_api_key_provider_if_needed()
 
         try:
             result = self._authenticate_provider(

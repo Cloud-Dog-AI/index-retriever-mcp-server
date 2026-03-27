@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from hashlib import sha256
 from typing import Any
 
@@ -219,7 +219,7 @@ class QueueEngine:
             idempotency_key=getattr(job, "idempotency_key", None),
             payload=payload,
             server_id=str(getattr(job, "host_id", "") or self.server_id),
-            created_at=getattr(job, "created_at", datetime.now(UTC)),
+            created_at=getattr(job, "created_at", datetime.now(timezone.utc)),
         )
 
     def _backend_job(self, job_id: str) -> Any:

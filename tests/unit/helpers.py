@@ -14,10 +14,20 @@
 
 from __future__ import annotations
 
+import os
+
+
+def _env_port(key: str) -> int:
+    """Read a required server port from the active pytest env file."""
+    return int(os.environ[key])
+
 
 def minimal_config() -> dict[str, object]:
     return {
-        "server": {"http": {"host": "0.0.0.0", "port": 8686}, "mcp": {"enabled": True, "port": 8687}},
+        "api_server": {"host": "0.0.0.0", "port": _env_port("CLOUD_DOG__API_SERVER__PORT")},
+        "web_server": {"host": "0.0.0.0", "port": _env_port("CLOUD_DOG__WEB_SERVER__PORT")},
+        "mcp_server": {"host": "0.0.0.0", "port": _env_port("CLOUD_DOG__MCP_SERVER__PORT"), "transport": "streamable-http"},
+        "a2a_server": {"host": "0.0.0.0", "port": _env_port("CLOUD_DOG__A2A_SERVER__PORT")},
         "auth": {
             "mode": "apikey+jwt",
             "jwt": {

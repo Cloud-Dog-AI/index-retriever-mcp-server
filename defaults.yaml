@@ -1,20 +1,26 @@
-# defaults.yaml (conceptual starter)
-server:
-  http:
-    host: "0.0.0.0"
-    port: 8686
-    base_path: ""  # Reverse proxy prefix (DC-11). e.g. "/index" when behind Traefik.
-  mcp:
-    enabled: true
-    port: 8687
-    base_path: ""  # Reverse proxy prefix (DC-11). e.g. "/index-mcp" when behind Traefik.
+api_server:
+  host: "0.0.0.0"
+  port: 8074
+
+web_server:
+  host: "0.0.0.0"
+  port: 8075
+
+mcp_server:
+  host: "0.0.0.0"
+  port: 8076
+  transport: "streamable-http"
+
+a2a_server:
+  host: "0.0.0.0"
+  port: 8077
 
 auth:
   mode: "apikey+jwt"
   jwt:
-    issuer: "${JWT_ISSUER:}"
-    audience: "${JWT_AUDIENCE:}"
-    public_keys_url: "${JWT_JWKS_URL:}"
+    issuer: "${JWT_ISSUER || ''}"
+    audience: "${JWT_AUDIENCE || ''}"
+    public_keys_url: "${JWT_JWKS_URL || ''}"
 
 storage:
   db:
@@ -49,7 +55,7 @@ profiles:
       provider: "openai_compat"
       openai_compat:
         base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
-        api_key: "${EMBED_API_KEY:}"
+        api_key: "${EMBED_API_KEY || ''}"
         model: "nomic-embed-text"
         timeout_seconds: 60
     ingestion:

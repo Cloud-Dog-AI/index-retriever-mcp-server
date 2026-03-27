@@ -20,7 +20,7 @@ import mimetypes
 import os
 import re
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
@@ -210,6 +210,33 @@ class ConfigEventRecord:
     created_at: datetime
 
 
+@dataclass(slots=True)
+class CollectionRecord:
+    """CollectionRecord definition."""
+
+    profile: str
+    collection: str
+    description: str = ""
+    dimensions: int | None = None
+    distance_metric: str = "cosine"
+    metadata: dict[str, Any] = field(default_factory=dict)
+    allowed_roles: set[str] = field(default_factory=lambda: {"reader", "writer", "maintainer", "admin"})
+
+
+@dataclass(slots=True)
+class SourceConfigRecord:
+    """SourceConfigRecord definition."""
+
+    source_id: str
+    source_type: str
+    uri: str
+    schedule: str
+    profile: str
+    collection: str
+    enabled: bool = True
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
 class IndexService:
     """Service facade providing deterministic behaviour for all tool flows."""
 
@@ -266,7 +293,9 @@ class IndexService:
                 "roles": {"reader", "writer", "maintainer", "admin"},
             }
         }
+        self.collections: dict[str, CollectionRecord] = {}
         self.collection_roles: dict[str, set[str]] = {}
+        self.source_configs: dict[str, SourceConfigRecord] = {}
         self.documents: dict[str, DocumentRecord] = {}
         self.idempotency: dict[str, str] = {}
         self.stream_sessions: dict[str, StreamSession] = {}
@@ -291,6 +320,49 @@ class IndexService:
         """Internal helper to require admin."""
         if "admin" not in roles:
             raise PermissionError("Admin role required")
+
+    @staticmethod
+    def _collection_payload(record: CollectionRecord) -> dict[str, Any]:
+        """Serialise collection state for API and MCP responses."""
+        return {
+            "profile": record.profile,
+            "collection": record.collection,
+            "description": record.description,
+            "dimensions": record.dimensions,
+            "distance_metric": record.distance_metric,
+            "metadata": dict(record.metadata),
+            "allowed_roles": sorted(record.allowed_roles),
+        }
+
+    @staticmethod
+    def _source_config_payload(record: SourceConfigRecord) -> dict[str, Any]:
+        """Serialise source-config state for API and MCP responses."""
+        return {
+            "source_id": record.source_id,
+            "source_type": record.source_type,
+            "uri": record.uri,
+            "schedule": record.schedule,
+            "profile": record.profile,
+            "collection": record.collection,
+            "enabled": record.enabled,
+            "metadata": dict(record.metadata),
+        }
+
+    def _ensure_collection_record(self, profile: str, collection: str) -> CollectionRecord:
+        """Create or return the runtime collection record."""
+        collection_key = self._collection_key(profile, collection)
+        record = self.collections.get(collection_key)
+        if record is not None:
+            return record
+        allowed_roles = set(self.collection_roles.get(collection_key, {"reader", "writer", "maintainer", "admin"}))
+        record = CollectionRecord(
+            profile=profile,
+            collection=collection,
+            allowed_roles=allowed_roles,
+        )
+        self.collections[collection_key] = record
+        self.collection_roles[collection_key] = set(record.allowed_roles)
+        return record
 
     def attach_auth_api_keys(self, auth_api_keys: dict[str, set[str]]) -> None:
         """Bind the runtime auth API-key store so admin key CRUD updates auth immediately."""
@@ -371,7 +443,7 @@ class IndexService:
                 action=action,
                 actor=actor,
                 payload=payload,
-                created_at=datetime.now(UTC),
+                created_at=datetime.now(timezone.utc),
             )
         )
 
@@ -928,26 +1000,136 @@ class IndexService:
                 output.append(name.removeprefix(prefix))
         return sorted(output)
 
+    def collection_get(self, profile: str, collection: str) -> dict[str, Any]:
+        """Return collection details for the requested profile and name."""
+        collection_key = self._collection_key(profile, collection)
+        if collection_key not in self.collection_manager.list():
+            raise KeyError(collection_key)
+        return self._collection_payload(self._ensure_collection_record(profile, collection))
+
     def admin_collection_create(
         self,
         profile: str,
         collection: str,
         roles: set[str],
+        payload: dict[str, Any] | None = None,
         allowed_roles: set[str] | None = None,
+        actor: str = "admin",
     ) -> None:
         """Execute admin collection create."""
         # Covers: FR-16
         self._require_admin(roles)
         collection_key = self._collection_key(profile, collection)
         self.collection_manager.create(collection_key)
-        self.collection_roles[collection_key] = set(allowed_roles or {"reader", "writer", "maintainer", "admin"})
+        resolved_payload = dict(payload or {})
+        resolved_allowed_roles = set(allowed_roles or resolved_payload.get("allowed_roles") or {"reader", "writer", "maintainer", "admin"})
+        record = CollectionRecord(
+            profile=profile,
+            collection=collection,
+            description=str(resolved_payload.get("description", "")),
+            dimensions=int(resolved_payload["dimensions"]) if resolved_payload.get("dimensions") not in {None, ""} else None,
+            distance_metric=str(resolved_payload.get("distance_metric", "cosine") or "cosine"),
+            metadata=dict(resolved_payload.get("metadata", {})) if isinstance(resolved_payload.get("metadata"), dict) else {},
+            allowed_roles=resolved_allowed_roles,
+        )
+        self.collections[collection_key] = record
+        self.collection_roles[collection_key] = set(record.allowed_roles)
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="create",
+            target_type="collection",
+            target_id=collection_key,
+            target_name=collection,
+            new_value=self._collection_payload(record),
+            profile=profile,
+            collection=collection,
+        )
+        self._emit_config_event(
+            entity_type="collection",
+            entity_id=collection_key,
+            action="created",
+            actor=actor,
+            payload=self._collection_payload(record),
+        )
 
-    def admin_collection_delete(self, profile: str, collection: str, roles: set[str]) -> None:
+    def admin_collection_update(
+        self,
+        profile: str,
+        collection: str,
+        roles: set[str],
+        updates: dict[str, Any],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Update collection metadata and RBAC details."""
+        self._require_admin(roles)
+        collection_key = self._collection_key(profile, collection)
+        if collection_key not in self.collection_manager.list():
+            raise KeyError(collection_key)
+        record = self._ensure_collection_record(profile, collection)
+        prior_value = self._collection_payload(record)
+        if "description" in updates:
+            record.description = str(updates.get("description", ""))
+        if "dimensions" in updates:
+            raw_dimensions = updates.get("dimensions")
+            record.dimensions = int(raw_dimensions) if raw_dimensions not in {None, ""} else None
+        if "distance_metric" in updates:
+            record.distance_metric = str(updates.get("distance_metric") or "cosine")
+        if "metadata" in updates and isinstance(updates.get("metadata"), dict):
+            record.metadata = dict(updates["metadata"])
+        if "allowed_roles" in updates and isinstance(updates.get("allowed_roles"), list):
+            record.allowed_roles = set(str(item) for item in updates["allowed_roles"] if str(item).strip())
+            if not record.allowed_roles:
+                raise ValueError("allowed_roles must not be empty")
+            self.collection_roles[collection_key] = set(record.allowed_roles)
+        payload = self._collection_payload(record)
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="update",
+            target_type="collection",
+            target_id=collection_key,
+            target_name=collection,
+            prior_value=prior_value,
+            new_value=payload,
+            profile=profile,
+            collection=collection,
+        )
+        self._emit_config_event(
+            entity_type="collection",
+            entity_id=collection_key,
+            action="updated",
+            actor=actor,
+            payload=payload,
+        )
+        return payload
+
+    def admin_collection_delete(self, profile: str, collection: str, roles: set[str], actor: str = "admin") -> None:
         """Execute admin collection delete."""
         self._require_admin(roles)
         collection_key = self._collection_key(profile, collection)
+        prior_value = self._collection_payload(self._ensure_collection_record(profile, collection))
         self.collection_manager.delete(collection_key)
         self.collection_roles.pop(collection_key, None)
+        self.collections.pop(collection_key, None)
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="delete",
+            target_type="collection",
+            target_id=collection_key,
+            target_name=collection,
+            prior_value=prior_value,
+            profile=profile,
+            collection=collection,
+        )
+        self._emit_config_event(
+            entity_type="collection",
+            entity_id=collection_key,
+            action="deleted",
+            actor=actor,
+            payload={"profile": profile, "collection": collection},
+        )
 
     def set_collection_roles(self, profile: str, collection: str, roles: set[str], allowed_roles: set[str]) -> None:
         """Set collection-level ACL roles for collection access checks."""
@@ -957,6 +1139,7 @@ class IndexService:
         collection_key = self._collection_key(profile, collection)
         self.collection_manager.create(collection_key)
         self.collection_roles[collection_key] = set(allowed_roles)
+        self._ensure_collection_record(profile, collection).allowed_roles = set(allowed_roles)
 
     def is_collection_role_allowed(self, profile: str, collection: str, roles: set[str]) -> bool:
         """Return True when caller roles are permitted for the collection."""
@@ -984,6 +1167,7 @@ class IndexService:
 
         collection_key = self._collection_key(profile, collection)
         self.collection_manager.create(collection_key)
+        self._ensure_collection_record(profile, collection)
 
         source_key = source + ":" + sha256(text.encode()).hexdigest()
         computed_key = self.queue.generate_idempotency_key(profile, collection, source_key)
@@ -1027,6 +1211,254 @@ class IndexService:
             source=path,
             actor=actor,
         )
+
+    def ingest_upload(
+        self,
+        profile: str,
+        collection: str,
+        filename: str,
+        content: bytes,
+        actor: str,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Ingest uploaded browser file content through the same runtime path as text ingest."""
+        source_uri = f"upload://{filename}"
+        payload = dict(metadata or {})
+        payload.setdefault("filename", filename)
+        payload.setdefault("mime_type", _infer_mime_type(filename))
+        job_id = self.ingest_text(
+            profile=profile,
+            collection=collection,
+            text=content.decode("utf-8", errors="replace"),
+            source=source_uri,
+            actor=actor,
+            metadata=payload,
+        )
+        return {
+            "job_id": job_id,
+            "filename": filename,
+            "source": source_uri,
+        }
+
+    def source_configs_list(self) -> list[dict[str, Any]]:
+        """Return all saved source configuration entries."""
+        return [self.source_config_get(source_id) for source_id in sorted(self.source_configs.keys())]
+
+    def source_config_get(self, source_id: str) -> dict[str, Any]:
+        """Return one saved source configuration entry."""
+        return self._source_config_payload(self.source_configs[source_id])
+
+    def admin_source_config_create(
+        self,
+        source_id: str,
+        roles: set[str],
+        payload: dict[str, Any],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Create a saved source configuration entry."""
+        self._require_admin(roles)
+        if source_id in self.source_configs:
+            raise ValueError(f"Source config already exists: {source_id}")
+        record = SourceConfigRecord(
+            source_id=source_id,
+            source_type=str(payload.get("source_type", "filesystem") or "filesystem"),
+            uri=str(payload.get("uri", "")),
+            schedule=str(payload.get("schedule", "")),
+            profile=str(payload.get("profile", "default")),
+            collection=str(payload.get("collection", "w12_documents")),
+            enabled=bool(payload.get("enabled", True)),
+            metadata=dict(payload.get("metadata", {})) if isinstance(payload.get("metadata"), dict) else {},
+        )
+        self.source_configs[source_id] = record
+        serialised = self._source_config_payload(record)
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="create",
+            target_type="source_config",
+            target_id=source_id,
+            target_name=source_id,
+            new_value=serialised,
+            profile=record.profile,
+            collection=record.collection,
+        )
+        self._emit_config_event(
+            entity_type="source_config",
+            entity_id=source_id,
+            action="created",
+            actor=actor,
+            payload=serialised,
+        )
+        return serialised
+
+    def admin_source_config_update(
+        self,
+        source_id: str,
+        roles: set[str],
+        payload: dict[str, Any],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Update a saved source configuration entry."""
+        self._require_admin(roles)
+        if source_id not in self.source_configs:
+            raise KeyError(source_id)
+        record = self.source_configs[source_id]
+        prior_value = self._source_config_payload(record)
+        if "source_type" in payload:
+            record.source_type = str(payload.get("source_type") or "filesystem")
+        if "uri" in payload:
+            record.uri = str(payload.get("uri") or "")
+        if "schedule" in payload:
+            record.schedule = str(payload.get("schedule") or "")
+        if "profile" in payload:
+            record.profile = str(payload.get("profile") or "default")
+        if "collection" in payload:
+            record.collection = str(payload.get("collection") or "w12_documents")
+        if "enabled" in payload:
+            record.enabled = bool(payload.get("enabled"))
+        if "metadata" in payload and isinstance(payload.get("metadata"), dict):
+            record.metadata = dict(payload["metadata"])
+        serialised = self._source_config_payload(record)
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="update",
+            target_type="source_config",
+            target_id=source_id,
+            target_name=source_id,
+            prior_value=prior_value,
+            new_value=serialised,
+            profile=record.profile,
+            collection=record.collection,
+        )
+        self._emit_config_event(
+            entity_type="source_config",
+            entity_id=source_id,
+            action="updated",
+            actor=actor,
+            payload=serialised,
+        )
+        return serialised
+
+    def admin_source_config_delete(self, source_id: str, roles: set[str], actor: str = "admin") -> None:
+        """Delete a saved source configuration entry."""
+        self._require_admin(roles)
+        prior_value = self.source_config_get(source_id)
+        if self.source_configs.pop(source_id, None) is None:
+            raise KeyError(source_id)
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="delete",
+            target_type="source_config",
+            target_id=source_id,
+            target_name=source_id,
+            prior_value=prior_value,
+        )
+        self._emit_config_event(
+            entity_type="source_config",
+            entity_id=source_id,
+            action="deleted",
+            actor=actor,
+            payload={"source_id": source_id},
+        )
+
+    def rbac_bindings_list(self) -> list[dict[str, Any]]:
+        """Return current RBAC bindings derived from user and group role assignments."""
+        bindings: list[dict[str, Any]] = []
+        for user_id, record in sorted(self.users.items()):
+            for role in sorted(record.roles):
+                bindings.append({"entity_type": "user", "entity_id": user_id, "role": role})
+        for group_id, record in sorted(self.groups.items()):
+            for role in sorted(record.roles):
+                bindings.append({"entity_type": "group", "entity_id": group_id, "role": role})
+        return bindings
+
+    def admin_rbac_bind(
+        self,
+        entity_type: str,
+        entity_id: str,
+        role: str,
+        roles: set[str],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Bind a role to a user or group."""
+        self._require_admin(roles)
+        target_role = str(role).strip()
+        if not target_role:
+            raise ValueError("role is required")
+        if entity_type == "user":
+            if entity_id not in self.users:
+                raise KeyError(entity_id)
+            self.users[entity_id].roles.add(target_role)
+            self._sync_idam_user(entity_id)
+        elif entity_type == "group":
+            if entity_id not in self.groups:
+                raise KeyError(entity_id)
+            self.groups[entity_id].roles.add(target_role)
+            self._sync_idam_group(entity_id)
+        else:
+            raise ValueError(f"Unsupported RBAC entity type: {entity_type}")
+        binding = {"entity_type": entity_type, "entity_id": entity_id, "role": target_role}
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="bind",
+            target_type="rbac",
+            target_id=f"{entity_type}:{entity_id}:{target_role}",
+            target_name=f"{entity_type}:{entity_id}",
+            new_value=binding,
+        )
+        self._emit_config_event(
+            entity_type="rbac_binding",
+            entity_id=f"{entity_type}:{entity_id}",
+            action="bound",
+            actor=actor,
+            payload=binding,
+        )
+        return binding
+
+    def admin_rbac_unbind(
+        self,
+        entity_type: str,
+        entity_id: str,
+        role: str,
+        roles: set[str],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Unbind a role from a user or group."""
+        self._require_admin(roles)
+        target_role = str(role).strip()
+        if entity_type == "user":
+            if entity_id not in self.users:
+                raise KeyError(entity_id)
+            self.users[entity_id].roles.discard(target_role)
+            self._sync_idam_user(entity_id)
+        elif entity_type == "group":
+            if entity_id not in self.groups:
+                raise KeyError(entity_id)
+            self.groups[entity_id].roles.discard(target_role)
+            self._sync_idam_group(entity_id)
+        else:
+            raise ValueError(f"Unsupported RBAC entity type: {entity_type}")
+        binding = {"entity_type": entity_type, "entity_id": entity_id, "role": target_role}
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="unbind",
+            target_type="rbac",
+            target_id=f"{entity_type}:{entity_id}:{target_role}",
+            target_name=f"{entity_type}:{entity_id}",
+            prior_value=binding,
+        )
+        self._emit_config_event(
+            entity_type="rbac_binding",
+            entity_id=f"{entity_type}:{entity_id}",
+            action="unbound",
+            actor=actor,
+            payload=binding,
+        )
+        return binding
 
     def _profile_backend(self, profile: str) -> str:
         profile_data = self.profiles.get(profile, self.profiles["default"])
@@ -1566,19 +1998,53 @@ async def _parser_probe(
     return bool(healthy), ir
 
 
-def _required_env(*keys: str) -> str:
-    """Read a required setting from environment using first non-empty key."""
-    for key in keys:
-        value = os.getenv(key, "").strip()
-        if value:
+def _cfg(path: str, default: Any = None) -> Any:
+    """Read a value from cloud_dog_config, returning *default* when absent.
+
+    Accepts both dotted config paths (``index.db.url``) and env-var-style
+    keys (``CLOUD_DOG__INDEX__DB__URL``) — the latter is converted automatically.
+    """
+    from cloud_dog_config import get_config  # type: ignore
+    value = get_config(path)
+    if value is not None:
+        return value
+    # Try env-var-to-path conversion if the original key didn't match.
+    converted = _env_key_to_config_path(path)
+    if converted != path:
+        value = get_config(converted)
+        if value is not None:
             return value
+    return default
+
+
+def _env_key_to_config_path(key: str) -> str:
+    """Convert an env var name to a cloud_dog_config dotted path.
+
+    ``CLOUD_DOG__INDEX__EMBEDDING__PROVIDER`` → ``index.embedding.provider``
+    ``EMBED_PROVIDER`` → ``embed_provider`` (lowercase, no transformation)
+    """
+    normalised = key.strip()
+    if normalised.upper().startswith("CLOUD_DOG__"):
+        normalised = normalised[len("CLOUD_DOG__"):]
+    return normalised.replace("__", ".").lower()
+
+
+def _required_env(*keys: str) -> str:
+    """Read a required setting from cloud_dog_config using first non-empty key."""
+    from cloud_dog_config import get_config  # type: ignore
+    for key in keys:
+        # Try dotted config path first, then env-var-to-path conversion.
+        for path in (key, _env_key_to_config_path(key)):
+            value = str(get_config(path) or "").strip()
+            if value:
+                return value
     raise RuntimeError(f"Missing required configuration: {', '.join(keys)}")
 
 
 def _resolve_queue_database_url(audit_path: str) -> str:
     """Resolve the queue database URL, defaulting to a per-instance SQLite file."""
-    for key in ("INDEX_RETRIEVER_DB_URL", "CLOUD_DOG__INDEX__DB__URL", "DB_URL"):
-        value = os.getenv(key, "").strip()
+    for path in ("index.db.url", "db.url"):
+        value = str(_cfg(path, "") or "").strip()
         if value:
             return value
     base_path = Path(audit_path).with_suffix(".queue.db")
@@ -1587,17 +2053,18 @@ def _resolve_queue_database_url(audit_path: str) -> str:
 
 def _resolve_server_id() -> str:
     """Resolve the queue worker identity from runtime configuration."""
-    for key in ("INDEX_RETRIEVER_SERVER_ID", "CLOUD_DOG__INDEX__SERVER_ID", "HOSTNAME"):
-        value = os.getenv(key, "").strip()
+    for path in ("index.server_id", "service.server_id"):
+        value = str(_cfg(path, "") or "").strip()
         if value:
             return value
-    return "index-retriever-local"
+    import socket
+    return socket.gethostname() or "index-retriever-local"
 
 
 def _resolve_environment() -> str:
     """Resolve the runtime environment name for structured audit events."""
-    for key in ("CLOUD_DOG_ENVIRONMENT", "ENVIRONMENT", "TEST_ENV_TIER"):
-        value = os.getenv(key, "").strip()
+    for path in ("service.environment", "environment"):
+        value = str(_cfg(path, "") or "").strip()
         if value:
             return value.lower()
     return "dev"
@@ -1605,25 +2072,37 @@ def _resolve_environment() -> str:
 
 def _env_or_default(key: str, default: str) -> str:
     """Return the configured string value or the supplied default."""
-    value = os.getenv(key, "").strip()
+    value = str(_cfg(key, "") or "").strip()
     return value or default
 
 
 def _env_int(key: str, *, default: int) -> int:
     """Return the configured integer value or the supplied default."""
-    value = os.getenv(key, "").strip()
-    return int(value) if value else default
+    value = _cfg(key)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _env_float(key: str, *, default: float) -> float:
     """Return the configured float value or the supplied default."""
-    value = os.getenv(key, "").strip()
-    return float(value) if value else default
+    value = _cfg(key)
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _env_bool(key: str, *, default: bool) -> bool:
     """Return the configured boolean value or the supplied default."""
-    value = os.getenv(key, "").strip()
-    if not value:
+    value = _cfg(key)
+    if value is None:
         return default
-    return value.lower() in {"1", "true", "yes", "on"}
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}

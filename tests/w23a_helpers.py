@@ -77,6 +77,13 @@ def _parse_int(raw: str | None, default: int) -> int:
         return default
 
 
+def _http_endpoint(host: str, port: str) -> str:
+    """Compose an HTTP endpoint without inventing a fallback port."""
+    if not host:
+        return ""
+    return f"http://{host}:{port}" if port else f"http://{host}"
+
+
 @lru_cache(maxsize=1)
 def vault_dev_config() -> dict[str, Any]:
     payload = load_vault_dev_config(required=False)
@@ -241,7 +248,7 @@ def _provider_env_config(provider_id: str) -> dict[str, Any]:
         port = _clean_text(os.getenv("CLOUD_DOG__INDEX__VDB__PORT") or os.getenv("QDRANT_PORT"))
         url = _clean_text(os.getenv("CLOUD_DOG__INDEX__VDB__QDRANT_URL") or os.getenv("QDRANT_URL"))
         if not url and host:
-            url = f"http://{host}:{port or '6333'}"
+            url = _http_endpoint(host, port)
         return {
             "base_url": url,
             "api_key": _clean_text(
@@ -259,7 +266,7 @@ def _provider_env_config(provider_id: str) -> dict[str, Any]:
             or os.getenv("OPENSEARCH_URL")
         )
         if not url and host:
-            url = f"http://{host}:{port or '9200'}"
+            url = _http_endpoint(host, port)
         return {
             "base_url": url,
             "username": _clean_text(
@@ -289,7 +296,7 @@ def _provider_env_config(provider_id: str) -> dict[str, Any]:
         port = _clean_text(os.getenv("CLOUD_DOG__INDEX__VDB__INFINITY_PORT") or os.getenv("INFINITY_PORT"))
         url = _clean_text(os.getenv("CLOUD_DOG__INDEX__VDB__INFINITY_URL") or os.getenv("INFINITY_URL"))
         if not url and host:
-            url = f"http://{host}:{port or '8080'}"
+            url = _http_endpoint(host, port)
         return {
             "base_url": url,
             "api_key": _clean_text(os.getenv("CLOUD_DOG__INDEX__VDB__INFINITY_API_KEY") or os.getenv("INFINITY_API_KEY")),

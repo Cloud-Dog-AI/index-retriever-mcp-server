@@ -2,10 +2,14 @@
 # Copy to .env and fill in secrets before running.
 
 # ── Server Ports ─────────────────────────────────────────────────
-CLOUD_DOG__INDEX__API_SERVER__PORT=8686
-CLOUD_DOG__INDEX__API_SERVER__HOST=0.0.0.0
-CLOUD_DOG__INDEX__MCP_SERVER__PORT=8687
-CLOUD_DOG__INDEX__MCP_SERVER__HOST=0.0.0.0
+CLOUD_DOG__API_SERVER__PORT=8074
+CLOUD_DOG__WEB_SERVER__PORT=8075
+CLOUD_DOG__WEB_SERVER__HOST=0.0.0.0
+CLOUD_DOG__API_SERVER__HOST=0.0.0.0
+CLOUD_DOG__MCP_SERVER__PORT=8076
+CLOUD_DOG__MCP_SERVER__HOST=0.0.0.0
+CLOUD_DOG__A2A_SERVER__PORT=8077
+CLOUD_DOG__A2A_SERVER__HOST=0.0.0.0
 
 # ── Authentication ───────────────────────────────────────────────
 # API key for tool execution (from Vault: vault.dev.keys.api_key)

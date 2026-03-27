@@ -291,8 +291,8 @@ def service(tmp_path: Path) -> IndexService:
 
 @pytest.fixture()
 def auth() -> AuthMiddleware:
-    """Provide auth middleware with deterministic local credentials."""
-    return AuthMiddleware(api_keys={"test-api-key": {"admin", "maintainer", "writer", "reader"}})
+    """Provide auth middleware from the active test env contract."""
+    return AuthMiddleware()
 
 
 @pytest.fixture(scope="session")

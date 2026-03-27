@@ -30,4 +30,4 @@ def service(tmp_path: Path) -> IndexService:
 
 @pytest.fixture()
 def auth() -> AuthMiddleware:
-    return AuthMiddleware(api_keys={"test-api-key": {"admin", "maintainer", "writer", "reader"}})
+    return AuthMiddleware()
