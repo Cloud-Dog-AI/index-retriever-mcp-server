@@ -3,19 +3,19 @@
 This document describes the pre-production operator/deployment overlay for this service. The Terraform container environment is the runtime source of truth, and `private/env-PREPROD` is the operator/test overlay used for local control commands and pytest runs against the deployed preprod service. Defaults and non-preprod settings remain documented in `docs/ENV-REFERENCE.md`, `docs/ARCHITECTURE.md`, and `defaults.yaml`.
 
 ## 1. Overview
-- Service URL: `https://indexretriever0.cloud-dog.net`
-- Container hostname: `indexretriever0.app.vpc0.cloud-dog.net`
-- Health endpoint verified during W28A-241: `https://indexretriever0.cloud-dog.net/health`
-- Docker image: `registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server:latest`
-- Active Terraform container definition: `/opt/iac/cloud-dog-repo/terraform/server0.viewdeck.com/60 Cloud-Dog AI Containers/indexretriever_containers.tf.json`
-- Legacy/parallel Terraform definition to cross-check when investigating drift: `/opt/iac/cloud-dog-repo/terraform/server0.viewdeck.com/27 MLAgents/indexretriever_containers.tf.json`
-- Operator overlay file: `/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/private/env-PREPROD`
+- Service URL: `https://indexretriever0.your-domain.com`
+- Container hostname: `indexretriever0.internal.example`
+- Health endpoint verified during W28A-241: `https://indexretriever0.your-domain.com/health`
+- Docker image: `registry.example.com/cloud-dog/index-retriever-mcp-server:latest`
+- Active Terraform container definition: `terraform/primary-environment/indexretriever_containers.tf.json`
+- Legacy/parallel Terraform definition to cross-check when investigating drift: `terraform/legacy-environment/indexretriever_containers.tf.json`
+- Operator overlay file: `./index-retriever-mcp-server/private/env-PREPROD`
 
 ### Port allocation
 | Surface | Internal port | External URL |
 |---|---:|---|
-| API | 8083 | `https://indexretriever0.cloud-dog.net` (health exposed at `/health`) |
-| MCP | 8081 | `https://indexretriever0.cloud-dog.net/mcp` |
+| API | 8083 | `https://indexretriever0.your-domain.com` (health exposed at `/health`) |
+| MCP | 8081 | `https://indexretriever0.your-domain.com/mcp` |
 | A2A/Test auth | internal/test only | use API key from Vault |
 
 ## 2. Configuration
@@ -39,7 +39,7 @@ Section 2 documents the full preprod environment surface that differs from or ma
 | `INDEX_RETRIEVER_RUNTIME_MODE`, `TEST_ENV_TIER` | not set in defaults | Terraform | Yes | Preprod container runs as `local-docker`; operator tests layer `private/env-PREPROD` on top. |
 
 ## 3. Preprod-Specific Overrides
-Only settings that differ materially from defaults or that must be supplied for preprod are listed here. The literal operator/test overlay is `/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/private/env-PREPROD`.
+Only settings that differ materially from defaults or that must be supplied for preprod are listed here. The literal operator/test overlay is `./index-retriever-mcp-server/private/env-PREPROD`.
 
 | Override | Why preprod differs | Source of truth |
 |---|---|---|
@@ -59,7 +59,7 @@ This service reads preprod secrets from the shared Vault config blob at `cloud_d
 
 ### Operator setup
 ```bash
-set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
+set -a; source .env.local
 vault kv get -mount=cloud_dog_ai config
 ```
 
@@ -85,26 +85,26 @@ The project rules forbid ad-hoc `docker build`; use the repo entrypoint script.
 
 1. Load Vault-backed build credentials.
 ```bash
-set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
+set -a; source .env.local
 ```
 2. Build the image.
 ```bash
-cd /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server && bash docker-build.sh latest
+cd ./index-retriever-mcp-server && bash docker-build.sh latest
 ```
 3. Tag and push the image.
 ```bash
-docker tag cloud-dog/index-retriever-mcp-server:latest registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server:latest
-docker push registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server:latest
+docker tag cloud-dog/index-retriever-mcp-server:latest registry.example.com/cloud-dog/index-retriever-mcp-server:latest
+docker push registry.example.com/cloud-dog/index-retriever-mcp-server:latest
 ```
 4. Plan and apply the Terraform update from the shared preprod workspace.
 ```bash
-cd '/opt/iac/cloud-dog-repo/terraform/server0.viewdeck.com/60 Cloud-Dog AI Containers'
+cd 'terraform/60 Cloud-Dog AI Containers'
 terraform plan -out=tfplan.out
 terraform apply tfplan.out
 ```
 5. Verify the deployed service.
 ```bash
-curl -fsS https://indexretriever0.cloud-dog.net/health
+curl -fsS https://indexretriever0.your-domain.com/health
 ```
 
 ## 6. Testing Against Preprod
@@ -119,6 +119,6 @@ Known limitations:
 - Parser-specific destructive corpus tests should avoid shared collections unless namespaced.
 
 ## 7. Troubleshooting
-- `curl -fsS https://indexretriever0.cloud-dog.net/health` should return `status=ok`.
-- `docker -H server0.viewdeck.com logs indexretriever0.app.vpc0.cloud-dog.net` for runtime logs.
+- `curl -fsS https://indexretriever0.your-domain.com/health` should return `status=ok`.
+- `docker -H your-docker-host logs indexretriever0.internal.example` for runtime logs.
 - If vector backend health fails, verify the Qdrant URL in `private/env-PREPROD` and Vault before changing runtime code.

@@ -1,5 +1,10 @@
 # Index Retriever MCP Server Architecture
 
+## W28A-421 Review Status
+- Reviewed for external/shareable publication during W28A-421.
+- Source basis: `defaults.yaml`, 4 server source files, 3 discovered routes/endpoints, and 60 MCP tools.
+- Internal-only absolute paths, environment-specific hosts, and private registries have been removed from this shareable document set.
+
 ## 1. Purpose
 
 `index-retriever-mcp-server` is the retrieval and indexing service for Cloud-Dog agent workflows. It exposes the same core capability set through:

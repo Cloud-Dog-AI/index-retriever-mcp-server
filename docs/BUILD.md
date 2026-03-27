@@ -2,18 +2,18 @@
 
 ## Prerequisites
 - Python `3.11+`
-- `pip` with access to private package index `https://pypi.cloud-dog.net/simple/`
-- Vault bootstrap file: `/opt/iac/Development/cloud-dog-ai/env-vault`
+- `pip` with access to private package index `https://your-package-index/simple/`
+- Vault bootstrap file: `.env.local`
 - Docker engine (for container build)
 
 ## Local Development Setup
 
 ```bash
-set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
+set -a; source .env.local
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
-pip install -e ".[dev]" --index-url https://pypi.cloud-dog.net/simple/
+pip install -e ".[dev]" --index-url https://your-package-index/simple/
 ```
 
 ## Build Python Package
@@ -87,10 +87,10 @@ python -m pytest tests/parser --env tests/env-PT -q
 ### Registry Push
 
 ```bash
-cd /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server
-set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
+cd ./index-retriever-mcp-server
+set -a; source .env.local
 bash docker-build.sh latest
-docker push registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server:latest
+docker push registry.example.com/cloud-dog/index-retriever-mcp-server:latest
 ```
 
 ### Standard Build Arguments and Prerequisites

@@ -1,5 +1,10 @@
 # Requirements — index-retriever-mcp-server
 
+## W28A-421 Review Status
+- Reviewed for external/shareable publication during W28A-421.
+- Source basis: `defaults.yaml`, 4 server source files, 3 discovered routes/endpoints, and 60 MCP tools.
+- Internal-only absolute paths, environment-specific hosts, and private registries have been removed from this shareable document set.
+
 **Version:** 1.1  
 **Date:** 2026-02-28  
 **Standards:** PS-00, PS-10, PS-20, PS-40, PS-50, PS-60, PS-70, PS-75, PS-80, PS-90, PS-95  

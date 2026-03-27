@@ -1,16 +1,16 @@
-# TASKS
+# Tasks
 
-## Delivery Workstreams
+## Current Delivery Tracks
+| Workstream | Status | Notes |
+|------------|--------|-------|
+| Runtime surfaces | Complete | Source files detected: `src/index_server/a2a_server.py`, `src/index_server/api_server.py`, `src/index_server/mcp_server.py`, `src/index_server/web_server.py`. |
+| API documentation | Complete | `docs/API_DOCUMENTATION.md` reviewed against source inventory. |
+| MCP documentation | Complete | `docs/MCP_DOCUMENTATION.md` reviewed against source inventory. |
+| Configuration reference | Complete | `docs/PARAMETERS.md` and `docs/ENV-REFERENCE.md` regenerated from `defaults.yaml`. |
+| Deployment guidance | Complete | `docs/DEPLOY.md` and `docs/DOCKER.md` refreshed with shareable examples. |
+| Test catalogue | Complete | `docs/TESTS.md` refreshed from the current repository inventory. |
 
-| Task ID | Description | Requirements | Architecture | Tests | Status |
-|---|---|---|---|---|---|
-| T1 | Maintain core runtime configuration and startup contract. | SV1.1, FR1.1, NF1.1 | SA1.1 | UT1.1, ST1.1 | Active |
-| T2 | Maintain API and transport behaviour contracts across supported interfaces. | FR1.2, FR1.3, UC1.1 | SA1.2 | IT1.1, AT1.1 | Active |
-| T3 | Maintain authentication and authorisation controls and security posture. | CS1.1, FR1.4 | SA1.3 | UT1.2, IT1.2 | Active |
-| T4 | Maintain observability, auditability, and operational quality gates. | NF1.2, NF1.3 | SA1.4 | QT1.1, QT1.2 | Active |
-| T5 | Keep REQUIREMENTS, ARCHITECTURE, and TESTS traceability aligned. | BO1.1, BR1.1 | SA1.5 | QT1.5 | Active |
-
-## Notes
-
-- Update this document whenever new requirements or major test suites are introduced.
-- Keep requirement and test IDs aligned with `docs/REQUIREMENTS.md` and `docs/TESTS.md`.
+## Next Review Cycle
+1. Re-run the release-relevant test tiers in the intended deployment environment.
+2. Update API and MCP inventories whenever routes or tool contracts change.
+3. Keep any non-standard topical docs aligned with the canonical set listed in this repository.

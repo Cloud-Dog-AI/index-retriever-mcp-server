@@ -1,249 +1,129 @@
-# Environment Reference — index-retriever-mcp-server
+# Environment Reference
 
-## 1. Configuration Precedence
+This reference is generated from `defaults.yaml` and the standard Cloud-Dog environment override pattern.
 
-`os.environ → .env → config.yaml → defaults.yaml → Vault`
+## `a2a_server`
 
-Runtime loading uses `cloud_dog_config` through `src/index_tools/config/loader.py` with strict unresolved-variable handling.
+| Variable | Default | Required | Example | Description |
+|----------|---------|----------|---------|-------------|
+| `CLOUD_DOG__A2A_SERVER__HOST` | `0.0.0.0` | Optional | `0.0.0.0` | Host binding or upstream host for a2a server. |
+| `CLOUD_DOG__A2A_SERVER__PORT` | `8077` | Optional | `8077` | Port for a2a server connections. |
 
-## 2. Variables by Category
+## `api_server`
 
-Columns: `Variable`, `Description`, `Default`, `Required`, `Example`
+| Variable | Default | Required | Example | Description |
+|----------|---------|----------|---------|-------------|
+| `CLOUD_DOG__API_SERVER__HOST` | `0.0.0.0` | Optional | `0.0.0.0` | Host binding or upstream host for api server. |
+| `CLOUD_DOG__API_SERVER__PORT` | `8074` | Optional | `8074` | Port for api server connections. |
 
-### Auth & Secrets
+## `auth`
 
-| Variable | Description | Default | Required | Example |
-|---|---|---|---|---|
-| `API_KEY` | Configuration for api key. | `-` | No | `***` |
-| `CHROMA_AUTH_TOKEN` | Configuration for chroma auth token. | `-` | No | `***` |
-| `CLOUD_DOG__INDEX__API_KEY` | Configuration for cloud dog index api key. | `-` | No | `***` |
-| `CLOUD_DOG__INDEX__AUTH__API_KEYS` | Comma-separated API keys accepted by auth middleware. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__EMBEDDING__API_KEY` | Configuration for cloud dog index embedding api key. | `-` | No | `***` |
-| `CLOUD_DOG__INDEX__VDB__API_KEY` | Configuration for cloud dog index vdb api key. | `-` | No | `***` |
-| `CLOUD_DOG__INDEX__VDB__CHROMA_AUTH_TOKEN` | Configuration for cloud dog index vdb chroma auth token. | `-` | No | `***` |
-| `CLOUD_DOG__INDEX__VDB__INFINITY_API_KEY` | Configuration for cloud dog index vdb infinity api key. | `-` | No | `***` |
-| `CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY` | Configuration for cloud dog index vdb qdrant api key. | `-` | No | `***` |
-| `CLOUD_DOG__INDEX__VDB__WEAVIATE_API_KEY` | Configuration for cloud dog index vdb weaviate api key. | `-` | No | `***` |
-| `EMBED_API_KEY` | Configuration for embed api key. | `-` | No | `***` |
-| `INDEX_MCP_AUTH_MODE` | Configuration for index mcp auth mode. | `-` | No | `<set-in-env>` |
-| `INFINITY_API_KEY` | Configuration for infinity api key. | `-` | No | `***` |
-| `MARKER_MCP_AUTH_TOKEN` | Configuration for marker mcp auth token. | `-` | No | `***` |
-| `MINERU_API_KEY` | Configuration for mineru api key. | `-` | No | `***` |
-| `QDRANT_API_KEY` | Configuration for qdrant api key. | `-` | No | `***` |
-| `TEST_A2A_API_KEY` | Expected API key used by A2A auth contract tests. | `-` | No | `***` |
-| `WEAVIATE_API_KEY` | Configuration for weaviate api key. | `-` | No | `***` |
+| Variable | Default | Required | Example | Description |
+|----------|---------|----------|---------|-------------|
+| `CLOUD_DOG__AUTH__MODE` | `apikey+jwt` | Optional | `apikey+jwt` | Configuration value for auth mode. |
+| `CLOUD_DOG__AUTH__JWT__ISSUER` | `${JWT_ISSUER || ''}` | Optional | `${JWT_ISSUER || ''}` | Configuration value for auth jwt issuer. |
+| `CLOUD_DOG__AUTH__JWT__AUDIENCE` | `${JWT_AUDIENCE || ''}` | Optional | `${JWT_AUDIENCE || ''}` | Configuration value for auth jwt audience. |
+| `CLOUD_DOG__AUTH__JWT__PUBLIC_KEYS_URL` | `${JWT_JWKS_URL || ''}` | Deployment dependent | `${JWT_JWKS_URL || ''}` | Endpoint or connection URL for auth jwt public keys. |
 
-### Core & Misc
+## `log`
 
-| Variable | Description | Default | Required | Example |
-|---|---|---|---|---|
-| `AUDIT_LOG_PATH` | Configuration for audit log path. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG_ENV_FILES` | Optional env file list consumed by runtime bootstrap wrappers. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__API_AUDIT_PATH` | API audit log output path override. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__AUDIT__ENABLED` | Configuration for cloud dog index audit enabled. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__LLM__BASE_URL` | Configuration for cloud dog index llm base url. | `-` | No | `https://example.internal` |
-| `CLOUD_DOG__INDEX__LLM__MODEL` | Configuration for cloud dog index llm model. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__LLM__PROVIDER` | Configuration for cloud dog index llm provider. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__LOG__LEVEL` | Configuration for cloud dog index log level. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__MCP_AUDIT_PATH` | MCP audit log output path override. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__STORAGE__AUDIT__PATH` | Fallback audit log path used by API/MCP services. | `-` | No | `<set-in-env>` |
-| `DRY_RUN` | Configuration for dry run. | `true` | No | `<set-in-env>` |
-| `ENV_FILE` | Configuration for env file. | `-` | No | `<set-in-env>` |
-| `INGEST_ROOT` | Configuration for ingest root. | `-` | No | `<set-in-env>` |
-| `JWT_AUDIENCE` | Configuration for jwt audience. | `-` | No | `<set-in-env>` |
-| `JWT_ISSUER` | Configuration for jwt issuer. | `-` | No | `<set-in-env>` |
-| `JWT_JWKS_URL` | Configuration for jwt jwks url. | `-` | No | `https://example.internal` |
-| `NO_PROXY` | Configuration for no proxy. | `-` | No | `<set-in-env>` |
-| `REQUIRE_ALL_PDF_PARSERS` | Configuration for require all pdf parsers. | `-` | No | `<set-in-env>` |
+| Variable | Default | Required | Example | Description |
+|----------|---------|----------|---------|-------------|
+| `CLOUD_DOG__LOG__SERVICE_INSTANCE` | `${HOSTNAME:index-retriever-local}` | Optional | `${HOSTNAME:index-retriever-local}` | Configuration value for log service instance. |
+| `CLOUD_DOG__LOG__ENVIRONMENT` | `${CLOUD_DOG_ENVIRONMENT:dev}` | Optional | `${CLOUD_DOG_ENVIRONMENT:dev}` | Configuration value for log environment. |
+| `CLOUD_DOG__LOG__RETENTION__HOT_DAYS` | `14` | Optional | `14` | Configuration value for log retention hot days. |
+| `CLOUD_DOG__LOG__RETENTION__COLD_DAYS` | `60` | Optional | `60` | Configuration value for log retention cold days. |
+| `CLOUD_DOG__LOG__RETENTION__ARCHIVE_FORMAT` | `gz` | Optional | `gz` | Configuration value for log retention archive format. |
+| `CLOUD_DOG__LOG__INTEGRITY__ENABLED` | `true` | Optional | `true` | Toggle for log integrity. |
+| `CLOUD_DOG__LOG__INTEGRITY__INTERVAL_SECONDS` | `300` | Optional | `300` | Timeout or duration control for log integrity interval. |
+| `CLOUD_DOG__LOG__INTEGRITY__LOG_FILE` | `logs/audit-integrity.log` | Optional | `logs/audit-integrity.log` | Configuration value for log integrity log file. |
+| `CLOUD_DOG__LOG__INTEGRITY__HASH_ALGORITHM` | `sha256` | Optional | `sha256` | Configuration value for log integrity hash algorithm. |
+| `CLOUD_DOG__LOG__ROTATION__MODE` | `size` | Optional | `size` | Configuration value for log rotation mode. |
+| `CLOUD_DOG__LOG__ROTATION__MAX_BYTES` | `104857600` | Optional | `104857600` | Configuration value for log rotation max bytes. |
+| `CLOUD_DOG__LOG__ROTATION__BACKUP_COUNT` | `10` | Optional | `10` | Configuration value for log rotation backup count. |
+| `CLOUD_DOG__LOG__ROTATION__WHEN` | `midnight` | Optional | `midnight` | Configuration value for log rotation when. |
+| `CLOUD_DOG__LOG__ROTATION__INTERVAL` | `1` | Optional | `1` | Configuration value for log rotation interval. |
+| `CLOUD_DOG__LOG__ROTATION__COMPRESS` | `true` | Optional | `true` | Configuration value for log rotation compress. |
 
-### Database
+## `mcp_server`
 
-| Variable | Description | Default | Required | Example |
-|---|---|---|---|---|
-| `CLOUD_DOG_DB__DATABASE` | Configuration for cloud dog db database. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG_DB__DIALECT` | Configuration for cloud dog db dialect. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG_DB__HOST` | Configuration for cloud dog db host. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG_DB__PASSWORD` | Configuration for cloud dog db password. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG_DB__PORT` | Configuration for cloud dog db port. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG_DB__USERNAME` | Configuration for cloud dog db username. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__DB__DATABASE` | Configuration for cloud dog db database. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__DB__DIALECT` | Configuration for cloud dog db dialect. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__DB__URL` | Configuration for cloud dog index db url. | `-` | No | `https://example.internal` |
-| `CLOUD_DOG__INDEX__VDB__CHROMA_URL` | Configuration for cloud dog index vdb chroma url. | `-` | No | `https://example.internal` |
-| `CLOUD_DOG__INDEX__VDB__COLLECTION` | Configuration for cloud dog index vdb collection. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__VDB__HOST` | Configuration for cloud dog index vdb host. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__VDB__INFINITY_HOST` | Configuration for cloud dog index vdb infinity host. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__VDB__INFINITY_PORT` | Configuration for cloud dog index vdb infinity port. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__VDB__INFINITY_URL` | Configuration for cloud dog index vdb infinity url. | `-` | No | `https://example.internal` |
-| `CLOUD_DOG__INDEX__VDB__OPENSEARCH_BASE_URL` | Configuration for cloud dog index vdb opensearch base url. | `-` | No | `https://example.internal` |
-| `CLOUD_DOG__INDEX__VDB__OPENSEARCH_HOST` | Configuration for cloud dog index vdb opensearch host. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__VDB__OPENSEARCH_PASSWORD` | Configuration for cloud dog index vdb opensearch password. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__VDB__OPENSEARCH_PORT` | Configuration for cloud dog index vdb opensearch port. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__VDB__OPENSEARCH_URL` | Configuration for cloud dog index vdb opensearch url. | `-` | No | `https://example.internal` |
-| `CLOUD_DOG__INDEX__VDB__OPENSEARCH_USERNAME` | Configuration for cloud dog index vdb opensearch username. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__VDB__PGVECTOR_DATABASE_URI` | Configuration for cloud dog index vdb pgvector database uri. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__VDB__PGVECTOR_URL` | Configuration for cloud dog index vdb pgvector url. | `-` | No | `https://example.internal` |
-| `CLOUD_DOG__INDEX__VDB__PORT` | Configuration for cloud dog index vdb port. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__VDB__PROVIDER` | Configuration for cloud dog index vdb provider. | `-` | Yes | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__VDB__QDRANT_URL` | Configuration for cloud dog index vdb qdrant url. | `-` | No | `https://example.internal` |
-| `CLOUD_DOG__INDEX__VDB__WEAVIATE_URL` | Configuration for cloud dog index vdb weaviate url. | `-` | No | `https://example.internal` |
-| `DB_URL` | Configuration for db url. | `-` | No | `https://example.internal` |
-| `INDEX_RETRIEVER_DB_URL` | Configuration for index retriever db url. | `-` | No | `https://example.internal` |
-| `PGVECTOR_DATABASE_URI` | Configuration for pgvector database uri. | `-` | No | `<set-in-env>` |
+| Variable | Default | Required | Example | Description |
+|----------|---------|----------|---------|-------------|
+| `CLOUD_DOG__MCP_SERVER__HOST` | `0.0.0.0` | Optional | `0.0.0.0` | Host binding or upstream host for mcp server. |
+| `CLOUD_DOG__MCP_SERVER__PORT` | `8076` | Optional | `8076` | Port for mcp server connections. |
+| `CLOUD_DOG__MCP_SERVER__TRANSPORT` | `streamable-http` | Optional | `streamable-http` | Configuration value for mcp server transport. |
 
-### Embedding & Parser Services
+## `profiles`
 
-| Variable | Description | Default | Required | Example |
-|---|---|---|---|---|
-| `CLOUD_DOG__INDEX__EMBEDDING__BASE_URL` | Configuration for cloud dog index embedding base url. | `-` | No | `https://example.internal` |
-| `CLOUD_DOG__INDEX__EMBEDDING__DIMENSIONS` | Configuration for cloud dog index embedding dimensions. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__EMBEDDING__MODEL` | Configuration for cloud dog index embedding model. | `-` | Yes | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__EMBEDDING__PROVIDER` | Configuration for cloud dog index embedding provider. | `-` | Yes | `<set-in-env>` |
-| `DEEPDOC_COMMAND` | Configuration for deepdoc command. | `-` | No | `<set-in-env>` |
-| `DEEPDOC_ENABLED` | Configuration for deepdoc enabled. | `-` | No | `<set-in-env>` |
-| `DEEPDOC_TIMEOUT_SECONDS` | Configuration for deepdoc timeout seconds. | `-` | No | `<set-in-env>` |
-| `DOCLING_COMMAND` | Configuration for docling command. | `-` | No | `<set-in-env>` |
-| `DOCLING_ENABLED` | Configuration for docling enabled. | `-` | No | `<set-in-env>` |
-| `DOCLING_TIMEOUT_SECONDS` | Configuration for docling timeout seconds. | `-` | No | `<set-in-env>` |
-| `EMBED_BASE_URL` | Configuration for embed base url. | `-` | No | `https://example.internal` |
-| `EMBED_MODEL` | Configuration for embed model. | `-` | No | `<set-in-env>` |
-| `MARKER_MCP_ASYNC_MAX_WAIT_SECONDS` | Configuration for marker mcp async max wait seconds. | `-` | No | `<set-in-env>` |
-| `MARKER_MCP_ASYNC_POLL_INTERVAL_SECONDS` | Configuration for marker mcp async poll interval seconds. | `-` | No | `<set-in-env>` |
-| `MARKER_MCP_ASYNC_THRESHOLD_SECONDS` | Configuration for marker mcp async threshold seconds. | `-` | No | `<set-in-env>` |
-| `MARKER_MCP_BASE_URL` | Configuration for marker mcp base url. | `-` | No | `https://example.internal` |
-| `MARKER_MCP_BUSY_RETRY_BACKOFF` | Configuration for marker mcp busy retry backoff. | `-` | No | `<set-in-env>` |
-| `MARKER_MCP_BUSY_RETRY_INITIAL_SECONDS` | Configuration for marker mcp busy retry initial seconds. | `-` | No | `<set-in-env>` |
-| `MARKER_MCP_BUSY_RETRY_MAX_DELAY_SECONDS` | Configuration for marker mcp busy retry max delay seconds. | `-` | No | `<set-in-env>` |
-| `MARKER_MCP_BUSY_RETRY_MAX_SECONDS` | Configuration for marker mcp busy retry max seconds. | `-` | No | `<set-in-env>` |
-| `MARKER_MCP_DOC_TIMEOUT_SECONDS` | Configuration for marker mcp doc timeout seconds. | `1200` | No | `<set-in-env>` |
-| `MARKER_MCP_ENABLED` | Configuration for marker mcp enabled. | `-` | No | `<set-in-env>` |
-| `MARKER_MCP_REQUEST_RETRIES` | Configuration for marker mcp request retries. | `-` | No | `<set-in-env>` |
-| `MARKER_MCP_TIMEOUT_SECONDS` | Configuration for marker mcp timeout seconds. | `1200` | No | `<set-in-env>` |
-| `MINERU_BASE_URL` | Configuration for mineru base url. | `-` | No | `https://example.internal` |
-| `MINERU_DOC_TIMEOUT_SECONDS` | Configuration for mineru doc timeout seconds. | `240` | No | `<set-in-env>` |
-| `MINERU_ENABLED` | Configuration for mineru enabled. | `-` | No | `<set-in-env>` |
-| `MINERU_FORMULA_ENABLE` | Configuration for mineru formula enable. | `-` | No | `<set-in-env>` |
-| `MINERU_PAGE_FALLBACK_MAX_PAGES` | Configuration for mineru page fallback max pages. | `-` | No | `<set-in-env>` |
-| `MINERU_PAGE_FALLBACK_TARGET_CHARS` | Configuration for mineru page fallback target chars. | `-` | No | `<set-in-env>` |
-| `MINERU_PARSE_BACKEND` | Configuration for mineru parse backend. | `-` | No | `<set-in-env>` |
-| `MINERU_PARSE_METHOD` | Configuration for mineru parse method. | `-` | No | `<set-in-env>` |
-| `MINERU_REQUEST_RETRIES` | Configuration for mineru request retries. | `-` | No | `<set-in-env>` |
-| `MINERU_RETURN_IMAGES` | Configuration for mineru return images. | `-` | No | `<set-in-env>` |
-| `MINERU_RETURN_MIDDLE_JSON` | Configuration for mineru return middle json. | `-` | No | `<set-in-env>` |
-| `MINERU_TABLE_ENABLE` | Configuration for mineru table enable. | `-` | No | `<set-in-env>` |
-| `MINERU_TIMEOUT_SECONDS` | Configuration for mineru timeout seconds. | `180` | No | `<set-in-env>` |
-| `PARSER_PROVIDER_TIMEOUT_SECONDS` | Configuration for parser provider timeout seconds. | `240` | No | `<set-in-env>` |
-| `TRANSFORMERS_BASE_URL` | Configuration for transformers base url. | `-` | No | `https://example.internal` |
-| `TRANSFORMERS_COMMAND` | Configuration for transformers command. | `-` | No | `<set-in-env>` |
-| `TRANSFORMERS_ENABLED` | Configuration for transformers enabled. | `-` | No | `<set-in-env>` |
-| `TRANSFORMERS_TIMEOUT_SECONDS` | Configuration for transformers timeout seconds. | `180` | No | `<set-in-env>` |
+| Variable | Default | Required | Example | Description |
+|----------|---------|----------|---------|-------------|
+| `CLOUD_DOG__PROFILES__DEFAULT__ENABLED` | `true` | Optional | `true` | Toggle for profiles default. |
+| `CLOUD_DOG__PROFILES__DEFAULT__VDB__TYPE` | `chroma` | Optional | `chroma` | Configuration value for profiles default vdb type. |
+| `CLOUD_DOG__PROFILES__DEFAULT__VDB__CHROMA__MODE` | `local` | Optional | `local` | Configuration value for profiles default vdb chroma mode. |
+| `CLOUD_DOG__PROFILES__DEFAULT__VDB__CHROMA__PATH` | `${CHROMA_PATH:./data/chroma}` | Optional | `./data/service.dat` | Configuration value for profiles default vdb chroma path. |
+| `CLOUD_DOG__PROFILES__DEFAULT__VDB__CHROMA__COLLECTION` | `default` | Optional | `default` | Configuration value for profiles default vdb chroma collection. |
+| `CLOUD_DOG__PROFILES__DEFAULT__EMBEDDINGS__PROVIDER` | `openai_compat` | Optional | `openai_compat` | Configuration value for profiles default embeddings provider. |
+| `CLOUD_DOG__PROFILES__DEFAULT__EMBEDDINGS__OPENAI_COMPAT__BASE_URL` | `<set per environment>` | Deployment dependent | `<set per environment>` | Endpoint or connection URL for profiles default embeddings openai compat base. |
+| `CLOUD_DOG__PROFILES__DEFAULT__EMBEDDINGS__OPENAI_COMPAT__API_KEY` | `<secret>` | Deployment dependent | `your-api-key` | Credential or authentication setting for the related subsystem. |
+| `CLOUD_DOG__PROFILES__DEFAULT__EMBEDDINGS__OPENAI_COMPAT__MODEL` | `nomic-embed-text` | Optional | `nomic-embed-text` | Configuration value for profiles default embeddings openai compat model. |
+| `CLOUD_DOG__PROFILES__DEFAULT__EMBEDDINGS__OPENAI_COMPAT__TIMEOUT_SECONDS` | `60` | Optional | `60` | Timeout or duration control for profiles default embeddings openai compat timeout. |
+| `CLOUD_DOG__PROFILES__DEFAULT__INGESTION__ALLOWED_SOURCES` | `["upload", "text", "filesystem", "s3", "webdav", "gdrive"]` | Optional | `<set as needed>` | Configuration value for profiles default ingestion allowed sources. |
+| `CLOUD_DOG__PROFILES__DEFAULT__INGESTION__FILESYSTEM__ROOTS` | `["${INGEST_ROOT:./uploads}"]` | Optional | `<set as needed>` | Configuration value for profiles default ingestion filesystem roots. |
+| `CLOUD_DOG__PROFILES__DEFAULT__INGESTION__FILESYSTEM__DENY_GLOBS` | `["**/.git/**", "**/node_modules/**"]` | Optional | `<set as needed>` | Configuration value for profiles default ingestion filesystem deny globs. |
+| `CLOUD_DOG__PROFILES__DEFAULT__INGESTION__MAX_FILE_MB` | `50` | Optional | `50` | Configuration value for profiles default ingestion max file mb. |
+| `CLOUD_DOG__PROFILES__DEFAULT__INGESTION__DEDUPE__MODE` | `hash` | Optional | `hash` | Configuration value for profiles default ingestion dedupe mode. |
+| `CLOUD_DOG__PROFILES__DEFAULT__INGESTION__DEDUPE__POLICY` | `skip` | Optional | `skip` | Configuration value for profiles default ingestion dedupe policy. |
+| `CLOUD_DOG__PROFILES__DEFAULT__CHUNKING__STRATEGY` | `token` | Optional | `token` | Configuration value for profiles default chunking strategy. |
+| `CLOUD_DOG__PROFILES__DEFAULT__CHUNKING__CHUNK_SIZE` | `800` | Optional | `800` | Configuration value for profiles default chunking chunk size. |
+| `CLOUD_DOG__PROFILES__DEFAULT__CHUNKING__CHUNK_OVERLAP` | `100` | Optional | `100` | Configuration value for profiles default chunking chunk overlap. |
+| `CLOUD_DOG__PROFILES__DEFAULT__SEARCH__TOP_K_DEFAULT` | `10` | Optional | `10` | Configuration value for profiles default search top k default. |
+| `CLOUD_DOG__PROFILES__DEFAULT__SEARCH__SCORE_THRESHOLD` | `0.0` | Optional | `0.0` | Configuration value for profiles default search score threshold. |
 
-### Server Runtime
+## `queue`
 
-| Variable | Description | Default | Required | Example |
-|---|---|---|---|---|
-| `CLOUD_DOG__INDEX__API_SERVER__HOST` | Configuration for cloud dog index api server host. | `0.0.0.0` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__API_SERVER__PORT` | Configuration for cloud dog index api server port. | `8686` | No | `8686` |
-| `CLOUD_DOG__INDEX__MCP_SERVER__HOST` | Configuration for cloud dog index mcp server host. | `0.0.0.0` | No | `<set-in-env>` |
-| `CLOUD_DOG__INDEX__MCP_SERVER__PORT` | Configuration for cloud dog index mcp server port. | `8687` | No | `8686` |
-| `INDEX_MCP_HOST` | Configuration for index mcp host. | `-` | No | `<set-in-env>` |
-| `INDEX_MCP_MCP_ENABLED` | Configuration for index mcp mcp enabled. | `-` | No | `<set-in-env>` |
-| `INDEX_MCP_MCP_PORT` | Configuration for index mcp mcp port. | `-` | No | `<set-in-env>` |
-| `INDEX_MCP_PORT` | Configuration for index mcp port. | `-` | No | `<set-in-env>` |
+| Variable | Default | Required | Example | Description |
+|----------|---------|----------|---------|-------------|
+| `CLOUD_DOG__QUEUE__BACKEND` | `${CLOUD_DOG__INDEX__QUEUE__BACKEND:sql}` | Optional | `${CLOUD_DOG__INDEX__QUEUE__BACKEND:sql}` | Configuration value for queue backend. |
+| `CLOUD_DOG__QUEUE__DATABASE_URL` | `${INDEX_RETRIEVER_DB_URL:${DB_URL:sqlite+aiosqlite:///./data/...` | Deployment dependent | `${INDEX_RETRIEVER_DB_URL:${DB_URL:sqlite+aiosqlite:///./data/...` | Endpoint or connection URL for queue database. |
+| `CLOUD_DOG__QUEUE__SERVER_ID` | `${INDEX_RETRIEVER_SERVER_ID:${HOSTNAME:index-retriever-local}}` | Optional | `${INDEX_RETRIEVER_SERVER_ID:${HOSTNAME:index-retriever-local}}` | Configuration value for queue server id. |
+| `CLOUD_DOG__QUEUE__MAX_CONCURRENCY` | `8` | Optional | `8` | Configuration value for queue max concurrency. |
+| `CLOUD_DOG__QUEUE__PER_PROFILE_CONCURRENCY` | `2` | Optional | `2` | Configuration value for queue per profile concurrency. |
+| `CLOUD_DOG__QUEUE__DEFAULT_TIMEOUT_SECONDS` | `1800` | Optional | `1800` | Timeout or duration control for queue default timeout. |
+| `CLOUD_DOG__QUEUE__RETRY__MAX_ATTEMPTS` | `3` | Optional | `3` | Configuration value for queue retry max attempts. |
+| `CLOUD_DOG__QUEUE__RETRY__BACKOFF_SECONDS` | `5` | Optional | `5` | Timeout or duration control for queue retry backoff. |
+| `CLOUD_DOG__QUEUE__REDIS__ENABLED` | `false` | Optional | `false` | Toggle for queue redis. |
+| `CLOUD_DOG__QUEUE__REDIS__URL` | `${REDIS_URL:redis://127.0.0.1:6379/0}` | Deployment dependent | `https://service.example.com` | Endpoint or connection URL for queue redis. |
 
-### Test & Runtime Harness
+## `rbac`
 
-| Variable | Description | Default | Required | Example |
-|---|---|---|---|---|
-| `INDEX_RETRIEVER_API_BASE_URL` | Configuration for index retriever api base url. | `-` | No | `https://example.internal` |
-| `INDEX_RETRIEVER_CHROMA_PURGE_REGEX` | Configuration for index retriever chroma purge regex. | `-` | No | `<set-in-env>` |
-| `INDEX_RETRIEVER_DEFAULT_BACKEND` | Configuration for index retriever default backend. | `-` | No | `<set-in-env>` |
-| `INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS` | Configuration for index retriever live required providers. | `chroma` | No | `<set-in-env>` |
-| `INDEX_RETRIEVER_LIVE_USE_VAULT_FALLBACK` | Configuration for index retriever live use vault fallback. | `-` | No | `<set-in-env>` |
-| `INDEX_RETRIEVER_MCP_BASE_URL` | Configuration for index retriever mcp base url. | `-` | No | `https://example.internal` |
-| `INDEX_RETRIEVER_RUNTIME_MODE` | Configuration for index retriever runtime mode. | `local-server` | No | `<set-in-env>` |
-| `INDEX_RETRIEVER_TEST_RUN_PREFIX` | Run prefix used to isolate test-created resources. | `-` | No | `<set-in-env>` |
-| `LOCAL_DOCKER_COMPOSE_FILE` | Configuration for local docker compose file. | `-` | No | `<set-in-env>` |
-| `LOCAL_DOCKER_COMPOSE_PROFILES` | Configuration for local docker compose profiles. | `-` | No | `<set-in-env>` |
-| `LOCAL_DOCKER_PROJECT_NAME` | Configuration for local docker project name. | `-` | No | `<set-in-env>` |
-| `LOCAL_DOCKER_SERVICES` | Configuration for local docker services. | `-` | No | `<set-in-env>` |
-| `LOCAL_DOCKER_SOURCE_ENV` | Configuration for local docker source env. | `-` | No | `<set-in-env>` |
-| `PYTEST_CURRENT_TEST` | Pytest internal marker used to adjust middleware in tests. | `-` | No | `<set-in-env>` |
-| `TEST_A2A_BASE_PATH` | Configuration for test a2a base path. | `/a2a` | No | `tests/env-<TIER>` |
-| `TEST_API_BASE_PATH` | Configuration for test api base path. | `/app/v1` | No | `tests/env-<TIER>` |
-| `TEST_ENV_TIER` | Configuration for test env tier. | `-` | No | `tests/env-<TIER>` |
-| `TEST_MCP_BASE_PATH` | Configuration for test mcp base path. | `/mcp` | No | `tests/env-<TIER>` |
-| `TEST_WEB_BASE_PATH` | Configuration for test web base path. | `/` | No | `tests/env-<TIER>` |
+| Variable | Default | Required | Example | Description |
+|----------|---------|----------|---------|-------------|
+| `CLOUD_DOG__RBAC__ENABLED` | `true` | Optional | `true` | Toggle for rbac. |
+| `CLOUD_DOG__RBAC__DEFAULT_DENY` | `true` | Optional | `true` | Configuration value for rbac default deny. |
+| `CLOUD_DOG__RBAC__ROLES__ADMIN` | `["*"]` | Optional | `<set as needed>` | Configuration value for rbac roles admin. |
+| `CLOUD_DOG__RBAC__ROLES__MAINTAINER` | `["profiles_*", "collections_*", "ingest_*", "search", "retrieve", "delete_*", "retention_*", "reindex_*", "job_*", "queu...` | Optional | `<set as needed>` | Configuration value for rbac roles maintainer. |
+| `CLOUD_DOG__RBAC__ROLES__WRITER` | `["ingest_*", "search", "retrieve", "job_list", "job_get", "job_wait", "job_stream", "queue_status"]` | Optional | `<set as needed>` | Configuration value for rbac roles writer. |
+| `CLOUD_DOG__RBAC__ROLES__READER` | `["profiles_list", "profile_get", "collections_list", "collection_get", "search", "retrieve", "search_explain", "job_get"...` | Optional | `<set as needed>` | Configuration value for rbac roles reader. |
 
-### Vault
+## `storage`
 
-| Variable | Description | Default | Required | Example |
-|---|---|---|---|---|
-| `CLOUD_DOG__VAULT__ADDR` | Configuration for cloud dog vault addr. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__VAULT__CONFIG_PATH` | Configuration for cloud dog vault config path. | `-` | No | `<set-in-env>` |
-| `CLOUD_DOG__VAULT__MOUNT_POINT` | Configuration for cloud dog vault mount point. | `-` | No | `<set-in-env>` |
-| `VAULT_ADDR` | Vault server base URL. | `-` | No | `https://vault.cloud-dog.net` |
-| `VAULT_CONFIG_PATH` | Vault config JSON path. | `-` | No | `<set-in-env>` |
-| `VAULT_MOUNT_POINT` | Vault KV mount point. | `-` | No | `<set-in-env>` |
-| `VAULT_TOKEN` | Vault access token for runtime secret resolution. | `-` | No | `***` |
+| Variable | Default | Required | Example | Description |
+|----------|---------|----------|---------|-------------|
+| `CLOUD_DOG__STORAGE__DB__URL` | `${DB_URL:sqlite+aiosqlite:///./data/index_retriever.db}` | Deployment dependent | `https://service.example.com` | Endpoint or connection URL for storage db. |
+| `CLOUD_DOG__STORAGE__AUDIT__PATH` | `${AUDIT_LOG_PATH:./logs/audit.log}` | Optional | `./data/service.dat` | Configuration value for storage audit path. |
 
-### Vector Backends
+## `web_server`
 
-| Variable | Description | Default | Required | Example |
-|---|---|---|---|---|
-| `CHROMA_PATH` | Configuration for chroma path. | `-` | No | `<set-in-env>` |
-| `CHROMA_URL` | Configuration for chroma url. | `-` | No | `https://example.internal` |
-| `INFINITY_HOST` | Configuration for infinity host. | `-` | No | `<set-in-env>` |
-| `INFINITY_PORT` | Configuration for infinity port. | `-` | No | `<set-in-env>` |
-| `INFINITY_URL` | Configuration for infinity url. | `-` | No | `https://example.internal` |
-| `OPENSEARCH_HOST` | Configuration for opensearch host. | `-` | No | `<set-in-env>` |
-| `OPENSEARCH_PASSWORD` | Configuration for opensearch password. | `-` | No | `<set-in-env>` |
-| `OPENSEARCH_PORT` | Configuration for opensearch port. | `-` | No | `<set-in-env>` |
-| `OPENSEARCH_URL` | Configuration for opensearch url. | `-` | No | `https://example.internal` |
-| `OPENSEARCH_USERNAME` | Configuration for opensearch username. | `-` | No | `<set-in-env>` |
-| `QDRANT_HOST` | Configuration for qdrant host. | `-` | No | `<set-in-env>` |
-| `QDRANT_PORT` | Configuration for qdrant port. | `-` | No | `<set-in-env>` |
-| `QDRANT_URL` | Configuration for qdrant url. | `-` | No | `https://example.internal` |
-| `WEAVIATE_URL` | Configuration for weaviate url. | `-` | No | `https://example.internal` |
+| Variable | Default | Required | Example | Description |
+|----------|---------|----------|---------|-------------|
+| `CLOUD_DOG__WEB_SERVER__HOST` | `0.0.0.0` | Optional | `0.0.0.0` | Host binding or upstream host for web server. |
+| `CLOUD_DOG__WEB_SERVER__PORT` | `8075` | Optional | `8075` | Port for web server connections. |
 
-## 3. Vault Integration
+## Vault Support
 
-Load Vault bootstrap before IT/AT or any runtime requiring secrets:
-
-```bash
-set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
-bash scripts/validate-vault.sh
-```
-
-Vault sections used by this project:
-- `dev.databases`
-- `dev.models`
-- `dev.vdbs`
-- `dev.storage`
-- `dev.redis`
-- `dev.repository`
-
-## 4. Example Configurations
-
-### Local Development (SQLite, minimal auth)
-
-```bash
-DB_URL=sqlite+aiosqlite:///./data/index_retriever.db
-CLOUD_DOG__INDEX__VDB__PROVIDER=chroma
-CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=openai_compat
-CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text
-```
-
-### Docker/Preprod (PostgreSQL + Vault)
-
-```bash
-set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
-CLOUD_DOG__INDEX__DB__URL=${vault.dev.databases.index_retriever.url}
-CLOUD_DOG__INDEX__VDB__QDRANT_URL=${vault.dev.vdbs.qdrant.url}
-CLOUD_DOG__INDEX__EMBEDDING__BASE_URL=${vault.dev.models.ollama.base_url}
-```
-
-### Production
-
-Use Vault-backed values for all credential-bearing keys (`*_API_KEY`, `*_TOKEN`, DB passwords) and lock down API keys to managed IDAM flows.
-
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `VAULT_ADDR` | Vault server URL when using secret-backed config resolution. | `https://your-vault-server` |
+| `VAULT_TOKEN` | Token-based authentication for Vault when applicable. | `your-vault-token` |
+| `VAULT_MOUNT_POINT` | Secret mount used by your Vault deployment. | `secret` |
+| `VAULT_CONFIG_PATH` | Config path holding service settings. | `services/your-service` |

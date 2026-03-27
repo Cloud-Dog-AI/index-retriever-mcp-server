@@ -1,138 +1,74 @@
-# Deploy Guide — index-retriever-mcp-server
+# Deployment Guide
 
-## 1. Docker Deployment
+## Option 1: Docker (recommended)
 
-### Build
+### Without Vault
 ```bash
-./docker-build.sh
+cat > .env <<EOF
+CLOUD_DOG__WEB_SERVER__PORT=8080
+CLOUD_DOG__MCP_SERVER__PORT=8081
+CLOUD_DOG__A2A_SERVER__PORT=8082
+CLOUD_DOG__API_SERVER__PORT=8083
+CLOUD_DOG__WEB_SERVER__USERNAME=admin
+CLOUD_DOG__WEB_SERVER__PASSWORD=your-secure-password
+CLOUD_DOG__API_SERVER__API_KEY=your-api-key
+EOF
+
+docker build -t index-retriever:latest .
+docker run -d --name index-retriever \
+  --env-file .env \
+  -p 8080:8080 -p 8081:8081 -p 8082:8082 -p 8083:8083 \
+  index-retriever:latest
 ```
 
-### Run (single-host example)
+### With Vault
 ```bash
-docker run --rm \
-  --name index-retriever \
-  -p 8686:8686 -p 8687:8687 \
-  --env-file tests/env-IT \
-  registry.cloud-dog.net/cloud-dog-ai/index-retriever-mcp-server:latest
+cat > .env <<EOF
+VAULT_ADDR=https://your-vault-server
+VAULT_TOKEN=your-vault-token
+VAULT_MOUNT_POINT=secret
+VAULT_CONFIG_PATH=services/your-service
+CLOUD_DOG__WEB_SERVER__PORT=8080
+CLOUD_DOG__MCP_SERVER__PORT=8081
+CLOUD_DOG__A2A_SERVER__PORT=8082
+CLOUD_DOG__API_SERVER__PORT=8083
+EOF
+
+docker run -d --name index-retriever \
+  --env-file .env \
+  -p 8080:8080 -p 8081:8081 -p 8082:8082 -p 8083:8083 \
+  index-retriever:latest
 ```
 
-### Compose
+### With Custom CA Certificates
 ```bash
-docker compose up -d
+docker run -d --name index-retriever \
+  --env-file .env \
+  -v /path/to/ca-bundle.pem:/app/certs/ca-bundle.pem \
+  -e REQUESTS_CA_BUNDLE=/app/certs/ca-bundle.pem \
+  -e SSL_CERT_FILE=/app/certs/ca-bundle.pem \
+  index-retriever:latest
 ```
 
-## 2. Bare Metal Deployment
-
-### Install
+## Option 2: Direct (no Docker)
 ```bash
-set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]" --index-url https://pypi.cloud-dog.net/simple/
+pip install -e ".[dev]"
+./server_control.sh --env env.example start all
 ```
 
-### Run under supervisor/systemd
-- Use `server_control.sh --env <env-file> start all` for process management.
-- Recommended split services:
-  - API: `src/index_server/api_server.py`
-  - MCP: `src/index_server/mcp_server.py`
+## Example Environment File
+- See `docs/ENV-REFERENCE.md` for the full variable catalogue.
+- Use only generic examples in shared documentation; inject secrets at runtime.
 
-## 3. Terraform Reference
-
-Infrastructure deployments are managed in:
-- `/opt/iac/Development/cloud-dog-repo/terraform/`
-
-This repository does not apply Terraform directly.
-
-## 4. Vault Integration
-
-### Bootstrap
+## Health Checks
 ```bash
-set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
-bash scripts/validate-vault.sh
+curl -f http://127.0.0.1:8083/health
+curl -f http://127.0.0.1:8081/health
 ```
 
-### Vault paths used
-- `dev.databases`
-- `dev.models`
-- `dev.vdbs`
-- `dev.storage`
-- `dev.redis`
-- `dev.repository`
-
-## 5. Database Options
-
-| Mode | Dialect | Use | Key Variables |
-|---|---|---|---|
-| Local dev | SQLite | fast local iteration | `DB_URL=sqlite+aiosqlite:///...` |
-| Preprod/prod | PostgreSQL | recommended persistent metadata | `CLOUD_DOG__INDEX__DB__URL` or `DB_URL` |
-| Optional | MySQL | compatibility testing path | `CLOUD_DOG_DB__*` / `CLOUD_DOG__DB__*` |
-
-Migration/initialisation is handled by runtime startup (`index_tools.db.initialise_database`).
-
-## 6. VDB Options
-
-Supported backends (via `cloud_dog_vdb`):
-- Chroma
-- Qdrant
-- OpenSearch
-- PGVector
-- Weaviate
-- Infinity
-
-Primary configuration keys are documented in [ENV-REFERENCE.md](ENV-REFERENCE.md).
-
-## 7. LLM/Embedding Configurations
-
-Embedding route is provided through `cloud_dog_llm`.
-
-Tested model matrix in this project test suite includes:
-- `bge-m3:567m` (1024 dimensions)
-- `nomic-embed-text` (768 dimensions)
-- `granite-embedding:278m` (768 dimensions)
-
-Typical endpoints:
-- `https://llm1.cloud-dog.net`
-- `https://llm2.cloud-dog.net`
-
-## 8. Health Check
-
-- API health: `GET /health`
-- Canonical API health: `GET /app/v1/health`
-- A2A health (auth required): `GET /a2a/health`
-- MCP health: `GET /health` on MCP listener
-
-Expected payload includes:
-- top-level `status: "ok"`
-- backend checks for DB, VDB, embedding on API health payload
-
-## 9. Monitoring and Audit
-
-- Runtime logs: `logs/`
-- Audit logs:
-  - API: `CLOUD_DOG__INDEX__API_AUDIT_PATH` (fallback `logs/index-retriever-audit-api.jsonl`)
-  - MCP: `CLOUD_DOG__INDEX__MCP_AUDIT_PATH` (fallback `logs/index-retriever-audit-mcp.jsonl`)
-- Test and agent evidence: `working/`
-- Operational diagnostics: `server_control.sh --env <env-file> status all`
-
-## Preprod Deployment Reference
-
-### Terraform
-
-- Terraform root: `/opt/iac/cloud-dog-repo/terraform/server0.viewdeck.com/60 Cloud-Dog AI Containers`
-- Public hostname: `https://indexretriever0.cloud-dog.net`
-- Container name: `indexretriever0.app.vpc0.cloud-dog.net`
-
-### Health Verification
-
-```bash
-curl -sk https://indexretriever0.cloud-dog.net/health
-curl -sk https://indexretriever0.cloud-dog.net/login
-```
-
-### Rollback
-
-1. Identify the last known good registry tag or digest.
-2. Update the deployment target back to that tag or digest.
-3. Re-apply Terraform or re-run the deployment workflow for this service.
-4. Re-check `/health`, the public login route, and any project-specific API or MCP health endpoints.
+## Deployment Notes
+- Service focus: Ingestion, parser orchestration, OCR/table handling, indexing, search, retrieval, and queue-backed maintenance for enterprise content.
+- Primary capabilities: document ingest, parser and OCR selection, search and retrieval, collection/source administration, queue and retention operations.
+- Review the published environment reference before deploying to a shared environment.
