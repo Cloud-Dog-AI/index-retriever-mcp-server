@@ -71,6 +71,7 @@ def run_playwright_spec(spec_name: str) -> None:
     env['E2E_BASE_URL'] = web_url
     env['E2E_API_BASE_URL'] = api_url
     env['E2E_API_KEY'] = env.get('E2E_API_KEY', 'valid-admin-token')
+    env['E2E_USE_EXISTING_SERVER'] = '1'
     command = [
         str(PLAYWRIGHT_BIN),
         'test',

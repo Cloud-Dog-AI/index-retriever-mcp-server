@@ -21,16 +21,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-COPY vendor/wheels/ ./vendor/wheels/
+ARG PYPI_URL=https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple
 RUN pip install --no-cache-dir \
-    ./vendor/wheels/cloud_dog_config-0.2.0-py3-none-any.whl \
-    ./vendor/wheels/cloud_dog_logging-0.2.0-py3-none-any.whl \
-    ./vendor/wheels/cloud_dog_api_kit-0.2.0-py3-none-any.whl \
-    ./vendor/wheels/cloud_dog_idam-0.2.0-py3-none-any.whl \
-    ./vendor/wheels/cloud_dog_jobs-0.2.0-py3-none-any.whl \
-    ./vendor/wheels/cloud_dog_db-0.1.0-py3-none-any.whl \
-    ./vendor/wheels/cloud_dog_llm-0.2.0-py3-none-any.whl \
-    ./vendor/wheels/cloud_dog_vdb-0.4.1-py3-none-any.whl
+      --extra-index-url ${PYPI_URL} \
+      --trusted-host gitea.cloud-dog.net \
+      --trusted-host pypi.org \
+      --trusted-host files.pythonhosted.org \
+      cloud-dog-config \
+      cloud-dog-logging \
+      cloud-dog-api-kit \
+      cloud-dog-idam \
+      cloud-dog-db \
+      cloud-dog-jobs \
+      cloud-dog-llm \
+      cloud-dog-vdb
 
 COPY pyproject.toml README.md ./
 COPY src/ ./src/

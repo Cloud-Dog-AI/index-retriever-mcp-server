@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -83,6 +84,80 @@ def test_service_search_wrapper_path(service: IndexService) -> None:
     service.ingest_text("default", "search_cov", "alpha beta gamma", "api://search", actor="writer")
     rows = service.search("default", "search_cov", "alpha", top_k=5, filters=None)
     assert rows
+
+
+def test_ingest_uses_backend_collection_name_for_upsert(
+    monkeypatch: pytest.MonkeyPatch, service: IndexService
+) -> None:
+    captured: dict[str, object] = {}
+
+    async def _capture_upsert(collection_name: str, records: list[object], provider_id: str | None = None) -> bool:
+        captured["collection_name"] = collection_name
+        captured["provider_id"] = provider_id
+        captured["records"] = records
+        return True
+
+    monkeypatch.setattr(service.vdb, "upsert_records", _capture_upsert)
+
+    service.ingest_text("default", "backend_name_cov", "alpha beta gamma", "api://backend-name", actor="writer")
+
+    provider_id = service._profile_provider("default")
+    assert captured["collection_name"] == service._backend_collection_name(
+        "default", "backend_name_cov", provider_id=provider_id
+    )
+    assert captured["collection_name"] != "default:backend_name_cov"
+
+
+def test_service_passes_resolved_embedding_settings_into_vdb_client(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    captured: dict[str, object] = {}
+
+    def _fake_get_vdb_client(config: dict[str, object]) -> InMemoryVdbAdapter:
+        captured["config"] = config
+        return InMemoryVdbAdapter()
+
+    monkeypatch.setattr("index_tools.tools.service.get_vdb_client", _fake_get_vdb_client)
+
+    service = IndexService(audit_path=str(tmp_path / "audit.jsonl"))
+
+    payload = captured["config"]
+    assert isinstance(payload, dict)
+    assert payload["embeddings"]["provider"] == service._llm_provider
+    assert payload["embeddings"][service._llm_provider]["model"] == service._llm_model
+
+
+def test_backend_health_check_works_inside_running_event_loop(
+    monkeypatch: pytest.MonkeyPatch, service: IndexService
+) -> None:
+    calls: list[str | None] = []
+    loops: list[int] = []
+
+    async def _fake_health_check(provider_id: str | None = None) -> bool:
+        calls.append(provider_id)
+        loops.append(id(asyncio.get_running_loop()))
+        await asyncio.sleep(0)
+        return True
+
+    monkeypatch.setattr(service.vdb, "health_check", _fake_health_check)
+
+    async def _invoke() -> tuple[dict[str, str], dict[str, str]]:
+        first = service.backend_health_check(provider_id="qdrant")
+        second = service.backend_health_check(provider_id="qdrant")
+        return first, second
+
+    assert asyncio.run(_invoke()) == (
+        {
+            "status": "ok",
+            "provider": "qdrant",
+            "backend": "qdrant",
+        },
+        {
+            "status": "ok",
+            "provider": "qdrant",
+            "backend": "qdrant",
+        },
+    )
+    assert calls == ["qdrant", "qdrant"]
+    assert len(set(loops)) == 1
 
 
 def test_search_engine_filter_validation_and_execution() -> None:

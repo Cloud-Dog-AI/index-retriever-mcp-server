@@ -19,23 +19,28 @@ import json
 import mimetypes
 import os
 import re
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
 from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
 from index_tools.audit.logger import AuditLogger
-from index_tools.collections.manager import CollectionManager
 from index_tools.embeddings.adapter import EmbeddingAdapter
 from index_tools.pipeline.chunking import token_chunks
 from index_tools.pipeline.metadata import build_metadata
 from index_tools.queue.engine import QueueEngine
 from index_tools.queue.models import JobRecord, JobStatus
-from index_tools.search.engine import SearchEngine
-from index_tools.vdb.adapters import InMemoryVdbAdapter
+from index_tools.config.loader import runtime_env_files
+
+try:
+    from cloud_dog_config import load_config
+except ImportError:  # pragma: no cover
+    load_config = None  # type: ignore[assignment]
 
 try:
     from cloud_dog_idam import APIKeyManager, GroupService, UserService
@@ -51,19 +56,27 @@ except ImportError:  # pragma: no cover
     IDAMUser = None  # type: ignore[assignment]
 
 try:
-    from cloud_dog_vdb import ParserIngestionOptions, SearchRequest, ingest_document
+    from cloud_dog_vdb import CollectionSpec, ParserIngestionOptions, Record, SearchRequest, get_vdb_client, ingest_document
     from cloud_dog_vdb.capabilities.planner import plan_search as vdb_plan_search
     from cloud_dog_vdb.domain.models import CapabilityDescriptor
     from cloud_dog_vdb.ingestion.ocr.planner import decide_ocr
     from cloud_dog_vdb.ingestion.pipeline import build_parser_registry
 except ImportError:  # pragma: no cover
+    CollectionSpec = None  # type: ignore[assignment]
     ParserIngestionOptions = None  # type: ignore[assignment]
+    Record = None  # type: ignore[assignment]
     SearchRequest = None  # type: ignore[assignment]
     CapabilityDescriptor = None  # type: ignore[assignment]
+    get_vdb_client = None  # type: ignore[assignment]
     vdb_plan_search = None
     ingest_document = None
     decide_ocr = None
     build_parser_registry = None
+
+try:
+    from cloud_dog_llm import get_llm_client
+except ImportError:  # pragma: no cover
+    get_llm_client = None  # type: ignore[assignment]
 
 
 _SECRET_FIELD_PATTERN = re.compile(r"(?i)(api[_-]?key|token|password|secret)\s*[:=]\s*([^\s,;]+)")
@@ -87,6 +100,64 @@ def _infer_filename(source_uri: str) -> str:
 def _infer_mime_type(filename: str) -> str:
     guessed, _ = mimetypes.guess_type(filename)
     return guessed or "text/plain"
+
+
+def _as_plain_data(value: Any) -> Any:
+    if isinstance(value, MappingProxyType):
+        return {k: _as_plain_data(v) for k, v in value.items()}
+    if isinstance(value, dict):
+        return {k: _as_plain_data(v) for k, v in value.items()}
+    if isinstance(value, tuple):
+        return [_as_plain_data(v) for v in value]
+    if isinstance(value, list):
+        return [_as_plain_data(v) for v in value]
+    return value
+
+
+def _nested_mapping(root: dict[str, Any], *keys: str) -> dict[str, Any]:
+    current: Any = root
+    for key in keys:
+        if not isinstance(current, dict):
+            return {}
+        current = current.get(key)
+    return current if isinstance(current, dict) else {}
+
+
+def _load_runtime_tree() -> dict[str, Any]:
+    if load_config is None:
+        return {}
+    compiled = load_config(
+        env_files=runtime_env_files(),
+        defaults_yaml="defaults.yaml",
+        unresolved_policy="strict",
+        vault_enabled=True,
+    )
+    return _as_plain_data(compiled.data)
+
+
+def _resolve_env_tier(runtime_tree: dict[str, Any]) -> str:
+    explicit = str(os.environ.get("TEST_ENV_TIER", "")).strip().upper()
+    if explicit:
+        return explicit
+    test_block = runtime_tree.get("test", {})
+    if isinstance(test_block, dict):
+        configured = str(test_block.get("env_tier", "")).strip().upper()
+        if configured:
+            return configured
+    for env_file in runtime_env_files():
+        name = Path(str(env_file)).name.upper()
+        if name.startswith("ENV-"):
+            remainder = name.removeprefix("ENV-")
+            candidate = remainder.split("-", 1)[0].strip()
+            if candidate:
+                return candidate
+    return ""
+
+
+def _safe_backend_name(value: str) -> str:
+    cleaned = re.sub(r"[^a-zA-Z0-9_]+", "_", value.strip())
+    cleaned = re.sub(r"_+", "_", cleaned).strip("_")
+    return cleaned or "default"
 
 
 class ProviderDiagnosticError(ValueError):
@@ -237,6 +308,31 @@ class SourceConfigRecord:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
+class _CollectionManagerCompat:
+    """Minimal compatibility shim for legacy unit paths that expect collection_manager."""
+
+    def __init__(self, service: IndexService) -> None:
+        self._service = service
+
+    def create(self, collection_key: str) -> None:
+        profile, collection = self._split_key(collection_key)
+        self._service._ensure_collection_record(profile, collection)
+
+    def list(self, profile: str) -> list[str]:
+        return self._service.collections_list(profile)
+
+    def delete(self, collection_key: str) -> None:
+        self._service.collections.pop(collection_key, None)
+        self._service.collection_roles.pop(collection_key, None)
+
+    @staticmethod
+    def _split_key(collection_key: str) -> tuple[str, str]:
+        if ":" in collection_key:
+            profile, collection = collection_key.split(":", 1)
+            return profile, collection
+        return "default", collection_key
+
+
 class IndexService:
     """Service facade providing deterministic behaviour for all tool flows."""
 
@@ -265,9 +361,16 @@ class IndexService:
         )
 
         self._default_backend = resolved_backend.strip().lower() or "chroma"
-        self.vdb = InMemoryVdbAdapter()
-        self.search_engine = SearchEngine(adapter=self.vdb)
-        self.collection_manager = CollectionManager(adapter=self.vdb)
+        self._runtime_tree = _load_runtime_tree()
+        self._env_tier = _resolve_env_tier(self._runtime_tree)
+        self._live_backend_mode = self._env_tier in {"ST", "IT", "AT", "CT"}
+        self._loop = asyncio.new_event_loop()
+        self._loop_thread: threading.Thread | None = None
+        self._llm_provider = resolved_provider.strip().lower() or "ollama"
+        self._llm_model = resolved_model
+        self._embedding_dimension_cache: int | None = None
+        self.vdb = self._build_vdb_client()
+        self._llm_client = self._build_llm_client()
         resolved_queue_database_url = queue_database_url or _resolve_queue_database_url(audit_path)
         resolved_server_id = server_id or _resolve_server_id()
         self.queue = QueueEngine(
@@ -300,6 +403,7 @@ class IndexService:
         self.idempotency: dict[str, str] = {}
         self.stream_sessions: dict[str, StreamSession] = {}
         self._job_handlers: dict[str, Any] = {}
+        self.collection_manager = _CollectionManagerCompat(self)
         self.users: dict[str, UserRecord] = {}
         self.groups: dict[str, GroupRecord] = {}
         self.api_keys: dict[str, ApiKeyRecord] = {}
@@ -309,12 +413,179 @@ class IndexService:
         self._idam_api_key_refs: dict[str, str] = {}
         self.a2a_events: list[ConfigEventRecord] = []
         self._auth_api_keys: dict[str, set[str]] = {}
+        self._auth_api_keys_bound = False
         self.queue.register_handler("ingest_text", self._process_ingest_text_job)
+
+    def _run_async(self, coro: Any) -> Any:
+        if self._loop_thread is not None and self._loop_thread.is_alive():
+            return asyncio.run_coroutine_threadsafe(coro, self._loop).result()
+
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return self._loop.run_until_complete(coro)
+
+        self._ensure_loop_thread()
+        return asyncio.run_coroutine_threadsafe(coro, self._loop).result()
+
+    def _ensure_loop_thread(self) -> None:
+        if self._loop_thread is not None and self._loop_thread.is_alive():
+            return
+
+        def _runner() -> None:
+            asyncio.set_event_loop(self._loop)
+            self._loop.run_forever()
+
+        self._loop_thread = threading.Thread(target=_runner, name="index-service-async-loop", daemon=True)
+        self._loop_thread.start()
+
+    def _profile_provider(self, profile: str) -> str:
+        payload = self.profiles.get(profile, self.profiles.get("default", {}))
+        provider = str(payload.get("backend", self._default_backend)).strip().lower()
+        return provider or self._default_backend
+
+    def _build_vdb_client(self) -> Any:
+        if get_vdb_client is None:
+            raise RuntimeError("cloud_dog_vdb is required")
+
+        profile_default = _nested_mapping(self._runtime_tree, "profiles", "default")
+        profile_vdb = _nested_mapping(profile_default, "vdb")
+        profile_chroma = _nested_mapping(profile_vdb, "chroma")
+        index_vdb = _nested_mapping(self._runtime_tree, "index", "vdb")
+
+        chroma_url = str(index_vdb.get("chroma_url", "")).strip()
+        qdrant_url = str(index_vdb.get("qdrant_url", "")).strip()
+        default_backend = self._default_backend
+        vector_stores: dict[str, Any] = {"default_backend": default_backend}
+
+        chroma_local_mode = not self._live_backend_mode or (
+            str(profile_vdb.get("type", "")).strip().lower() == "chroma"
+            and str(profile_chroma.get("mode", "")).strip().lower() == "local"
+            and not chroma_url
+        )
+        if chroma_url or chroma_local_mode:
+            vector_stores["chroma"] = {
+                "enabled": True,
+                "base_url": chroma_url,
+                "timeout_seconds": 120,
+                "local_mode": chroma_local_mode,
+            }
+
+        if qdrant_url:
+            vector_stores["qdrant"] = {
+                "enabled": True,
+                "base_url": qdrant_url,
+                "api_key": str(index_vdb.get("qdrant_api_key", "")).strip(),
+                "timeout_seconds": 120,
+                "local_mode": not self._live_backend_mode,
+            }
+
+        return get_vdb_client(
+            {
+                "vector_stores": vector_stores,
+                "embeddings": self._resolved_embedding_settings(),
+            }
+        )
+
+    def _resolved_embedding_settings(self) -> dict[str, Any]:
+        profile_default = _nested_mapping(self._runtime_tree, "profiles", "default")
+        embeddings = _nested_mapping(profile_default, "embeddings")
+        openai_compat = _nested_mapping(embeddings, "openai_compat")
+        base_url = str(openai_compat.get("base_url", "")).strip() or _env_or_default("EMBED_BASE_URL", "")
+        api_key = str(openai_compat.get("api_key", "")).strip() or _env_or_default("EMBED_API_KEY", "")
+        timeout_seconds = int(openai_compat.get("timeout_seconds", 60) or 60)
+        return {
+            "provider": self._llm_provider,
+            self._llm_provider: {
+                "base_url": base_url,
+                "api_key": api_key,
+                "model": self._llm_model,
+                "timeout_seconds": timeout_seconds,
+            },
+        }
+
+    def _build_llm_client(self) -> Any | None:
+        if get_llm_client is None:
+            return None
+        resolved = self._resolved_embedding_settings()
+        provider_cfg = _nested_mapping(resolved, self._llm_provider)
+        base_url = str(provider_cfg.get("base_url", "")).strip()
+        api_key = str(provider_cfg.get("api_key", "")).strip()
+        if not base_url:
+            return None
+        return get_llm_client(
+            {
+                "llm": {"default_provider": self._llm_provider},
+                "providers": {
+                    self._llm_provider: {
+                        "enabled": True,
+                        "base_url": base_url,
+                        "model": self._llm_model,
+                        "api_key": api_key,
+                        "timeout_seconds": int(provider_cfg.get("timeout_seconds", 300) or 300),
+                    }
+                },
+            }
+        )
+
+    def _embedding_dimension(self) -> int:
+        if self._embedding_dimension_cache is not None:
+            return self._embedding_dimension_cache
+        if self._llm_client is not None:
+            try:
+                vectors = self._run_async(
+                    asyncio.wait_for(
+                        self._llm_client.embed(
+                            ["dimension probe"],
+                            provider_id=self._llm_provider,
+                            model=self._llm_model,
+                        ),
+                        timeout=30.0,
+                    )
+                )
+                if vectors:
+                    self._embedding_dimension_cache = len(vectors[0])
+            except Exception:
+                self._embedding_dimension_cache = None
+        if self._embedding_dimension_cache is None:
+            self._embedding_dimension_cache = 1024
+        return self._embedding_dimension_cache
+
+    def _ensure_backend_collection(self, profile: str, collection: str) -> str:
+        if CollectionSpec is None:
+            raise RuntimeError("cloud_dog_vdb CollectionSpec is required")
+        provider_id = self._profile_provider(profile)
+        backend_name = self._backend_collection_name(profile, collection, provider_id=provider_id)
+        existing = self._run_async(self.vdb.get_collection(backend_name, provider_id=provider_id))
+        if existing is None:
+            self._run_async(
+                self.vdb.create_collection(
+                    CollectionSpec(
+                        name=backend_name,
+                        embedding_dim=self._embedding_dimension(),
+                        metadata={"embedding_model": self._llm_model},
+                    ),
+                    provider_id=provider_id,
+                )
+            )
+        return backend_name
 
     @staticmethod
     def _collection_key(profile: str, collection: str) -> str:
         """Internal helper to collection key."""
         return f"{profile}:{collection}"
+
+    @staticmethod
+    def _backend_collection_name(profile: str, collection: str, provider_id: str | None = None) -> str:
+        """Return a backend-safe physical collection name for the VDB layer."""
+        provider = str(provider_id or "").strip().lower()
+        base_name = _safe_backend_name(f"indexretriever_{profile}_{collection}")
+        if provider == "pgvector" and base_name[:1].isdigit():
+            base_name = f"idx_{base_name}"
+        if provider != "infinity":
+            return base_name
+        digest = sha256(base_name.encode("utf-8")).hexdigest()[:18]
+        return f"idxinf_{digest}"
 
     def _require_admin(self, roles: set[str]) -> None:
         """Internal helper to require admin."""
@@ -367,6 +638,45 @@ class IndexService:
     def attach_auth_api_keys(self, auth_api_keys: dict[str, set[str]]) -> None:
         """Bind the runtime auth API-key store so admin key CRUD updates auth immediately."""
         self._auth_api_keys = auth_api_keys
+        self._auth_api_keys_bound = True
+        for key_id in sorted(self.api_keys.keys()):
+            self._sync_auth_api_key_record(self.api_keys[key_id])
+
+    def _effective_user_roles(self, user_id: str) -> set[str]:
+        record = self.users.get(user_id)
+        if record is None:
+            return set()
+        roles = set(record.roles)
+        for group_id in record.groups:
+            group = self.groups.get(group_id)
+            if group is not None:
+                roles.update(group.roles)
+        return roles
+
+    def _sync_auth_api_key_record(self, record: ApiKeyRecord) -> None:
+        if not self._auth_api_keys_bound:
+            return
+        if record.revoked:
+            self._auth_api_keys.pop(record.token, None)
+            return
+        effective_roles = set(record.roles)
+        if record.user_id:
+            effective_roles.update(self._effective_user_roles(record.user_id))
+        self._auth_api_keys[record.token] = effective_roles
+
+    def _refresh_auth_api_keys_for_user(self, user_id: str) -> None:
+        for record in self.api_keys.values():
+            if record.user_id == user_id:
+                self._sync_auth_api_key_record(record)
+
+    def _refresh_auth_api_keys_for_group(self, group_id: str) -> None:
+        impacted_users = sorted(
+            user_id
+            for user_id, record in self.users.items()
+            if group_id in record.groups
+        )
+        for user_id in impacted_users:
+            self._refresh_auth_api_keys_for_user(user_id)
 
     def _sync_idam_user(self, user_id: str) -> None:
         if self._idam_users is None or IDAMUser is None or IDAMUserStatus is None:
@@ -459,12 +769,15 @@ class IndexService:
         created_at_raw = str(payload.get("created_at", "")).strip()
         created_at = datetime.fromisoformat(created_at_raw) if created_at_raw else None
 
-        collection_key = self._collection_key(profile, collection)
+        if Record is None:
+            raise RuntimeError("cloud_dog_vdb Record is required")
+        self._ensure_backend_collection(profile, collection)
+        provider_id = self._profile_provider(profile)
+        backend_collection = self._backend_collection_name(profile, collection, provider_id=provider_id)
         doc_id = str(uuid4())
         chunks = token_chunks(text, chunk_size=64, chunk_overlap=8)
         if not chunks:
             chunks = [text]
-        vectors = self.embedding_adapter.embed(chunks)
         document_metadata = build_metadata(
             source=source,
             content=text.encode(),
@@ -473,20 +786,29 @@ class IndexService:
         )
         if isinstance(metadata, dict):
             document_metadata.update(metadata)
+        source_type = "file" if "://" in source else "other"
+        created_value = (created_at or datetime.now(timezone.utc)).isoformat().replace("+00:00", "Z")  # noqa: UP017
+        document_metadata.setdefault("tenant_id", profile)
+        document_metadata.setdefault("source", source)
         document_metadata.setdefault("source_uri", source)
+        document_metadata.setdefault("source_type", source_type)
         document_metadata.setdefault("filename", _infer_filename(str(document_metadata["source_uri"])))
         document_metadata.setdefault("mime_type", _infer_mime_type(str(document_metadata["filename"])))
-        if created_at is not None:
-            document_metadata["created_at"] = created_at.isoformat()
-        else:
-            document_metadata["created_at"] = datetime.now(timezone.utc).isoformat()  # noqa: UP017
+        document_metadata.setdefault("lifecycle_state", "active")
+        document_metadata["created_at"] = str(document_metadata.get("created_at") or created_value).replace("+00:00", "Z")
+        document_metadata.setdefault("actor", actor)
+        document_metadata.setdefault("profile", profile)
+        document_metadata.setdefault("collection", collection)
+        document_metadata.setdefault("indexing_signature", self._llm_model)
+        document_metadata.setdefault("embedding_model", self._llm_model)
+        document_metadata.setdefault("chunker_version", "v1")
 
-        self.vdb.upsert(
-            collection=collection_key,
-            doc_id=doc_id,
-            chunks=chunks,
-            vectors=vectors,
-            metadata=document_metadata,
+        self._run_async(
+            self.vdb.upsert_records(
+                backend_collection,
+                [Record(record_id=doc_id, content=text, metadata=document_metadata)],
+                provider_id=provider_id,
+            )
         )
         created = created_at or datetime.now(timezone.utc)  # noqa: UP017
         self.documents[doc_id] = DocumentRecord(
@@ -660,6 +982,7 @@ class IndexService:
         )
         self.users[user_id] = record
         self._sync_idam_user(user_id)
+        self._refresh_auth_api_keys_for_user(user_id)
         self.audit_logger.log_admin_action(
             actor=actor,
             roles=roles,
@@ -700,6 +1023,7 @@ class IndexService:
         if "enabled" in payload:
             record.enabled = bool(payload["enabled"])
         self._sync_idam_user(user_id)
+        self._refresh_auth_api_keys_for_user(user_id)
         self.audit_logger.log_admin_action(
             actor=actor,
             roles=roles,
@@ -727,6 +1051,7 @@ class IndexService:
             raise KeyError(user_id)
         if self._idam_users is not None:
             self._idam_users.disable(user_id)
+        self._refresh_auth_api_keys_for_user(user_id)
         self.audit_logger.log_admin_action(
             actor=actor,
             roles=roles,
@@ -776,6 +1101,7 @@ class IndexService:
         )
         self.groups[group_id] = record
         self._sync_idam_group(group_id)
+        self._refresh_auth_api_keys_for_group(group_id)
         self.audit_logger.log_admin_action(
             actor=actor,
             roles=roles,
@@ -807,11 +1133,14 @@ class IndexService:
             raise KeyError(group_id)
         record = self.groups[group_id]
         prior_value = self.group_get(group_id)
+        prior_members = set(record.members)
         if "roles" in payload:
             record.roles = set(str(item) for item in payload["roles"])
         if "members" in payload:
             record.members = set(str(item) for item in payload["members"])
         self._sync_idam_group(group_id)
+        for member in sorted(prior_members.union(record.members)):
+            self._refresh_auth_api_keys_for_user(member)
         self.audit_logger.log_admin_action(
             actor=actor,
             roles=roles,
@@ -835,8 +1164,11 @@ class IndexService:
         """Delete a group record."""
         self._require_admin(roles)
         prior_value = self.group_get(group_id)
+        prior_members = set(self.groups[group_id].members)
         if self.groups.pop(group_id, None) is None:
             raise KeyError(group_id)
+        for member in sorted(prior_members):
+            self._refresh_auth_api_keys_for_user(member)
         self.audit_logger.log_admin_action(
             actor=actor,
             roles=roles,
@@ -904,7 +1236,7 @@ class IndexService:
         self.api_keys[key_id] = record
         if idam_key_id:
             self._idam_api_key_refs[key_id] = idam_key_id
-        self._auth_api_keys[token] = set(record.roles)
+        self._sync_auth_api_key_record(record)
         created = {
             "key_id": record.key_id,
             "token": record.token,
@@ -943,7 +1275,7 @@ class IndexService:
         idam_key_id = self._idam_api_key_refs.get(key_id, "")
         if self._idam_api_keys is not None and idam_key_id:
             self._idam_api_keys.revoke(idam_key_id)
-        self._auth_api_keys.pop(record.token, None)
+        self._sync_auth_api_key_record(record)
         result = {
             "key_id": record.key_id,
             "label": record.label,
@@ -993,17 +1325,17 @@ class IndexService:
 
     def collections_list(self, profile: str) -> list[str]:
         """Execute collections list."""
-        prefix = f"{profile}:"
-        output: list[str] = []
-        for name in self.collection_manager.list():
-            if name.startswith(prefix):
-                output.append(name.removeprefix(prefix))
-        return sorted(output)
+        output = [
+            record.collection
+            for record in self.collections.values()
+            if record.profile == profile
+        ]
+        return sorted(set(output))
 
     def collection_get(self, profile: str, collection: str) -> dict[str, Any]:
         """Return collection details for the requested profile and name."""
         collection_key = self._collection_key(profile, collection)
-        if collection_key not in self.collection_manager.list():
+        if collection_key not in self.collections:
             raise KeyError(collection_key)
         return self._collection_payload(self._ensure_collection_record(profile, collection))
 
@@ -1020,7 +1352,7 @@ class IndexService:
         # Covers: FR-16
         self._require_admin(roles)
         collection_key = self._collection_key(profile, collection)
-        self.collection_manager.create(collection_key)
+        self._ensure_backend_collection(profile, collection)
         resolved_payload = dict(payload or {})
         resolved_allowed_roles = set(allowed_roles or resolved_payload.get("allowed_roles") or {"reader", "writer", "maintainer", "admin"})
         record = CollectionRecord(
@@ -1064,7 +1396,7 @@ class IndexService:
         """Update collection metadata and RBAC details."""
         self._require_admin(roles)
         collection_key = self._collection_key(profile, collection)
-        if collection_key not in self.collection_manager.list():
+        if collection_key not in self.collections:
             raise KeyError(collection_key)
         record = self._ensure_collection_record(profile, collection)
         prior_value = self._collection_payload(record)
@@ -1109,7 +1441,12 @@ class IndexService:
         self._require_admin(roles)
         collection_key = self._collection_key(profile, collection)
         prior_value = self._collection_payload(self._ensure_collection_record(profile, collection))
-        self.collection_manager.delete(collection_key)
+        self._run_async(
+            self.vdb.delete_collection(
+                self._backend_collection_name(profile, collection, provider_id=self._profile_provider(profile)),
+                provider_id=self._profile_provider(profile),
+            )
+        )
         self.collection_roles.pop(collection_key, None)
         self.collections.pop(collection_key, None)
         self.audit_logger.log_admin_action(
@@ -1137,7 +1474,7 @@ class IndexService:
         if not allowed_roles:
             raise ValueError("allowed_roles must not be empty")
         collection_key = self._collection_key(profile, collection)
-        self.collection_manager.create(collection_key)
+        self._ensure_backend_collection(profile, collection)
         self.collection_roles[collection_key] = set(allowed_roles)
         self._ensure_collection_record(profile, collection).allowed_roles = set(allowed_roles)
 
@@ -1165,8 +1502,7 @@ class IndexService:
         if profile not in self.profiles:
             raise ValueError(f"Unknown profile: {profile}")
 
-        collection_key = self._collection_key(profile, collection)
-        self.collection_manager.create(collection_key)
+        collection_key = self._ensure_backend_collection(profile, collection)
         self._ensure_collection_record(profile, collection)
 
         source_key = source + ":" + sha256(text.encode()).hexdigest()
@@ -1392,11 +1728,13 @@ class IndexService:
                 raise KeyError(entity_id)
             self.users[entity_id].roles.add(target_role)
             self._sync_idam_user(entity_id)
+            self._refresh_auth_api_keys_for_user(entity_id)
         elif entity_type == "group":
             if entity_id not in self.groups:
                 raise KeyError(entity_id)
             self.groups[entity_id].roles.add(target_role)
             self._sync_idam_group(entity_id)
+            self._refresh_auth_api_keys_for_group(entity_id)
         else:
             raise ValueError(f"Unsupported RBAC entity type: {entity_type}")
         binding = {"entity_type": entity_type, "entity_id": entity_id, "role": target_role}
@@ -1434,11 +1772,13 @@ class IndexService:
                 raise KeyError(entity_id)
             self.users[entity_id].roles.discard(target_role)
             self._sync_idam_user(entity_id)
+            self._refresh_auth_api_keys_for_user(entity_id)
         elif entity_type == "group":
             if entity_id not in self.groups:
                 raise KeyError(entity_id)
             self.groups[entity_id].roles.discard(target_role)
             self._sync_idam_group(entity_id)
+            self._refresh_auth_api_keys_for_group(entity_id)
         else:
             raise ValueError(f"Unsupported RBAC entity type: {entity_type}")
         binding = {"entity_type": entity_type, "entity_id": entity_id, "role": target_role}
@@ -1540,13 +1880,33 @@ class IndexService:
         """Execute search."""
         # Covers: FR-14
         planned = self.search_plan(profile=profile, query=query, top_k=top_k, filters=filters)
-        return self.search_engine.search(
-            collection=self._collection_key(profile, collection),
-            query=query,
-            top_k=int(planned.get("top_k", top_k)),
-            filters=planned.get("filters", filters),
-            score_threshold=score_threshold,
+        if SearchRequest is None:
+            raise RuntimeError("cloud_dog_vdb SearchRequest is required")
+        response = self._run_async(
+                self.vdb.search(
+                self._backend_collection_name(profile, collection, provider_id=self._profile_provider(profile)),
+                SearchRequest(
+                    query_text=query,
+                    top_k=int(planned.get("top_k", top_k)),
+                    filters=dict(planned.get("filters", filters or {})),
+                    score_threshold=score_threshold,
+                ),
+                provider_id=self._profile_provider(profile),
+            )
         )
+        output: list[dict[str, Any]] = []
+        for item in response.results:
+            payload = dict(item.payload)
+            output.append(
+                {
+                    "doc_id": str(item.id),
+                    "chunk_id": str(item.id),
+                    "text": str(payload.get("content", "")),
+                    "score": float(item.score),
+                    "metadata": dict(payload.get("metadata", {})),
+                }
+            )
+        return output
 
     def retrieve(self, doc_id: str) -> dict[str, Any]:
         """Execute retrieve."""
@@ -1562,13 +1922,29 @@ class IndexService:
 
     def delete_by_id(self, profile: str, collection: str, doc_id: str) -> bool:
         """Execute delete by id."""
-        deleted = self.vdb.delete_by_doc_id(self._collection_key(profile, collection), doc_id)
+        deleted = bool(
+            self._run_async(
+                self.vdb.delete_record(
+                    self._backend_collection_name(profile, collection, provider_id=self._profile_provider(profile)),
+                    doc_id,
+                    provider_id=self._profile_provider(profile),
+                )
+            )
+        )
         self.documents.pop(doc_id, None)
         return deleted
 
     def delete_by_filter(self, profile: str, collection: str, filters: dict[str, Any]) -> int:
         """Execute delete by filter."""
-        deleted = self.vdb.delete_by_filter(self._collection_key(profile, collection), filters)
+        deleted = int(
+            self._run_async(
+                self.vdb.delete_by_filter(
+                    self._backend_collection_name(profile, collection, provider_id=self._profile_provider(profile)),
+                    filters,
+                    provider_id=self._profile_provider(profile),
+                )
+            )
+        )
         if deleted:
             keep: dict[str, DocumentRecord] = {}
             for key, value in self.documents.items():
@@ -1597,7 +1973,14 @@ class IndexService:
 
     def reindex_run(self, profile: str, collection: str) -> dict[str, int]:
         """Execute reindex run."""
-        doc_count = len([d for d in self.documents.values() if d.profile == profile and d.collection == collection])
+        doc_count = int(
+            self._run_async(
+                self.vdb.count_documents(
+                    self._backend_collection_name(profile, collection, provider_id=self._profile_provider(profile)),
+                    provider_id=self._profile_provider(profile),
+                )
+            )
+        )
         return {"documents": doc_count}
 
     def job_list(self, limit: int | None = None) -> list[JobRecord]:
@@ -1630,17 +2013,40 @@ class IndexService:
         """Execute queue status."""
         return self.queue.queue_status()
 
-    def backend_health_check(self) -> dict[str, str]:
+    def backend_health_check(self, provider_id: str | None = None) -> dict[str, str]:
         """Execute backend health check."""
-        health = dict(self.vdb.health_check())
-        health.setdefault("provider", self._default_backend)
-        return health
+        resolved_provider = (provider_id or self._default_backend).strip().lower()
+        healthy = bool(self._run_async(self.vdb.health_check(provider_id=resolved_provider)))
+        return {
+            "status": "ok" if healthy else "error",
+            "provider": resolved_provider,
+            "backend": resolved_provider,
+        }
 
     def embedding_health_check(self) -> dict[str, str | int]:
         """Execute embedding health check."""
-        vectors = self.embedding_adapter.embed(["health check"])
-        dims = len(vectors[0]) if vectors else 0
-        return {"status": "ok", "dimensions": dims}
+        if not self._live_backend_mode:
+            vectors = self.embedding_adapter.embed(["health check"])
+            dims = len(vectors[0]) if vectors else 0
+            return {
+                "status": "ok" if dims > 0 else "error",
+                "provider": self._llm_provider,
+                "model": self._llm_model,
+                "dimensions": dims,
+            }
+        if self._llm_client is None:
+            return {"status": "error", "provider": self._llm_provider, "model": self._llm_model, "dimensions": 0}
+        try:
+            healthy = bool(self._run_async(asyncio.wait_for(self._llm_client.health(), timeout=15.0)))
+            dims = self._embedding_dimension() if healthy else 0
+            return {
+                "status": "ok" if healthy else "error",
+                "provider": self._llm_provider,
+                "model": self._llm_model,
+                "dimensions": dims,
+            }
+        except Exception:
+            return {"status": "error", "provider": self._llm_provider, "model": self._llm_model, "dimensions": 0}
 
     def _run_pipeline_preview(
         self,
@@ -2033,9 +2439,15 @@ def _required_env(*keys: str) -> str:
     """Read a required setting from cloud_dog_config using first non-empty key."""
     from cloud_dog_config import get_config  # type: ignore
     for key in keys:
+        direct = str(os.environ.get(key, "")).strip()
+        if direct:
+            return direct
         # Try dotted config path first, then env-var-to-path conversion.
         for path in (key, _env_key_to_config_path(key)):
-            value = str(get_config(path) or "").strip()
+            try:
+                value = str(get_config(path) or "").strip()
+            except Exception:
+                value = ""
             if value:
                 return value
     raise RuntimeError(f"Missing required configuration: {', '.join(keys)}")

@@ -211,6 +211,35 @@ def test_audit_logger_admin_and_security_helpers(tmp_path: Path) -> None:
     assert '"user_agent": "pytest"' in auth_row
 
 
+def test_audit_logger_admin_helper_falls_back_when_privileged_api_missing(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    out = tmp_path / "audit-admin-fallback.jsonl"
+    logger = AuditLogger(path=out, server_id="ut-admin-fallback")
+    captured: dict[str, object] = {}
+
+    def capture_log_crud(**kwargs: object) -> None:
+        captured.update(kwargs)
+
+    monkeypatch.setattr(logger._platform, "log_privileged", None, raising=False)
+    monkeypatch.setattr(logger._platform, "log_crud", capture_log_crud)
+
+    logger.log_admin_action(
+        actor="admin-user",
+        roles={"admin"},
+        action="create",
+        target_type="profile",
+        target_id="alpha",
+        new_value={"enabled": True},
+    )
+
+    assert captured["action"] == "create"
+    assert captured["outcome"] == "success"
+    assert captured["server_id"] == "ut-admin-fallback"
+    assert captured["new_value"] == {"enabled": True}
+
+
 def test_audit_logger_security_helper_supports_legacy_actor_signature(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -285,6 +314,55 @@ def test_audit_logger_security_helper_supports_legacy_target_signature(
     assert target.id == "/a2a/health"
 
 
+def test_audit_logger_build_event_supports_legacy_audit_event_signature(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    out = tmp_path / "audit-legacy-event.jsonl"
+    logger = AuditLogger(path=out, server_id="ut-legacy-event")
+
+    class LegacyAuditEvent:
+        def __init__(
+            self,
+            *,
+            event_type: str,
+            actor: object,
+            action: str,
+            outcome: str,
+            correlation_id: str,
+            service: str,
+            timestamp: str = "",
+            target: object | None = None,
+            details: dict[str, object] | None = None,
+            duration_ms: int | None = None,
+        ) -> None:
+            self.event_type = event_type
+            self.actor = actor
+            self.action = action
+            self.outcome = outcome
+            self.correlation_id = correlation_id
+            self.service = service
+            self.timestamp = timestamp
+            self.target = target
+            self.details = details
+            self.duration_ms = duration_ms
+
+    monkeypatch.setattr("index_tools.audit.logger.AuditEvent", LegacyAuditEvent)
+
+    event = logger.build_event(
+        event_type="tool.call",
+        actor=Actor(type="user", id="tester"),
+        action="execute",
+        outcome="success",
+        target=Target(type="collection", id="c"),
+        details={"password": "secret"},
+    )
+
+    assert isinstance(event, LegacyAuditEvent)
+    assert event.service == "index-retriever-mcp-server"
+    assert event.details == {"password": "[REDACTED]"}
+
+
 def test_rbac_backend_name_and_matching(monkeypatch: pytest.MonkeyPatch) -> None:
     auth = RbacAuthoriser(role_actions={"writer": ["ingest_*"]}, default_deny=True)
     subject = Subject(user_id="u1", roles={"writer"})
@@ -326,3 +404,43 @@ def test_handlers_and_config_paths() -> None:
     assert manager.list() == ["alpha"]
     manager.delete("alpha")
     assert manager.list() == []
+
+
+def test_db_runtime_serialises_sqlite_migrations_and_retries_existing_table(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from index_tools.db import runtime as db_runtime_module
+
+    calls: list[str] = []
+    lock_paths: list[str] = []
+
+    class DummyLock:
+        def __init__(self, path: str) -> None:
+            lock_paths.append(path)
+
+        def __enter__(self) -> None:
+            return None
+
+        def __exit__(self, exc_type: object, exc: object, tb: object) -> bool:
+            return False
+
+    class DummyRunner:
+        def upgrade(self, revision: str) -> None:
+            calls.append(revision)
+            if len(calls) == 1:
+                raise OperationalError(
+                    "CREATE TABLE index_platform_db_state",
+                    {},
+                    Exception("table index_platform_db_state already exists"),
+                )
+
+    monkeypatch.setattr(db_runtime_module, "FileLock", DummyLock)
+
+    runner = DummyRunner()
+    sqlite_path = tmp_path / "runtime.db"
+
+    db_runtime_module._run_migrations(runner, sqlite_path)
+
+    assert calls == ["head", "head"]
+    assert lock_paths == [f"{sqlite_path}.migrate.lock"]

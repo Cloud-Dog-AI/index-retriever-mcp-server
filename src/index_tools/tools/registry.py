@@ -22,6 +22,8 @@ from pydantic import BaseModel
 from index_tools.tools.definitions import (
     ExtractOnlyOutput,
     GenericToolInput,
+    BackendHealthOutput,
+    EmbeddingHealthOutput,
     GenericToolOutput,
     IngestOutput,
     IngestPreviewInput,
@@ -142,8 +144,8 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="delete_by_filter", input_model=GenericToolInput, output_model=GenericToolOutput),
         ToolSpec(name="retention_run", input_model=GenericToolInput, output_model=GenericToolOutput),
         ToolSpec(name="reindex_run", input_model=GenericToolInput, output_model=GenericToolOutput),
-        ToolSpec(name="backend_health_check", input_model=GenericToolInput, output_model=GenericToolOutput),
-        ToolSpec(name="embedding_health_check", input_model=GenericToolInput, output_model=GenericToolOutput),
+        ToolSpec(name="backend_health_check", input_model=GenericToolInput, output_model=BackendHealthOutput),
+        ToolSpec(name="embedding_health_check", input_model=GenericToolInput, output_model=EmbeddingHealthOutput),
     ]
     for spec in specs:
         registry.register(spec)

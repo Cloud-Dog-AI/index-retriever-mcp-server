@@ -73,13 +73,13 @@ def test_job_management_tools_contract(service: IndexService) -> None:
     assert cancelled_job.get("job_id") == job_id
     assert str(cancelled_job.get("status", "")).lower() == "cancelled"
 
-    original_embed = service.embedding_adapter.embed
+    original_upsert = service.vdb.upsert_records
 
-    def _fail_embed(_: list[str], dimensions: int = 8) -> list[list[float]]:
-        _ = dimensions
+    async def _fail_upsert(*args, **kwargs):
+        _ = args, kwargs
         raise RuntimeError("forced embed failure for IT1.20 retry path")
 
-    service.embedding_adapter.embed = _fail_embed
+    service.vdb.upsert_records = _fail_upsert
     with pytest.raises(RuntimeError, match="forced embed failure"):
         _ = service.ingest_text(
             profile="default",
@@ -88,7 +88,7 @@ def test_job_management_tools_contract(service: IndexService) -> None:
             source="file://it1_20/jobs-failed.txt",
             actor="integration",
         )
-    service.embedding_adapter.embed = original_embed
+    service.vdb.upsert_records = original_upsert
 
     failed_list = _call_tool(client, "job_list", {"status": "failed"}, "valid-admin-token")
     failed_jobs = failed_list.get("jobs")

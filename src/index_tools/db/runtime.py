@@ -16,8 +16,8 @@
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from threading import Lock
 from typing import Any
@@ -30,8 +30,10 @@ from cloud_dog_db import (
     probe_database,
 )
 from cloud_dog_db.migrations.runner import MigrationConfig
+from filelock import FileLock
 from sqlalchemy import Engine
 from sqlalchemy.engine import make_url
+from sqlalchemy.exc import OperationalError
 
 
 @dataclass(slots=True)
@@ -59,9 +61,16 @@ def _default_sqlite_path() -> str:
 
 
 def _env_value(*names: str) -> str | None:
-    from cloud_dog_config import get_config  # type: ignore
     for name in names:
-        cfg_val = get_config(name)
+        env_value = str(os.environ.get(name, "")).strip()
+        if env_value:
+            return env_value
+        try:
+            from cloud_dog_config import get_config  # type: ignore
+
+            cfg_val = get_config(name)
+        except Exception:
+            cfg_val = None
         if cfg_val is not None:
             value = str(cfg_val).strip()
             if value:
@@ -133,6 +142,29 @@ def _migration_script_location() -> str:
     return str((_project_root() / "database" / "migrations" / "cloud_dog_db").resolve())
 
 
+def _is_existing_table_error(exc: OperationalError) -> bool:
+    message = str(exc).lower()
+    return "table" in message and "already exists" in message
+
+
+def _run_migrations(runner: MigrationRunner, sqlite_path: Path | None) -> None:
+    def upgrade_with_retry() -> None:
+        try:
+            runner.upgrade("head")
+        except OperationalError as exc:
+            if sqlite_path is None or not _is_existing_table_error(exc):
+                raise
+            runner.upgrade("head")
+
+    if sqlite_path is None:
+        upgrade_with_retry()
+        return
+
+    lock = FileLock(f"{sqlite_path}.migrate.lock")
+    with lock:
+        upgrade_with_retry()
+
+
 def initialise_database(*, force_reinit: bool = False) -> PlatformDatabaseRuntime:
     """Initialise engine/session/migrations through cloud_dog_db."""
     global _RUNTIME
@@ -153,7 +185,7 @@ def initialise_database(*, force_reinit: bool = False) -> PlatformDatabaseRuntim
                 sqlalchemy_url=settings.to_sync_url(),
             )
         )
-        runner.upgrade("head")
+        _run_migrations(runner, sqlite_path)
 
         _RUNTIME = PlatformDatabaseRuntime(
             settings=settings,

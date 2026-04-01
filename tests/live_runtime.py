@@ -357,65 +357,56 @@ def resolve_live_runtime_config() -> LiveRuntimeConfig:
     queue_db_url = _env("INDEX_RETRIEVER_DB_URL", "CLOUD_DOG__INDEX__DB__URL", "DB_URL")
     default_backend = _env("CLOUD_DOG__INDEX__VDB__PROVIDER", default="chroma").strip().lower() or "chroma"
 
-    if (
-        not embedding_base_url
-        or not chroma_url
-        or not qdrant_url
-        or not queue_db_url
-        or (chroma_url and not chroma_auth_token)
-        or (qdrant_url and not qdrant_api_key)
-        or _as_bool(_env("INDEX_RETRIEVER_LIVE_USE_VAULT_FALLBACK"), default=False)
-    ):
-        vault = load_vault_dev_config(required=False)
-        if vault:
-            ollama = _nested_dict(vault, "models", "ollama_nomic_embed_text_llm1")
-            chroma = _nested_dict(vault, "vdbs", "chroma")
-            qdrant = _nested_dict(vault, "vdbs", "qdrant")
-            opensearch = _nested_dict(vault, "vdbs", "opensearch")
-            pgvector = _nested_dict(vault, "vdbs", "pgvector")
-            weaviate = _nested_dict(vault, "vdbs", "weaviate")
-            infinity = _nested_dict(vault, "vdbs", "infinity")
-            postgres = _nested_dict(vault, "databases", "providers", "postgres")
+    vault = load_vault_dev_config(required=False)
+    if vault:
+        ollama = _nested_dict(vault, "models", "ollama_nomic_embed_text_llm1")
+        chroma = _nested_dict(vault, "vdbs", "chroma")
+        qdrant = _nested_dict(vault, "vdbs", "qdrant")
+        opensearch = _nested_dict(vault, "vdbs", "opensearch")
+        pgvector = _nested_dict(vault, "vdbs", "pgvector")
+        weaviate = _nested_dict(vault, "vdbs", "weaviate")
+        infinity = _nested_dict(vault, "vdbs", "infinity")
+        postgres = _nested_dict(vault, "databases", "providers", "postgres")
 
-            if not embedding_base_url:
-                embedding_base_url = str(ollama.get("base_url", ""))
-            if not embedding_model:
-                embedding_model = str(ollama.get("model", "nomic-embed-text")) or "nomic-embed-text"
-            if not embedding_api_key:
-                embedding_api_key = str(ollama.get("api_key", ""))
+        if not embedding_base_url:
+            embedding_base_url = str(ollama.get("base_url", ""))
+        if not embedding_model:
+            embedding_model = str(ollama.get("model", "nomic-embed-text")) or "nomic-embed-text"
+        if not embedding_api_key:
+            embedding_api_key = str(ollama.get("api_key", ""))
 
-            if not chroma_url:
-                chroma_url = str(chroma.get("base_url", ""))
-            if not chroma_auth_token:
-                chroma_auth_token = str(chroma.get("auth_token", ""))
+        if not chroma_url:
+            chroma_url = str(chroma.get("base_url", ""))
+        if not chroma_auth_token:
+            chroma_auth_token = str(chroma.get("auth_token", ""))
 
-            if not qdrant_url:
-                qdrant_url = _qdrant_url_from_vault(qdrant)
-            if not qdrant_api_key:
-                qdrant_api_key = str(qdrant.get("api_key", ""))
+        if not qdrant_url:
+            qdrant_url = _qdrant_url_from_vault(qdrant)
+        if not qdrant_api_key:
+            qdrant_api_key = str(qdrant.get("api_key", ""))
 
-            if not opensearch_url:
-                opensearch_url = _opensearch_url_from_vault(opensearch)
-            if not opensearch_username:
-                opensearch_username = str(opensearch.get("username", ""))
-            if not opensearch_password:
-                opensearch_password = str(opensearch.get("password", ""))
+        if not opensearch_url:
+            opensearch_url = _opensearch_url_from_vault(opensearch)
+        if not opensearch_username:
+            opensearch_username = str(opensearch.get("username", ""))
+        if not opensearch_password:
+            opensearch_password = str(opensearch.get("password", ""))
 
-            if not pgvector_database_uri:
-                pgvector_database_uri = _pgvector_uri_from_vault(pgvector)
+        if not pgvector_database_uri:
+            pgvector_database_uri = _pgvector_uri_from_vault(pgvector)
 
-            if not weaviate_url:
-                weaviate_url = _weaviate_url_from_vault(weaviate)
-            if not weaviate_api_key:
-                weaviate_api_key = str(weaviate.get("api_key", ""))
+        if not weaviate_url:
+            weaviate_url = _weaviate_url_from_vault(weaviate)
+        if not weaviate_api_key:
+            weaviate_api_key = str(weaviate.get("api_key", ""))
 
-            if not infinity_url:
-                infinity_url = _infinity_url_from_vault(infinity)
-            if not infinity_api_key:
-                infinity_api_key = str(infinity.get("api_key", ""))
+        if not infinity_url:
+            infinity_url = _infinity_url_from_vault(infinity)
+        if not infinity_api_key:
+            infinity_api_key = str(infinity.get("api_key", ""))
 
-            if not queue_db_url:
-                queue_db_url = _postgres_url_from_vault(postgres)
+        if not queue_db_url:
+            queue_db_url = _postgres_url_from_vault(postgres)
 
     if not queue_db_url:
         queue_db_url = "sqlite:///data/index-retriever-live.db"

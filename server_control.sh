@@ -41,16 +41,6 @@ if [[ "${1:-}" == "--env" ]]; then
     exit 1
   fi
   export CLOUD_DOG_ENV_FILES="${ENV_FILE}"
-  # Safe key=value loader: exports plain values, skips ${vault.*} expressions
-  # that are resolved by cloud_dog_config at Python runtime.
-  while IFS= read -r _line || [[ -n "$_line" ]]; do
-    _line="${_line%%#*}"
-    _line="${_line#"${_line%%[![:space:]]*}"}"
-    [[ -z "$_line" || "$_line" != *=* ]] && continue
-    _key="${_line%%=*}"; _val="${_line#*=}"
-    [[ "$_val" == *'${vault.'* ]] && continue
-    export "${_key}=${_val}"
-  done < "${ENV_FILE}"
   shift 2
 fi
 

@@ -16,10 +16,16 @@ from index_tools.tools.registry import build_default_tool_registry
 
 
 def test_ut_40_tool_registry_contract_fields() -> None:
-    # Covers: FR-P002
+    # Covers: FR-P002, FR-16A
     registry = build_default_tool_registry()
     tools = registry.list_tools()
     assert tools
+    assert len(tools) == 60
+
+    names = [str(tool["name"]) for tool in tools]
+    assert len(names) == len(set(names))
+    assert names[0] == "profiles_list"
+    assert names[-1] == "embedding_health_check"
 
     for tool in tools:
         assert isinstance(tool.get("name"), str)

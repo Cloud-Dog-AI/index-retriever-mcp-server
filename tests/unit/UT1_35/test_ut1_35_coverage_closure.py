@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import runpy
 import sys
 import os
@@ -201,9 +202,10 @@ def test_mcp_health_and_main_module_paths(monkeypatch: pytest.MonkeyPatch, servi
         route.endpoint
         for route in app.router.routes
         if getattr(route, "path", "") == "/health"
-        and getattr(getattr(route, "endpoint", None), "__qualname__", "").endswith("build_mcp_app.<locals>.health")
     )
-    assert local_health() == {"status": "ok"}
+    health_payload = asyncio.run(local_health())
+    assert health_payload["status"] == "ok"
+    assert health_payload["application"] == "index-retriever-mcp-server"
 
     captured: dict[str, object] = {}
     fake_uvicorn = SimpleNamespace(

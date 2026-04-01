@@ -18,12 +18,17 @@ import os
 import json
 import secrets
 import time
+import socket
 from collections.abc import Callable
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
+import resource
+import shutil
 from typing import Any
 
 from cloud_dog_api_kit import LifecycleHooks, create_app, create_health_router  # type: ignore
+from cloud_dog_api_kit.a2a.card import create_a2a_card_router, A2ASkill
 import cloud_dog_idam  # type: ignore
 from cloud_dog_logging import setup_logging  # type: ignore
 from cloud_dog_logging.correlation import get_correlation_id as get_logging_correlation_id
@@ -31,11 +36,16 @@ from cloud_dog_logging.correlation import set_correlation_id as set_logging_corr
 from fastapi import File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
+try:
+    import psutil
+except ImportError:  # pragma: no cover - optional runtime dependency
+    psutil = None
 
 from index_server.admin_ui import admin_ui_script, admin_ui_styles, profiles_page, security_page
-from index_server.auth.middleware import AuthMiddleware
+from index_server.auth.middleware import AuthMiddleware, AuthResult
 from index_server.mcp_server import build_registry, execute_tool
 from index_server.runtime_config import resolve_server_binding
+from index_tools.config.loader import load_runtime_config, runtime_env_files
 from index_tools.db import (
     PlatformDatabaseRuntime,
     database_health,
@@ -47,7 +57,8 @@ from index_tools.tools.service import IndexService
 _CANONICAL_API_BASE_PATH = "/app/v1"
 _LEGACY_API_BASE_PATH = "/api/v1"
 _CANONICAL_A2A_BASE_PATH = "/a2a"
-_SPA_RESERVED_PREFIXES = (
+_BOOT_TIME = time.time()
+_SPA_RESERVED_SEGMENTS = {
     "api",
     "app",
     "a2a",
@@ -58,17 +69,61 @@ _SPA_RESERVED_PREFIXES = (
     "runtime-config.js",
     "docs",
     "openapi.json",
-)
+}
+
+
+def _log_path(name: str) -> Path:
+    """Resolve a runtime log path."""
+    return Path("logs") / name
+
+
+def _parse_log_timestamp(raw: str | None) -> datetime | None:
+    """Parse supported timestamp formats from structured logs."""
+    if not raw:
+        return None
+    text = str(raw).strip()
+    if not text:
+        return None
+    if text.endswith("Z"):
+        text = f"{text[:-1]}+00:00"
+    try:
+        return datetime.fromisoformat(text)
+    except ValueError:
+        return None
+
+
+def _read_jsonl_records(path: Path, limit: int = 200) -> list[dict[str, Any]]:
+    """Read the tail of a JSONL log file as records."""
+    if not path.exists():
+        return []
+    try:
+        lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+    except OSError:
+        return []
+    records: list[dict[str, Any]] = []
+    for line in lines[-limit:]:
+        text = line.strip()
+        if not text.startswith("{"):
+            continue
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict):
+            records.append(payload)
+    return records
 
 
 def _api_audit_path() -> str:
     """Resolve API audit path from configured environment keys."""
-    return (
-        os.getenv("CLOUD_DOG__INDEX__API_AUDIT_PATH", "").strip()
-        or os.getenv("CLOUD_DOG__INDEX__STORAGE__AUDIT__PATH", "").strip()
-        or os.getenv("AUDIT_LOG_PATH", "").strip()
+    from cloud_dog_config import get_config  # type: ignore
+
+    return str(
+        get_config("index.api_audit_path")
+        or get_config("index.storage.audit.path")
+        or get_config("audit.log_path")
         or "logs/index-retriever-audit-api.jsonl"
-    )
+    ).strip()
 
 
 def _ui_dist_dir() -> Path:
@@ -92,32 +147,52 @@ def _runtime_config_payload() -> dict[str, str]:
     return {
         "ENV": str(get_config("service.environment") or "dev"),
         "API_BASE_URL": str(get_config("index.ui.api_base_url") or "").strip() or "${window.location.origin}",
+        "MCP_BASE_URL": str(get_config("index.ui.mcp_base_url") or "").strip(),
+        "A2A_BASE_URL": str(get_config("index.ui.a2a_base_url") or "").strip(),
         "AUTH_MODE": str(get_config("index.ui.auth_mode") or "cookie"),
         "APP_VERSION": str(get_config("index.ui.app_version") or "dev"),
+        "BUILD_DATE": str(get_config("index.ui.build_date") or "").strip(),
+        "GIT_COMMIT": str(get_config("index.ui.git_commit") or "").strip(),
         "DEFAULT_PROFILE": str(get_config("index.ui.default_profile") or "default"),
         "DEFAULT_COLLECTION": str(get_config("index.ui.default_collection") or "w12_documents"),
+        "SESSION_TIMEOUT_MINUTES": str(get_config("index.ui.session_timeout_minutes") or "30"),
     }
 
 
 def _runtime_config_response() -> Response:
     """Render the runtime config bootstrap script."""
     payload = _runtime_config_payload()
-    api_base_value = payload["API_BASE_URL"]
-    uses_js_expr = api_base_value.startswith("${")
-    runtime = {
-        "ENV": payload["ENV"],
-        "API_BASE_URL": "" if uses_js_expr else api_base_value,
-        "AUTH_MODE": payload["AUTH_MODE"],
-        "APP_VERSION": payload["APP_VERSION"],
-        "DEFAULT_PROFILE": payload["DEFAULT_PROFILE"],
-        "DEFAULT_COLLECTION": payload["DEFAULT_COLLECTION"],
-    }
-    lines = [f"window.__RUNTIME_CONFIG__ = {json.dumps(runtime)};"]
-    if uses_js_expr:
-        lines.append(
-            f'window.__RUNTIME_CONFIG__["API_BASE_URL"] = `{api_base_value}`;'
-        )
-    return Response(content="\n".join(lines), media_type="application/javascript")
+    env = payload["ENV"]
+    api_base_url = payload["API_BASE_URL"]
+    mcp_base_url = payload["MCP_BASE_URL"]
+    a2a_base_url = payload["A2A_BASE_URL"]
+    auth_mode = payload["AUTH_MODE"]
+    app_version = payload["APP_VERSION"]
+    build_date = payload["BUILD_DATE"]
+    git_commit = payload["GIT_COMMIT"]
+    default_profile = payload["DEFAULT_PROFILE"]
+    default_collection = payload["DEFAULT_COLLECTION"]
+    session_timeout_minutes = payload["SESSION_TIMEOUT_MINUTES"]
+    body = (
+        "const __origin = window.location.origin;\n"
+        f"const __apiBase = {api_base_url!r} === '${{window.location.origin}}' ? __origin : {api_base_url!r};\n"
+        f"const __mcpBase = {mcp_base_url!r} || `${{__origin}}/mcp`;\n"
+        f"const __a2aBase = {a2a_base_url!r} || `${{__origin}}/a2a`;\n"
+        "window.__RUNTIME_CONFIG__ = {\n"
+        f'  "ENV": "{env}",\n'
+        '  "API_BASE_URL": __apiBase,\n'
+        '  "MCP_BASE_URL": __mcpBase,\n'
+        '  "A2A_BASE_URL": __a2aBase,\n'
+        f'  "AUTH_MODE": "{auth_mode}",\n'
+        f'  "APP_VERSION": "{app_version}",\n'
+        f'  "BUILD_DATE": "{build_date}",\n'
+        f'  "GIT_COMMIT": "{git_commit}",\n'
+        f'  "DEFAULT_PROFILE": "{default_profile}",\n'
+        f'  "DEFAULT_COLLECTION": "{default_collection}",\n'
+        f'  "SESSION_TIMEOUT_MINUTES": {session_timeout_minutes}\n'
+        "};\n"
+    )
+    return Response(content=body, media_type="application/javascript")
 
 
 def _spa_not_built_response() -> HTMLResponse:
@@ -127,8 +202,9 @@ def _spa_not_built_response() -> HTMLResponse:
 
 def _maybe_disable_timeout_middleware(app: Any) -> Any:
     """Avoid TestClient deadlocks from platform timeout middleware in local tiers."""
-    in_pytest = os.getenv("PYTEST_CURRENT_TEST") is not None
-    if not in_pytest and os.getenv("TEST_ENV_TIER", "").upper() not in {"UT", "ST"}:
+    process_env = os.environ
+    in_pytest = process_env.get("PYTEST_CURRENT_TEST") is not None
+    if not in_pytest and process_env.get("TEST_ENV_TIER", "").upper() not in {"UT", "ST"}:
         return app
     user_middleware = getattr(app, "user_middleware", None)
     build_stack = getattr(app, "build_middleware_stack", None)
@@ -200,6 +276,124 @@ def build_health_payload(
     }
 
 
+def build_status_payload(
+    service: Any,
+    *,
+    active_connections: int = 0,
+    correlation_id: str | None = None,
+) -> dict[str, Any]:
+    """Build the richer runtime status payload used by the SPA."""
+    profiles = service.profiles_list()
+    collection_rows: list[dict[str, Any]] = []
+    for profile in profiles:
+        for collection in service.collections_list(profile):
+            try:
+                collection_rows.append(service.collection_get(profile, collection))
+            except Exception:
+                continue
+    document_count = 0
+    for row in collection_rows:
+        metadata = row.get("metadata") if isinstance(row, dict) else {}
+        if isinstance(metadata, dict):
+            try:
+                document_count += int(metadata.get("doc_count", 0) or 0)
+            except (TypeError, ValueError):
+                continue
+
+    uptime_seconds = max(0, int(time.time() - _BOOT_TIME))
+    disk_usage = shutil.disk_usage(Path.cwd())
+    disk_percent = round((disk_usage.used / disk_usage.total) * 100, 2) if disk_usage.total else 0.0
+    memory_mb = 0.0
+    memory_percent = 0.0
+    cpu_percent = 0.0
+    if psutil is not None:
+        process = psutil.Process()
+        memory_info = process.memory_info()
+        memory_mb = round(memory_info.rss / (1024 * 1024), 2)
+        memory_percent = round(process.memory_percent(), 2)
+        cpu_percent = round(process.cpu_percent(interval=0.0), 2)
+    else:
+        usage = resource.getrusage(resource.RUSAGE_SELF)
+        rss_kb = float(usage.ru_maxrss)
+        memory_mb = round(rss_kb / 1024, 2)
+        try:
+            with open("/proc/meminfo", "r", encoding="utf-8") as handle:
+                meminfo: dict[str, float] = {}
+                for line in handle:
+                    key, _, value = line.partition(":")
+                    amount = value.strip().split(" ", 1)[0]
+                    meminfo[key] = float(amount)
+            total_kb = meminfo.get("MemTotal", 0.0)
+            if total_kb > 0:
+                memory_percent = round((rss_kb / total_kb) * 100, 2)
+        except OSError:
+            memory_percent = 0.0
+        try:
+            load_avg = os.getloadavg()[0]
+            cpu_count = max(os.cpu_count() or 1, 1)
+            cpu_percent = round(min(max(load_avg / cpu_count, 0.0) * 100, 100.0), 2)
+        except OSError:
+            cpu_percent = 0.0
+    return {
+        "status": "ok",
+        "correlation_id": correlation_id or get_logging_correlation_id(),
+        "uptime_seconds": uptime_seconds,
+        "memory_mb": memory_mb,
+        "memory_percent": memory_percent,
+        "cpu_percent": cpu_percent,
+        "disk_percent": disk_percent,
+        "active_connections": active_connections,
+        "index_count": len(profiles),
+        "document_count": document_count,
+        "collection_count": len(collection_rows),
+        "host": socket.gethostname(),
+    }
+
+
+def build_log_payload(
+    *,
+    levels: list[str] | None = None,
+    phase: str | None = None,
+    limit: int = 200,
+) -> dict[str, Any]:
+    """Build a structured log payload for the UI review checks."""
+    requested_levels = {item.upper() for item in (levels or []) if item}
+    startup_window = 120
+    records: list[dict[str, Any]] = []
+
+    for payload in _read_jsonl_records(_log_path("api.log"), limit=limit):
+        timestamp = _parse_log_timestamp(payload.get("timestamp"))
+        level = str(payload.get("level", "INFO")).upper()
+        logger_name = str(payload.get("logger", "")).strip() or "runtime"
+        message = str(payload.get("message", "")).strip()
+        entry_phase = "runtime"
+        if timestamp is not None:
+            if (timestamp.timestamp() - _BOOT_TIME) <= startup_window:
+                entry_phase = "startup"
+        source = None
+        extra = payload.get("extra")
+        if isinstance(extra, dict):
+            source = extra.get("source")
+        if not source:
+            source = payload.get("logger")
+        record = {
+            "timestamp": payload.get("timestamp"),
+            "level": level,
+            "logger": logger_name,
+            "message": message,
+            "correlation_id": payload.get("correlation_id"),
+            "source": source or "runtime",
+            "phase": entry_phase,
+        }
+        if requested_levels and level not in requested_levels:
+            continue
+        if phase and record["phase"] != phase:
+            continue
+        records.append(record)
+
+    return {"logs": records[-limit:], "count": len(records[-limit:])}
+
+
 def handle_search(
     service: IndexService,
     auth: AuthMiddleware,
@@ -244,7 +438,7 @@ def _init_platform_logging() -> None:
     """Initialise cloud_dog_logging so structured JSON logging, correlation IDs and rotation are active."""
     from cloud_dog_config import load_config
     import socket
-    config = load_config(unresolved_policy="warn")
+    config = load_config(env_files=runtime_env_files(), unresolved_policy="strict")
     log_config = {
         "service_name": str(config.get("service.name", "index-retriever-mcp-server")),
         "service_instance": str(config.get("service.server_id", "")).strip() or socket.gethostname(),
@@ -264,6 +458,7 @@ def build_api_app(service: IndexService | None = None) -> Any:
     """Execute build api app."""
     # Covers: FR-01, FR-01A, FR-17
     _init_platform_logging()
+    runtime_cfg = load_runtime_config(env_files=runtime_env_files(), vault_enabled=True, unresolved_policy="strict")
     if cloud_dog_idam is None:  # pragma: no cover - platform package is mandatory
         raise RuntimeError("cloud_dog_idam is required")
     active_service = service or IndexService(audit_path=_api_audit_path())
@@ -279,8 +474,8 @@ def build_api_app(service: IndexService | None = None) -> Any:
 
     # In-memory token session store (no itsdangerous dependency).
     _sessions: dict[str, dict] = {}
-    _admin_username = os.environ.get("CLOUD_DOG_WEB_LOGIN_USERNAME", "admin")
-    _admin_password = os.environ.get("CLOUD_DOG_WEB_LOGIN_PASSWORD", "")
+    _admin_username = runtime_cfg.web_login.username.strip() or "admin"
+    _admin_password = runtime_cfg.web_login.password
     _cookie_name = "index_web_session"
 
     def _get_session(request: Request) -> dict | None:
@@ -374,6 +569,24 @@ def build_api_app(service: IndexService | None = None) -> Any:
     def _auth_or_raise(request: Request, headers: dict[str, str]) -> Any:
         """Internal helper to auth or raise."""
         _sync_logging_correlation(request)
+        has_explicit_auth = bool(headers.get("x-api-key") or headers.get("authorization"))
+        if not has_explicit_auth:
+            session = _get_session(request)
+            if session is not None:
+                identity = AuthResult(
+                    user_id=str(session.get("user", session.get("user_id", "admin"))),
+                    roles={str(session.get("role", "admin"))},
+                    token_type="cookie",
+                )
+                _log_auth_event(
+                    request,
+                    actor=identity.user_id,
+                    outcome="success",
+                    action="authenticate",
+                    roles=identity.roles,
+                    auth_mechanism="cookie",
+                )
+                return identity
         try:
             identity = auth.authenticate(headers)
         except PermissionError as exc:
@@ -449,6 +662,29 @@ def build_api_app(service: IndexService | None = None) -> Any:
         correlation_id = _sync_logging_correlation(request) if request is not None else get_logging_correlation_id()
         return build_health_payload(active_service, correlation_id=correlation_id, db_runtime=db_runtime)
 
+    def status(request: Request = None) -> dict[str, Any]:
+        """Expose runtime status metrics for the SPA observability views."""
+        correlation_id = _sync_logging_correlation(request) if request is not None else get_logging_correlation_id()
+        return build_status_payload(active_service, active_connections=len(_sessions), correlation_id=correlation_id)
+
+    def logs(
+        request: Request,
+        phase: str | None = None,
+        limit: int = 200,
+    ) -> dict[str, Any]:
+        """Expose structured logs for UI review validation and observability pages."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        safe_limit = max(1, min(limit, 500))
+        levels = [item for item in request.query_params.getlist("level") if item]
+        return build_log_payload(levels=levels, phase=phase, limit=safe_limit)
+
+    def config_events(request: Request) -> dict[str, Any]:
+        """Expose configuration events through the standard API auth path for SPA views."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        return {"events": active_service.a2a_config_events()}
+
     def a2a_root(request: Request) -> dict[str, Any]:
         """Execute a2a root."""
         _ = _a2a_auth_or_raise(request, _headers_from_request(request))
@@ -460,8 +696,7 @@ def build_api_app(service: IndexService | None = None) -> Any:
         }
 
     def a2a_health(request: Request) -> dict[str, Any]:
-        """Execute a2a health."""
-        _ = _a2a_auth_or_raise(request, _headers_from_request(request))
+        """Execute a2a health.  Public (no auth) so load-balancers and peers can probe."""
         return build_health_payload(active_service, correlation_id=get_logging_correlation_id(), db_runtime=db_runtime)
 
     def a2a_events(request: Request) -> dict[str, Any]:
@@ -502,7 +737,8 @@ def build_api_app(service: IndexService | None = None) -> Any:
 
     def spa_fallback(path: str) -> Response:
         """Serve the SPA entrypoint for client-routed paths."""
-        if path.startswith(_SPA_RESERVED_PREFIXES):
+        first_segment = path.split("/", 1)[0]
+        if first_segment in _SPA_RESERVED_SEGMENTS:
             raise HTTPException(status_code=404, detail="Not found")
         if "." in path.rsplit("/", 1)[-1]:
             raise HTTPException(status_code=404, detail="Not found")
@@ -877,12 +1113,31 @@ def build_api_app(service: IndexService | None = None) -> Any:
         checks={"db": _db_probe, "vdb": _vdb_probe, "embedding": _embedding_probe},
     )
     app.include_router(_hr)
+    app.router.routes = [r for r in app.router.routes if getattr(r, "path", None) != "/status"]
+    app.get("/status")(status)
+    app.get("/api/status")(status)
+    app.get("/api/logs")(logs)
+    app.get("/api/config-events")(config_events)
     for base_path in (_CANONICAL_API_BASE_PATH, _LEGACY_API_BASE_PATH):
         app.get(f"{base_path}/health")(health)
 
     app.get(_CANONICAL_A2A_BASE_PATH)(a2a_root)
     app.get(f"{_CANONICAL_A2A_BASE_PATH}/health")(a2a_health)
     app.get(f"{_CANONICAL_A2A_BASE_PATH}/events")(a2a_events)
+
+    # A2A agent card and task submission router
+    _a2a_skills = [
+        A2ASkill(id="ingest_text", name="Ingest Text", description="Ingest text into the vector database"),
+        A2ASkill(id="search", name="Search", description="Semantic search across indexed documents"),
+        A2ASkill(id="retrieve", name="Retrieve", description="Retrieve documents by ID or metadata"),
+    ]
+    _a2a_card_router = create_a2a_card_router(
+        name="index-retriever",
+        description="Index retriever A2A server for vector database search and document ingestion",
+        skills=_a2a_skills,
+    )
+    app.include_router(_a2a_card_router)
+
     app.get("/admin/ui")(admin_ui_root)
     app.get("/admin/ui/profiles")(admin_ui_profiles)
     app.get("/admin/ui/security")(admin_ui_security)

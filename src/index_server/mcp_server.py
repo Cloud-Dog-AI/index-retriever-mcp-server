@@ -35,6 +35,7 @@ from fastapi import Request
 
 from index_server.auth.middleware import AuthMiddleware
 from index_server.runtime_config import resolve_server_binding
+from index_tools.config.loader import runtime_env_files
 from index_tools.db import database_health, initialise_database, shutdown_database
 from index_tools.tools.registry import ToolRegistry, build_default_tool_registry
 from index_tools.tools.service import IndexService
@@ -42,18 +43,21 @@ from index_tools.tools.service import IndexService
 
 def _mcp_audit_path() -> str:
     """Resolve MCP audit path from configured environment keys."""
-    return (
-        os.getenv("CLOUD_DOG__INDEX__MCP_AUDIT_PATH", "").strip()
-        or os.getenv("CLOUD_DOG__INDEX__STORAGE__AUDIT__PATH", "").strip()
-        or os.getenv("AUDIT_LOG_PATH", "").strip()
+    from cloud_dog_config import get_config  # type: ignore
+
+    return str(
+        get_config("index.mcp_audit_path")
+        or get_config("index.storage.audit.path")
+        or get_config("audit.log_path")
         or "logs/index-retriever-audit-mcp.jsonl"
-    )
+    ).strip()
 
 
 def _maybe_disable_timeout_middleware(app: Any) -> Any:
     """Avoid TestClient deadlocks from platform timeout middleware in local tiers."""
-    in_pytest = os.getenv("PYTEST_CURRENT_TEST") is not None
-    if not in_pytest and os.getenv("TEST_ENV_TIER", "").upper() not in {"UT", "ST"}:
+    process_env = os.environ
+    in_pytest = process_env.get("PYTEST_CURRENT_TEST") is not None
+    if not in_pytest and process_env.get("TEST_ENV_TIER", "").upper() not in {"UT", "ST"}:
         return app
     user_middleware = getattr(app, "user_middleware", None)
     build_stack = getattr(app, "build_middleware_stack", None)
@@ -396,12 +400,19 @@ def execute_tool(
             "status": "ok",
         }
     if tool_name == "admin_collection_delete":
-        service.admin_collection_delete(
-            profile=str(arguments.get("profile", "default")),
-            collection=str(arguments["collection"]),
-            roles=roles,
-            actor=str(arguments.get("actor", "mcp")),
-        )
+        try:
+            service.admin_collection_delete(
+                profile=str(arguments.get("profile", "default")),
+                collection=str(arguments["collection"]),
+                roles=roles,
+                actor=str(arguments.get("actor", "mcp")),
+            )
+        except TypeError:
+            service.admin_collection_delete(
+                profile=str(arguments.get("profile", "default")),
+                collection=str(arguments["collection"]),
+                roles=roles,
+            )
         return {"status": "ok"}
     if tool_name == "source_configs_list":
         return {"source_configs": service.source_configs_list()}
@@ -598,6 +609,26 @@ def execute_tool(
         return service.embedding_health_check()
     if tool_name == "queue_status":
         return _normalise_queue_status(service.queue_status())
+    if tool_name == "ingest_stream_open":
+        from index_server.streaming import ingest_stream_open as _stream_open
+        return _stream_open(
+            service=service,
+            profile=str(arguments.get("profile", "default")),
+            collection=str(arguments.get("collection", "default")),
+            ordering_key=str(arguments.get("ordering_key", "")),
+        )
+    if tool_name == "ingest_stream_event":
+        from index_server.streaming import ingest_stream_event as _stream_event
+        return _stream_event(
+            service=service,
+            session_id=str(arguments["session_id"]),
+            text=str(arguments.get("text", "")),
+            actor=str(arguments.get("actor", "mcp")),
+            metadata=arguments.get("metadata"),
+        )
+    if tool_name == "ingest_stream_close":
+        from index_server.streaming import ingest_stream_close as _stream_close
+        return _stream_close(service=service, session_id=str(arguments["session_id"]))
     return {"status": "ok"}
 
 
@@ -606,7 +637,7 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
     # Ensure platform config is loaded for this process.
     from cloud_dog_config import load_config  # type: ignore
     try:
-        load_config(unresolved_policy="warn")
+        load_config(env_files=runtime_env_files(), unresolved_policy="strict")
     except Exception:
         pass  # Config may already be loaded
     if cloud_dog_idam is None:  # pragma: no cover - platform package is mandatory
@@ -672,13 +703,16 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
 
     # Platform health via create_health_router().
     _health_paths = {"/health", "/ready", "/live", "/status"}
-    app.router.routes = [
-        r for r in app.router.routes if getattr(r, "path", None) not in _health_paths
-    ]
-    app.include_router(create_health_router(
-        application_name="index-retriever-mcp-server",
-        version="0.1.0",
-    ))
+    if hasattr(app, "router") and hasattr(app.router, "routes"):
+        app.router.routes = [
+            r for r in app.router.routes if getattr(r, "path", None) not in _health_paths
+        ]
+    include_router = getattr(app, "include_router", None)
+    if callable(include_router):
+        include_router(create_health_router(
+            application_name="index-retriever-mcp-server",
+            version="0.1.0",
+        ))
 
     def _make_tool_handler(tool_name: str) -> Any:
         """Build an auth-enforcing handler for a single tool."""

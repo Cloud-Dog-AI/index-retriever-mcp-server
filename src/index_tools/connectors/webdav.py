@@ -16,6 +16,9 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
+from cloud_dog_storage.backends.webdav import WebDavStorage
+from cloud_dog_storage.config.models import WebDavConfig
+
 from index_tools.connectors.models import FetchPlan
 
 
@@ -25,3 +28,18 @@ def resolve(uri: str) -> FetchPlan:
     if parsed.scheme not in {"webdav", "webdavs", "http", "https"}:
         raise ValueError("Invalid WebDAV URI")
     return FetchPlan(source_type="webdav", location=uri, metadata={"host": parsed.netloc})
+
+
+def build_storage(
+    base_url: str,
+    *,
+    username: str = "",
+    password: str = "",
+) -> WebDavStorage:
+    """Build a cloud_dog_storage WebDAV backend from connection parameters.
+
+    This adapter allows callers to use the platform storage interface for
+    WebDAV read/write operations instead of bespoke HTTP calls.
+    """
+    config = WebDavConfig(base_url=base_url, username=username, password=password)
+    return WebDavStorage(config)

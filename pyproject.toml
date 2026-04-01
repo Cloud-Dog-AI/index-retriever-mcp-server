@@ -13,13 +13,14 @@ authors = [
 ]
 dependencies = [
     # Platform packages (from https://pypi.cloud-dog.net/simple/)
-    "cloud_dog_config>=0.1.0",
-    "cloud_dog_logging>=0.1.0",
-    "cloud_dog_api_kit>=0.1.0",
-    "cloud_dog_idam>=0.1.0",
-    "cloud_dog_jobs>=0.1.0",
+    "cloud_dog_config>=0.3.1",
+    "cloud_dog_logging>=0.3.1",
+    "cloud_dog_api_kit>=0.2.4",
+    "cloud_dog_idam>=0.2.0",
+    "cloud_dog_jobs>=0.2.0",
     "cloud_dog_db>=0.1.0",
-    "cloud_dog_llm>=0.1.0",
+    "cloud_dog_storage>=0.1.1",
+    "cloud_dog_llm>=0.2.0",
     "cloud_dog_vdb>=0.5.0",
     # Core runtime
     "pydantic>=2.7,<3.0",

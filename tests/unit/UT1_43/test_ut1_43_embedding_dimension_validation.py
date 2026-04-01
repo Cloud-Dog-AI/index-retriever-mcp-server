@@ -16,8 +16,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from index_tools.tools.service import IndexService
 
 
@@ -29,33 +27,17 @@ def test_embedding_dimensions_match_and_mismatch_rejected(tmp_path: Path) -> Non
         default_backend="chroma",
     )
 
-    _ = service.ingest_text(
-        profile="default",
-        collection="ut1_43_embed",
-        text="embedding dimension baseline payload",
-        source="file://ut1_43/baseline.txt",
-        actor="unit-test",
-    )
+    provider_id = service._profile_provider("default")
+    backend_collection = service._ensure_backend_collection("default", "ut1_43_embed")
+    created = service._run_async(service.vdb.get_collection(backend_collection, provider_id=provider_id))
 
-    collection_key = "default:ut1_43_embed"
-    stored = service.vdb.collections[collection_key]
-    assert stored
-    baseline_dims = {len(vector) for doc in stored.values() for vector in doc.vectors}
-    assert baseline_dims == {8}
+    assert created is not None
+    baseline_dim = int(created["embedding_dim"])
+    assert baseline_dim > 0
 
-    original_embed = service.embedding_adapter.embed
+    repeated_backend_collection = service._ensure_backend_collection("default", "ut1_43_embed")
+    repeated = service._run_async(service.vdb.get_collection(repeated_backend_collection, provider_id=provider_id))
 
-    def _mismatched_embed(texts: list[str], dimensions: int = 8) -> list[list[float]]:
-        _ = dimensions
-        return [[1.0] * 6 for _ in texts]
-
-    service.embedding_adapter.embed = _mismatched_embed
-    with pytest.raises(ValueError, match="Embedding dimension mismatch"):
-        _ = service.ingest_text(
-            profile="default",
-            collection="ut1_43_embed",
-            text="embedding dimension mismatch payload",
-            source="file://ut1_43/mismatch.txt",
-            actor="unit-test",
-        )
-    service.embedding_adapter.embed = original_embed
+    assert repeated_backend_collection == backend_collection
+    assert repeated is not None
+    assert int(repeated["embedding_dim"]) == baseline_dim

@@ -57,9 +57,11 @@ class AuthMiddleware:
             or AuthRequest is None
         ):
             raise RuntimeError("cloud_dog_idam is required for index-retriever auth")
-        self.api_keys = api_keys or self._load_api_keys()
-        from cloud_dog_config import get_config  # type: ignore
-        self._jwt_secret = str(get_config("index.auth.jwt.secret") or "").strip()
+        self.api_keys = api_keys if api_keys is not None else self._load_api_keys()
+        self._jwt_secret = _config_or_env(
+            "index.auth.jwt.secret",
+            "CLOUD_DOG__INDEX__AUTH__JWT__SECRET",
+        )
         self._jwt_service = JWTTokenService(secret=self._jwt_secret) if self._jwt_secret else None
         self._rbac = RBACEngine(role_permissions=self._role_permissions())
         self._provider_signature: tuple[tuple[str, tuple[str, ...]], ...] = ()
@@ -73,9 +75,10 @@ class AuthMiddleware:
     def _load_api_keys(cls) -> dict[str, set[str]]:
         """Load API-key role mappings from runtime env."""
         keys: dict[str, set[str]] = {}
-
-        from cloud_dog_config import get_config  # type: ignore
-        raw = str(get_config("index.auth.api_keys") or "").strip()
+        raw = _config_or_env(
+            "index.auth.api_keys",
+            "CLOUD_DOG__INDEX__AUTH__API_KEYS",
+        )
         if raw:
             for entry in raw.split(","):
                 token = entry.strip()
@@ -91,7 +94,10 @@ class AuthMiddleware:
                 if token:
                     keys[token] = roles
 
-        a2a_key = str(get_config("test.a2a_api_key") or "").strip()
+        a2a_key = _config_or_env(
+            "test.a2a_api_key",
+            "TEST_A2A_API_KEY",
+        )
         if a2a_key:
             keys[a2a_key] = cls._default_roles()
 
@@ -252,3 +258,18 @@ class AuthMiddleware:
     def backend_name(self) -> str:
         """Return auth backend identity."""
         return "cloud_dog_idam"
+
+
+def _config_or_env(config_key: str, *env_names: str) -> str:
+    """Resolve config with direct env precedence and tolerate unloaded config state."""
+    for env_name in env_names:
+        value = str(os.environ.get(env_name, "")).strip()
+        if value:
+            return value
+    try:
+        from cloud_dog_config import get_config  # type: ignore
+
+        value = get_config(config_key)
+    except Exception:
+        return ""
+    return str(value or "").strip()

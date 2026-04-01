@@ -194,16 +194,35 @@ class AuditLogger:
     ) -> None:
         """Write a privileged admin audit event."""
         self._bind_context()
-        self._platform.log_privileged(
-            actor=self._actor(actor, roles=roles),
-            action=action,
-            target=self._target(target_type, target_id, target_name=target_name),
-            outcome=outcome,
-            command_text=f"{target_type}.{action}",
-            prior_value=prior_value,
-            new_value=new_value,
-            server_id=self.server_id,
+        actor_obj = self._actor(actor, roles=roles)
+        target_obj = self._target(target_type, target_id, target_name=target_name)
+        audit_details = {
+            "server_id": self.server_id,
             **details,
+        }
+        if prior_value is not None:
+            audit_details["prior_value"] = prior_value
+        if new_value is not None:
+            audit_details["new_value"] = new_value
+
+        log_privileged = getattr(self._platform, "log_privileged", None)
+        if callable(log_privileged):
+            log_privileged(
+                actor=actor_obj,
+                action=action,
+                target=target_obj,
+                outcome=outcome,
+                command_text=f"{target_type}.{action}",
+                **audit_details,
+            )
+            return
+
+        self._platform.log_crud(
+            actor=actor_obj,
+            action=action,
+            target=target_obj,
+            outcome=outcome,
+            **audit_details,
         )
 
     def log_security_event(
@@ -245,20 +264,27 @@ class AuditLogger:
     ) -> AuditEvent:
         """Build a concrete platform audit event for direct emission in tests."""
         self._bind_context()
-        return AuditEvent(
-            event_type=event_type,
-            actor=actor,
-            action=action,
-            outcome=outcome,
-            correlation_id=get_correlation_id(),
-            service=self.service_name,
-            service_instance=self.server_id,
-            environment=self.environment,
-            severity=severity,
-            target=target,
-            details=redact_payload(details or {}) if details else None,
-            duration_ms=duration_ms,
-        )
+        event_kwargs: dict[str, Any] = {
+            "event_type": event_type,
+            "actor": actor,
+            "action": action,
+            "outcome": outcome,
+            "correlation_id": get_correlation_id(),
+            "service": self.service_name,
+            "service_instance": self.server_id,
+            "environment": self.environment,
+            "severity": severity,
+            "target": target,
+            "details": redact_payload(details or {}) if details else None,
+            "duration_ms": duration_ms,
+        }
+        try:
+            return AuditEvent(**event_kwargs)
+        except TypeError:
+            event_kwargs.pop("service_instance", None)
+            event_kwargs.pop("environment", None)
+            event_kwargs.pop("severity", None)
+            return AuditEvent(**event_kwargs)
 
     def get_backend_name(self) -> str:
         """Return the active audit backend identifier."""

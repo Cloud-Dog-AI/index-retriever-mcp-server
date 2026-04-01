@@ -188,6 +188,13 @@ class LogConfig(BaseModel):
     environment: str = "dev"
 
 
+class WebLoginConfig(BaseModel):
+    """Cookie-login credentials for the SPA shell."""
+
+    username: str = "admin"
+    password: str = ""
+
+
 class GlobalConfig(BaseModel):
     """GlobalConfig definition."""
 
@@ -200,6 +207,7 @@ class GlobalConfig(BaseModel):
     queue: QueueConfig = Field(default_factory=QueueConfig)
     profiles: dict[str, ProfileConfig]
     rbac: RbacConfig = Field(default_factory=RbacConfig)
+    web_login: WebLoginConfig = Field(default_factory=WebLoginConfig)
     log: LogConfig = Field(default_factory=LogConfig)
 
     @classmethod

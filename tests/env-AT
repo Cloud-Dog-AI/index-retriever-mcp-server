@@ -7,7 +7,9 @@ CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text
 EMBED_BASE_URL=https://llm1.cloud-dog.net
 EMBED_API_KEY=
 CLOUD_DOG__INDEX__VDB__CHROMA_URL=${vault.dev.vdbs.chroma.base_url}
+CLOUD_DOG__INDEX__VDB__CHROMA_AUTH_TOKEN=${vault.dev.vdbs.chroma.auth_token}
 CLOUD_DOG__INDEX__VDB__QDRANT_URL=${vault.dev.vdbs.qdrant.url}
+CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY=${vault.dev.vdbs.qdrant.api_key}
 VAULT_ADDR=https://vault0.cloud-dog.net
 VAULT_MOUNT_POINT=cloud_dog_ai
 VAULT_CONFIG_PATH=config
@@ -23,3 +25,4 @@ CLOUD_DOG__DB__DATABASE=./data/index-retriever-at.db
 TEST_A2A_API_KEY=12345678
 
 CLOUD_DOG__INDEX__AUTH__API_KEYS=test-api-key,valid-reader-token:reader,valid-writer-token:writer,valid-admin-token:admin
+CLOUD_DOG_WEB_LOGIN_USERNAME=admin

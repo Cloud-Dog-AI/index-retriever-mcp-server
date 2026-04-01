@@ -177,3 +177,20 @@ class GenericToolOutput(BaseModel):
     """GenericToolOutput definition."""
 
     status: str = "ok"
+
+
+class BackendHealthOutput(BaseModel):
+    """BackendHealthOutput definition."""
+
+    status: str = "ok"
+    provider: str
+    backend: str
+
+
+class EmbeddingHealthOutput(BaseModel):
+    """EmbeddingHealthOutput definition."""
+
+    status: str = "ok"
+    provider: str
+    model: str
+    dimensions: int

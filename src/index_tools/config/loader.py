@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 import cloud_dog_config  # type: ignore
-from cloud_dog_config import load_config  # type: ignore
+from cloud_dog_config import load_config, resolve_runtime_env_files  # type: ignore
 
 from index_tools.config.models import GlobalConfig
 
@@ -55,6 +55,13 @@ def _normalise_env_files(env_files: str | Path | Sequence[str | Path] | None) ->
     return output
 
 
+def runtime_env_files(env_files: str | Path | Sequence[str | Path] | None = None) -> list[str]:
+    """Resolve runtime env files from explicit args or CLOUD_DOG_ENV_FILES."""
+    if env_files is None:
+        return resolve_runtime_env_files()
+    return _normalise_env_files(env_files)
+
+
 def load_runtime_config(
     *,
     env_files: str | Path | Sequence[str | Path] | None = None,
@@ -66,7 +73,7 @@ def load_runtime_config(
     """Load runtime config via canonical cloud_dog_config.load_config semantics."""
     # Covers: FR-02
     resolved = load_config(
-        env_files=_normalise_env_files(env_files),
+        env_files=runtime_env_files(env_files),
         config_yaml=str(config_yaml),
         defaults_yaml=str(defaults_yaml),
         unresolved_policy=unresolved_policy,
