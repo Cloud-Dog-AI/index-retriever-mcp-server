@@ -757,6 +757,10 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
                     reason=str(exc),
                 )
                 raise UnauthenticatedError(message=str(exc)) from exc
+            # Reject disabled users after auth succeeds
+            user_record = active_service.users.get(identity.user_id)
+            if user_record is not None and not getattr(user_record, 'enabled', True):
+                raise UnauthenticatedError(message="User account is disabled")
             _log_auth_event(
                 request,
                 actor=identity.user_id,
