@@ -1224,7 +1224,19 @@ class IndexService:
             idam_key_id = metadata.api_key_id
         if not token:
             token = f"cd_{uuid4().hex}"
-        key_roles = set(str(item) for item in payload.get("roles", ["reader"]))
+        # Inherit owner user's role if no explicit roles provided
+        explicit_roles = payload.get("roles")
+        if not explicit_roles and payload.get("user_id"):
+            owner_user = self.users.get(str(payload["user_id"]))
+            if owner_user is not None:
+                explicit_roles = list(getattr(owner_user, "roles", set()) or set())
+            elif self._idam_users is not None:
+                idam_user = self._idam_users.get(str(payload["user_id"]))
+                if idam_user is not None:
+                    idam_role = getattr(idam_user, "role", "")
+                    if idam_role:
+                        explicit_roles = [str(idam_role)]
+        key_roles = set(str(item) for item in (explicit_roles or ["reader"]))
         record = ApiKeyRecord(
             key_id=key_id,
             token=token,
