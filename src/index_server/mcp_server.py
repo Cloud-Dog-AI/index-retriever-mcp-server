@@ -126,11 +126,6 @@ def _required_roles_for_tool(tool_name: str) -> set[str]:
         "retrieve",
         "profiles_list",
         "profile_get",
-        "users_list",
-        "user_get",
-        "groups_list",
-        "group_get",
-        "api_keys_list",
         "a2a_config_events",
         "collections_list",
         "collection_get",
@@ -138,6 +133,14 @@ def _required_roles_for_tool(tool_name: str) -> set[str]:
         "source_config_get",
     }:
         return {"reader", "writer", "maintainer", "admin"}
+    if tool_name in {
+        "users_list",
+        "user_get",
+        "groups_list",
+        "group_get",
+        "api_keys_list",
+    }:
+        return {"admin"}
     if tool_name == "rbac_bindings_list":
         return {"admin"}
     if tool_name.startswith("job_") or tool_name == "queue_status":
@@ -553,15 +556,22 @@ def execute_tool(
         )
     if tool_name == "search":
         _enforce_collection_acl(service, roles, arguments)
-        return {
-            "results": service.search(
-                profile=str(arguments["profile"]),
-                collection=str(arguments["collection"]),
-                query=str(arguments["query"]),
-                top_k=int(arguments.get("top_k", 10)),
-                filters=arguments.get("filters"),
-            )
-        }
+        try:
+            return {
+                "results": service.search(
+                    profile=str(arguments["profile"]),
+                    collection=str(arguments["collection"]),
+                    query=str(arguments["query"]),
+                    top_k=int(arguments.get("top_k", 10)),
+                    filters=arguments.get("filters"),
+                )
+            }
+        except (RuntimeError, ConnectionError, OSError, TimeoutError) as exc:
+            return {
+                "results": [],
+                "error": f"Search backend unavailable: {exc}",
+                "status": "backend_error",
+            }
     if tool_name == "job_get":
         job = service.job_get(str(arguments["job_id"]))
         return {"job": _normalise_job_payload(job)}

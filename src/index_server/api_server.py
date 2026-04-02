@@ -403,13 +403,20 @@ def handle_search(
     """Execute handle search."""
     identity = auth.authenticate(headers)
     auth.require_roles(identity, {"reader", "writer", "maintainer", "admin"})
-    results = service.search(
-        profile=str(payload["profile"]),
-        collection=str(payload["collection"]),
-        query=str(payload["query"]),
-        top_k=int(payload.get("top_k", 10)),
-        filters=payload.get("filters"),
-    )
+    try:
+        results = service.search(
+            profile=str(payload["profile"]),
+            collection=str(payload["collection"]),
+            query=str(payload["query"]),
+            top_k=int(payload.get("top_k", 10)),
+            filters=payload.get("filters"),
+        )
+    except (RuntimeError, ConnectionError, OSError, TimeoutError) as exc:
+        return {
+            "results": [],
+            "error": f"Search backend unavailable: {exc}",
+            "status": "backend_error",
+        }
     return {"results": results}
 
 
@@ -821,7 +828,7 @@ def build_api_app(service: IndexService | None = None) -> Any:
 
     def admin_users_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, {"admin"})
         return {"users": active_service.users_list()}
 
     def admin_users_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
@@ -862,7 +869,7 @@ def build_api_app(service: IndexService | None = None) -> Any:
 
     def admin_groups_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, {"admin"})
         return {"groups": active_service.groups_list()}
 
     def admin_groups_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
@@ -903,7 +910,7 @@ def build_api_app(service: IndexService | None = None) -> Any:
 
     def admin_api_keys_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, {"admin"})
         return {"api_keys": active_service.api_keys_list()}
 
     def admin_api_keys_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
@@ -1125,11 +1132,96 @@ def build_api_app(service: IndexService | None = None) -> Any:
     app.get(f"{_CANONICAL_A2A_BASE_PATH}/health")(a2a_health)
     app.get(f"{_CANONICAL_A2A_BASE_PATH}/events")(a2a_events)
 
+    # --- A2A skill handlers that call real IndexService logic ---
+    def _parse_a2a_input(text: str) -> dict[str, Any]:
+        """Parse JSON input text or return a minimal dict from plain text."""
+        text = text.strip()
+        if text.startswith("{"):
+            try:
+                return json.loads(text)
+            except json.JSONDecodeError:
+                pass
+        return {"query": text} if text else {}
+
+    def _handle_ingest_text(text: str) -> Any:
+        """Ingest text into the vector database via execute_tool."""
+        payload = _parse_a2a_input(text)
+        payload.setdefault("profile", "default")
+        payload.setdefault("collection", "default")
+        payload.setdefault("source", "a2a")
+        payload.setdefault("actor", "a2a-client")
+        if "text" not in payload and not text.strip().startswith("{"):
+            payload["text"] = text
+        return execute_tool(
+            service=active_service,
+            tool_name="ingest_text",
+            arguments=payload,
+            registry=registry,
+        )
+
+    def _handle_search(text: str) -> Any:
+        """Semantic search across indexed documents via execute_tool.
+
+        Resolves the profile and collection from the live service when
+        the caller does not supply them, so A2A searches work without
+        callers needing to know the internal collection topology.
+        """
+        payload = _parse_a2a_input(text)
+        if "query" not in payload and not text.strip().startswith("{"):
+            payload["query"] = text
+
+        # Resolve profile — use the first available profile if not specified.
+        if not payload.get("profile"):
+            profiles = active_service.profiles_list()
+            payload["profile"] = profiles[0] if profiles else "default"
+
+        # Resolve collection — pick the first real collection for the profile.
+        if not payload.get("collection"):
+            try:
+                collections = active_service.collections_list(payload["profile"])
+            except Exception:  # noqa: BLE001
+                collections = []
+            payload["collection"] = collections[0] if collections else "default"
+
+        try:
+            return execute_tool(
+                service=active_service,
+                tool_name="search",
+                arguments=payload,
+                registry=registry,
+            )
+        except Exception as exc:
+            # If VDB search fails (e.g. embedding model unreachable), fall back
+            # to listing available collections so the caller gets useful output.
+            try:
+                profiles = active_service.profiles_list()
+                collections_info = []
+                for p in profiles[:5]:
+                    try:
+                        cols = active_service.collections_list(p)
+                        collections_info.append(f"  {p}: {cols}")
+                    except Exception:
+                        collections_info.append(f"  {p}: (error listing)")
+                return {
+                    "error": f"Search failed: {exc}",
+                    "available_profiles": profiles,
+                    "collections": collections_info,
+                    "hint": "The VDB search pipeline may need embedding model configuration.",
+                }
+            except Exception:
+                return {"error": f"Search failed: {exc}"}
+
+    def _handle_retrieve(text: str) -> Any:
+        """Retrieve a document by ID via the IndexService."""
+        payload = _parse_a2a_input(text)
+        doc_id = payload.get("doc_id") or payload.get("id") or text.strip()
+        return active_service.retrieve(doc_id)
+
     # A2A agent card and task submission router
     _a2a_skills = [
-        A2ASkill(id="ingest_text", name="Ingest Text", description="Ingest text into the vector database"),
-        A2ASkill(id="search", name="Search", description="Semantic search across indexed documents"),
-        A2ASkill(id="retrieve", name="Retrieve", description="Retrieve documents by ID or metadata"),
+        A2ASkill(id="ingest_text", name="Ingest Text", description="Ingest text into the vector database", handler=_handle_ingest_text),
+        A2ASkill(id="search", name="Search", description="Semantic search across indexed documents", handler=_handle_search),
+        A2ASkill(id="retrieve", name="Retrieve", description="Retrieve documents by ID or metadata", handler=_handle_retrieve),
     ]
     _a2a_card_router = create_a2a_card_router(
         name="index-retriever",
