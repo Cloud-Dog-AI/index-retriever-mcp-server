@@ -757,9 +757,18 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
                     reason=str(exc),
                 )
                 raise UnauthenticatedError(message=str(exc)) from exc
-            # Reject disabled users after auth succeeds
-            user_record = active_service.users.get(identity.user_id)
-            if user_record is not None and not getattr(user_record, 'enabled', True):
+            # Reject disabled users after auth succeeds.
+            # Check by identity.user_id first, then scan API keys for the
+            # token to find the owning user (IDAM user_id may differ from
+            # service user_id).
+            _disabled_user = active_service.users.get(identity.user_id)
+            if _disabled_user is None:
+                _api_key_header = headers.get("x-api-key", "").strip()
+                for _kr in active_service.api_keys.values():
+                    if _kr.token == _api_key_header and _kr.user_id:
+                        _disabled_user = active_service.users.get(_kr.user_id)
+                        break
+            if _disabled_user is not None and not getattr(_disabled_user, 'enabled', True):
                 raise UnauthenticatedError(message="User account is disabled")
             _log_auth_event(
                 request,
