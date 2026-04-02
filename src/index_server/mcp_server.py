@@ -572,6 +572,12 @@ def execute_tool(
                 "error": f"Search backend unavailable: {exc}",
                 "status": "backend_error",
             }
+        except Exception as exc:  # noqa: BLE001
+            return {
+                "results": [],
+                "error": f"Search failed: {exc}",
+                "status": "error",
+            }
     if tool_name == "job_get":
         job = service.job_get(str(arguments["job_id"]))
         return {"job": _normalise_job_payload(job)}

@@ -1225,13 +1225,15 @@ class IndexService:
         if not token:
             token = f"cd_{uuid4().hex}"
         # Inherit owner user's role if no explicit roles provided
+        # Accept both "user_id" and "owner_user_id" for the owner reference
+        _owner_uid = payload.get("user_id") or payload.get("owner_user_id") or ""
         explicit_roles = payload.get("roles")
-        if not explicit_roles and payload.get("user_id"):
-            owner_user = self.users.get(str(payload["user_id"]))
+        if not explicit_roles and _owner_uid:
+            owner_user = self.users.get(str(_owner_uid))
             if owner_user is not None:
                 explicit_roles = list(getattr(owner_user, "roles", set()) or set())
             elif self._idam_users is not None:
-                idam_user = self._idam_users.get(str(payload["user_id"]))
+                idam_user = self._idam_users.get(str(_owner_uid))
                 if idam_user is not None:
                     idam_role = getattr(idam_user, "role", "")
                     if idam_role:
@@ -1243,7 +1245,7 @@ class IndexService:
             label=str(payload.get("label", key_id)),
             roles=key_roles,
             capabilities=set(str(item) for item in payload.get("capabilities", [])),
-            user_id=str(payload["user_id"]) if payload.get("user_id") else None,
+            user_id=str(_owner_uid) if _owner_uid else None,
         )
         self.api_keys[key_id] = record
         if idam_key_id:
