@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 ARG PYPI_URL=https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple
+COPY vendor/wheels/ /tmp/wheels/
 RUN pip install --no-cache-dir \
       --extra-index-url ${PYPI_URL} \
       --trusted-host gitea.cloud-dog.net \
@@ -34,7 +35,7 @@ RUN pip install --no-cache-dir \
       cloud-dog-db \
       cloud-dog-jobs \
       cloud-dog-llm \
-      cloud-dog-vdb
+      /tmp/wheels/cloud_dog_vdb-*.whl
 
 COPY pyproject.toml README.md ./
 COPY src/ ./src/
