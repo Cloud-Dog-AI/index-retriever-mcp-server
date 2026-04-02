@@ -204,8 +204,14 @@ class AuthMiddleware:
             raise PermissionError("Authentication failed") from exc
 
         roles = set(self.api_keys.get(key, {str(result.user.role)}))
+        user_id = str(result.user.user_id)
+        # Reject disabled users — check the service user store if available
+        if hasattr(self, '_user_store') and self._user_store is not None:
+            user_record = self._user_store.get(user_id)
+            if user_record is not None and not getattr(user_record, 'enabled', True):
+                raise PermissionError("User account is disabled")
         return AuthResult(
-            user_id=str(result.user.user_id),
+            user_id=user_id,
             roles=roles,
             token_type="api_key",
         )

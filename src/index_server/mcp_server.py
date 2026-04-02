@@ -674,6 +674,8 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
         active_service._idam_api_keys = auth._api_key_manager
     elif hasattr(auth, "_provider") and hasattr(auth._provider, "_api_key_manager"):
         active_service._idam_api_keys = auth._provider._api_key_manager
+    # Share user store with auth middleware for disabled-user checks
+    auth._user_store = active_service.users
     app = _create_runtime_app(on_shutdown=shutdown_database)
 
     def _sync_logging_correlation(request: Request) -> str:
