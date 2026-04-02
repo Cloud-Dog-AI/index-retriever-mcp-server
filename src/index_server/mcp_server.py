@@ -667,6 +667,13 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
     bind_auth_api_keys = getattr(active_service, "attach_auth_api_keys", None)
     if callable(bind_auth_api_keys):
         bind_auth_api_keys(auth.api_keys)
+    # Share the auth middleware's IDAM key manager with the service so that
+    # dynamically created API keys are registered in the SAME manager
+    # that authenticates requests (not a separate instance).
+    if hasattr(auth, "_api_key_manager") and auth._api_key_manager is not None:
+        active_service._idam_api_keys = auth._api_key_manager
+    elif hasattr(auth, "_provider") and hasattr(auth._provider, "_api_key_manager"):
+        active_service._idam_api_keys = auth._provider._api_key_manager
     app = _create_runtime_app(on_shutdown=shutdown_database)
 
     def _sync_logging_correlation(request: Request) -> str:
