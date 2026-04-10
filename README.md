@@ -7,11 +7,11 @@
 ### Prerequisites
 - Python `3.11+`
 - Access to `https://pypi.cloud-dog.net/simple/`
-- Vault bootstrap env file: `/opt/iac/Development/cloud-dog-ai/env-vault`
+- Vault bootstrap env file: `<workspace>/env-vault`
 
 ### Install
 ```bash
-set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
+set -a; source <workspace>/env-vault; set +a
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]" --index-url https://pypi.cloud-dog.net/simple/

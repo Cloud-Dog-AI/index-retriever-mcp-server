@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -42,6 +43,7 @@ from index_tools.security.rbac import RbacAuthoriser, Subject
 from index_tools.security.scope import ScopeError, validate_uri
 from index_tools.tools.definitions import SearchInput
 from index_tools.tools.handlers import handle_ingest_text, handle_search
+from index_server.logging_runtime import build_platform_log_config
 from tests.unit.helpers import minimal_config
 
 
@@ -116,7 +118,7 @@ def test_queue_engine_and_redis_bridge_paths(monkeypatch: pytest.MonkeyPatch, tm
     engine.enqueue(failing)
     with pytest.raises(RuntimeError):
         engine.run("j2", lambda _: (_ for _ in ()).throw(RuntimeError("boom")))
-    assert engine.get("j2").status is JobStatus.failed
+    assert engine.get("j2").status is JobStatus.dead_lettered
 
     assert engine.backend_name() == "cloud_dog_jobs"
     monkeypatch.setattr(queue_engine_module, "cloud_dog_jobs", None)
@@ -167,11 +169,14 @@ def test_audit_logger_backend_name_and_write(tmp_path: Path) -> None:
     )
     logger.write_event(event)
     content = out.read_text(encoding="utf-8")
+    payload = json.loads(content)
     assert "REDACTED" in content
     assert '"service_instance": "ut-audit"' in content
     assert '"correlation_id":' in content
     assert '"environment":' in content
-    assert '"actor": {"type": "user", "id": "tester", "roles": ["writer"]}' in content
+    assert payload["actor"]["type"] == "user"
+    assert payload["actor"]["id"] == "tester"
+    assert payload["actor"]["roles"] == ["writer"]
     assert logger.get_backend_name() == "cloud_dog_logging"
 
 
@@ -209,6 +214,29 @@ def test_audit_logger_admin_and_security_helpers(tmp_path: Path) -> None:
     assert '"event_type": "security.authenticate"' in auth_row
     assert '"ip": "127.0.0.1"' in auth_row
     assert '"user_agent": "pytest"' in auth_row
+
+
+def test_audit_logger_ingest_helper_emits_schema_complete_tool_event(tmp_path: Path) -> None:
+    out = tmp_path / "audit-ingest.jsonl"
+    logger = AuditLogger(path=out, server_id="ut-ingest")
+
+    logger.log_ingest(
+        actor="writer-user",
+        profile="default",
+        collection="docs",
+        job_id="job-1",
+        source="upload",
+        metadata={"token": "secret"},
+        chunk_count=4,
+        document_count=2,
+    )
+
+    row = out.read_text(encoding="utf-8")
+    assert '"event_type": "tool.call"' in row
+    assert '"action": "execute"' in row
+    assert '"target": {"type": "tool", "id": "ingest_text", "name": "ingest_text"}' in row
+    assert '"actor": {"type": "user", "id": "writer-user"' in row
+    assert '"metadata": {"token": "***REDACTED***"}' in row
 
 
 def test_audit_logger_admin_helper_falls_back_when_privileged_api_missing(
@@ -363,6 +391,52 @@ def test_audit_logger_build_event_supports_legacy_audit_event_signature(
     assert event.details == {"password": "[REDACTED]"}
 
 
+def test_build_platform_log_config_uses_surface_specific_log_files() -> None:
+    class DummyConfig:
+        def __init__(self, values: dict[str, object]) -> None:
+            self._values = values
+
+        def get(self, key: str, default: object | None = None) -> object | None:
+            return self._values.get(key, default)
+
+    config = DummyConfig(
+        {
+            "service.name": "index-retriever-mcp-server",
+            "log.service_instance": "ut-index-instance",
+            "log.environment": "test",
+            "log.level": "INFO",
+            "log.format": "json",
+            "log.console": True,
+            "log.audit_log": "logs/audit.log.jsonl",
+            "log.api_server_log": "logs/api_server.log",
+            "log.web_server_log": "logs/web_server.log",
+            "log.mcp_server_log": "logs/mcp_server.log",
+            "log.a2a_server_log": "logs/a2a_server.log",
+            "log.rotation.mode": "size",
+            "log.rotation.max_bytes": 1234,
+            "log.rotation.backup_count": 2,
+            "log.rotation.when": "midnight",
+            "log.rotation.interval": 1,
+            "log.rotation.compress": True,
+            "log.integrity.enabled": True,
+            "log.integrity.interval_seconds": 300,
+            "log.integrity.log_file": "logs/audit-integrity.log",
+            "log.integrity.hash_algorithm": "sha256",
+            "log.retention.hot_days": 14,
+            "log.retention.cold_days": 60,
+            "log.retention.archive_format": "gz",
+        }
+    )
+
+    payload = build_platform_log_config(config, surface_name="web_server")
+
+    assert payload["service_name"] == "index-retriever-mcp-server"
+    assert payload["service_instance"] == "ut-index-instance"
+    assert payload["environment"] == "test"
+    assert payload["log"]["app_log"] == "logs/web_server.log"
+    assert payload["log"]["audit_log"] == "logs/audit.log.jsonl"
+
+
 def test_rbac_backend_name_and_matching(monkeypatch: pytest.MonkeyPatch) -> None:
     auth = RbacAuthoriser(role_actions={"writer": ["ingest_*"]}, default_deny=True)
     subject = Subject(user_id="u1", roles={"writer"})
@@ -372,13 +446,16 @@ def test_rbac_backend_name_and_matching(monkeypatch: pytest.MonkeyPatch) -> None
     permissive = RbacAuthoriser(role_actions={}, default_deny=False)
     assert permissive.is_allowed(Subject(user_id="u2", roles={"x"}), "anything") is True
 
-    monkeypatch.setattr(rbac_module, "cloud_dog_idam", None)
-    assert auth.backend_name() == "fallback"
-    monkeypatch.setattr(rbac_module, "cloud_dog_idam", object())
+    # W28A-703: fallback removed — cloud_dog_idam is now a hard requirement.
+    # Backend name always returns "cloud_dog_idam".
     assert auth.backend_name() == "cloud_dog_idam"
 
 
 def test_handlers_and_config_paths() -> None:
+    api_port = int(os.environ.get("CLOUD_DOG__API_SERVER__PORT", "8074"))
+    web_port = int(os.environ.get("CLOUD_DOG__WEB_SERVER__PORT", "8075"))
+    mcp_port = int(os.environ.get("CLOUD_DOG__MCP_SERVER__PORT", "8076"))
+    a2a_port = int(os.environ.get("CLOUD_DOG__A2A_SERVER__PORT", "8077"))
     payload = SearchInput(profile="default", collection="c", query="q", top_k=3)
     out = handle_search(
         payload,
@@ -391,11 +468,11 @@ def test_handlers_and_config_paths() -> None:
 
     cfg = minimal_config()
     model = bind_model(cfg)
-    assert model.api_server.port == int(os.environ["CLOUD_DOG__API_SERVER__PORT"])
-    assert model.web_server.port == int(os.environ["CLOUD_DOG__WEB_SERVER__PORT"])
-    assert model.mcp_server.port == int(os.environ["CLOUD_DOG__MCP_SERVER__PORT"])
-    assert model.a2a_server.port == int(os.environ["CLOUD_DOG__A2A_SERVER__PORT"])
-    merged_port = int(os.environ["CLOUD_DOG__API_SERVER__PORT"]) + 9
+    assert model.api_server.port == api_port
+    assert model.web_server.port == web_port
+    assert model.mcp_server.port == mcp_port
+    assert model.a2a_server.port == a2a_port
+    merged_port = api_port + 9
     merged = get_config(defaults_layer=minimal_config(), config_layer={"api_server": {"port": merged_port}})
     assert merged.api_server.port == merged_port
 

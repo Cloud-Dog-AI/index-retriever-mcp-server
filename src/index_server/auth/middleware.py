@@ -26,14 +26,8 @@ try:
     from cloud_dog_idam import APIKeyOnlyProvider, JWTTokenService, RBACEngine  # type: ignore
     from cloud_dog_idam.domain.errors import AuthenticationError, TokenError  # type: ignore
     from cloud_dog_idam.domain.models import AuthRequest  # type: ignore
-except ImportError:  # pragma: no cover
-    cloud_dog_idam = None  # type: ignore[assignment]
-    APIKeyOnlyProvider = None  # type: ignore[assignment]
-    JWTTokenService = None  # type: ignore[assignment]
-    RBACEngine = None  # type: ignore[assignment]
-    AuthenticationError = Exception  # type: ignore[assignment]
-    TokenError = Exception  # type: ignore[assignment]
-    AuthRequest = None  # type: ignore[assignment]
+except ImportError:  # pragma: no cover — cloud_dog_idam is a required dependency
+    raise ImportError("cloud_dog_idam is required — install via: pip install cloud-dog-idam>=0.2.0")
 
 
 @dataclass(slots=True)
@@ -268,14 +262,35 @@ class AuthMiddleware:
 
 def _config_or_env(config_key: str, *env_names: str) -> str:
     """Resolve config with direct env precedence and tolerate unloaded config state."""
+    process_env = dict(os.environ)
     for env_name in env_names:
-        value = str(os.environ.get(env_name, "")).strip()
+        value = str(process_env.get(env_name, "")).strip()
         if value:
             return value
-    try:
-        from cloud_dog_config import get_config  # type: ignore
 
-        value = get_config(config_key)
+    try:
+        from cloud_dog_config import get_config, load_config  # type: ignore
     except Exception:
         return ""
-    return str(value or "").strip()
+
+    candidates = [config_key, *env_names, *(name.replace("__", ".").lower() for name in env_names)]
+    for candidate in candidates:
+        try:
+            value = get_config(candidate)
+        except Exception:
+            value = None
+        if value is not None and str(value).strip():
+            return str(value).strip()
+
+    try:
+        compiled = load_config(unresolved_policy="strict", vault_enabled=True)
+    except Exception:
+        return ""
+    for candidate in candidates:
+        try:
+            value = compiled.get(candidate)
+        except Exception:
+            value = None
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return ""

@@ -18,6 +18,7 @@ import runpy
 import sys
 import os
 from types import SimpleNamespace
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -26,7 +27,7 @@ from index_server import a2a_server, api_server, mcp_server, web_server
 from index_server.admin.endpoints import collection_create
 from index_server.main import main
 from index_server.runtime_config import ServerBinding
-from index_server.streaming import ingest_stream_close, ingest_stream_event, ingest_stream_open
+from index_server.streaming import ingest_stream_close, ingest_stream_event, ingest_stream_session_start
 from index_tools.tools.service import IndexService
 from tests.http_paths import api_tools_path, mcp_tools_path
 
@@ -160,7 +161,31 @@ def test_api_create_runtime_app_typeerror_fallback(monkeypatch: pytest.MonkeyPat
     assert isinstance(app, DummyApp)
 
 
+def test_build_log_payload_synthesises_blank_messages(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        api_server,
+        "_read_jsonl_records",
+        lambda _path, limit=200: [
+            {
+                "timestamp": "2026-04-08T15:54:07.885Z",
+                "level": "INFO",
+                "logger": "runtime",
+                "message": "",
+                "action": "create",
+                "outcome": "success",
+                "target": {"name": "POST /app/v1/tools/profile_get"},
+            }
+        ],
+    )
+
+    payload = api_server.build_log_payload(limit=10)
+
+    assert payload["count"] == 1
+    assert payload["logs"][0]["message"] == "create POST /app/v1/tools/profile_get (success)"
+
+
 def test_api_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    api_port = int(os.environ.get("CLOUD_DOG__API_SERVER__PORT", "8074"))
     captured: dict[str, object] = {}
     fake_uvicorn = SimpleNamespace(
         run=lambda app, host, port, log_level: captured.update(
@@ -172,7 +197,7 @@ def test_api_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         api_server,
         "resolve_server_binding",
-        lambda _name: ServerBinding(host="127.0.0.1", port=int(os.environ["CLOUD_DOG__API_SERVER__PORT"])),
+        lambda _name: ServerBinding(host="127.0.0.1", port=api_port),
     )
     monkeypatch.setitem(sys.modules, "uvicorn", fake_uvicorn)
 
@@ -180,7 +205,7 @@ def test_api_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     assert captured == {
         "app": sentinel_app,
         "host": "127.0.0.1",
-        "port": int(os.environ["CLOUD_DOG__API_SERVER__PORT"]),
+        "port": api_port,
         "log_level": "info",
     }
 
@@ -277,6 +302,7 @@ def test_mcp_build_app_typeerror_fallback(monkeypatch: pytest.MonkeyPatch, servi
 
 
 def test_mcp_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    mcp_port = int(os.environ.get("CLOUD_DOG__MCP_SERVER__PORT", "8076"))
     captured: dict[str, object] = {}
     fake_uvicorn = SimpleNamespace(
         run=lambda app, host, port, log_level: captured.update(
@@ -288,7 +314,7 @@ def test_mcp_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         mcp_server,
         "resolve_server_binding",
-        lambda _name: ServerBinding(host="127.0.0.1", port=int(os.environ["CLOUD_DOG__MCP_SERVER__PORT"])),
+        lambda _name: ServerBinding(host="127.0.0.1", port=mcp_port),
     )
     monkeypatch.setitem(sys.modules, "uvicorn", fake_uvicorn)
 
@@ -296,7 +322,7 @@ def test_mcp_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     assert captured == {
         "app": sentinel_app,
         "host": "127.0.0.1",
-        "port": int(os.environ["CLOUD_DOG__MCP_SERVER__PORT"]),
+        "port": mcp_port,
         "log_level": "info",
     }
 
@@ -310,7 +336,7 @@ def test_entrypoint_and_streaming_wrappers(monkeypatch: pytest.MonkeyPatch, serv
     sys.modules.pop("index_server.main", None)
     runpy.run_module("index_server.main", run_name="__main__")
 
-    session = ingest_stream_open(service, "default", "ut_stream", "k1")
+    session = ingest_stream_session_start(service, "default", "ut_stream", "k1")
     sid = session["session_id"]
     evt = ingest_stream_event(service, sid, "stream payload", actor="writer")
     assert evt["job_id"]
@@ -324,6 +350,7 @@ def test_admin_collection_create_endpoint(service: IndexService) -> None:
 
 
 def test_web_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    web_port = int(os.environ.get("CLOUD_DOG__WEB_SERVER__PORT", "8075"))
     captured: dict[str, object] = {}
     fake_uvicorn = SimpleNamespace(
         run=lambda app, host, port, log_level: captured.update(
@@ -335,7 +362,7 @@ def test_web_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         web_server,
         "resolve_server_binding",
-        lambda _name: ServerBinding(host="127.0.0.1", port=int(os.environ["CLOUD_DOG__WEB_SERVER__PORT"])),
+        lambda _name: ServerBinding(host="127.0.0.1", port=web_port),
     )
     monkeypatch.setitem(sys.modules, "uvicorn", fake_uvicorn)
 
@@ -343,12 +370,71 @@ def test_web_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     assert captured == {
         "app": sentinel_app,
         "host": "127.0.0.1",
-        "port": int(os.environ["CLOUD_DOG__WEB_SERVER__PORT"]),
+        "port": web_port,
         "log_level": "info",
     }
 
 
+def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    class DummyConfig:
+        def get(self, key: str, default: object = None) -> object:
+            values = {
+                "service.environment": "staging",
+                "index.ui.auth_mode": "api_key",
+                "index.ui.app_version": "test",
+                "index.ui.default_profile": "default",
+                "index.ui.default_collection": "w12_documents",
+                "index.ui.session_timeout_minutes": "5.5",
+                "test.api_key": "test-api-key",
+            }
+            return values.get(key, default)
+
+    class DummyProxy:
+        async def request(self, method: str, path: str, **_kwargs: object) -> SimpleNamespace:
+            return SimpleNamespace(
+                status_code=401 if path == "/admin/profiles" else 200,
+                data={"detail": "Authentication failed"} if path == "/admin/profiles" else {"status": "ok"},
+                headers={"content-type": "application/json"},
+            )
+
+    index_path = tmp_path / "index.html"
+    index_path.write_text("<html><body><div id='root'></div></body></html>", encoding="utf-8")
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir()
+
+    monkeypatch.setattr(web_server, "load_config", lambda **_kwargs: DummyConfig())
+    monkeypatch.setattr(web_server, "runtime_env_files", lambda: [])
+    monkeypatch.setattr(web_server, "_ui_index_path", lambda: index_path)
+    monkeypatch.setattr(web_server, "_ui_dist_dir", lambda: tmp_path)
+    monkeypatch.setattr(web_server, "_ui_assets_dir", lambda: assets_dir)
+    monkeypatch.setattr(
+        web_server,
+        "resolve_server_binding",
+        lambda name: {
+            "api_server": ServerBinding(host="127.0.0.1", port=8074),
+            "mcp_server": ServerBinding(host="127.0.0.1", port=8076),
+            "a2a_server": ServerBinding(host="127.0.0.1", port=8077),
+        }[name],
+    )
+    monkeypatch.setattr(web_server.WebApiProxy, "from_config", classmethod(lambda cls, _config: DummyProxy()))
+
+    client = TestClient(web_server.build_web_app())
+
+    runtime_config = client.get("/runtime-config.js")
+    assert runtime_config.status_code == 200
+    assert '"SESSION_TIMEOUT_MINUTES": 5.5' in runtime_config.text
+
+    spa_admin = client.get("/admin/users")
+    assert spa_admin.status_code == 200
+    assert "id='root'" in spa_admin.text
+
+    proxied_admin = client.get("/admin/profiles")
+    assert proxied_admin.status_code == 401
+    assert proxied_admin.json() == {"detail": "Authentication failed"}
+
+
 def test_a2a_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    a2a_port = int(os.environ.get("CLOUD_DOG__A2A_SERVER__PORT", "8077"))
     captured: dict[str, object] = {}
     fake_uvicorn = SimpleNamespace(
         run=lambda app, host, port, log_level: captured.update(
@@ -360,7 +446,7 @@ def test_a2a_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         a2a_server,
         "resolve_server_binding",
-        lambda _name: ServerBinding(host="127.0.0.1", port=int(os.environ["CLOUD_DOG__A2A_SERVER__PORT"])),
+        lambda _name: ServerBinding(host="127.0.0.1", port=a2a_port),
     )
     monkeypatch.setitem(sys.modules, "uvicorn", fake_uvicorn)
 
@@ -368,6 +454,6 @@ def test_a2a_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     assert captured == {
         "app": sentinel_app,
         "host": "127.0.0.1",
-        "port": int(os.environ["CLOUD_DOG__A2A_SERVER__PORT"]),
+        "port": a2a_port,
         "log_level": "info",
     }

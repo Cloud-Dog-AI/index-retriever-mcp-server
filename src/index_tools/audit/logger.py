@@ -14,9 +14,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
+from cloud_dog_storage import path_utils
 from cloud_dog_logging.audit_logger import AuditLogger as PlatformAuditLogger
 from cloud_dog_logging.audit_schema import Actor, AuditEvent, Target
 from cloud_dog_logging.correlation import get_correlation_id, set_service_name
@@ -67,22 +67,26 @@ class AuditLogger:
 
     def __init__(
         self,
-        path: str | Path,
+        path: str,
         *,
         server_id: str | None = None,
         service_name: str = "index-retriever-mcp-server",
         environment: str = "dev",
     ) -> None:
         """Initialise the audit sink adapter."""
-        self.path = Path(path)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        resolved_path = path_utils.resolve_path(path)
+        path_utils.mkdir(path_utils.parent(resolved_path))
+        self.path = resolved_path
         self.server_id = (server_id or "").strip() or "index-retriever-local"
         self.service_name = service_name
         self.environment = environment.strip() or "dev"
         self._platform = PlatformAuditLogger(
             service_name=self.service_name,
-            sink=FileSink(str(self.path)),
+            sink=FileSink(self.path),
         )
+        # Bind context immediately so cloud_dog_api_kit AuditMiddleware
+        # picks up service/environment on its first request.
+        self._bind_context()
 
     def _bind_context(self) -> None:
         set_service_name(self.service_name)
@@ -142,41 +146,29 @@ class AuditLogger:
         document_count: int = 1,
     ) -> None:
         """Write a structured ingest audit event."""
-        self._bind_context()
-        self._platform.log_tool_call(
-            actor=self._actor(actor),
-            tool="ingest_text",
-            params={
-                "profile": profile,
-                "collection": collection,
-                "source": source,
-                "metadata": redact_payload(metadata or {}),
-            },
-            outcome="success",
-            duration_ms=0,
-            job_id=job_id,
-            document_count=document_count,
-            chunk_count=chunk_count,
-            server_id=self.server_id,
-        )
-        if metadata:
-            self.write_event(
-                self.build_event(
-                    event_type="tool.call",
-                    actor=self._actor(actor),
-                    action="ingest_text",
-                    outcome="success",
-                    target=self._target("collection", f"{profile}:{collection}", target_name=collection),
-                    details={
+        self.write_event(
+            self.build_event(
+                event_type="tool.call",
+                actor=self._actor(actor),
+                action="execute",
+                outcome="success",
+                target=self._target("tool", "ingest_text", target_name="ingest_text"),
+                details={
+                    "tool": "ingest_text",
+                    "params": {
+                        "profile": profile,
+                        "collection": collection,
                         "source": source,
-                        "metadata": metadata,
-                        "job_id": job_id,
-                        "document_count": document_count,
-                        "chunk_count": chunk_count,
-                        "server_id": self.server_id,
+                        "metadata": redact_payload(metadata or {}),
                     },
-                )
+                    "job_id": job_id,
+                    "document_count": document_count,
+                    "chunk_count": chunk_count,
+                    "server_id": self.server_id,
+                },
+                duration_ms=0,
             )
+        )
 
     def log_admin_action(
         self,
@@ -264,27 +256,35 @@ class AuditLogger:
     ) -> AuditEvent:
         """Build a concrete platform audit event for direct emission in tests."""
         self._bind_context()
-        event_kwargs: dict[str, Any] = {
-            "event_type": event_type,
-            "actor": actor,
-            "action": action,
-            "outcome": outcome,
-            "correlation_id": get_correlation_id(),
-            "service": self.service_name,
-            "service_instance": self.server_id,
-            "environment": self.environment,
-            "severity": severity,
-            "target": target,
-            "details": redact_payload(details or {}) if details else None,
-            "duration_ms": duration_ms,
-        }
+        correlation_id = get_correlation_id()
+        redacted_details = redact_payload(details or {}) if details else None
         try:
-            return AuditEvent(**event_kwargs)
+            return AuditEvent(
+                event_type=event_type,
+                actor=actor,
+                action=action,
+                outcome=outcome,
+                correlation_id=correlation_id,
+                service=self.service_name,
+                service_instance=self.server_id,
+                environment=self.environment,
+                severity=severity,
+                target=target,
+                details=redacted_details,
+                duration_ms=duration_ms,
+            )
         except TypeError:
-            event_kwargs.pop("service_instance", None)
-            event_kwargs.pop("environment", None)
-            event_kwargs.pop("severity", None)
-            return AuditEvent(**event_kwargs)
+            return AuditEvent(
+                event_type=event_type,
+                actor=actor,
+                action=action,
+                outcome=outcome,
+                correlation_id=correlation_id,
+                service=self.service_name,
+                target=target,
+                details=redacted_details,
+                duration_ms=duration_ms,
+            )
 
     def get_backend_name(self) -> str:
         """Return the active audit backend identifier."""

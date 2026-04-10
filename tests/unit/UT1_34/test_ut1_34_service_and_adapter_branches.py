@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import pytest
 
@@ -84,6 +85,35 @@ def test_service_search_wrapper_path(service: IndexService) -> None:
     service.ingest_text("default", "search_cov", "alpha beta gamma", "api://search", actor="writer")
     rows = service.search("default", "search_cov", "alpha", top_k=5, filters=None)
     assert rows
+
+
+def test_service_search_falls_back_to_local_documents_when_vdb_returns_empty(
+    monkeypatch: pytest.MonkeyPatch, service: IndexService
+) -> None:
+    service.ingest_text(
+        "default",
+        "search_local_fallback",
+        "cloud computing fallback document",
+        "api://search-local-fallback",
+        actor="writer",
+        metadata={"tenant": "alpha"},
+    )
+
+    async def _empty_search(*_args, **_kwargs):
+        return SimpleNamespace(results=[])
+
+    monkeypatch.setattr(service.vdb, "search", _empty_search)
+
+    rows = service.search(
+        "default",
+        "search_local_fallback",
+        "cloud computing",
+        top_k=5,
+        filters={"tenant": "alpha"},
+    )
+
+    assert len(rows) == 1
+    assert "cloud computing fallback document" in rows[0]["text"]
 
 
 def test_ingest_uses_backend_collection_name_for_upsert(

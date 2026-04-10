@@ -29,11 +29,30 @@ from cloud_dog_api_kit import (  # type: ignore
     register_mcp_contract,
 )
 import cloud_dog_idam  # type: ignore
+from cloud_dog_logging import get_audit_logger  # PS-40 tool audit
+from cloud_dog_logging.audit_schema import Actor, Target
 from cloud_dog_logging.correlation import get_correlation_id as get_logging_correlation_id
 from cloud_dog_logging.correlation import set_correlation_id as set_logging_correlation_id
+
+_tool_audit_logger = get_audit_logger()
+
+
+def _log_tool_audit(tool_name: str, actor_id: str, outcome: str, details: dict[str, Any] | None = None) -> None:
+    """PS-40 tool audit — redact document content, log metadata only."""
+    safe = dict(details or {})
+    for key in ("content", "text", "document", "body", "chunks"):
+        safe.pop(key, None)
+    _tool_audit_logger.log_crud(
+        actor=Actor(type="service", id=actor_id),
+        action=f"mcp.tool.{tool_name}",
+        target=Target(type="mcp_tool", id=tool_name),
+        outcome=outcome,
+        **({"details": safe} if safe else {}),
+    )
 from fastapi import Request
 
 from index_server.auth.middleware import AuthMiddleware
+from index_server.logging_runtime import init_platform_logging
 from index_server.runtime_config import resolve_server_binding
 from index_tools.config.loader import runtime_env_files
 from index_tools.db import database_health, initialise_database, shutdown_database
@@ -43,14 +62,19 @@ from index_tools.tools.service import IndexService
 
 def _mcp_audit_path() -> str:
     """Resolve MCP audit path from configured environment keys."""
-    from cloud_dog_config import get_config  # type: ignore
+    try:
+        from cloud_dog_config import get_config  # type: ignore
+    except Exception:
+        get_config = None  # type: ignore[assignment]
 
-    return str(
-        get_config("index.mcp_audit_path")
-        or get_config("index.storage.audit.path")
-        or get_config("audit.log_path")
-        or "logs/index-retriever-audit-mcp.jsonl"
-    ).strip()
+    for key in ("index.mcp_audit_path", "index.storage.audit.path", "audit.log_path"):
+        try:
+            value = get_config(key) if get_config is not None else None
+        except Exception:
+            value = None
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return "logs/index-retriever-audit-mcp.jsonl"
 
 
 def _maybe_disable_timeout_middleware(app: Any) -> Any:
@@ -152,6 +176,14 @@ def _required_roles_for_tool(tool_name: str) -> set[str]:
     return {"admin"}
 
 
+def _enforce_tool_rbac(tool_name: str, roles: set[str], *, actor_id: str) -> None:
+    """PS-50: per-tool RBAC at MCP tool dispatch — deny when caller roles miss required intersection."""
+    required_roles = _required_roles_for_tool(tool_name)
+    if not roles.intersection(required_roles):
+        _log_tool_audit(tool_name, actor_id, "denied", {"roles": sorted(roles), "required": sorted(required_roles)})
+        raise PermissionError(f"Authorisation failed for tool '{tool_name}'")
+
+
 def list_tool_names(registry: ToolRegistry) -> list[str]:
     """Execute list tool names."""
     return [tool["name"] for tool in registry.list_tools()]
@@ -181,6 +213,25 @@ def _normalise_job_payload(job: Any) -> dict[str, Any]:
             "ordering_key",
             "idempotency_key",
             "created_at",
+            "updated_at",
+            "started_at",
+            "finished_at",
+            "next_run_at",
+            "last_heartbeat_at",
+            "attempt",
+            "max_attempts",
+            "claimed_by",
+            "correlation_id",
+            "trace_id",
+            "user_id",
+            "request_source",
+            "request_ip",
+            "request_auth_method",
+            "request_auth_identity",
+            "request_user_agent",
+            "last_error",
+            "result_ref",
+            "progress",
         ):
             if hasattr(job, key):
                 payload[key] = getattr(job, key)
@@ -188,9 +239,17 @@ def _normalise_job_payload(job: Any) -> dict[str, Any]:
     status = payload.get("status")
     if hasattr(status, "value"):
         payload["status"] = status.value
-    created_at = payload.get("created_at")
-    if callable(getattr(created_at, "isoformat", None)):
-        payload["created_at"] = created_at.isoformat()
+    for timestamp_key in (
+        "created_at",
+        "updated_at",
+        "started_at",
+        "finished_at",
+        "next_run_at",
+        "last_heartbeat_at",
+    ):
+        timestamp = payload.get(timestamp_key)
+        if callable(getattr(timestamp, "isoformat", None)):
+            payload[timestamp_key] = timestamp.isoformat()
     return payload
 
 
@@ -237,14 +296,23 @@ def execute_tool(
     registry: ToolRegistry | None = None,
     identity_roles: set[str] | None = None,
 ) -> dict[str, Any]:
-    """Execute execute tool."""
+    """Execute execute tool with PS-40 audit logging."""
     # Covers: FR-16, FR-13B
     active_registry = registry or build_registry()
     _ = active_registry.get(tool_name)
+    actor_id = str(arguments.get("actor", "mcp"))
+    _log_tool_audit(
+        tool_name,
+        actor_id,
+        "success",
+        {
+            "phase": "invoke",
+            "profile": arguments.get("profile"),
+            "collection": arguments.get("collection"),
+        },
+    )
     roles = identity_roles or {"admin"}
-    required_roles = _required_roles_for_tool(tool_name)
-    if not roles.intersection(required_roles):
-        raise PermissionError(f"Authorisation failed for tool '{tool_name}'")
+    _enforce_tool_rbac(tool_name, roles, actor_id=actor_id)
 
     if tool_name == "profiles_list":
         return {"profiles": service.profiles_list()}
@@ -572,6 +640,8 @@ def execute_tool(
                 "error": f"Search backend unavailable: {exc}",
                 "status": "backend_error",
             }
+        except KeyError:
+            raise
         except Exception as exc:  # noqa: BLE001
             return {
                 "results": [],
@@ -626,8 +696,8 @@ def execute_tool(
     if tool_name == "queue_status":
         return _normalise_queue_status(service.queue_status())
     if tool_name == "ingest_stream_open":
-        from index_server.streaming import ingest_stream_open as _stream_open
-        return _stream_open(
+        from index_server.streaming import ingest_stream_session_start as _stream_session_start
+        return _stream_session_start(
             service=service,
             profile=str(arguments.get("profile", "default")),
             collection=str(arguments.get("collection", "default")),
@@ -650,12 +720,7 @@ def execute_tool(
 
 def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | None = None) -> Any:
     """Execute build mcp app."""
-    # Ensure platform config is loaded for this process.
-    from cloud_dog_config import load_config  # type: ignore
-    try:
-        load_config(env_files=runtime_env_files(), unresolved_policy="strict")
-    except Exception:
-        pass  # Config may already be loaded
+    init_platform_logging("mcp_server")
     if cloud_dog_idam is None:  # pragma: no cover - platform package is mandatory
         raise RuntimeError("cloud_dog_idam is required")
     active_service = service or IndexService(audit_path=_mcp_audit_path())
@@ -674,8 +739,9 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
         active_service._idam_api_keys = auth._api_key_manager
     elif hasattr(auth, "_provider") and hasattr(auth._provider, "_api_key_manager"):
         active_service._idam_api_keys = auth._provider._api_key_manager
-    # Share user store with auth middleware for disabled-user checks
-    auth._user_store = active_service.users
+    # Share user store with auth middleware for disabled-user checks when available.
+    if hasattr(active_service, "users"):
+        auth._user_store = active_service.users
     app = _create_runtime_app(on_shutdown=shutdown_database)
 
     def _sync_logging_correlation(request: Request) -> str:

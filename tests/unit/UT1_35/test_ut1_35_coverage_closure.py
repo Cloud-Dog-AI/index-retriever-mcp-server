@@ -117,6 +117,7 @@ def test_api_require_roles_http403_branch(monkeypatch: pytest.MonkeyPatch, servi
 
 
 def test_api_main_module_branch(monkeypatch: pytest.MonkeyPatch) -> None:
+    api_port = os.environ.get("CLOUD_DOG__API_SERVER__PORT", "8074")
     captured: dict[str, object] = {}
     fake_uvicorn = SimpleNamespace(
         run=lambda app, host, port, log_level: captured.update(
@@ -124,9 +125,9 @@ def test_api_main_module_branch(monkeypatch: pytest.MonkeyPatch) -> None:
         )
     )
     monkeypatch.setitem(sys.modules, "uvicorn", fake_uvicorn)
-    monkeypatch.setenv("CLOUD_DOG__API_SERVER__PORT", os.environ["CLOUD_DOG__API_SERVER__PORT"])
+    monkeypatch.setenv("CLOUD_DOG__API_SERVER__PORT", api_port)
     runpy.run_module("index_server.api_server", run_name="__main__", alter_sys=True)
-    assert captured["port"] == int(os.environ["CLOUD_DOG__API_SERVER__PORT"])
+    assert captured["port"] == int(api_port)
 
 
 def test_mcp_role_mapping_and_execute_paths(service, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -197,6 +198,7 @@ def test_mcp_role_mapping_and_execute_paths(service, monkeypatch: pytest.MonkeyP
 
 
 def test_mcp_health_and_main_module_paths(monkeypatch: pytest.MonkeyPatch, service) -> None:
+    mcp_port = os.environ.get("CLOUD_DOG__MCP_SERVER__PORT", "8076")
     app = mcp_server.build_mcp_app(service=service)
     local_health = next(
         route.endpoint
@@ -214,9 +216,9 @@ def test_mcp_health_and_main_module_paths(monkeypatch: pytest.MonkeyPatch, servi
         )
     )
     monkeypatch.setitem(sys.modules, "uvicorn", fake_uvicorn)
-    monkeypatch.setenv("CLOUD_DOG__MCP_SERVER__PORT", os.environ["CLOUD_DOG__MCP_SERVER__PORT"])
+    monkeypatch.setenv("CLOUD_DOG__MCP_SERVER__PORT", mcp_port)
     runpy.run_module("index_server.mcp_server", run_name="__main__", alter_sys=True)
-    assert captured["port"] == int(os.environ["CLOUD_DOG__MCP_SERVER__PORT"])
+    assert captured["port"] == int(mcp_port)
 
 
 def test_auth_connector_registry_and_embedding_branches(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:

@@ -4,7 +4,7 @@ DB_URL=sqlite+aiosqlite:///data/index-retriever-at.db
 CLOUD_DOG__INDEX__VDB__PROVIDER=chroma
 CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=ollama
 CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text
-EMBED_BASE_URL=https://llm1.cloud-dog.net
+EMBED_BASE_URL=https://llm2.cloud-dog.net
 EMBED_API_KEY=
 CLOUD_DOG__INDEX__VDB__CHROMA_URL=${vault.dev.vdbs.chroma.base_url}
 CLOUD_DOG__INDEX__VDB__CHROMA_AUTH_TOKEN=${vault.dev.vdbs.chroma.auth_token}
@@ -25,4 +25,4 @@ CLOUD_DOG__DB__DATABASE=./data/index-retriever-at.db
 TEST_A2A_API_KEY=12345678
 
 CLOUD_DOG__INDEX__AUTH__API_KEYS=test-api-key,valid-reader-token:reader,valid-writer-token:writer,valid-admin-token:admin
-CLOUD_DOG_WEB_LOGIN_USERNAME=admin
+CLOUD_DOG_WEB_LOGIN_USERNAME=dummy

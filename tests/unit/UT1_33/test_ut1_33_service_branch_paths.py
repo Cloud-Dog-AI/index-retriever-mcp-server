@@ -88,7 +88,7 @@ def test_service_delete_reindex_retention_and_stream_errors(service: IndexServic
     removed_by_retention = service.retention_run("default", "ret", older_than_days=100)
     assert removed_by_retention >= 0
 
-    sid = service.ingest_stream_open("default", "streams", "order-1")
+    sid = service.ingest_stream_session_start("default", "streams", "order-1")
     _ = service.ingest_stream_event(sid, "chunk-1", actor="writer")
     closed = service.ingest_stream_close(sid)
     assert closed["ingested_events"] == 1

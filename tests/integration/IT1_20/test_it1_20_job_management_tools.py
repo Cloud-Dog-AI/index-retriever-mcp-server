@@ -90,7 +90,7 @@ def test_job_management_tools_contract(service: IndexService) -> None:
         )
     service.vdb.upsert_records = original_upsert
 
-    failed_list = _call_tool(client, "job_list", {"status": "failed"}, "valid-admin-token")
+    failed_list = _call_tool(client, "job_list", {"status": "dead_lettered"}, "valid-admin-token")
     failed_jobs = failed_list.get("jobs")
     assert isinstance(failed_jobs, list)
     assert failed_jobs, "Expected at least one failed job from forced failure path"

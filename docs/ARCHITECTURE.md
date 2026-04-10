@@ -253,6 +253,74 @@ This registry is used by both API and MCP surfaces, which is why the same tool s
 - retention and reindex actions,
 - dependency health reporting.
 
+### 6.4 Metadata uplift boundary and control-plane contract
+
+The metadata uplift introduces a stricter ownership boundary between this service and `cloud_dog_vdb`.
+
+#### 6.4.1 Ownership split
+
+`index-retriever-mcp-server` owns:
+
+- transport contracts for HTTP, MCP, A2A, and Admin WebUI,
+- authentication, RBAC enforcement, and audit entry points,
+- profile and collection selection,
+- job creation, progress reporting, and orchestration,
+- caller attribution inputs such as actor, app, user, and session context,
+- response shaping and compatibility aliases for API and MCP callers.
+
+`cloud_dog_vdb` owns:
+
+- canonical metadata schema and validation,
+- deterministic identity helpers for `doc_id`, `record_id`, content/source hashes, and chunk lineage,
+- parser, OCR, table extraction, and chunk-provenance normalization,
+- backend-portable metadata filter planning and lifecycle helpers,
+- backend adapter writes and reads for record metadata persistence.
+
+Current implementation note:
+
+- some legacy service ingest paths still populate metadata defaults and generate UUID-based document identifiers locally,
+- this is a transition gap, not the intended long-term ownership model for the uplift.
+
+#### 6.4.2 Forbidden duplication list
+
+The service MUST NOT permanently duplicate package-owned logic for:
+
+- canonical metadata required-field validation,
+- deterministic ID generation rules,
+- source/content hash computation rules once package helpers exist,
+- parser/OCR/table provenance schema design,
+- backend-specific metadata filter translation,
+- lifecycle transition semantics for `active`, `superseded`, `deleted`, and `archived`,
+- retention-field interpretation and purge-candidate selection.
+
+The package MUST NOT take ownership of service concerns such as:
+
+- transport authentication and RBAC decisions,
+- API/MCP/A2A route registration and response envelopes,
+- job/audit correlation IDs,
+- profile CRUD and service runtime configuration persistence,
+- WebUI-facing compatibility aliases or service-local request contracts.
+
+#### 6.4.3 Control-plane integration model
+
+The service-to-package hand-off is a control-plane contract:
+
+- service passes in:
+  - resolved `profile` and `collection`,
+  - source payload or source reference,
+  - actor and caller context (`app_id`, `user_id`, `session_id`) when available,
+  - parser/OCR/chunking options,
+  - retention and dedupe intent,
+  - explicit metadata overrides that are additive rather than schema-defining;
+- package returns:
+  - validated canonical metadata per record,
+  - deterministic identifiers and lineage fields,
+  - parser/OCR/table provenance,
+  - backend write/read results,
+  - lifecycle and filter semantics that are portable across supported adapters.
+
+This means the service is the policy and transport entry point, while `cloud_dog_vdb` is the canonical metadata and vector-operation execution plane.
+
 ## 7. Transport Contracts
 
 ### 7.1 HTTP API
@@ -481,6 +549,18 @@ This distinction matters for external users:
 - connector capability exists at module level,
 - contract and configuration support exists in requirements and tests,
 - the delivered main service path for `ingest_reference` is still the simpler local-path implementation.
+
+### 10.3 Canonical metadata flow
+
+The target metadata flow for the uplift is:
+
+1. the service resolves transport identity, profile, collection, and request options;
+2. the service passes those control-plane inputs into `cloud_dog_vdb`;
+3. `cloud_dog_vdb` computes or validates canonical metadata and record identities;
+4. backend adapters persist and query records using that canonical metadata model;
+5. the service formats response payloads for API or MCP callers without redefining canonical field semantics.
+
+Until the uplift is completed, some legacy service-core paths still perform local metadata shaping. Those paths should be treated as temporary compatibility behaviour and not as the final architecture boundary.
 
 ### 10.3 Search and retrieval path
 

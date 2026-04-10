@@ -12,17 +12,316 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Web server entrypoint for SPA and legacy admin UI delivery."""
+"""Thin Web server for SPA delivery and API proxy helpers."""
 
 from __future__ import annotations
 
-from index_server.api_server import build_api_app
+import json
+import os
+from typing import Any
+
+from cloud_dog_api_kit import create_app
+from cloud_dog_api_kit.web.proxy import WebApiProxy
+from cloud_dog_config import load_config  # type: ignore
+from cloud_dog_storage import path_utils
+from fastapi import HTTPException, Request
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
+
+from index_tools.config.loader import runtime_env_files
 from index_server.runtime_config import resolve_server_binding
+
+_SPA_RESERVED_SEGMENTS = {
+    "api",
+    "app",
+    "a2a",
+    "mcp",
+    "auth",
+    "assets",
+    "health",
+    "runtime-config.js",
+    "docs",
+    "openapi.json",
+    "redoc",
+    "webapi",
+    "status",
+}
+
+_SPA_ADMIN_PATHS = {
+    "admin",
+    "admin/users",
+    "admin/groups",
+    "admin/api-keys",
+    "admin/rbac",
+}
+
+
+def _project_root_dir() -> str:
+    """Resolve the repository root for runtime assets."""
+    current = path_utils.resolve_path(__file__)
+    return path_utils.parent(path_utils.parent(path_utils.parent(current)))
+
+
+def _ui_dist_dir() -> str:
+    """Resolve the built SPA distribution directory."""
+    return path_utils.join(_project_root_dir(), "ui", "dist")
+
+
+def _ui_assets_dir() -> str:
+    """Resolve the built SPA assets directory."""
+    return path_utils.join(_ui_dist_dir(), "assets")
+
+
+def _ui_index_path() -> str:
+    """Resolve the built SPA index file."""
+    return path_utils.join(_ui_dist_dir(), "index.html")
+
+
+def _normalise_api_host(raw_host: str) -> str:
+    """Convert wildcard bind addresses into a routable loopback target."""
+    host = str(raw_host or "").strip()
+    if host in {"0.0.0.0", "::", "[::]"}:
+        return "127.0.0.1"
+    return host or "127.0.0.1"
+
+
+class _ProxyConfigBridge:
+    """Bridge cloud_dog_config into the keys expected by WebApiProxy."""
+
+    def __init__(self, config: Any) -> None:
+        self._config = config
+        api_binding = resolve_server_binding("api_server")
+        self.api_base_url = f"http://{_normalise_api_host(api_binding.host)}:{int(api_binding.port)}"
+
+    def get(self, key: str, default: Any = None) -> Any:
+        if key in {"web_server.api_base_url", "api_server.base_url"}:
+            return self.api_base_url
+        if key == "web_server.verify_tls":
+            return False
+        if key == "api_server.api_key":
+            return self._config.get("test.api_key") or self._config.get("auth.admin_token") or default
+        value = self._config.get(key)
+        return default if value is None else value
+
+
+def _runtime_override(config: Any, env_name: str, config_key: str, default: str = "") -> str:
+    """Resolve a runtime config value from env first, then config, then default."""
+    raw = os.environ.get(env_name, "").strip()
+    if raw:
+        return raw
+    return str(config.get(config_key) or "").strip() or default
+
+
+def _runtime_override_number(config: Any, env_name: str, config_key: str, default: float) -> int | float:
+    """Resolve a numeric runtime config value, preserving integers where possible."""
+    raw = _runtime_override(config, env_name, config_key, str(default))
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        value = float(default)
+    return int(value) if value.is_integer() else value
 
 
 def build_web_app() -> object:
-    """Build the web server app."""
-    return build_api_app()
+    """Build the thin web server app."""
+    try:
+        config = load_config(
+            env_files=runtime_env_files(),
+            defaults_yaml="defaults.yaml",
+            unresolved_policy="strict",
+            vault_enabled=True,
+        )
+    except Exception:
+        config = load_config(
+            env_files=runtime_env_files(),
+            defaults_yaml="defaults.yaml",
+            unresolved_policy="empty",
+            vault_enabled=False,
+        )
+    proxy_config = _ProxyConfigBridge(config)
+    proxy = WebApiProxy.from_config(proxy_config)
+    api_binding = resolve_server_binding("api_server")
+    mcp_binding = resolve_server_binding("mcp_server")
+    a2a_binding = resolve_server_binding("a2a_server")
+
+    api_base_url = proxy_config.api_base_url
+    mcp_base_url = f"http://{_normalise_api_host(mcp_binding.host)}:{int(mcp_binding.port)}"
+    a2a_base_url = f"http://{_normalise_api_host(a2a_binding.host)}:{int(a2a_binding.port)}"
+
+    app = create_app(
+        title="index-retriever-mcp-server Web",
+        version="0.1.0",
+        description="Thin Web surface for index-retriever-mcp-server",
+        cors_origins=["*"],
+    )
+
+    assets_dir = _ui_assets_dir()
+    if path_utils.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="ui-assets")
+
+    def _runtime_config_response() -> Response:
+        payload = {
+            "ENV": _runtime_override(config, "CLOUD_DOG_ENVIRONMENT", "service.environment", "dev"),
+            "API_BASE_URL": api_base_url,
+        }
+        payload["MCP_BASE_URL"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__MCP_BASE_URL", "index.ui.mcp_base_url", mcp_base_url)
+        payload["A2A_BASE_URL"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__A2A_BASE_URL", "index.ui.a2a_base_url", a2a_base_url)
+        payload["AUTH_MODE"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__AUTH_MODE", "index.ui.auth_mode", "cookie")
+        payload["APP_VERSION"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__APP_VERSION", "index.ui.app_version", "dev")
+        payload["BUILD_DATE"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__BUILD_DATE", "index.ui.build_date")
+        payload["GIT_COMMIT"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__GIT_COMMIT", "index.ui.git_commit")
+        payload["DEFAULT_PROFILE"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__DEFAULT_PROFILE", "index.ui.default_profile", "default")
+        payload["DEFAULT_COLLECTION"] = _runtime_override(
+            config,
+            "CLOUD_DOG__INDEX__UI__DEFAULT_COLLECTION",
+            "index.ui.default_collection",
+            "w12_documents",
+        )
+        payload["SESSION_TIMEOUT_MINUTES"] = _runtime_override_number(
+            config,
+            "CLOUD_DOG__INDEX__UI__SESSION_TIMEOUT_MINUTES",
+            "index.ui.session_timeout_minutes",
+            30,
+        )
+        body = (
+            "window.__RUNTIME_CONFIG__ = "
+            + json.dumps(payload, ensure_ascii=True)
+            + ";\n"
+        )
+        return Response(content=body, media_type="application/javascript")
+
+    async def _proxy_request(path: str, request: Request) -> Response:
+        headers = {
+            key: value
+            for key, value in request.headers.items()
+            if key.lower() not in {"host", "content-length"}
+        }
+        body = await request.body()
+        json_body: Any = None
+        if body:
+            content_type = headers.get("content-type", "")
+            if "application/json" in content_type:
+                try:
+                    json_body = json.loads(body)
+                except json.JSONDecodeError:
+                    json_body = None
+
+        result = await proxy.request(
+            request.method,
+            path if path.startswith("/") else f"/{path}",
+            json=json_body,
+            params=dict(request.query_params),
+            headers=headers,
+            cookies=dict(request.cookies),
+        )
+        if result.data is None:
+            content: bytes | str = ""
+        elif isinstance(result.data, (dict, list)):
+            content = json.dumps(result.data)
+        else:
+            content = result.data
+        return Response(
+            content=content,
+            status_code=result.status_code,
+            media_type=result.headers.get("content-type", "application/json"),
+            headers={key: value for key, value in result.headers.items() if key.lower() not in {"content-length", "transfer-encoding"}},
+        )
+
+    @app.get("/health")
+    async def health() -> JSONResponse:
+        return JSONResponse(
+            {
+                "status": "ok",
+                "application": "index-retriever-mcp-server",
+                "surface": "web",
+                "api_base_url": api_base_url,
+                "api_port": int(api_binding.port),
+                "ui_dist_path": _ui_dist_dir(),
+            }
+        )
+
+    @app.get("/status")
+    async def status() -> JSONResponse:
+        return JSONResponse(
+            {
+                "status": "ok",
+                "surface": "web",
+                "api_base_url": api_base_url,
+                "mcp_base_url": mcp_base_url,
+                "a2a_base_url": a2a_base_url,
+            }
+        )
+
+    @app.get("/runtime-config.js")
+    async def runtime_config() -> Response:
+        return _runtime_config_response()
+
+    @app.api_route("/webapi/proxy/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+    async def web_api_proxy(path: str, request: Request) -> Response:
+        """Proxy JSON-capable API requests through the thin web surface."""
+        return await _proxy_request(path, request)
+
+    @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+    async def api_proxy(path: str, request: Request) -> Response:
+        return await _proxy_request(f"/api/{path}", request)
+
+    @app.api_route("/app/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+    async def app_proxy(path: str, request: Request) -> Response:
+        return await _proxy_request(f"/app/{path}", request)
+
+    @app.get("/admin")
+    @app.get("/admin/users")
+    @app.get("/admin/groups")
+    @app.get("/admin/api-keys")
+    @app.get("/admin/rbac")
+    async def admin_spa_routes() -> Response:
+        return _spa_index()
+
+    @app.api_route("/admin/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+    async def admin_proxy(path: str, request: Request) -> Response:
+        return await _proxy_request(f"/admin/{path}", request)
+
+    @app.api_route("/auth/{path:path}", methods=["GET", "POST"])
+    async def auth_proxy(path: str, request: Request) -> Response:
+        return await _proxy_request(f"/auth/{path}", request)
+
+    @app.get("/openapi.json")
+    async def openapi_proxy(request: Request) -> Response:
+        return await _proxy_request("/openapi.json", request)
+
+    @app.get("/docs")
+    async def docs_proxy(request: Request) -> Response:
+        return await _proxy_request("/docs", request)
+
+    @app.get("/redoc")
+    async def redoc_proxy(request: Request) -> Response:
+        return await _proxy_request("/redoc", request)
+
+    def _spa_index() -> Response:
+        index_path = _ui_index_path()
+        if not path_utils.exists(index_path):
+            return HTMLResponse(content="<h1>UI not built</h1>", status_code=503)
+        return FileResponse(index_path)
+
+    @app.get("/")
+    async def spa_root() -> Response:
+        return _spa_index()
+
+    @app.get("/{path:path}")
+    async def spa_fallback(path: str) -> Response:
+        if path in _SPA_ADMIN_PATHS:
+            return _spa_index()
+        first_segment = path.split("/", 1)[0]
+        if first_segment in _SPA_RESERVED_SEGMENTS:
+            raise HTTPException(status_code=404, detail="Not found")
+        if "." in path.rsplit("/", 1)[-1]:
+            candidate = path_utils.join(_ui_dist_dir(), path)
+            if path_utils.exists(candidate):
+                return FileResponse(candidate)
+            raise HTTPException(status_code=404, detail="Not found")
+        return _spa_index()
+
+    return app
 
 
 def run_web_server() -> None:

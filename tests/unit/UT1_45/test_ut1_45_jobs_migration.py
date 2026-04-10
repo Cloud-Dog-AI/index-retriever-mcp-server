@@ -56,14 +56,17 @@ def test_jobs_backend_lifecycle_with_retry(tmp_path: Path) -> None:
     result = engine.run(queued.job_id)
     assert result.status is JobStatus.succeeded
     assert attempts["count"] == 2
+    assert result.attempt == 2
+    assert result.progress["phase"] == "succeeded"
 
     status = engine.queue_status()
     assert status["backend"] == "cloud_dog_jobs"
     assert status["server_id"] == "ut-jobs-retry"
     assert status["failed"] == 0
+    assert status["dead_lettered"] == 0
 
 
-def test_jobs_backend_timeout_marks_terminal_status(tmp_path: Path) -> None:
+def test_jobs_backend_timeout_marks_dead_lettered_terminal_status(tmp_path: Path) -> None:
     database_url = f"sqlite+aiosqlite:///{tmp_path / 'jobs-timeout.db'}"
     engine = QueueEngine(
         database_url=database_url,
@@ -90,4 +93,41 @@ def test_jobs_backend_timeout_marks_terminal_status(tmp_path: Path) -> None:
     with pytest.raises(TimeoutError, match="timed out"):
         engine.run(queued.job_id)
 
-    assert engine.get(queued.job_id).status is JobStatus.timeout
+    job = engine.get(queued.job_id)
+    assert job.status is JobStatus.dead_lettered
+    assert job.last_error is not None
+    assert job.last_error["type"] == "timeout"
+
+
+def test_jobs_backend_records_progress_and_dead_letters_failures(tmp_path: Path) -> None:
+    database_url = f"sqlite+aiosqlite:///{tmp_path / 'jobs-progress.db'}"
+    engine = QueueEngine(
+        database_url=database_url,
+        server_id="ut-jobs-progress",
+        timeout_seconds=5,
+        retry_max_attempts=1,
+        retry_backoff_seconds=0.01,
+    )
+
+    def failing(job: JobRecord) -> None:
+        engine.record_progress(job.job_id, phase="custom-step", percentage=55, message="mid-flight")
+        raise RuntimeError("forced failure")
+
+    engine.register_handler("ingest_text", failing)
+    queued = engine.enqueue(
+        JobRecord(
+            job_id="job-progress",
+            profile="default",
+            collection="jobs",
+            job_type="ingest_text",
+        ),
+        payload={"profile": "default", "collection": "jobs", "text": "payload", "source": "inline://progress"},
+    )
+
+    with pytest.raises(RuntimeError, match="forced failure"):
+        engine.run(queued.job_id)
+
+    job = engine.get(queued.job_id)
+    assert job.status is JobStatus.dead_lettered
+    assert job.progress["phase"] == "dead_lettered"
+    assert any(event["phase"] == "custom-step" for event in job.progress["events"])

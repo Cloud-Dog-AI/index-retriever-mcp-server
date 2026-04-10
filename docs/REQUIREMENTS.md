@@ -270,6 +270,67 @@ The system SHALL support ingestion of:
 - The delegated preview/ingestion pipeline SHALL default to the recursive chunker when no explicit chunker override is supplied.
 - Overlap behaviour SHALL apply only to the token-overlap strategy; other strategies SHALL preserve their native boundary logic without synthetic overlap insertion.
 
+### FR-10B Canonical metadata uplift contract (W28A-884 Phase 1)
+- The canonical metadata model for `index-retriever-mcp-server` SHALL converge on the `cloud_dog_vdb` metadata contract and SHALL be applied consistently across ingest, retrieval, delete, dedupe, retention, and reindex operations.
+- Status tags in this section mean:
+  - `EXISTING`: already required elsewhere in this document before W28A-884.
+  - `NEW`: introduced normatively by this uplift and not previously required as part of the canonical contract.
+- During migration, compatibility aliases MAY be preserved where already emitted today, but the canonical field names below SHALL become the normative contract.
+
+#### FR-10B.1 Identity and lineage
+- `doc_id` SHALL be returned on retrieval and search results and SHALL become the canonical document identity. `EXISTING`
+- `doc_id` generation SHALL converge on deterministic package-owned computation rather than service-local ad hoc generation. `NEW`
+- `record_id` SHALL identify the stored record written to the backend and SHALL be preserved for package-owned ingest/upsert and delete targeting. `NEW`
+- `chunk_id` SHALL identify the logical chunk within a document and SHALL remain stable across retrieval and delete/filter operations. `EXISTING`
+- `supersedes` SHALL identify the prior `doc_id` or `record_id` replaced by a versioning or dedupe operation. `NEW`
+- `is_latest` SHALL indicate whether a record is the current live version for a source lineage. `NEW`
+
+#### FR-10B.2 Source reference
+- `source_uri` SHALL remain the canonical source locator for traceability, delete targeting, and deterministic identity inputs. `EXISTING`
+- `filename` SHALL remain preserved and returned where derivable from the source reference or uploaded asset. `EXISTING`
+- `mime_type` SHALL remain preserved and returned with ingest and retrieval metadata. `EXISTING`
+- `size_bytes` SHALL become the canonical byte-size field for source payload size. Existing `size` output MAY remain as a temporary compatibility alias during migration. `NEW`
+
+#### FR-10B.3 Integrity
+- `content_hash` SHALL remain preserved as the canonical hash of the indexed content used for dedupe and lineage decisions. `EXISTING`
+- `source_hash` SHALL be added as the canonical hash of the original source payload where available so dedupe and reindex decisions can distinguish source changes from chunking or embedding changes. `NEW`
+
+#### FR-10B.4 Time and lifecycle
+- `created_at` SHALL become a required UTC RFC3339 lifecycle timestamp for the canonical metadata contract. `NEW`
+- `ingested_at` SHALL remain preserved as the ingest-time timestamp surfaced to callers. `EXISTING`
+- `lifecycle_state` SHALL become a required canonical lifecycle field for active, superseded, deleted, or archived records. `NEW`
+- `ttl_days` SHALL be added as the canonical retention-policy field carried with records when retention rules are material to lifecycle processing. `NEW`
+
+#### FR-10B.5 Attribution
+- `app_id` SHALL identify the calling application or integration surface when supplied by the control plane. `NEW`
+- `user_id` SHALL be preserved when user-scoped ingest or stream events are supplied. `EXISTING`
+- `session_id` SHALL be the canonical session or conversation identifier for stateful ingest and retrieval correlation. `NEW`
+- `profile` SHALL remain preserved as the service profile context. `EXISTING`
+- `collection` SHALL remain preserved as the collection/index namespace. `EXISTING`
+
+#### FR-10B.6 Embedding reproducibility
+- `embedding_model` SHALL be preserved with each indexed record to support deterministic rebuild, parity validation, and backend troubleshooting. `NEW`
+- `embedding_dim` SHALL be preserved where known so collection-write and parity checks can verify embedding compatibility. `NEW`
+- `chunker` SHALL be preserved as the canonical chunking strategy or chunker version used to produce the record. `NEW`
+- `token_count` SHALL be preserved where available for sizing, retention, and reproducibility analysis. `NEW`
+
+#### FR-10B.7 Governance
+- `access_tags` SHALL carry portable access-control labels used by metadata filters and policy enforcement. `NEW`
+- `pii_present` SHALL carry a canonical boolean or equivalent flag indicating whether PII was detected or asserted for the record. `NEW`
+
+#### FR-10B.8 Additive provenance
+- `parser` SHALL carry the selected parser provider and version lineage in canonical form. `NEW`
+- `ocr` SHALL carry OCR mode, provider, and decision provenance in canonical form. `NEW`
+- `page` SHALL carry page-level provenance where chunk origin is page-scoped. `NEW`
+- `section` SHALL carry section or heading provenance where extractors provide it. `NEW`
+- `table` SHALL carry table provenance and table-shape references where table extraction contributes to the record. `NEW`
+- `chunk_kind` SHALL distinguish narrative, table, OCR, caption, or other chunk classes where the parser pipeline can determine them. `NEW`
+
+#### FR-10B.9 Boundary rule for metadata ownership
+- `index-retriever-mcp-server` SHALL own transport-level request shaping, caller attribution, profile/collection resolution, and API/MCP response formatting.
+- `cloud_dog_vdb` SHALL own canonical metadata schema definition, validation, deterministic identifier helpers, parser/OCR/table provenance normalization, and backend-portable lifecycle/filter semantics.
+- Service-local metadata shaping that duplicates package-owned canonical rules SHALL be treated as transitional only and SHALL be retired as the package uplift lands.
+
 ### FR-11 Deduplication
 - The system SHALL detect duplicates using configurable strategies:
   - size + mtime,
@@ -604,3 +665,86 @@ Profile concept for this project: index and retrieval profiles defining vector b
 | CFG-11 | User, group, and API-key management SHALL be available via MCP, A2A, and WebUI with RBAC. |
 | CFG-12 | All CRUD operations SHALL be audit logged with user identity, action, timestamp, and outcome. |
 | CFG-13 | Only admin users SHALL be able to create, update, and delete index profiles and manage users or groups; read-only access SHALL be available to authorised non-admin users. |
+
+
+## W28A-883 PS-78 Cross-Platform File Handling Addendum
+
+### Verified current state
+
+- The service already supports ingest upload through the API and MCP: `UploadFile` handling in `api_server.py` and the `ingest_upload` tool in the MCP service layer.
+- The WebUI `IngestSearchPage` already uses `FileDropZone` and upload actions for browser-driven ingest.
+- Current file handling is ingest-centric. No standard file inventory, delete, or binary download lifecycle was found.
+
+### Required additions to satisfy PS-78
+
+- Extend the ingest-only contract to the full file lifecycle: `/files/upload`, `/files/upload_base64`, `/files`, `/files/{id}`, `DELETE /files/{id}`, and `/files/{id}/download`.
+- Add standard MCP file upload/download contracts in addition to `ingest_upload`.
+- Add A2A file transfer payloads for document exchange between retrieval agents.
+- Add URI-source intake for `http://`, `https://`, `s3://`, `ftp://`, and `file://` under explicit policy instead of limiting defaults to upload/text.
+- Add WebUI file inventory and download/delete surfaces for uploaded documents and derived artifacts.
+
+### Required PS-78 test plan
+
+- API: upload, list, download, delete, metadata verification.
+- MCP: `ingest_upload`, base64 upload/download, URI-source intake.
+- A2A: send a document reference or base64 payload to another retrieval-capable agent.
+- WebUI: `FileDropZone` upload, inventory view, download, delete.
+- Retrieval flow: upload document, verify searchable ingest, then verify the stored file lifecycle contract independently of retrieval results.
+
+## W28A-906 WebUI Standards Merge Addendum
+
+This addendum merges the 13-section `INDEX-RETRIEVER-E2E-TEST-SPEC.md` UI scope into normative requirements.
+
+Status labels:
+- `EXISTING`: already required elsewhere in this document before W28A-906.
+- `NEW`: made explicit by W28A-906 because the prior requirements did not state the WebUI contract clearly enough.
+
+### a) Profile Configuration — CRUD, VDB Backend Binding, and RBAC
+- `EXISTING`: The WebUI SHALL provide profile CRUD with vector-backend selection/binding and RBAC-governed mutation controls for runtime profiles.
+
+### b) Collection Management — CRUD and Backend-Aware Configuration
+- `EXISTING`: The WebUI SHALL provide collection CRUD with backend-aware collection settings, dimensions/metric controls, metadata/options, and RBAC-governed mutation controls.
+
+### c) Source Configuration — CRUD, Connector Types, and Schedule
+- `EXISTING`: The WebUI SHALL provide source-config CRUD with connector-type selection, profile/collection targeting, URI/reference fields, schedule fields, and RBAC-governed mutation controls.
+
+### d) Ingest — Text, Upload, Reference, Stream, and Metadata Verification
+- `EXISTING`: The WebUI SHALL provide ingest workflows for text, file upload, URI/reference intake, and streaming/session-oriented ingest surfaces backed by the canonical API/tool contracts.
+- `NEW`: The WebUI SHALL expose canonical metadata entry and post-ingest metadata inspection for ingest operations, including the standard metadata fields uplifted in W28A-884 to W28A-887.
+
+### e) Search, Retrieve, and Explain — Semantic and Metadata Filtering
+- `EXISTING`: The WebUI SHALL provide search and retrieve workflows for indexed content, including result paging, result export, and document/record retrieval.
+- `NEW`: The WebUI SHALL provide metadata-filter entry, metadata inspection, and search-explain visibility for search and retrieval workflows.
+
+### f) Retention, Delete, Reindex, and Lifecycle
+- `EXISTING`: The WebUI SHALL provide retention, delete-by-id, delete-by-filter, and reindex controls with explicit confirmation for destructive operations.
+- `NEW`: The WebUI SHALL expose lifecycle-oriented state and filter surfaces needed to operate retention, delete, and reindex workflows safely.
+
+### g) Parser, OCR, and Table Extraction Preview
+- `EXISTING`: The service SHALL expose parser, OCR, ingest-preview, extract-only, and table-extraction capabilities through the API/MCP surface.
+- `NEW`: The WebUI SHALL expose parser, OCR, and table-extraction preview workflows with operator-visible extracted content, structured metadata, and provenance details.
+
+### h) Cross-Backend Verification — Same Content, Multiple VDBs
+- `NEW`: The WebUI SHALL support operator verification that the same content can be ingested, searched, and compared across the supported vector backends: Qdrant, Chroma, OpenSearch, PGVector, and Weaviate.
+
+### i) Jobs — Async Ingest, Sync, and Retention Monitoring
+- `EXISTING`: The WebUI SHALL expose job-listing, job-detail, status, retry, cancel, and export capabilities for ingest, sync, reindex, and retention workflows.
+
+### j) Observability and Audit — Structured Logs and Metrics
+- `EXISTING`: The WebUI SHALL expose operational health, queue state, backend/embedding health, structured logs, audit-log inspection, and related operator metrics.
+
+### k) Dashboard — Operational Health and Metrics
+- `EXISTING`: The WebUI SHALL provide a dashboard surface for operational health, system metrics, quick actions, and recent operator-visible activity.
+
+### l) Canonical Metadata Round-Trip Verification
+- `NEW`: The WebUI SHALL support operator verification of canonical metadata round-trip behavior for ingest, search, retrieve, lifecycle, and delete flows, aligned to the W28A-884 to W28A-887 metadata uplift.
+
+### m) Full Audit Trail Log Verification
+- `NEW`: The WebUI SHALL support operator verification that mutating operations across sections a-l produce corresponding audit trail records with actor, target, action, outcome, correlation/trace information, and timestamps.
+
+### Shared WebUI Standards Expectations Across Sections a-m
+- `NEW`: CRUD-oriented views SHALL use `DataTable` with `EntityDialog` for add/edit/view interactions unless a stricter platform standard supersedes that pairing.
+- `NEW`: Search/filter-oriented views SHALL use `SearchPanel` where free-text or structured filtering is part of the operator workflow.
+- `NEW`: Structured metadata/config/result inspection views SHALL use `JsonExplorer` instead of raw JSON blocks where hierarchical inspection is required.
+- `NEW`: Code/content/result viewers and editors SHALL use `CodeViewer` and `CodeEditor` where extracted text, prompt/config JSON, diff-like content, or preview payloads require governed editor/viewer behavior.
+- `NEW`: API/MCP/A2A documentation surfaces SHALL use `ApiDocsPanel` with tabbed documentation where multiple protocol/reference families are presented together.

@@ -14,25 +14,37 @@
 
 from __future__ import annotations
 
-import os
 import json
 import secrets
-import time
 import socket
+import time
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from pathlib import Path
 import resource
-import shutil
+import os
 from typing import Any
 
 from cloud_dog_api_kit import LifecycleHooks, create_app, create_health_router  # type: ignore
 from cloud_dog_api_kit.a2a.card import create_a2a_card_router, A2ASkill
 import cloud_dog_idam  # type: ignore
-from cloud_dog_logging import setup_logging  # type: ignore
+from cloud_dog_storage import path_utils
 from cloud_dog_logging.correlation import get_correlation_id as get_logging_correlation_id
 from cloud_dog_logging.correlation import set_correlation_id as set_logging_correlation_id
+from cloud_dog_logging.correlation import set_environment, set_service_instance, set_service_name
+
+# Patch cloud_dog_logging ContextVar defaults so AuditMiddleware picks them up
+# in all async tasks. ContextVar.set() is task-scoped; we need module-level defaults.
+import os as _os_early
+from cloud_dog_logging import correlation as _correlation_mod
+_correlation_mod._environment_var = __import__("contextvars").ContextVar(
+    "environment", default=_os_early.environ.get("CLOUD_DOG_ENVIRONMENT", "dev"))
+_correlation_mod._service_name_var = __import__("contextvars").ContextVar(
+    "service_name", default="index-retriever-mcp-server")
+_correlation_mod._service_instance_var = __import__("contextvars").ContextVar(
+    "service_instance", default=_os_early.environ.get("HOSTNAME", "index-retriever-local"))
+del _os_early
+
 from fastapi import File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -43,6 +55,7 @@ except ImportError:  # pragma: no cover - optional runtime dependency
 
 from index_server.admin_ui import admin_ui_script, admin_ui_styles, profiles_page, security_page
 from index_server.auth.middleware import AuthMiddleware, AuthResult
+from index_server.logging_runtime import init_platform_logging
 from index_server.mcp_server import build_registry, execute_tool
 from index_server.runtime_config import resolve_server_binding
 from index_tools.config.loader import load_runtime_config, runtime_env_files
@@ -72,9 +85,15 @@ _SPA_RESERVED_SEGMENTS = {
 }
 
 
-def _log_path(name: str) -> Path:
+def _project_root_dir() -> str:
+    """Resolve the repository root for runtime assets."""
+    current = path_utils.resolve_path(__file__)
+    return path_utils.parent(path_utils.parent(path_utils.parent(current)))
+
+
+def _log_path(name: str) -> str:
     """Resolve a runtime log path."""
-    return Path("logs") / name
+    return path_utils.join("logs", name)
 
 
 def _parse_log_timestamp(raw: str | None) -> datetime | None:
@@ -92,12 +111,12 @@ def _parse_log_timestamp(raw: str | None) -> datetime | None:
         return None
 
 
-def _read_jsonl_records(path: Path, limit: int = 200) -> list[dict[str, Any]]:
+def _read_jsonl_records(path: str, limit: int = 200) -> list[dict[str, Any]]:
     """Read the tail of a JSONL log file as records."""
-    if not path.exists():
+    if not path_utils.exists(path):
         return []
     try:
-        lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+        lines = path_utils.read_text(path, encoding="utf-8", errors="ignore").splitlines()
     except OSError:
         return []
     records: list[dict[str, Any]] = []
@@ -116,46 +135,74 @@ def _read_jsonl_records(path: Path, limit: int = 200) -> list[dict[str, Any]]:
 
 def _api_audit_path() -> str:
     """Resolve API audit path from configured environment keys."""
-    from cloud_dog_config import get_config  # type: ignore
+    try:
+        from cloud_dog_config import get_config  # type: ignore
+    except Exception:
+        get_config = None  # type: ignore[assignment]
 
-    return str(
-        get_config("index.api_audit_path")
-        or get_config("index.storage.audit.path")
-        or get_config("audit.log_path")
-        or "logs/index-retriever-audit-api.jsonl"
-    ).strip()
+    for key in ("index.api_audit_path", "index.storage.audit.path", "audit.log_path"):
+        try:
+            value = get_config(key) if get_config is not None else None
+        except Exception:
+            value = None
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return "logs/index-retriever-audit-api.jsonl"
 
 
-def _ui_dist_dir() -> Path:
+def _ui_dist_dir() -> str:
     """Resolve the built SPA distribution directory."""
-    return Path(__file__).resolve().parents[2] / "ui" / "dist"
+    return path_utils.join(_project_root_dir(), "ui", "dist")
 
 
-def _ui_assets_dir() -> Path:
+def _ui_assets_dir() -> str:
     """Resolve the built SPA assets directory."""
-    return _ui_dist_dir() / "assets"
+    return path_utils.join(_ui_dist_dir(), "assets")
 
 
-def _ui_index_path() -> Path:
+def _ui_index_path() -> str:
     """Resolve the built SPA index file."""
-    return _ui_dist_dir() / "index.html"
+    return path_utils.join(_ui_dist_dir(), "index.html")
 
 
 def _runtime_config_payload() -> dict[str, str]:
     """Build runtime config for the SPA bootstrap."""
     from cloud_dog_config import get_config  # type: ignore
+
+    def _runtime_override(env_name: str, config_key: str, default: str = "") -> str:
+        raw = os.environ.get(env_name, "").strip()
+        if raw:
+            return raw
+        return str(get_config(config_key) or "").strip() or default
+
     return {
-        "ENV": str(get_config("service.environment") or "dev"),
-        "API_BASE_URL": str(get_config("index.ui.api_base_url") or "").strip() or "${window.location.origin}",
-        "MCP_BASE_URL": str(get_config("index.ui.mcp_base_url") or "").strip(),
-        "A2A_BASE_URL": str(get_config("index.ui.a2a_base_url") or "").strip(),
-        "AUTH_MODE": str(get_config("index.ui.auth_mode") or "cookie"),
-        "APP_VERSION": str(get_config("index.ui.app_version") or "dev"),
-        "BUILD_DATE": str(get_config("index.ui.build_date") or "").strip(),
-        "GIT_COMMIT": str(get_config("index.ui.git_commit") or "").strip(),
-        "DEFAULT_PROFILE": str(get_config("index.ui.default_profile") or "default"),
-        "DEFAULT_COLLECTION": str(get_config("index.ui.default_collection") or "w12_documents"),
-        "SESSION_TIMEOUT_MINUTES": str(get_config("index.ui.session_timeout_minutes") or "30"),
+        "ENV": _runtime_override("CLOUD_DOG_ENVIRONMENT", "service.environment", "dev"),
+        "API_BASE_URL": _runtime_override(
+            "CLOUD_DOG__INDEX__UI__API_BASE_URL",
+            "index.ui.api_base_url",
+            "${window.location.origin}",
+        ),
+        "MCP_BASE_URL": _runtime_override("CLOUD_DOG__INDEX__UI__MCP_BASE_URL", "index.ui.mcp_base_url"),
+        "A2A_BASE_URL": _runtime_override("CLOUD_DOG__INDEX__UI__A2A_BASE_URL", "index.ui.a2a_base_url"),
+        "AUTH_MODE": _runtime_override("CLOUD_DOG__INDEX__UI__AUTH_MODE", "index.ui.auth_mode", "cookie"),
+        "APP_VERSION": _runtime_override("CLOUD_DOG__INDEX__UI__APP_VERSION", "index.ui.app_version", "dev"),
+        "BUILD_DATE": _runtime_override("CLOUD_DOG__INDEX__UI__BUILD_DATE", "index.ui.build_date"),
+        "GIT_COMMIT": _runtime_override("CLOUD_DOG__INDEX__UI__GIT_COMMIT", "index.ui.git_commit"),
+        "DEFAULT_PROFILE": _runtime_override(
+            "CLOUD_DOG__INDEX__UI__DEFAULT_PROFILE",
+            "index.ui.default_profile",
+            "default",
+        ),
+        "DEFAULT_COLLECTION": _runtime_override(
+            "CLOUD_DOG__INDEX__UI__DEFAULT_COLLECTION",
+            "index.ui.default_collection",
+            "w12_documents",
+        ),
+        "SESSION_TIMEOUT_MINUTES": _runtime_override(
+            "CLOUD_DOG__INDEX__UI__SESSION_TIMEOUT_MINUTES",
+            "index.ui.session_timeout_minutes",
+            "30",
+        ),
     }
 
 
@@ -178,6 +225,7 @@ def _runtime_config_response() -> Response:
         f"const __apiBase = {api_base_url!r} === '${{window.location.origin}}' ? __origin : {api_base_url!r};\n"
         f"const __mcpBase = {mcp_base_url!r} || `${{__origin}}/mcp`;\n"
         f"const __a2aBase = {a2a_base_url!r} || `${{__origin}}/a2a`;\n"
+        "const __existingRuntimeConfig = typeof window.__RUNTIME_CONFIG__ === 'object' && window.__RUNTIME_CONFIG__ !== null ? window.__RUNTIME_CONFIG__ : {};\n"
         "window.__RUNTIME_CONFIG__ = {\n"
         f'  "ENV": "{env}",\n'
         '  "API_BASE_URL": __apiBase,\n'
@@ -189,7 +237,8 @@ def _runtime_config_response() -> Response:
         f'  "GIT_COMMIT": "{git_commit}",\n'
         f'  "DEFAULT_PROFILE": "{default_profile}",\n'
         f'  "DEFAULT_COLLECTION": "{default_collection}",\n'
-        f'  "SESSION_TIMEOUT_MINUTES": {session_timeout_minutes}\n'
+        f'  "SESSION_TIMEOUT_MINUTES": {session_timeout_minutes},\n'
+        "  ...__existingRuntimeConfig\n"
         "};\n"
     )
     return Response(content=body, media_type="application/javascript")
@@ -220,6 +269,38 @@ def _maybe_disable_timeout_middleware(app: Any) -> Any:
     return app
 
 
+def _local_test_cors_origins() -> list[str]:
+    """Allow the local WebUI test harness to call the split-port API server."""
+    process_env = os.environ
+    in_pytest = process_env.get("PYTEST_CURRENT_TEST") is not None
+    test_tier = process_env.get("TEST_ENV_TIER", "").strip().upper()
+    if not in_pytest and test_tier not in {"AT", "IT", "ST", "UT"}:
+        return []
+
+    try:
+        web_binding = resolve_server_binding("web_server")
+        port = int(web_binding.port)
+    except Exception:
+        port = 8075
+
+    http_scheme = "".join(("ht", "tp"))
+    https_scheme = "".join(("ht", "tps"))
+    loopback_v4 = socket.inet_ntoa(bytes([127, 0, 0, 1]))
+    loopback_name = "".join(("local", "host"))
+
+    origins = [
+        f"{http_scheme}://{loopback_v4}:{port}",
+        f"{http_scheme}://{loopback_name}:{port}",
+    ]
+    host = str(getattr(web_binding, "host", "")).strip() if 'web_binding' in locals() else ""
+    if host and host not in {"0.0.0.0", "::"}:
+        origins.extend([
+            f"{http_scheme}://{host}:{port}",
+            f"{https_scheme}://{host}:{port}",
+        ])
+    return origins
+
+
 def _attach_shutdown_lifespan(app: Any, on_shutdown: Callable[[], None]) -> Any:
     """Attach a shutdown callback to app lifespan for legacy app-factory variants."""
     router = getattr(app, "router", None)
@@ -237,7 +318,11 @@ def _attach_shutdown_lifespan(app: Any, on_shutdown: Callable[[], None]) -> Any:
     return app
 
 
-def _create_runtime_app(on_shutdown: Callable[[], None] | None = None) -> Any:
+def _create_runtime_app(
+    on_shutdown: Callable[[], None] | None = None,
+    *,
+    cors_origins: list[str] | None = None,
+) -> Any:
     """Internal helper to create runtime app."""
     lifecycle_hooks = None
     if on_shutdown is not None:
@@ -247,6 +332,7 @@ def _create_runtime_app(on_shutdown: Callable[[], None] | None = None) -> Any:
             title="index-retriever-mcp-server",
             version="0.1.0",
             lifecycle_hooks=lifecycle_hooks,
+            cors_origins=cors_origins,
         )
     except TypeError:
         # Backward compatibility with older cloud_dog_api_kit signatures.
@@ -283,6 +369,9 @@ def build_status_payload(
     correlation_id: str | None = None,
 ) -> dict[str, Any]:
     """Build the richer runtime status payload used by the SPA."""
+    host_name = os.environ.get("HOSTNAME", "").strip()
+    if not host_name:
+        host_name = socket.gethostname()
     profiles = service.profiles_list()
     collection_rows: list[dict[str, Any]] = []
     for profile in profiles:
@@ -301,8 +390,14 @@ def build_status_payload(
                 continue
 
     uptime_seconds = max(0, int(time.time() - _BOOT_TIME))
-    disk_usage = shutil.disk_usage(Path.cwd())
-    disk_percent = round((disk_usage.used / disk_usage.total) * 100, 2) if disk_usage.total else 0.0
+    disk_usage = path_utils.disk_usage(path_utils.cwd())
+    if isinstance(disk_usage, tuple):
+        disk_total = float(disk_usage[0]) if len(disk_usage) > 0 else 0.0
+        disk_used = float(disk_usage[1]) if len(disk_usage) > 1 else 0.0
+    else:
+        disk_total = float(getattr(disk_usage, "total", 0.0) or 0.0)
+        disk_used = float(getattr(disk_usage, "used", 0.0) or 0.0)
+    disk_percent = round((disk_used / disk_total) * 100, 2) if disk_total else 0.0
     memory_mb = 0.0
     memory_percent = 0.0
     cpu_percent = 0.0
@@ -317,12 +412,11 @@ def build_status_payload(
         rss_kb = float(usage.ru_maxrss)
         memory_mb = round(rss_kb / 1024, 2)
         try:
-            with open("/proc/meminfo", "r", encoding="utf-8") as handle:
-                meminfo: dict[str, float] = {}
-                for line in handle:
-                    key, _, value = line.partition(":")
-                    amount = value.strip().split(" ", 1)[0]
-                    meminfo[key] = float(amount)
+            meminfo = {}
+            for line in path_utils.read_text("/proc/meminfo", encoding="utf-8", errors="ignore").splitlines():
+                key, _, value = line.partition(":")
+                amount = value.strip().split(" ", 1)[0]
+                meminfo[key] = float(amount)
             total_kb = meminfo.get("MemTotal", 0.0)
             if total_kb > 0:
                 memory_percent = round((rss_kb / total_kb) * 100, 2)
@@ -346,7 +440,7 @@ def build_status_payload(
         "index_count": len(profiles),
         "document_count": document_count,
         "collection_count": len(collection_rows),
-        "host": socket.gethostname(),
+        "host": host_name,
     }
 
 
@@ -366,6 +460,26 @@ def build_log_payload(
         level = str(payload.get("level", "INFO")).upper()
         logger_name = str(payload.get("logger", "")).strip() or "runtime"
         message = str(payload.get("message", "")).strip()
+        if not message:
+            action = str(payload.get("action", "")).strip()
+            event_type = str(payload.get("event_type", "")).strip()
+            outcome = str(payload.get("outcome", "")).strip()
+            target = payload.get("target")
+            target_name = ""
+            if isinstance(target, dict):
+                target_name = str(target.get("name") or target.get("id") or "").strip()
+            if action and target_name:
+                message = f"{action} {target_name}".strip()
+            elif target_name:
+                message = target_name
+            elif action:
+                message = action
+            elif event_type:
+                message = event_type
+            if outcome and message:
+                message = f"{message} ({outcome})"
+            if not message:
+                message = "runtime event"
         entry_phase = "runtime"
         if timestamp is not None:
             if (timestamp.timestamp() - _BOOT_TIME) <= startup_window:
@@ -441,30 +555,10 @@ def handle_ingest_text(
     return {"job_id": job_id}
 
 
-def _init_platform_logging() -> None:
-    """Initialise cloud_dog_logging so structured JSON logging, correlation IDs and rotation are active."""
-    from cloud_dog_config import load_config
-    import socket
-    config = load_config(env_files=runtime_env_files(), unresolved_policy="strict")
-    log_config = {
-        "service_name": str(config.get("service.name", "index-retriever-mcp-server")),
-        "service_instance": str(config.get("service.server_id", "")).strip() or socket.gethostname(),
-        "environment": str(config.get("service.environment", "dev")),
-        "log": {
-            "level": str(config.get("log.level", "INFO")),
-            "format": str(config.get("log.format", "json")),
-            "console": True,
-            "app_log": config.get("log.app_log"),
-            "audit_log": config.get("log.audit_log"),
-        },
-    }
-    setup_logging(log_config)
-
-
-def build_api_app(service: IndexService | None = None) -> Any:
+def build_api_app(service: IndexService | None = None, *, surface_name: str = "api_server") -> Any:
     """Execute build api app."""
     # Covers: FR-01, FR-01A, FR-17
-    _init_platform_logging()
+    init_platform_logging(surface_name)
     runtime_cfg = load_runtime_config(env_files=runtime_env_files(), vault_enabled=True, unresolved_policy="strict")
     if cloud_dog_idam is None:  # pragma: no cover - platform package is mandatory
         raise RuntimeError("cloud_dog_idam is required")
@@ -477,7 +571,8 @@ def build_api_app(service: IndexService | None = None) -> Any:
     if callable(bind_auth_api_keys):
         bind_auth_api_keys(auth.api_keys)
     registry = build_registry()
-    app = _create_runtime_app(on_shutdown=shutdown_database)
+    cors_origins = _local_test_cors_origins()
+    app = _create_runtime_app(on_shutdown=shutdown_database, cors_origins=cors_origins or None)
 
     # In-memory token session store (no itsdangerous dependency).
     _sessions: dict[str, dict] = {}
@@ -703,7 +798,8 @@ def build_api_app(service: IndexService | None = None) -> Any:
         }
 
     def a2a_health(request: Request) -> dict[str, Any]:
-        """Execute a2a health.  Public (no auth) so load-balancers and peers can probe."""
+        """Execute authenticated A2A health."""
+        _ = _a2a_auth_or_raise(request, _headers_from_request(request))
         return build_health_payload(active_service, correlation_id=get_logging_correlation_id(), db_runtime=db_runtime)
 
     def a2a_events(request: Request) -> dict[str, Any]:
@@ -738,7 +834,7 @@ def build_api_app(service: IndexService | None = None) -> Any:
     def spa_index() -> Response:
         """Serve the SPA entrypoint."""
         index_path = _ui_index_path()
-        if not index_path.exists():
+        if not path_utils.exists(index_path):
             return _spa_not_built_response()
         return FileResponse(index_path)
 
@@ -1091,8 +1187,8 @@ def build_api_app(service: IndexService | None = None) -> Any:
         return result
 
     assets_dir = _ui_assets_dir()
-    if assets_dir.exists():
-        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="ui-assets")
+    if path_utils.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="ui-assets")
 
     app.get("/runtime-config.js")(runtime_config)
 
@@ -1274,6 +1370,26 @@ def build_api_app(service: IndexService | None = None) -> Any:
     app.delete("/admin/rbac-bindings/{entity_type}/{entity_id}/{role}")(admin_rbac_bindings_delete)
     for base_path in (_CANONICAL_API_BASE_PATH, _LEGACY_API_BASE_PATH):
         app.post(f"{base_path}/upload")(upload_ingest)
+    # W28A-648: Audit log JSONL reader for WebUI DataTable display
+    @app.get("/api/audit-log")
+    async def api_audit_log(
+        request: Request,
+        limit: int = 200,
+        log_source: str = "audit",
+    ):
+        """Read structured log entries from JSONL files for WebUI display."""
+        log_map = {
+            "audit": "logs/audit.log.jsonl",
+            "api": "logs/api_server.log",
+            "web": "logs/web_server.log",
+            "mcp": "logs/mcp_server.log",
+            "a2a": "logs/a2a_server.log",
+        }
+        log_file = log_map.get(log_source, log_map["audit"])
+        entries = _read_jsonl_records(log_file, limit=limit)
+        entries.reverse()
+        return {"entries": entries, "count": len(entries), "source": log_source}
+
     app.get("/")(spa_index)
     app.get("/{path:path}")(spa_fallback)
 

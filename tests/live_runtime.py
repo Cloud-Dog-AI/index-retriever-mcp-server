@@ -166,7 +166,7 @@ def load_vault_dev_config(required: bool = True) -> dict[str, Any]:
         if not isinstance(payload, dict):
             raise RuntimeError("Vault payload is not a mapping")
         return _extract_dev_section(payload)
-    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, KeyError, RuntimeError):
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, KeyError, RuntimeError, Exception):
         if required:
             raise
         return {}
@@ -1401,7 +1401,7 @@ class LiveIndexRuntime:
             if value.collection_name == collection_name:
                 del self._idempotency_records[key]
 
-    def ingest_stream_open(
+    def ingest_stream_session_start(
         self,
         profile: str,
         collection: str,

@@ -36,7 +36,7 @@ if str(SRC) not in sys.path:
 
 from index_server.auth.middleware import AuthMiddleware  # noqa: E402
 from index_tools.tools.service import IndexService  # noqa: E402
-from tests.live_runtime import LiveIndexRuntime, load_vault_dev_config  # noqa: E402
+from tests.live_runtime import LiveIndexRuntime, load_vault_dev_config, resolve_live_runtime_config  # noqa: E402
 
 _INITIAL_ENV_KEYS = set(os.environ.keys())
 _LIVE_REQUIRED_TIERS = {"ST", "IT", "AT", "CT", "QT"}
@@ -334,11 +334,13 @@ def live_service_preflight(env_tiers: list[str]) -> None:
 def live_service(live_service_preflight: None) -> LiveIndexRuntime:
     """Provide live runtime backed by env/Vault-configured services."""
     _ = live_service_preflight
+    resolve_live_runtime_config.cache_clear()
     runtime = LiveIndexRuntime()
     try:
         yield runtime
     finally:
         runtime.cleanup()
+        resolve_live_runtime_config.cache_clear()
 
 
 @pytest.fixture(scope="session", autouse=True)

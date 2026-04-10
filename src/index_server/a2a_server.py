@@ -22,7 +22,7 @@ from index_server.runtime_config import resolve_server_binding
 
 def build_a2a_app() -> object:
     """Build the A2A server app."""
-    return build_api_app()
+    return build_api_app(surface_name="a2a_server")
 
 
 def run_a2a_server() -> None:
@@ -39,3 +39,4 @@ def run_a2a_server() -> None:
 
 if __name__ == "__main__":
     run_a2a_server()
+# W28A-565 fix 1775032326

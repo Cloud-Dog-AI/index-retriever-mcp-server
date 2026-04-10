@@ -21,20 +21,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-ARG PYPI_URL=https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple
 COPY vendor/wheels/ /tmp/wheels/
-RUN pip install --no-cache-dir \
-      --extra-index-url ${PYPI_URL} \
-      --trusted-host gitea.cloud-dog.net \
-      --trusted-host pypi.org \
-      --trusted-host files.pythonhosted.org \
-      cloud-dog-config \
-      cloud-dog-logging \
-      cloud-dog-api-kit \
-      cloud-dog-idam \
-      cloud-dog-db \
-      cloud-dog-jobs \
-      cloud-dog-llm \
+RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
+    pip install --no-cache-dir \
+      /tmp/wheels/cloud_dog_config-*.whl \
+      /tmp/wheels/cloud_dog_logging-*.whl \
+      /tmp/wheels/cloud_dog_api_kit-*.whl \
+      /tmp/wheels/cloud_dog_idam-*.whl \
+      /tmp/wheels/cloud_dog_db-*.whl \
+      /tmp/wheels/cloud_dog_jobs-*.whl \
+      /tmp/wheels/cloud_dog_storage-*.whl \
+      /tmp/wheels/cloud_dog_llm-*.whl \
       /tmp/wheels/cloud_dog_vdb-*.whl
 
 COPY pyproject.toml README.md ./
@@ -63,7 +60,7 @@ RUN if [ -n "${CUSTOM_CA_CERT}" ] && [ -f "${CUSTOM_CA_CERT}" ]; then \
     fi
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl netcat-openbsd procps net-tools socat \
+    curl iproute2 netcat-openbsd procps net-tools socat \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -98,7 +95,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 EXPOSE 8080 8081 8082 8083 8686 8687
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=5 \
   CMD /app/healthcheck.sh
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

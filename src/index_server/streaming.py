@@ -19,9 +19,18 @@ from typing import Any
 from index_tools.tools.service import IndexService
 
 
-def ingest_stream_open(service: IndexService, profile: str, collection: str, ordering_key: str) -> dict[str, str]:
-    """Execute ingest stream open."""
-    session_id = service.ingest_stream_open(profile=profile, collection=collection, ordering_key=ordering_key)
+def ingest_stream_session_start(
+    service: IndexService,
+    profile: str,
+    collection: str,
+    ordering_key: str,
+) -> dict[str, str]:
+    """Execute ingest stream session start."""
+    session_id = service.ingest_stream_session_start(
+        profile=profile,
+        collection=collection,
+        ordering_key=ordering_key,
+    )
     return {"session_id": session_id}
 
 

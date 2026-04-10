@@ -17,6 +17,8 @@ from __future__ import annotations
 from pathlib import Path
 from urllib.parse import urlparse
 
+from cloud_dog_storage import path_utils
+
 
 class ScopeError(ValueError):
     """Raised when a path or URI escapes allowed scope."""
@@ -24,9 +26,9 @@ class ScopeError(ValueError):
 
 def resolve_scoped_path(allowed_roots: list[str], requested_path: str) -> Path:
     """Resolve and validate that requested_path is within configured roots."""
-    candidate = Path(requested_path).resolve()
+    candidate = path_utils.as_path(path_utils.resolve_path(requested_path))
     for root in allowed_roots:
-        base = Path(root).resolve()
+        base = path_utils.as_path(path_utils.resolve_path(root))
         if candidate == base or base in candidate.parents:
             return candidate
     raise ScopeError(f"Path is outside allowed roots: {requested_path}")

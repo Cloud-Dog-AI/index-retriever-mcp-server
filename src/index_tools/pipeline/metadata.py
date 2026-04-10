@@ -17,14 +17,15 @@ from __future__ import annotations
 import mimetypes
 from datetime import datetime, timezone
 from hashlib import sha256
-from pathlib import Path
 from urllib.parse import unquote, urlparse
+
+from cloud_dog_storage import path_utils
 
 
 def _resolve_filename(source: str) -> str:
     parsed = urlparse(source)
     candidate = parsed.path if parsed.scheme else source
-    return Path(unquote(candidate)).name or source
+    return path_utils.name(unquote(candidate)) or source
 
 
 def _resolve_mime_type(source: str, filename: str) -> str:

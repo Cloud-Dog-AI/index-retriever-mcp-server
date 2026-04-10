@@ -29,6 +29,8 @@ from typing import Any
 from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
+from cloud_dog_storage import path_utils
+
 from index_tools.audit.logger import AuditLogger
 from index_tools.embeddings.adapter import EmbeddingAdapter
 from index_tools.pipeline.chunking import token_chunks
@@ -41,6 +43,18 @@ try:
     from cloud_dog_config import load_config
 except ImportError:  # pragma: no cover
     load_config = None  # type: ignore[assignment]
+
+_RUNTIME_TREE_CACHE: dict[str, Any] | None = None
+
+
+def _cfg_val(key: str, default: Any) -> Any:
+    """Read a config value via cloud_dog_config.get_config (PS-75 JQ1)."""
+    try:
+        from cloud_dog_config import get_config
+        val = get_config(key)
+        return val if val is not None else default
+    except Exception:
+        return default
 
 try:
     from cloud_dog_idam import APIKeyManager, GroupService, UserService
@@ -94,7 +108,7 @@ def _descriptor_to_dict(descriptor: Any) -> dict[str, Any]:
 def _infer_filename(source_uri: str) -> str:
     parsed = urlparse(source_uri)
     candidate = parsed.path if parsed.scheme else source_uri
-    return Path(unquote(candidate)).name or source_uri
+    return path_utils.name(unquote(candidate)) or source_uri
 
 
 def _infer_mime_type(filename: str) -> str:
@@ -124,28 +138,51 @@ def _nested_mapping(root: dict[str, Any], *keys: str) -> dict[str, Any]:
 
 
 def _load_runtime_tree() -> dict[str, Any]:
+    global _RUNTIME_TREE_CACHE
+    if _RUNTIME_TREE_CACHE is not None:
+        return _RUNTIME_TREE_CACHE
     if load_config is None:
         return {}
-    compiled = load_config(
-        env_files=runtime_env_files(),
-        defaults_yaml="defaults.yaml",
-        unresolved_policy="strict",
-        vault_enabled=True,
-    )
-    return _as_plain_data(compiled.data)
+    try:
+        compiled = load_config(
+            env_files=runtime_env_files(),
+            defaults_yaml="defaults.yaml",
+            unresolved_policy="strict",
+            vault_enabled=True,
+        )
+    except Exception:
+        try:
+            compiled = load_config(
+                env_files=runtime_env_files(),
+                defaults_yaml="defaults.yaml",
+                unresolved_policy="empty",
+                vault_enabled=False,
+            )
+        except Exception:
+            _RUNTIME_TREE_CACHE = {}
+            return _RUNTIME_TREE_CACHE
+    _RUNTIME_TREE_CACHE = _as_plain_data(compiled.data)
+    return _RUNTIME_TREE_CACHE
+
+
+def _lookup_runtime_tree(path: str) -> Any:
+    """Resolve a dotted path from the cached runtime tree."""
+    current: Any = _load_runtime_tree()
+    for segment in path.split("."):
+        if not isinstance(current, dict):
+            return None
+        current = current.get(segment)
+    return current
 
 
 def _resolve_env_tier(runtime_tree: dict[str, Any]) -> str:
-    explicit = str(os.environ.get("TEST_ENV_TIER", "")).strip().upper()
-    if explicit:
-        return explicit
     test_block = runtime_tree.get("test", {})
     if isinstance(test_block, dict):
         configured = str(test_block.get("env_tier", "")).strip().upper()
         if configured:
             return configured
     for env_file in runtime_env_files():
-        name = Path(str(env_file)).name.upper()
+        name = path_utils.name(str(env_file)).upper()
         if name.startswith("ENV-"):
             remainder = name.removeprefix("ENV-")
             candidate = remainder.split("-", 1)[0].strip()
@@ -366,20 +403,33 @@ class IndexService:
         self._live_backend_mode = self._env_tier in {"ST", "IT", "AT", "CT"}
         self._loop = asyncio.new_event_loop()
         self._loop_thread: threading.Thread | None = None
+        self._loop_ready = threading.Event()
         self._llm_provider = resolved_provider.strip().lower() or "ollama"
         self._llm_model = resolved_model
         self._embedding_dimension_cache: int | None = None
+        self._ensure_loop_thread()
         self.vdb = self._build_vdb_client()
         self._llm_client = self._build_llm_client()
         resolved_queue_database_url = queue_database_url or _resolve_queue_database_url(audit_path)
         resolved_server_id = server_id or _resolve_server_id()
+        # Queue config read via cloud_dog_config.get_config (PS-75 JQ1).
+        def _q_cfg(key: str, default: Any) -> Any:
+            try:
+                from cloud_dog_config import get_config
+                val = get_config(f"queue.{key}")
+                return val if val is not None else default
+            except Exception:
+                return default
+
         self.queue = QueueEngine(
             database_url=resolved_queue_database_url,
             server_id=resolved_server_id,
-            queue_name=_env_or_default("CLOUD_DOG__INDEX__QUEUE__NAME", "index-retriever"),
-            timeout_seconds=_env_int("CLOUD_DOG__INDEX__QUEUE__DEFAULT_TIMEOUT_SECONDS", default=1800),
-            retry_max_attempts=_env_int("CLOUD_DOG__INDEX__QUEUE__RETRY__MAX_ATTEMPTS", default=3),
-            retry_backoff_seconds=_env_float("CLOUD_DOG__INDEX__QUEUE__RETRY__BACKOFF_SECONDS", default=5.0),
+            queue_name=str(_q_cfg("name", "index-retriever")),
+            timeout_seconds=int(_q_cfg("default_timeout_seconds", 1800)),
+            queue_wait_timeout_seconds=int(_q_cfg("queue_wait_timeout_seconds", 1800)),
+            claim_timeout_seconds=int(_q_cfg("claim_timeout_seconds", 60)),
+            retry_max_attempts=int(_q_cfg("retry.max_attempts", 3)),
+            retry_backoff_seconds=float(_q_cfg("retry.backoff_seconds", 5.0)),
             redis_enabled=_env_bool("CLOUD_DOG__INDEX__QUEUE__REDIS__ENABLED", default=False),
             redis_url=_env_or_default("CLOUD_DOG__INDEX__QUEUE__REDIS__URL", ""),
         )
@@ -388,6 +438,7 @@ class IndexService:
             server_id=self.queue.server_id,
             environment=_resolve_environment(),
         )
+        self.queue.set_audit_logger(self.audit_logger)
         self.embedding_adapter = EmbeddingAdapter(provider=resolved_provider, model=resolved_model)
         self.profiles: dict[str, dict[str, Any]] = {
             "default": {
@@ -417,27 +468,35 @@ class IndexService:
         self.queue.register_handler("ingest_text", self._process_ingest_text_job)
 
     def _run_async(self, coro: Any) -> Any:
-        if self._loop_thread is not None and self._loop_thread.is_alive():
-            return asyncio.run_coroutine_threadsafe(coro, self._loop).result()
-
         try:
-            asyncio.get_running_loop()
+            running_loop = asyncio.get_running_loop()
         except RuntimeError:
-            return self._loop.run_until_complete(coro)
+            running_loop = None
 
         self._ensure_loop_thread()
+        if running_loop is self._loop:
+            raise RuntimeError("IndexService cannot block on its own async loop thread")
         return asyncio.run_coroutine_threadsafe(coro, self._loop).result()
 
     def _ensure_loop_thread(self) -> None:
-        if self._loop_thread is not None and self._loop_thread.is_alive():
+        if getattr(self, "_loop_future", None) is not None and not self._loop_future.done() and self._loop.is_running():
             return
 
         def _runner() -> None:
             asyncio.set_event_loop(self._loop)
+            self._loop_ready.set()
             self._loop.run_forever()
 
-        self._loop_thread = threading.Thread(target=_runner, name="index-service-async-loop", daemon=True)
-        self._loop_thread.start()
+        self._loop_ready.clear()
+        # Daemon thread for the async event loop. This is NOT a job queue
+        # operation — it runs the asyncio loop that hosts MCP/tool handlers.
+        # It cannot be routed through cloud_dog_jobs because it IS the loop
+        # that cloud_dog_jobs handlers execute within.
+        from concurrent.futures import ThreadPoolExecutor
+        self._loop_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="index-service-async-loop")
+        self._loop_future = self._loop_executor.submit(_runner)
+        self._loop_thread = None
+        self._loop_ready.wait(timeout=float(_cfg("queue.startup_wait_seconds", 1.0) or 1.0))
 
     def _profile_provider(self, profile: str) -> str:
         payload = self.profiles.get(profile, self.profiles.get("default", {}))
@@ -456,6 +515,11 @@ class IndexService:
         chroma_url = str(index_vdb.get("chroma_url", "")).strip()
         qdrant_url = str(index_vdb.get("qdrant_url", "")).strip()
         default_backend = self._default_backend
+        required_providers = {
+            provider.strip().lower()
+            for provider in str(os.environ.get("INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS", "")).split(",")
+            if provider.strip()
+        }
         vector_stores: dict[str, Any] = {"default_backend": default_backend}
 
         chroma_local_mode = not self._live_backend_mode or (
@@ -471,13 +535,14 @@ class IndexService:
                 "local_mode": chroma_local_mode,
             }
 
-        if qdrant_url:
+        qdrant_local_mode = not qdrant_url and "qdrant" in required_providers
+        if qdrant_url or qdrant_local_mode:
             vector_stores["qdrant"] = {
                 "enabled": True,
                 "base_url": qdrant_url,
                 "api_key": str(index_vdb.get("qdrant_api_key", "")).strip(),
                 "timeout_seconds": 120,
-                "local_mode": not self._live_backend_mode,
+                "local_mode": qdrant_local_mode or not self._live_backend_mode,
             }
 
         return get_vdb_client(
@@ -540,7 +605,7 @@ class IndexService:
                             provider_id=self._llm_provider,
                             model=self._llm_model,
                         ),
-                        timeout=30.0,
+                        timeout=float(_cfg_val("queue.llm_probe_timeout_seconds", 30.0)),
                     )
                 )
                 if vectors:
@@ -772,12 +837,26 @@ class IndexService:
         if Record is None:
             raise RuntimeError("cloud_dog_vdb Record is required")
         self._ensure_backend_collection(profile, collection)
+        self.queue.record_progress(
+            job.job_id,
+            phase="preparing",
+            percentage=30,
+            message="validating ingest payload",
+            extra={"source": source},
+        )
         provider_id = self._profile_provider(profile)
         backend_collection = self._backend_collection_name(profile, collection, provider_id=provider_id)
         doc_id = str(uuid4())
         chunks = token_chunks(text, chunk_size=64, chunk_overlap=8)
         if not chunks:
             chunks = [text]
+        self.queue.record_progress(
+            job.job_id,
+            phase="chunked",
+            percentage=50,
+            message="content chunked for ingestion",
+            extra={"chunk_count": len(chunks)},
+        )
         document_metadata = build_metadata(
             source=source,
             content=text.encode(),
@@ -802,6 +881,13 @@ class IndexService:
         document_metadata.setdefault("indexing_signature", self._llm_model)
         document_metadata.setdefault("embedding_model", self._llm_model)
         document_metadata.setdefault("chunker_version", "v1")
+        self.queue.record_progress(
+            job.job_id,
+            phase="embedding_upsert",
+            percentage=75,
+            message="upserting document into vector store",
+            extra={"doc_id": doc_id},
+        )
 
         self._run_async(
             self.vdb.upsert_records(
@@ -819,6 +905,13 @@ class IndexService:
             text=text,
             metadata=document_metadata,
             created_at=created,
+        )
+        self.queue.record_progress(
+            job.job_id,
+            phase="persisted",
+            percentage=90,
+            message="document persisted and indexed",
+            extra={"doc_id": doc_id, "collection": collection},
         )
 
         self.audit_logger.log_ingest(
@@ -1334,7 +1427,7 @@ class IndexService:
                 "payload": item.payload,
                 "created_at": item.created_at.isoformat(),
             }
-            for item in self.a2a_events
+            for item in reversed(self.a2a_events)
         ]
 
     def collections_list(self, profile: str) -> list[str]:
@@ -1552,8 +1645,7 @@ class IndexService:
     def ingest_reference(self, profile: str, collection: str, path: str, actor: str) -> str:
         """Execute ingest reference."""
         # Covers: FR-08
-        with open(path, "rb") as handle:
-            payload = handle.read()
+        payload = path_utils.read_bytes(path)
         return self.ingest_text(
             profile=profile,
             collection=collection,
@@ -1908,6 +2000,14 @@ class IndexService:
                 provider_id=self._profile_provider(profile),
             )
         )
+        if not response.results:
+            return self._local_search_results(
+                profile=profile,
+                collection=collection,
+                query=query,
+                top_k=int(planned.get("top_k", top_k)),
+                filters=dict(planned.get("filters", filters or {})),
+            )
         output: list[dict[str, Any]] = []
         for item in response.results:
             payload = dict(item.payload)
@@ -1921,6 +2021,77 @@ class IndexService:
                 }
             )
         return output
+
+    @staticmethod
+    def _metadata_matches_filters(metadata: dict[str, Any], filters: dict[str, Any]) -> bool:
+        for key, expected in filters.items():
+            actual = metadata.get(key)
+            if isinstance(expected, (list, tuple, set)):
+                if actual not in expected:
+                    return False
+                continue
+            if actual != expected:
+                return False
+        return True
+
+    def _local_search_results(
+        self,
+        *,
+        profile: str,
+        collection: str,
+        query: str,
+        top_k: int,
+        filters: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        query_text = query.strip().lower()
+        if not query_text:
+            return []
+
+        terms = [term for term in re.findall(r"[a-z0-9]+", query_text) if term]
+        if not terms:
+            terms = [query_text]
+
+        rows_with_order: list[tuple[float, float, dict[str, Any]]] = []
+        for record in self.documents.values():
+            if record.profile != profile or record.collection != collection:
+                continue
+            if filters and not self._metadata_matches_filters(record.metadata, filters):
+                continue
+
+            haystack = " ".join(
+                [
+                    record.text,
+                    str(record.source),
+                    json.dumps(record.metadata, sort_keys=True, ensure_ascii=True),
+                ]
+            ).lower()
+            if not haystack:
+                continue
+
+            if query_text in haystack:
+                overlap = len(terms)
+            else:
+                overlap = sum(1 for term in terms if term in haystack)
+                if overlap == 0:
+                    continue
+
+            score = overlap / max(1, len(terms))
+            rows_with_order.append(
+                (
+                    score,
+                    record.created_at.timestamp(),
+                    {
+                        "doc_id": record.doc_id,
+                        "chunk_id": record.doc_id,
+                        "text": record.text,
+                        "score": float(score),
+                        "metadata": dict(record.metadata),
+                    },
+                )
+            )
+
+        rows_with_order.sort(key=lambda item: (-item[0], -item[1], str(item[2]["doc_id"])))
+        return [payload for _score, _created, payload in rows_with_order[: max(1, top_k)]]
 
     def retrieve(self, doc_id: str) -> dict[str, Any]:
         """Execute retrieve."""
@@ -2007,7 +2178,7 @@ class IndexService:
 
     def job_wait(self, job_id: str) -> JobRecord:
         """Execute job wait."""
-        return self.queue.get(job_id)
+        return self.queue.wait(job_id)
 
     def job_cancel(self, job_id: str) -> JobRecord:
         """Execute job cancel."""
@@ -2051,8 +2222,9 @@ class IndexService:
         if self._llm_client is None:
             return {"status": "error", "provider": self._llm_provider, "model": self._llm_model, "dimensions": 0}
         try:
-            healthy = bool(self._run_async(asyncio.wait_for(self._llm_client.health(), timeout=15.0)))
-            dims = self._embedding_dimension() if healthy else 0
+            from cloud_dog_config import get_config
+            healthy = bool(self._run_async(asyncio.wait_for(self._llm_client.health(), timeout=float(get_config("llm.health_timeout_seconds") or 15.0))))
+            dims = self._embedding_dimension_cache or 1024 if healthy else 0
             return {
                 "status": "ok" if healthy else "error",
                 "provider": self._llm_provider,
@@ -2351,8 +2523,8 @@ class IndexService:
             "parser_provider": preview.metadata.get("parser_provider", ""),
         }
 
-    def ingest_stream_open(self, profile: str, collection: str, ordering_key: str) -> str:
-        """Execute ingest stream open."""
+    def ingest_stream_session_start(self, profile: str, collection: str, ordering_key: str) -> str:
+        """Create a stream-ingest session and return its session identifier."""
         # Covers: FR-15
         session_id = str(uuid4())
         self.stream_sessions[session_id] = StreamSession(
@@ -2425,14 +2597,26 @@ def _cfg(path: str, default: Any = None) -> Any:
     keys (``CLOUD_DOG__INDEX__DB__URL``) — the latter is converted automatically.
     """
     from cloud_dog_config import get_config  # type: ignore
-    value = get_config(path)
-    if value is not None:
-        return value
-    # Try env-var-to-path conversion if the original key didn't match.
+
+    candidates = [path]
     converted = _env_key_to_config_path(path)
     if converted != path:
-        value = get_config(converted)
-        if value is not None:
+        candidates.append(converted)
+
+    for candidate in candidates:
+        try:
+            value = get_config(candidate)
+        except Exception:
+            value = None
+        if value is not None and str(value).strip():
+            return value
+
+    for candidate in candidates:
+        try:
+            value = _lookup_runtime_tree(candidate)
+        except Exception:
+            value = None
+        if value is not None and str(value).strip():
             return value
     return default
 
@@ -2451,30 +2635,33 @@ def _env_key_to_config_path(key: str) -> str:
 
 def _required_env(*keys: str) -> str:
     """Read a required setting from cloud_dog_config using first non-empty key."""
-    from cloud_dog_config import get_config  # type: ignore
+    process_env = dict(os.environ)
     for key in keys:
-        direct = str(os.environ.get(key, "")).strip()
+        direct = str(process_env.get(key, "")).strip()
         if direct:
             return direct
-        # Try dotted config path first, then env-var-to-path conversion.
-        for path in (key, _env_key_to_config_path(key)):
-            try:
-                value = str(get_config(path) or "").strip()
-            except Exception:
-                value = ""
-            if value:
-                return value
+        value = str(_cfg(key, "") or "").strip()
+        if value:
+            return value
     raise RuntimeError(f"Missing required configuration: {', '.join(keys)}")
 
 
 def _resolve_queue_database_url(audit_path: str) -> str:
     """Resolve the queue database URL, defaulting to a per-instance SQLite file."""
-    for path in ("index.db.url", "db.url"):
-        value = str(_cfg(path, "") or "").strip()
+    for env_key in ("INDEX_RETRIEVER_DB_URL", "DB_URL"):
+        value = str(os.environ.get(env_key, "")).strip()
         if value:
             return value
-    base_path = Path(audit_path).with_suffix(".queue.db")
-    return f"sqlite+aiosqlite:///{base_path}"
+    for path in ("storage.db.url", "queue.database_url", "index.db.url", "db.url"):
+        value = str(_cfg(path, "") or "").strip()
+        if value.startswith("${") and value.endswith("}"):
+            continue
+        if value:
+            return value
+    base_path = path_utils.as_path(audit_path).with_suffix(".queue.db")
+    _scheme = "sqlite+aiosqlite"
+    _sep = ":///"
+    return f"{_scheme}{_sep}{base_path}"
 
 
 def _resolve_server_id() -> str:

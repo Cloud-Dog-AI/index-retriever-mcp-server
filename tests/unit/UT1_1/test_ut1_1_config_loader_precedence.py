@@ -18,7 +18,7 @@ from index_tools.config.loader import merge_config_layers
 
 
 def test_config_loader_precedence() -> None:
-    base_port = int(os.environ["CLOUD_DOG__API_SERVER__PORT"])
+    base_port = int(os.environ.get("CLOUD_DOG__API_SERVER__PORT", "8074"))
     defaults = {"api_server": {"port": base_port}}
     config = {"api_server": {"port": base_port + 1}}
     dot_env = {"api_server": {"port": base_port + 2}}

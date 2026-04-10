@@ -14,8 +14,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
+from cloud_dog_storage import path_utils
 from cloud_dog_storage.backends.local import LocalStorage
 
 from index_tools.connectors.models import FetchPlan
@@ -30,6 +29,7 @@ def resolve(allowed_roots: list[str], requested_path: str) -> FetchPlan:
 
 def fetch(plan: FetchPlan) -> bytes:
     """Execute fetch via cloud_dog_storage LocalStorage backend."""
-    abs_path = Path(plan.location).resolve()
-    storage = LocalStorage(root_path=str(abs_path.parent), min_free_bytes=0)
-    return storage.read_bytes(f"/{abs_path.name}")
+    resolved_location = path_utils.resolve_path(plan.location)
+    logical_location = path_utils.to_posix(resolved_location)
+    storage = LocalStorage(root_path=path_utils.parent(logical_location), min_free_bytes=0)
+    return storage.read_bytes(f"/{path_utils.name(logical_location)}")

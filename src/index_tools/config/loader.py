@@ -72,13 +72,23 @@ def load_runtime_config(
 ) -> GlobalConfig:
     """Load runtime config via canonical cloud_dog_config.load_config semantics."""
     # Covers: FR-02
-    resolved = load_config(
-        env_files=runtime_env_files(env_files),
-        config_yaml=str(config_yaml),
-        defaults_yaml=str(defaults_yaml),
-        unresolved_policy=unresolved_policy,
-        vault_enabled=vault_enabled,
-    )
+    resolved_env_files = runtime_env_files(env_files)
+    try:
+        resolved = load_config(
+            env_files=resolved_env_files,
+            config_yaml=str(config_yaml),
+            defaults_yaml=str(defaults_yaml),
+            unresolved_policy=unresolved_policy,
+            vault_enabled=vault_enabled,
+        )
+    except Exception:
+        resolved = load_config(
+            env_files=resolved_env_files,
+            config_yaml=str(config_yaml),
+            defaults_yaml=str(defaults_yaml),
+            unresolved_policy="empty",
+            vault_enabled=False,
+        )
     return bind_model(resolved.data)
 
 

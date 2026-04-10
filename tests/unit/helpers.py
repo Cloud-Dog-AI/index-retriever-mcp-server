@@ -16,10 +16,17 @@ from __future__ import annotations
 
 import os
 
+_DEFAULT_PORTS = {
+    "CLOUD_DOG__API_SERVER__PORT": 8074,
+    "CLOUD_DOG__WEB_SERVER__PORT": 8075,
+    "CLOUD_DOG__MCP_SERVER__PORT": 8076,
+    "CLOUD_DOG__A2A_SERVER__PORT": 8077,
+}
+
 
 def _env_port(key: str) -> int:
-    """Read a required server port from the active pytest env file."""
-    return int(os.environ[key])
+    """Read a server port from env, falling back to the standard local defaults."""
+    return int(os.environ.get(key, str(_DEFAULT_PORTS[key])))
 
 
 def minimal_config() -> dict[str, object]:

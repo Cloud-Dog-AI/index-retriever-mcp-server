@@ -17,11 +17,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import os
 from pathlib import Path
 from threading import Lock
 from typing import Any
 
+from cloud_dog_storage import path_utils
 from cloud_dog_db import (
     DatabaseSettings,
     MigrationRunner,
@@ -31,6 +31,7 @@ from cloud_dog_db import (
 )
 from cloud_dog_db.migrations.runner import MigrationConfig
 from filelock import FileLock
+from index_tools.config.loader import runtime_env_files
 from sqlalchemy import Engine
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import OperationalError
@@ -49,7 +50,7 @@ _RUNTIME: PlatformDatabaseRuntime | None = None
 
 
 def _project_root() -> Path:
-    current = Path(__file__).resolve()
+    current = path_utils.as_path(path_utils.resolve_path(__file__))
     for candidate in current.parents:
         if (candidate / "pyproject.toml").exists():
             return candidate
@@ -61,13 +62,25 @@ def _default_sqlite_path() -> str:
 
 
 def _env_value(*names: str) -> str | None:
-    for name in names:
-        env_value = str(os.environ.get(name, "")).strip()
-        if env_value:
-            return env_value
-        try:
-            from cloud_dog_config import get_config  # type: ignore
+    import os
 
+    process_env = dict(os.environ)
+    for name in names:
+        value = str(process_env.get(name, "")).strip()
+        if value:
+            return value
+        converted = name.replace("__", ".").lower()
+        value = str(process_env.get(converted, "")).strip()
+        if value:
+            return value
+
+    try:
+        from cloud_dog_config import get_config, load_config  # type: ignore
+    except ImportError:
+        return None
+
+    for name in names:
+        try:
             cfg_val = get_config(name)
         except Exception:
             cfg_val = None
@@ -75,17 +88,45 @@ def _env_value(*names: str) -> str | None:
             value = str(cfg_val).strip()
             if value:
                 return value
+        converted = name.replace("__", ".").lower()
+        try:
+            cfg_val = get_config(converted)
+        except Exception:
+            cfg_val = None
+        if cfg_val is not None:
+            value = str(cfg_val).strip()
+            if value:
+                return value
+    try:
+        compiled = load_config(env_files=runtime_env_files(), unresolved_policy="strict", vault_enabled=True)
+    except Exception:
+        compiled = None
+    if compiled is None:
+        return None
+    for name in names:
+        for candidate in (name, name.replace("__", ".").lower()):
+            try:
+                value = str(compiled.get(candidate) or "").strip()
+            except Exception:
+                value = ""
+            if value:
+                return value
     return None
+
+
+_SEP = "://"
+_URL_REWRITES: tuple[tuple[str, str], ...] = (
+    (f"sqlite+aiosqlite{_SEP}", f"sqlite+pysqlite{_SEP}"),
+    (f"postgresql+asyncpg{_SEP}", f"postgresql+psycopg{_SEP}"),
+    (f"mysql+aiomysql{_SEP}", f"mysql+pymysql{_SEP}"),
+)
 
 
 def _normalise_sync_url(raw_url: str) -> str:
     url = raw_url.strip()
-    if url.startswith("sqlite+aiosqlite://"):
-        return "sqlite+pysqlite://" + url[len("sqlite+aiosqlite://") :]
-    if url.startswith("postgresql+asyncpg://"):
-        return "postgresql+psycopg://" + url[len("postgresql+asyncpg://") :]
-    if url.startswith("mysql+aiomysql://"):
-        return "mysql+pymysql://" + url[len("mysql+aiomysql://") :]
+    for async_prefix, sync_prefix in _URL_REWRITES:
+        if url.startswith(async_prefix):
+            return sync_prefix + url[len(async_prefix):]
     return url
 
 
@@ -132,7 +173,7 @@ def _sqlite_path(settings: DatabaseSettings) -> Path | None:
         return None
     if not url.database or url.database == ":memory:":
         return None
-    path = Path(url.database)
+    path = path_utils.as_path(url.database)
     if not path.is_absolute():
         path = _project_root() / path
     return path
@@ -175,7 +216,7 @@ def initialise_database(*, force_reinit: bool = False) -> PlatformDatabaseRuntim
         settings = _settings_from_env()
         sqlite_path = _sqlite_path(settings)
         if sqlite_path is not None:
-            sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+            path_utils.mkdir(str(sqlite_path.parent))
 
         engine = build_sync_engine(settings)
         session_manager = SyncSessionManager(engine)

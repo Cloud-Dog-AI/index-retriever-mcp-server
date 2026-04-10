@@ -38,7 +38,9 @@ queue:
   server_id: "${INDEX_RETRIEVER_SERVER_ID:${HOSTNAME:index-retriever-local}}"
   max_concurrency: 8
   per_profile_concurrency: 2
+  queue_wait_timeout_seconds: 1800
   default_timeout_seconds: 1800
+  claim_timeout_seconds: 60
   retry:
     max_attempts: 3
     backoff_seconds: 5
@@ -91,6 +93,10 @@ rbac:
 log:
   service_instance: "${HOSTNAME:index-retriever-local}"
   environment: "${CLOUD_DOG_ENVIRONMENT:dev}"
+  api_server_log: "logs/api_server.log"
+  web_server_log: "logs/web_server.log"
+  mcp_server_log: "logs/mcp_server.log"
+  a2a_server_log: "logs/a2a_server.log"
   audit_log: "logs/audit.log.jsonl"
   retention:
     hot_days: 14

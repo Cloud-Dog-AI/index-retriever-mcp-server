@@ -61,3 +61,4 @@ node_modules
 *.pyc
 .terraform
 *.tfstate
+tmp-w28a847-api-nohup.log
