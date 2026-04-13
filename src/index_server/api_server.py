@@ -46,6 +46,8 @@ _correlation_mod._service_instance_var = __import__("contextvars").ContextVar(
 del _os_early
 
 from fastapi import File, Form, HTTPException, Request, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 try:
@@ -131,6 +133,16 @@ def _read_jsonl_records(path: str, limit: int = 200) -> list[dict[str, Any]]:
         if isinstance(payload, dict):
             records.append(payload)
     return records
+
+
+def _read_jsonl_records_many(paths: list[str], limit: int = 200) -> list[dict[str, Any]]:
+    """Read and sort structured records across multiple JSONL files."""
+    combined: list[dict[str, Any]] = []
+    per_file_limit = max(limit, 1)
+    for path in paths:
+        combined.extend(_read_jsonl_records(path, limit=per_file_limit))
+    combined.sort(key=lambda entry: _parse_log_timestamp(entry.get("timestamp")) or datetime.min.replace(tzinfo=timezone.utc))
+    return combined[-limit:]
 
 
 def _api_audit_path() -> str:
@@ -274,7 +286,9 @@ def _local_test_cors_origins() -> list[str]:
     process_env = os.environ
     in_pytest = process_env.get("PYTEST_CURRENT_TEST") is not None
     test_tier = process_env.get("TEST_ENV_TIER", "").strip().upper()
-    if not in_pytest and test_tier not in {"AT", "IT", "ST", "UT"}:
+    env_files = process_env.get("CLOUD_DOG_ENV_FILES", "").strip().upper()
+    using_test_env_files = any(token in env_files for token in ("ENV-AT", "ENV-IT", "ENV-ST", "ENV-UT"))
+    if not in_pytest and test_tier not in {"AT", "IT", "ST", "UT"} and not using_test_env_files:
         return []
 
     try:
@@ -339,6 +353,14 @@ def _create_runtime_app(
         app = create_app(service_name="index-retriever-mcp-server")
         if on_shutdown is not None:
             app = _attach_shutdown_lifespan(app, on_shutdown)
+    if cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=cors_origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
     return _maybe_disable_timeout_middleware(app)
 
 
@@ -380,14 +402,25 @@ def build_status_payload(
                 collection_rows.append(service.collection_get(profile, collection))
             except Exception:
                 continue
-    document_count = 0
-    for row in collection_rows:
-        metadata = row.get("metadata") if isinstance(row, dict) else {}
-        if isinstance(metadata, dict):
-            try:
-                document_count += int(metadata.get("doc_count", 0) or 0)
-            except (TypeError, ValueError):
-                continue
+    active_document_ids: set[str] = set()
+    for record in getattr(service, "documents", {}).values():
+        metadata = dict(getattr(record, "metadata", {}) or {})
+        if str(metadata.get("lifecycle_state", "active")) == "deleted":
+            continue
+        if metadata.get("is_latest") is False:
+            continue
+        doc_id = str(metadata.get("doc_id") or getattr(record, "doc_id", "")).strip()
+        if doc_id:
+            active_document_ids.add(doc_id)
+    document_count = len(active_document_ids)
+    if document_count == 0:
+        for row in collection_rows:
+            metadata = row.get("metadata") if isinstance(row, dict) else {}
+            if isinstance(metadata, dict):
+                try:
+                    document_count += int(metadata.get("doc_count", 0) or 0)
+                except (TypeError, ValueError):
+                    continue
 
     uptime_seconds = max(0, int(time.time() - _BOOT_TIME))
     disk_usage = path_utils.disk_usage(path_utils.cwd())
@@ -573,6 +606,39 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     registry = build_registry()
     cors_origins = _local_test_cors_origins()
     app = _create_runtime_app(on_shutdown=shutdown_database, cors_origins=cors_origins or None)
+
+    def _custom_openapi() -> dict[str, Any]:
+        if app.openapi_schema and "IngestPreviewOutput" in dict(app.openapi_schema.get("components", {}).get("schemas", {})):
+            return app.openapi_schema
+        schema = get_openapi(
+            title=str(getattr(app, "title", "index-retriever-mcp-server")),
+            version=str(getattr(app, "version", "0.1.0")),
+            description=str(getattr(app, "description", "")),
+            routes=app.routes,
+        )
+        components = schema.setdefault("components", {}).setdefault("schemas", {})
+        tool_contracts = schema.setdefault("x-tool-contracts", {})
+        for spec in getattr(registry, "_tools", {}).values():
+            input_name = spec.input_model.__name__
+            output_name = spec.output_model.__name__
+            input_schema = spec.input_model.model_json_schema(ref_template="#/components/schemas/{model}")
+            output_schema = spec.output_model.model_json_schema(ref_template="#/components/schemas/{model}")
+            for schema_payload in (input_schema, output_schema):
+                for def_name, def_schema in dict(schema_payload.pop("$defs", {})).items():
+                    components.setdefault(def_name, def_schema)
+            components.setdefault(input_name, input_schema)
+            components.setdefault(output_name, output_schema)
+            tool_contracts[spec.name] = {
+                "input_model": input_name,
+                "output_model": output_name,
+                "input_schema": {"$ref": f"#/components/schemas/{input_name}"},
+                "output_schema": {"$ref": f"#/components/schemas/{output_name}"},
+            }
+        app.openapi_schema = schema
+        return schema
+
+    app.openapi_schema = None
+    app.openapi = _custom_openapi
 
     # In-memory token session store (no itsdangerous dependency).
     _sessions: dict[str, dict] = {}
@@ -1378,15 +1444,22 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         log_source: str = "audit",
     ):
         """Read structured log entries from JSONL files for WebUI display."""
-        log_map = {
-            "audit": "logs/audit.log.jsonl",
+        log_map: dict[str, str | list[str]] = {
+            "audit": [
+                "logs/index-retriever-audit-api.jsonl",
+                "logs/index-retriever-audit-mcp.jsonl",
+                "logs/audit.log.jsonl",
+            ],
             "api": "logs/api_server.log",
             "web": "logs/web_server.log",
             "mcp": "logs/mcp_server.log",
             "a2a": "logs/a2a_server.log",
         }
         log_file = log_map.get(log_source, log_map["audit"])
-        entries = _read_jsonl_records(log_file, limit=limit)
+        if isinstance(log_file, list):
+            entries = _read_jsonl_records_many(log_file, limit=limit)
+        else:
+            entries = _read_jsonl_records(log_file, limit=limit)
         entries.reverse()
         return {"entries": entries, "count": len(entries), "source": log_source}
 

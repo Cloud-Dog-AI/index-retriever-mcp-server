@@ -15,9 +15,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from hashlib import sha256
 from importlib import import_module
 from typing import Any
+
+from cloud_dog_vdb.metadata.identity import compute_content_hash
 
 try:
     xxhash_module: Any = import_module("xxhash")
@@ -47,7 +48,7 @@ class DedupeIndex:
         """Execute fingerprint."""
         if method == "xxhash" and xxhash_module is not None:
             return str(xxhash_module.xxh64(content).hexdigest())
-        return sha256(content).hexdigest()
+        return compute_content_hash(content.decode("utf-8", errors="replace"))
 
     def check_duplicate(self, candidate: DedupeRecord, mode: str) -> DedupeRecord | None:
         """Execute check duplicate."""

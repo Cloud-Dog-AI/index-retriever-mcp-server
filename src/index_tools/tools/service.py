@@ -29,13 +29,18 @@ from typing import Any
 from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
+from cloud_dog_vdb.lifecycle.manager import mark_deleted, mark_superseded
+from cloud_dog_vdb.metadata.filters import SCALAR_FILTER_FIELDS, matches_metadata
+from cloud_dog_vdb.metadata.identity import compute_content_hash, normalise_source_uri
+from cloud_dog_vdb.metadata.provenance import merge_provenance
+from cloud_dog_vdb.metadata.schema import validate_metadata
 from cloud_dog_storage import path_utils
 
 from index_tools.audit.logger import AuditLogger
 from index_tools.embeddings.adapter import EmbeddingAdapter
 from index_tools.pipeline.chunking import token_chunks
 from index_tools.pipeline.metadata import build_metadata
-from index_tools.queue.engine import QueueEngine
+from index_tools.queue.engine import JobCancelledError, QueueEngine
 from index_tools.queue.models import JobRecord, JobStatus
 from index_tools.config.loader import runtime_env_files
 
@@ -94,6 +99,48 @@ except ImportError:  # pragma: no cover
 
 
 _SECRET_FIELD_PATTERN = re.compile(r"(?i)(api[_-]?key|token|password|secret)\s*[:=]\s*([^\s,;]+)")
+_PROTECTED_METADATA_FIELDS = frozenset(
+    {
+        "doc_id",
+        "record_id",
+        "chunk_id",
+        "chunk_index",
+        "is_latest",
+        "tenant_id",
+        "namespace",
+        "source",
+        "source_uri",
+        "source_type",
+        "filename",
+        "mime_type",
+        "size",
+        "size_bytes",
+        "content_hash",
+        "source_hash",
+        "created_at",
+        "ingested_at",
+        "modified_at",
+        "lifecycle_state",
+        "profile",
+        "collection",
+        "embedding_model",
+        "chunker",
+        "chunker_version",
+        "token_count",
+        "parser_name",
+        "parser_version",
+        "parser_provider",
+        "ocr_provider",
+        "ocr_engine",
+        "ocr_confidence",
+        "ocr_applied",
+        "page",
+        "page_number",
+        "table_id",
+        "chunk_kind",
+        "extras",
+    }
+)
 
 
 def _redact_diagnostic_detail(text: str) -> str:
@@ -114,6 +161,39 @@ def _infer_filename(source_uri: str) -> str:
 def _infer_mime_type(filename: str) -> str:
     guessed, _ = mimetypes.guess_type(filename)
     return guessed or "text/plain"
+
+
+def _merge_document_metadata(
+    base_metadata: dict[str, Any],
+    override_metadata: dict[str, Any] | None,
+) -> dict[str, Any]:
+    document_metadata = dict(base_metadata)
+    if not isinstance(override_metadata, dict):
+        return document_metadata
+
+    extras = dict(document_metadata.get("extras", {}))
+    for key, value in override_metadata.items():
+        if key in _PROTECTED_METADATA_FIELDS and value != base_metadata.get(key):
+            extras[f"user_{key}"] = value
+            continue
+        document_metadata[key] = value
+    if extras:
+        document_metadata["extras"] = extras
+    return document_metadata
+
+
+def _normalise_provenance_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    normalised = dict(metadata)
+    normalised.setdefault("parser_provider", "")
+    normalised.setdefault("parser_version", "")
+    normalised.setdefault("ocr_engine", str(normalised.get("ocr_provider", "") or ""))
+    normalised.setdefault("ocr_confidence", None)
+    page_value = normalised.get("page", normalised.get("page_number"))
+    normalised.setdefault("page", page_value)
+    normalised.setdefault("page_number", page_value)
+    normalised.setdefault("table_id", "")
+    normalised.setdefault("chunk_kind", str(normalised.get("chunk_kind", "") or ""))
+    return normalised
 
 
 def _as_plain_data(value: Any) -> Any:
@@ -257,6 +337,7 @@ class DocumentRecord:
     text: str
     metadata: dict[str, Any]
     created_at: datetime
+    record_id: str = ""
 
 
 @dataclass(slots=True)
@@ -407,6 +488,9 @@ class IndexService:
         self._llm_provider = resolved_provider.strip().lower() or "ollama"
         self._llm_model = resolved_model
         self._embedding_dimension_cache: int | None = None
+        self._async_job_execution = self._live_backend_mode
+        self._job_threads: dict[str, threading.Thread] = {}
+        self._job_threads_lock = threading.Lock()
         self._ensure_loop_thread()
         self.vdb = self._build_vdb_client()
         self._llm_client = self._build_llm_client()
@@ -633,6 +717,9 @@ class IndexService:
                     provider_id=provider_id,
                 )
             )
+        record = self.collections.get(self._collection_key(profile, collection))
+        if record is not None:
+            record.metadata.pop("backend_binding_pending", None)
         return backend_name
 
     @staticmethod
@@ -837,6 +924,7 @@ class IndexService:
         if Record is None:
             raise RuntimeError("cloud_dog_vdb Record is required")
         self._ensure_backend_collection(profile, collection)
+        self._raise_if_job_cancelled(job.job_id)
         self.queue.record_progress(
             job.job_id,
             phase="preparing",
@@ -846,10 +934,10 @@ class IndexService:
         )
         provider_id = self._profile_provider(profile)
         backend_collection = self._backend_collection_name(profile, collection, provider_id=provider_id)
-        doc_id = str(uuid4())
         chunks = token_chunks(text, chunk_size=64, chunk_overlap=8)
         if not chunks:
             chunks = [text]
+        self._raise_if_job_cancelled(job.job_id)
         self.queue.record_progress(
             job.job_id,
             phase="chunked",
@@ -863,66 +951,158 @@ class IndexService:
             profile=profile,
             collection=collection,
         )
-        if isinstance(metadata, dict):
-            document_metadata.update(metadata)
-        source_type = "file" if "://" in source else "other"
+        document_metadata = _merge_document_metadata(
+            document_metadata,
+            metadata if isinstance(metadata, dict) else None,
+        )
+        source_uri = str(document_metadata.get("source_uri", source))
+        for existing in self.documents.values():
+            if (
+                existing.profile == profile
+                and existing.collection == collection
+                and str(existing.metadata.get("source_uri", existing.source)) == source_uri
+                and str(existing.metadata.get("lifecycle_state", "active")) == "active"
+            ):
+                document_metadata = merge_provenance(document_metadata, existing.metadata)
+                break
+        self._raise_if_job_cancelled(job.job_id)
         created_value = (created_at or datetime.now(timezone.utc)).isoformat().replace("+00:00", "Z")  # noqa: UP017
-        document_metadata.setdefault("tenant_id", profile)
-        document_metadata.setdefault("source", source)
-        document_metadata.setdefault("source_uri", source)
-        document_metadata.setdefault("source_type", source_type)
-        document_metadata.setdefault("filename", _infer_filename(str(document_metadata["source_uri"])))
-        document_metadata.setdefault("mime_type", _infer_mime_type(str(document_metadata["filename"])))
-        document_metadata.setdefault("lifecycle_state", "active")
-        document_metadata["created_at"] = str(document_metadata.get("created_at") or created_value).replace("+00:00", "Z")
+        document_metadata["created_at"] = created_value
+        document_metadata["source"] = str(document_metadata.get("source_uri", source))
         document_metadata.setdefault("actor", actor)
         document_metadata.setdefault("profile", profile)
         document_metadata.setdefault("collection", collection)
+        document_metadata["tenant_id"] = profile
+        document_metadata["namespace"] = f"{profile}:{collection}"
+        document_metadata["lifecycle_state"] = "active"
+        document_metadata["is_latest"] = True
+        document_metadata["embedding_model"] = self._llm_model
+        document_metadata["embedding_dim"] = self._embedding_dimension()
+        document_metadata["chunker"] = "token_chunks"
+        document_metadata["chunker_version"] = "v1"
+        document_metadata["token_count"] = len(text.split())
+        document_metadata["user_id"] = str(document_metadata.get("user_id") or actor)
+        document_metadata["parser_name"] = str(document_metadata.get("parser_name") or "internal")
+        document_metadata["parser_provider"] = str(document_metadata.get("parser_provider") or "internal")
         document_metadata.setdefault("indexing_signature", self._llm_model)
-        document_metadata.setdefault("embedding_model", self._llm_model)
-        document_metadata.setdefault("chunker_version", "v1")
+        metadata_errors = validate_metadata(document_metadata)
+        if metadata_errors:
+            raise ValueError(f"Invalid document metadata: {'; '.join(metadata_errors)}")
+        doc_id = str(document_metadata["doc_id"])
+        record_id = str(document_metadata["record_id"])
+        superseded_record_ids: list[str] = []
+        superseded_records: list[Any] = []
+        superseded_snapshots: list[tuple[DocumentRecord, dict[str, Any]]] = []
+        for existing in self.documents.values():
+            if (
+                existing.profile == profile
+                and existing.collection == collection
+                and str(existing.metadata.get("source_uri", existing.source)) == source_uri
+                and str(existing.record_id or existing.doc_id) != record_id
+                and str(existing.metadata.get("lifecycle_state", "active")) == "active"
+            ):
+                superseded_snapshots.append((existing, dict(existing.metadata)))
+                existing.metadata.update(mark_superseded(existing.metadata, new_record_id=record_id))
+                superseded_record_ids.append(str(existing.record_id or existing.doc_id))
+                superseded_records.append(
+                    Record(
+                        record_id=str(existing.record_id or existing.doc_id),
+                        content=existing.text,
+                        metadata=dict(existing.metadata),
+                    )
+                )
         self.queue.record_progress(
             job.job_id,
             phase="embedding_upsert",
             percentage=75,
             message="upserting document into vector store",
-            extra={"doc_id": doc_id},
+            extra={"doc_id": doc_id, "record_id": record_id},
         )
-
-        self._run_async(
-            self.vdb.upsert_records(
-                backend_collection,
-                [Record(record_id=doc_id, content=text, metadata=document_metadata)],
-                provider_id=provider_id,
-            )
-        )
+        self._raise_if_job_cancelled(job.job_id)
         created = created_at or datetime.now(timezone.utc)  # noqa: UP017
-        self.documents[doc_id] = DocumentRecord(
+        document_record = DocumentRecord(
             doc_id=doc_id,
+            record_id=record_id,
             profile=profile,
             collection=collection,
-            source=source,
+            source=source_uri,
             text=text,
             metadata=document_metadata,
             created_at=created,
         )
+        self.documents[record_id] = document_record
+        try:
+            self._run_async(
+                self.vdb.upsert_records(
+                    backend_collection,
+                    superseded_records + [Record(record_id=record_id, content=text, metadata=document_metadata)],
+                    provider_id=provider_id,
+                )
+            )
+            self._raise_if_job_cancelled(job.job_id)
+        except Exception:
+            self.documents.pop(record_id, None)
+            for existing, previous_metadata in superseded_snapshots:
+                existing.metadata = previous_metadata
+            raise
         self.queue.record_progress(
             job.job_id,
             phase="persisted",
             percentage=90,
             message="document persisted and indexed",
-            extra={"doc_id": doc_id, "collection": collection},
+            extra={"doc_id": doc_id, "record_id": record_id, "collection": collection},
         )
-
+        audit_metadata = dict(document_metadata)
+        audit_metadata["dedupe_decision"] = "version" if superseded_record_ids else "ingest"
+        if superseded_record_ids:
+            audit_metadata["superseded_record_ids"] = superseded_record_ids
         self.audit_logger.log_ingest(
             actor=actor,
             profile=profile,
             collection=collection,
             job_id=job.job_id,
             source=source,
-            metadata=metadata,
+            metadata=audit_metadata,
             chunk_count=len(chunks),
         )
+
+    def _raise_if_job_cancelled(self, job_id: str) -> None:
+        """Abort cooperative job execution when the queue state is cancelled."""
+        if self.queue.get(job_id).status is JobStatus.cancelled:
+            raise JobCancelledError(f"Job {job_id} was cancelled")
+
+    def _dispatch_job_async(self, job_id: str) -> None:
+        """Run a queued job in a detached worker thread when live execution is enabled."""
+        if not self._async_job_execution:
+            try:
+                self.queue.run(job_id=job_id)
+            except Exception:
+                pass
+            return
+
+        with self._job_threads_lock:
+            existing = self._job_threads.get(job_id)
+            if existing is not None and existing.is_alive():
+                return
+
+            def _runner() -> None:
+                try:
+                    self.queue.run(job_id=job_id)
+                except Exception:
+                    pass
+                finally:
+                    with self._job_threads_lock:
+                        current = self._job_threads.get(job_id)
+                        if current is threading.current_thread():
+                            self._job_threads.pop(job_id, None)
+
+            worker = threading.Thread(
+                target=_runner,
+                name=f"index-retriever-job-{job_id[:8]}",
+                daemon=True,
+            )
+            self._job_threads[job_id] = worker
+            worker.start()
 
     def profiles_list(self) -> list[str]:
         """Execute profiles list."""
@@ -1459,8 +1639,28 @@ class IndexService:
         # Covers: FR-16
         self._require_admin(roles)
         collection_key = self._collection_key(profile, collection)
-        self._ensure_backend_collection(profile, collection)
+        backend_binding_pending = False
+        if self._async_job_execution:
+            try:
+                provider_id = self._profile_provider(profile)
+                backend_name = self._backend_collection_name(profile, collection, provider_id=provider_id)
+                existing = self._run_async(self.vdb.get_collection(backend_name, provider_id=provider_id))
+                backend_binding_pending = existing is None
+            except Exception:
+                backend_binding_pending = True
+        else:
+            try:
+                self._ensure_backend_collection(profile, collection)
+            except KeyError:
+                backend_binding_pending = True
         resolved_payload = dict(payload or {})
+        metadata_payload = (
+            dict(resolved_payload.get("metadata", {}))
+            if isinstance(resolved_payload.get("metadata"), dict)
+            else {}
+        )
+        if backend_binding_pending:
+            metadata_payload.setdefault("backend_binding_pending", True)
         resolved_allowed_roles = set(allowed_roles or resolved_payload.get("allowed_roles") or {"reader", "writer", "maintainer", "admin"})
         record = CollectionRecord(
             profile=profile,
@@ -1468,7 +1668,7 @@ class IndexService:
             description=str(resolved_payload.get("description", "")),
             dimensions=int(resolved_payload["dimensions"]) if resolved_payload.get("dimensions") not in {None, ""} else None,
             distance_metric=str(resolved_payload.get("distance_metric", "cosine") or "cosine"),
-            metadata=dict(resolved_payload.get("metadata", {})) if isinstance(resolved_payload.get("metadata"), dict) else {},
+            metadata=metadata_payload,
             allowed_roles=resolved_allowed_roles,
         )
         self.collections[collection_key] = record
@@ -1609,10 +1809,15 @@ class IndexService:
         if profile not in self.profiles:
             raise ValueError(f"Unknown profile: {profile}")
 
-        collection_key = self._ensure_backend_collection(profile, collection)
-        self._ensure_collection_record(profile, collection)
+        try:
+            self._ensure_backend_collection(profile, collection)
+        except KeyError:
+            record = self._ensure_collection_record(profile, collection)
+            record.metadata.setdefault("backend_binding_pending", True)
+        else:
+            self._ensure_collection_record(profile, collection)
 
-        source_key = source + ":" + sha256(text.encode()).hexdigest()
+        source_key = f"{normalise_source_uri(source)}:{compute_content_hash(text)}"
         computed_key = self.queue.generate_idempotency_key(profile, collection, source_key)
         request_key = idempotency_key or computed_key
         if request_key in self.idempotency:
@@ -1638,7 +1843,7 @@ class IndexService:
             },
             actor=actor,
         )
-        self.queue.run(job_id=queued_job.job_id)
+        self._dispatch_job_async(queued_job.job_id)
         self.idempotency[request_key] = queued_job.job_id
         return queued_job.job_id
 
@@ -1938,6 +2143,38 @@ class IndexService:
             payload.update(capability_override)
         return CapabilityDescriptor(**payload)
 
+    def _get_document_record(self, doc_id: str) -> DocumentRecord:
+        record = self.documents.get(doc_id)
+        if record is not None:
+            return record
+        for candidate in self.documents.values():
+            if candidate.doc_id == doc_id or str(candidate.metadata.get("doc_id", "")) == doc_id:
+                return candidate
+        raise KeyError(doc_id)
+
+    @staticmethod
+    def _search_result_payload(
+        *,
+        record_id: str,
+        text: str,
+        score: float,
+        metadata: dict[str, Any],
+    ) -> dict[str, Any]:
+        canonical_record_id = str(metadata.get("record_id") or record_id)
+        canonical_doc_id = str(metadata.get("doc_id") or canonical_record_id)
+        return {
+            "doc_id": canonical_doc_id,
+            "record_id": canonical_record_id,
+            "chunk_id": str(metadata.get("chunk_id") or canonical_record_id),
+            "text": text,
+            "score": float(score),
+            "source_uri": str(metadata.get("source_uri", "")),
+            "content_hash": str(metadata.get("content_hash", "")),
+            "lifecycle_state": str(metadata.get("lifecycle_state", "active")),
+            "is_latest": metadata.get("is_latest"),
+            "metadata": metadata,
+        }
+
     def backend_capabilities(
         self,
         profile: str = "default",
@@ -1986,6 +2223,9 @@ class IndexService:
         """Execute search."""
         # Covers: FR-14
         planned = self.search_plan(profile=profile, query=query, top_k=top_k, filters=filters)
+        requested_filters = dict(filters or {})
+        resolved_filters = dict(planned.get("filters", filters or {}))
+        filter_latest_only = "is_latest" not in requested_filters
         if SearchRequest is None:
             raise RuntimeError("cloud_dog_vdb SearchRequest is required")
         response = self._run_async(
@@ -1994,7 +2234,7 @@ class IndexService:
                 SearchRequest(
                     query_text=query,
                     top_k=int(planned.get("top_k", top_k)),
-                    filters=dict(planned.get("filters", filters or {})),
+                    filters=resolved_filters,
                     score_threshold=score_threshold,
                 ),
                 provider_id=self._profile_provider(profile),
@@ -2006,25 +2246,46 @@ class IndexService:
                 collection=collection,
                 query=query,
                 top_k=int(planned.get("top_k", top_k)),
-                filters=dict(planned.get("filters", filters or {})),
+                filters=requested_filters or resolved_filters,
             )
         output: list[dict[str, Any]] = []
         for item in response.results:
             payload = dict(item.payload)
+            record_id = str(item.id)
+            local_record = self.documents.get(record_id)
+            metadata = dict(payload.get("metadata", {}))
+            text_value = str(payload.get("content", ""))
+            if local_record is not None and local_record.profile == profile and local_record.collection == collection:
+                metadata = dict(local_record.metadata)
+                text_value = local_record.text
+            if requested_filters and not self._metadata_matches_filters(metadata, requested_filters):
+                continue
+            if str(metadata.get("lifecycle_state", "active")) == "deleted":
+                continue
+            if filter_latest_only and metadata.get("is_latest") is False:
+                continue
             output.append(
-                {
-                    "doc_id": str(item.id),
-                    "chunk_id": str(item.id),
-                    "text": str(payload.get("content", "")),
-                    "score": float(item.score),
-                    "metadata": dict(payload.get("metadata", {})),
-                }
+                self._search_result_payload(
+                    record_id=record_id,
+                    text=text_value,
+                    score=float(item.score),
+                    metadata=metadata,
+                )
             )
-        return output
+        return output[: max(1, int(planned.get("top_k", top_k)))]
 
     @staticmethod
     def _metadata_matches_filters(metadata: dict[str, Any], filters: dict[str, Any]) -> bool:
+        canonical_filters: dict[str, Any] = {
+            key: value
+            for key, value in filters.items()
+            if key in SCALAR_FILTER_FIELDS or key == "access_tags"
+        }
+        if canonical_filters and not matches_metadata(metadata, canonical_filters):
+            return False
         for key, expected in filters.items():
+            if key in canonical_filters:
+                continue
             actual = metadata.get(key)
             if isinstance(expected, (list, tuple, set)):
                 if actual not in expected:
@@ -2055,6 +2316,10 @@ class IndexService:
         for record in self.documents.values():
             if record.profile != profile or record.collection != collection:
                 continue
+            if str(record.metadata.get("lifecycle_state", "active")) == "deleted":
+                continue
+            if record.metadata.get("is_latest") is False:
+                continue
             if filters and not self._metadata_matches_filters(record.metadata, filters):
                 continue
 
@@ -2080,13 +2345,12 @@ class IndexService:
                 (
                     score,
                     record.created_at.timestamp(),
-                    {
-                        "doc_id": record.doc_id,
-                        "chunk_id": record.doc_id,
-                        "text": record.text,
-                        "score": float(score),
-                        "metadata": dict(record.metadata),
-                    },
+                    self._search_result_payload(
+                        record_id=str(record.record_id or record.doc_id),
+                        text=record.text,
+                        score=float(score),
+                        metadata=dict(record.metadata),
+                    ),
                 )
             )
 
@@ -2095,32 +2359,52 @@ class IndexService:
 
     def retrieve(self, doc_id: str) -> dict[str, Any]:
         """Execute retrieve."""
-        record = self.documents[doc_id]
+        record = self._get_document_record(doc_id)
         return {
             "doc_id": record.doc_id,
+            "record_id": record.record_id or record.doc_id,
             "profile": record.profile,
             "collection": record.collection,
             "source": record.source,
+            "source_uri": str(record.metadata.get("source_uri", record.source)),
             "text": record.text,
+            "content_hash": str(record.metadata.get("content_hash", "")),
+            "lifecycle_state": str(record.metadata.get("lifecycle_state", "active")),
+            "is_latest": record.metadata.get("is_latest"),
             "metadata": record.metadata,
         }
 
     def delete_by_id(self, profile: str, collection: str, doc_id: str) -> bool:
         """Execute delete by id."""
+        try:
+            record = self._get_document_record(doc_id)
+        except KeyError:
+            record = None
+        record_id = str(record.record_id or record.doc_id) if record is not None else doc_id
         deleted = bool(
             self._run_async(
                 self.vdb.delete_record(
                     self._backend_collection_name(profile, collection, provider_id=self._profile_provider(profile)),
-                    doc_id,
+                    record_id,
                     provider_id=self._profile_provider(profile),
                 )
             )
         )
-        self.documents.pop(doc_id, None)
+        if record is not None and record.profile == profile and record.collection == collection:
+            record.metadata.update(mark_deleted(record.metadata))
+            return True
         return deleted
 
     def delete_by_filter(self, profile: str, collection: str, filters: dict[str, Any]) -> int:
         """Execute delete by filter."""
+        matched_records = [
+            value
+            for value in self.documents.values()
+            if value.profile == profile
+            and value.collection == collection
+            and str(value.metadata.get("lifecycle_state", "active")) != "deleted"
+            and self._metadata_matches_filters(value.metadata, filters)
+        ]
         deleted = int(
             self._run_async(
                 self.vdb.delete_by_filter(
@@ -2130,28 +2414,23 @@ class IndexService:
                 )
             )
         )
-        if deleted:
-            keep: dict[str, DocumentRecord] = {}
-            for key, value in self.documents.items():
-                if value.profile == profile and value.collection == collection:
-                    matches = all(value.metadata.get(k) == v for k, v in filters.items())
-                    if matches:
-                        continue
-                keep[key] = value
-            self.documents = keep
-        return deleted
+        for value in matched_records:
+            value.metadata.update(mark_deleted(value.metadata))
+        return max(deleted, len(matched_records))
 
     def retention_run(self, profile: str, collection: str, older_than_days: int) -> int:
         """Execute retention run."""
         # Covers: FR-16
         threshold = datetime.now(timezone.utc) - timedelta(days=older_than_days)  # noqa: UP017
         deleted_count = 0
-        for doc_id, value in list(self.documents.items()):
+        for value in list(self.documents.values()):
+            if str(value.metadata.get("lifecycle_state", "active")) == "archived":
+                continue
             if (
                 value.profile == profile
                 and value.collection == collection
                 and value.created_at < threshold
-                and self.delete_by_id(profile, collection, doc_id)
+                and self.delete_by_id(profile, collection, value.record_id or value.doc_id)
             ):
                 deleted_count += 1
         return deleted_count
@@ -2188,10 +2467,8 @@ class IndexService:
         """Execute job retry."""
         job = self.queue.retry(job_id)
         if job.status is JobStatus.queued:
-            try:
-                return self.queue.run(job_id=job_id)
-            except RuntimeError:
-                return self.queue.get(job_id)
+            self._dispatch_job_async(job_id)
+            return self.queue.get(job_id)
         return job
 
     def queue_status(self) -> dict[str, Any]:
@@ -2302,6 +2579,7 @@ class IndexService:
 
         chunks = [str(getattr(record, "content", "")) for record in bridge.records]
         first_metadata = dict(getattr(bridge.records[0], "metadata", {})) if bridge.records else base_metadata
+        first_metadata = _normalise_provenance_metadata(first_metadata)
         return _PreviewResult(
             record_ids=[str(item) for item in record_ids],
             metadata=first_metadata,
@@ -2417,7 +2695,11 @@ class IndexService:
             "parser_provider": meta.get("parser_provider", ""),
             "parser_version": meta.get("parser_version", ""),
             "ocr_mode": meta.get("ocr_mode", ocr_mode),
+            "ocr_engine": meta.get("ocr_engine", meta.get("ocr_provider", "")),
+            "ocr_confidence": meta.get("ocr_confidence"),
             "ocr_applied": bool(meta.get("ocr_applied", False)),
+            "page": meta.get("page", meta.get("page_number")),
+            "table_id": meta.get("table_id", ""),
             "table_policy": meta.get("table_policy", table_policy),
             "checkpoints": preview.checkpoints,
         }
@@ -2521,6 +2803,8 @@ class IndexService:
             "table_count": len(table_like),
             "tables": table_like,
             "parser_provider": preview.metadata.get("parser_provider", ""),
+            "page": preview.metadata.get("page", preview.metadata.get("page_number")),
+            "table_id": preview.metadata.get("table_id", ""),
         }
 
     def ingest_stream_session_start(self, profile: str, collection: str, ordering_key: str) -> str:

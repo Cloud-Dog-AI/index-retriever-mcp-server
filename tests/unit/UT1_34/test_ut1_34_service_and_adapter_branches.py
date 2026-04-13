@@ -36,6 +36,102 @@ def test_service_collection_and_admin_paths(service: IndexService) -> None:
     assert service.collections_list("default") == []
 
 
+def test_service_collection_create_allows_unregistered_backend_profile(service: IndexService) -> None:
+    service.admin_profile_create(
+        "missing-backend",
+        roles={"admin"},
+        config={"backend": "nonexistent-backend", "enabled": True, "roles": ["reader", "writer", "maintainer"]},
+        actor="admin",
+    )
+
+    service.admin_collection_create(
+        "missing-backend",
+        "pending",
+        roles={"admin"},
+        payload={"metadata": {}},
+        actor="admin",
+    )
+
+    record = service.collection_get("missing-backend", "pending")
+    assert record["collection"] == "pending"
+    assert record["metadata"]["backend_binding_pending"] is True
+
+
+def test_live_collection_create_marks_pending_without_blocking_backend_create(
+    monkeypatch: pytest.MonkeyPatch, service: IndexService
+) -> None:
+    async def _missing_collection(*_args, **_kwargs):
+        return None
+
+    async def _unexpected_create(*_args, **_kwargs):
+        raise AssertionError("backend create_collection should not run during live admin collection creation")
+
+    monkeypatch.setattr(service, "_async_job_execution", True)
+    monkeypatch.setattr(service.vdb, "get_collection", _missing_collection)
+    monkeypatch.setattr(service.vdb, "create_collection", _unexpected_create)
+
+    service.admin_collection_create(
+        "default",
+        "lazy-live-binding",
+        roles={"admin"},
+        payload={"metadata": {}},
+        actor="admin",
+    )
+
+    record = service.collection_get("default", "lazy-live-binding")
+    assert record["metadata"]["backend_binding_pending"] is True
+
+
+def test_ingest_text_queues_failed_job_for_unregistered_backend_profile(service: IndexService) -> None:
+    service.queue._retry_max_attempts = 1
+    service.queue._retry_backoff_seconds = 0.0
+    service.admin_profile_create(
+        "missing-backend-ingest",
+        roles={"admin"},
+        config={"backend": "nonexistent-backend", "enabled": True, "roles": ["reader", "writer", "maintainer"]},
+        actor="admin",
+    )
+    service.admin_collection_create(
+        "missing-backend-ingest",
+        "pending",
+        roles={"admin"},
+        payload={"metadata": {}},
+        actor="admin",
+    )
+
+    job_id = service.ingest_text(
+        "missing-backend-ingest",
+        "pending",
+        "queued against missing backend",
+        "api://missing-backend-ingest",
+        actor="writer",
+    )
+    job = service.job_wait(job_id)
+
+    assert job.job_id == job_id
+    assert str(getattr(job.status, "value", job.status)).lower() in {"failed", "dead_lettered"}
+
+
+def test_live_ingest_dispatches_async_when_enabled(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
+    started: list[str] = []
+
+    def _capture(job_id: str) -> None:
+        started.append(job_id)
+
+    monkeypatch.setattr(service, "_async_job_execution", True)
+    monkeypatch.setattr(service, "_dispatch_job_async", _capture)
+
+    job_id = service.ingest_text(
+        "default",
+        "async-dispatch",
+        "async queue payload",
+        "api://async-dispatch",
+        actor="writer",
+    )
+
+    assert started == [job_id]
+
+
 def test_service_idempotency_retrieve_delete_and_retention(
     monkeypatch: pytest.MonkeyPatch, service: IndexService
 ) -> None:

@@ -20,10 +20,10 @@ from typing import Any
 from pydantic import BaseModel
 
 from index_tools.tools.definitions import (
-    ExtractOnlyOutput,
-    GenericToolInput,
     BackendHealthOutput,
     EmbeddingHealthOutput,
+    ExtractOnlyOutput,
+    GenericToolInput,
     GenericToolOutput,
     IngestOutput,
     IngestPreviewInput,
@@ -35,6 +35,8 @@ from index_tools.tools.definitions import (
     ParsersListOutput,
     ParserTestInput,
     ParserTestOutput,
+    RetrieveInput,
+    RetrieveOutput,
     SearchInput,
     SearchOutput,
     TableExtractOutput,
@@ -131,7 +133,7 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="ingest_stream_close", input_model=GenericToolInput, output_model=GenericToolOutput),
         ToolSpec(name="search", input_model=SearchInput, output_model=SearchOutput),
         # Covers: FR-P002
-        ToolSpec(name="retrieve", input_model=GenericToolInput, output_model=GenericToolOutput),
+        ToolSpec(name="retrieve", input_model=RetrieveInput, output_model=RetrieveOutput),
         ToolSpec(name="search_explain", input_model=SearchInput, output_model=SearchOutput),
         ToolSpec(name="job_list", input_model=GenericToolInput, output_model=GenericToolOutput),
         ToolSpec(name="job_get", input_model=GenericToolInput, output_model=GenericToolOutput),

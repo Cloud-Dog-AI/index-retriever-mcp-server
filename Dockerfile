@@ -34,11 +34,18 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
       /tmp/wheels/cloud_dog_llm-*.whl \
       /tmp/wheels/cloud_dog_vdb-*.whl
 
-COPY pyproject.toml README.md ./
+COPY requirements-docker.txt pyproject.toml README.md ./
 COPY src/ ./src/
 COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     pip install --no-cache-dir \
+      --trusted-host pypi.cloud-dog.net \
+      --trusted-host pypi.org \
+      --trusted-host files.pythonhosted.org \
+      -r requirements-docker.txt
+RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
+    pip install --no-cache-dir \
+      --no-deps \
       --trusted-host pypi.cloud-dog.net \
       --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
@@ -68,7 +75,7 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-COPY pyproject.toml README.md ./
+COPY requirements-docker.txt pyproject.toml README.md ./
 COPY src/ ./src/
 COPY ui/ ./ui/
 COPY database/ ./database/

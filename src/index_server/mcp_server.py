@@ -17,6 +17,7 @@ from __future__ import annotations
 import os
 from collections.abc import Callable
 from contextlib import asynccontextmanager
+import json
 from typing import Any
 
 from cloud_dog_api_kit import (  # type: ignore
@@ -50,6 +51,7 @@ def _log_tool_audit(tool_name: str, actor_id: str, outcome: str, details: dict[s
         **({"details": safe} if safe else {}),
     )
 from fastapi import Request
+from starlette.responses import JSONResponse
 
 from index_server.auth.middleware import AuthMiddleware
 from index_server.logging_runtime import init_platform_logging
@@ -114,6 +116,23 @@ def _attach_shutdown_lifespan(app: Any, on_shutdown: Callable[[], None]) -> Any:
     return app
 
 
+def _compat_detail_from_error_body(payload: Any) -> str | None:
+    """Surface a FastAPI-style detail field alongside MCP error envelopes."""
+    if not isinstance(payload, dict) or payload.get("ok") is not False:
+        return None
+    error = payload.get("error")
+    if not isinstance(error, dict):
+        return None
+    detail = error.get("message")
+    if isinstance(error.get("details"), dict):
+        nested_detail = error["details"].get("detail")
+        if isinstance(nested_detail, str) and nested_detail.strip():
+            detail = nested_detail
+    if not isinstance(detail, str) or not detail.strip():
+        return None
+    return detail
+
+
 def _create_runtime_app(on_shutdown: Callable[[], None] | None = None) -> Any:
     """Create MCP runtime app with optional shutdown lifecycle callback."""
     lifecycle_hooks = None
@@ -129,6 +148,44 @@ def _create_runtime_app(on_shutdown: Callable[[], None] | None = None) -> Any:
         app = create_app(service_name="index-retriever-mcp-server-mcp")
         if on_shutdown is not None:
             app = _attach_shutdown_lifespan(app, on_shutdown)
+
+    @app.middleware("http")
+    async def _augment_error_detail(request: Request, call_next: Callable[..., Any]) -> Any:
+        response = await call_next(request)
+        content_type = str(response.headers.get("content-type", ""))
+        if "application/json" not in content_type:
+            return response
+        if not (400 <= int(getattr(response, "status_code", 200)) < 600):
+            return response
+
+        body = b""
+        async for chunk in response.body_iterator:
+            body += chunk
+        if not body:
+            return response
+        try:
+            payload = json.loads(body)
+        except json.JSONDecodeError:
+            return JSONResponse(
+                status_code=response.status_code,
+                content=body.decode("utf-8", errors="ignore"),
+                media_type=response.media_type,
+            )
+        if isinstance(payload, dict) and "detail" not in payload:
+            detail = _compat_detail_from_error_body(payload)
+            if detail is not None:
+                payload["detail"] = detail
+        headers = {
+            key: value
+            for key, value in response.headers.items()
+            if key.lower() not in {"content-length", "content-type"}
+        }
+        return JSONResponse(
+            status_code=response.status_code,
+            content=payload,
+            headers=headers,
+            media_type=response.media_type,
+        )
     return _maybe_disable_timeout_middleware(app)
 
 
@@ -648,6 +705,44 @@ def execute_tool(
                 "error": f"Search failed: {exc}",
                 "status": "error",
             }
+    if tool_name == "retrieve":
+        _enforce_collection_acl(service, roles, arguments)
+        return service.retrieve(str(arguments["doc_id"]))
+    if tool_name == "delete_by_id":
+        _enforce_collection_acl(service, roles, arguments)
+        deleted = service.delete_by_id(
+            profile=str(arguments["profile"]),
+            collection=str(arguments["collection"]),
+            doc_id=str(arguments["doc_id"]),
+        )
+        return {"deleted": bool(deleted), "status": "ok" if deleted else "not_found"}
+    if tool_name == "delete_by_filter":
+        _enforce_collection_acl(service, roles, arguments)
+        deleted = service.delete_by_filter(
+            profile=str(arguments["profile"]),
+            collection=str(arguments["collection"]),
+            filters=arguments.get("filters") if isinstance(arguments.get("filters"), dict) else {},
+        )
+        return {"deleted": int(deleted), "status": "ok"}
+    if tool_name == "retention_run":
+        _enforce_collection_acl(service, roles, arguments)
+        deleted = service.retention_run(
+            profile=str(arguments["profile"]),
+            collection=str(arguments["collection"]),
+            older_than_days=int(arguments.get("older_than_days", 0)),
+        )
+        return {"deleted": int(deleted), "status": "ok"}
+    if tool_name == "reindex_run":
+        _enforce_collection_acl(service, roles, arguments)
+        result = service.reindex_run(
+            profile=str(arguments["profile"]),
+            collection=str(arguments["collection"]),
+        )
+        if isinstance(result, dict):
+            payload = dict(result)
+            payload.setdefault("status", "ok")
+            return payload
+        return {"documents": int(result), "status": "ok"}
     if tool_name == "job_get":
         job = service.job_get(str(arguments["job_id"]))
         return {"job": _normalise_job_payload(job)}

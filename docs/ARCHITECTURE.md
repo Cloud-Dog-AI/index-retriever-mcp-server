@@ -2,7 +2,7 @@
 
 ## W28A-421 Review Status
 - Reviewed for external/shareable publication during W28A-421.
-- Source basis: `defaults.yaml`, 4 server source files, 3 discovered routes/endpoints, and 60 MCP tools.
+- Source basis: `defaults.yaml`, 4 server source files, 92+ discovered routes/endpoints, and 60 MCP tools.
 - Internal-only absolute paths, environment-specific hosts, and private registries have been removed from this shareable document set.
 
 ## 1. Purpose
@@ -131,7 +131,11 @@ The runtime exposes these logical surfaces:
 | Legacy API alias | `/api/v1` | `src/index_server/api_server.py` |
 | MCP | `/mcp` | `src/index_server/mcp_server.py` |
 | A2A | `/a2a` | `src/index_server/api_server.py` |
-| Health | `/health`, `/api/health`, `/app/v1/health` | `src/index_server/api_server.py` |
+| A2A (standalone) | `/a2a` | `src/index_server/a2a_server.py` (reuses API app) |
+| Web | `/` (SPA + proxy) | `src/index_server/web_server.py` |
+| Admin API | `/admin/*` | `src/index_server/api_server.py` |
+| Admin UI (legacy) | `/admin/ui/*` | `src/index_server/api_server.py` |
+| Health | `/health`, `/ready`, `/live`, `/app/v1/health`, `/api/v1/health` | `src/index_server/api_server.py` |
 
 The MCP runtime is registered through `cloud_dog_api_kit.register_mcp_contract(...)`, with legacy tools alias support enabled for compatibility.
 
@@ -321,25 +325,76 @@ The service-to-package hand-off is a control-plane contract:
 
 This means the service is the policy and transport entry point, while `cloud_dog_vdb` is the canonical metadata and vector-operation execution plane.
 
+### 6.5 Source Module Directory
+
+The `src/` tree contains two top-level packages. The complete directory listing is:
+
+#### `src/index_server/` -- Transport and runtime layer
+
+| Module | Purpose |
+|---|---|
+| `api_server.py` | HTTP API app builder; all API, admin, A2A, auth, and SPA routes |
+| `a2a_server.py` | A2A server entrypoint (reuses the API app) |
+| `mcp_server.py` | MCP server and tool contract registration |
+| `web_server.py` | Thin web server for SPA delivery and API proxy |
+| `main.py` | CLI entrypoint for starting servers |
+| `runtime_config.py` | Server binding and port resolution |
+| `logging_runtime.py` | Platform logging initialisation |
+| `streaming.py` | Stream session ingest helpers |
+| `admin_ui.py` | Legacy admin UI HTML/JS/CSS generators |
+| `admin/` | Admin sub-package (`endpoints.py`) |
+| `auth/` | Auth sub-package (`middleware.py` -- AuthMiddleware, AuthResult) |
+
+#### `src/index_tools/` -- Application, capability, and state layer
+
+| Module | Purpose |
+|---|---|
+| `tools/` | Tool registry, definitions, handlers, and `IndexService` facade |
+| `config/` | Configuration loader and typed config models |
+| `db/` | Platform database runtime, ORM models, migrations |
+| `collections/` | Collection manager and collection schema |
+| `search/` | Search engine and reranker |
+| `embeddings/` | Embedding adapter and provider registry |
+| `vdb/` | Vector database adapters (InMemoryVdbAdapter) and VDB registry |
+| `pipeline/` | Ingest pipeline: chunking, deduplication, metadata shaping |
+| `queue/` | Queue engine, job models, Redis bridge |
+| `audit/` | Audit logger and audit event definitions |
+| `connectors/` | Source connectors: filesystem, S3, WebDAV, FTP, HTTP, Google Drive |
+| `convert/` | Document converters: PDF, Office, Pandoc, DeepDoc, MinerU |
+| `lifecycle/` | Document lifecycle and retention logic |
+| `security/` | RBAC enforcement and scope resolution |
+
 ## 7. Transport Contracts
 
 ### 7.1 HTTP API
 
 The HTTP API is the canonical surface for external integrations and the Admin WebUI.
 
-Implemented routes include:
+The full route inventory is maintained in `docs/API_DOCUMENTATION.md`. Key route groups are summarised below:
 
-| Method | Path | Purpose |
-|---|---|---|
-| `GET` | `/health` | service health |
-| `GET` | `/api/health` | compatibility health |
-| `GET` | `/app/v1/health` | canonical API health |
-| `GET` | `/a2a` | A2A descriptor |
-| `GET` | `/a2a/health` | A2A health |
-| `GET` | `/app/v1/tools` | list tools |
-| `POST` | `/app/v1/tools/{tool_name}` | execute tool |
-| `GET` | `/api/v1/tools` | legacy tool list |
-| `POST` | `/api/v1/tools/{tool_name}` | legacy tool execute |
+| Group | Methods | Paths | Purpose |
+|---|---|---|---|
+| Auth | POST, GET | `/auth/login`, `/auth/me`, `/auth/logout` | Session authentication |
+| Health | GET | `/health`, `/ready`, `/live` | Platform health probes (DB, VDB, embedding) |
+| Status | GET | `/status`, `/api/status` | Runtime status metrics |
+| Logs | GET | `/api/logs`, `/api/config-events`, `/api/audit-log` | Observability and audit log access |
+| API health | GET | `/app/v1/health`, `/api/v1/health` | Per-surface health |
+| A2A | GET | `/a2a`, `/a2a/health`, `/a2a/events` | A2A service descriptor and health |
+| A2A agent | GET, POST | `/.well-known/agent.json`, `/tasks`, `/a2a/tasks` | A2A agent card and task submission |
+| Tools | GET, POST | `/app/v1/tools`, `/app/v1/tools/{tool_name}` | Tool catalogue and execution |
+| Tools (legacy) | GET, POST | `/api/v1/tools`, `/api/v1/tools/{tool_name}` | Legacy tool catalogue and execution |
+| Upload | POST | `/app/v1/upload`, `/api/v1/upload` | Multipart file upload ingestion |
+| Admin profiles | GET, POST, PUT, DELETE | `/admin/profiles`, `/admin/profiles/{id}` | Profile CRUD |
+| Admin users | GET, POST, PUT, DELETE | `/admin/users`, `/admin/users/{id}` | User CRUD |
+| Admin groups | GET, POST, PUT, DELETE | `/admin/groups`, `/admin/groups/{id}` | Group CRUD |
+| Admin API keys | GET, POST, DELETE | `/admin/api-keys`, `/admin/api-keys/{id}` | API key management |
+| Admin collections | GET, POST, PUT, DELETE | `/admin/collections`, `/admin/collections/{id}` | Collection CRUD |
+| Admin sources | GET, POST, PUT, DELETE | `/admin/source-configs`, `/admin/source-configs/{id}` | Source configuration CRUD |
+| Admin RBAC | GET, POST, DELETE | `/admin/rbac-bindings`, `/admin/rbac-bindings/{type}/{id}/{role}` | RBAC binding management |
+| Admin UI | GET | `/admin/ui`, `/admin/ui/profiles`, `/admin/ui/security`, `/admin/ui/app.js`, `/admin/ui/styles.css` | Legacy admin UI pages |
+| SPA | GET | `/runtime-config.js`, `/`, `/{path:path}` | SPA delivery and client routing |
+
+Total API server route registrations: 67+.
 
 Health payloads include:
 
@@ -362,17 +417,36 @@ Each tool call is authenticated and then dispatched through the same `execute_to
 
 ### 7.3 A2A
 
-The A2A surface is a small authenticated HTTP contract:
+The A2A surface is an authenticated HTTP contract with agent card and task submission:
 
-- `GET /a2a`
-- `GET /a2a/health`
+- `GET /a2a` -- A2A service descriptor (API-key auth required)
+- `GET /a2a/health` -- A2A health (API-key auth required)
+- `GET /a2a/events` -- configuration change events (API-key auth required)
+- `GET /.well-known/agent.json` -- A2A agent card (skills: ingest_text, search, retrieve)
+- `POST /tasks` -- submit A2A task
+- `POST /a2a/tasks` -- submit A2A task (prefixed path)
 
 `/a2a/health` enforces the shared API-key authority and is expected to return:
 
 - `401` without valid credentials,
 - `200` with a valid API key supplied either as `X-API-Key` or `Authorization: Bearer <api-key>`.
 
-### 7.4 Tool catalogue and execution coverage
+### 7.4 Web Server
+
+The web server (`web_server.py`) is a thin SPA delivery and API proxy surface:
+
+- `GET /health`, `GET /status` -- web surface health and status
+- `GET /runtime-config.js` -- SPA runtime config bootstrap
+- `ALL /webapi/proxy/{path}`, `ALL /api/{path}`, `ALL /app/{path}` -- API proxy routes
+- `ALL /admin/{path}` -- admin proxy (non-SPA admin paths)
+- `GET,POST /auth/{path}` -- auth proxy
+- `GET /openapi.json`, `GET /docs`, `GET /redoc` -- documentation proxy
+- `GET /admin`, `/admin/users`, `/admin/groups`, `/admin/api-keys`, `/admin/rbac` -- SPA admin routes
+- `GET /`, `GET /{path}` -- SPA entrypoint and fallback
+
+Total web server route registrations: 19.
+
+### 7.5 Tool catalogue and execution coverage
 
 The shared tool registry publishes the service catalogue and JSON schemas for both API and MCP clients.
 

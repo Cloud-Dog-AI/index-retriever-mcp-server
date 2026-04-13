@@ -62,3 +62,5 @@ node_modules
 .terraform
 *.tfstate
 tmp-w28a847-api-nohup.log
+working/w28a-*-screenshots/
+node_modules/

@@ -255,6 +255,7 @@ def test_mcp_app_and_execute_tool_paths(service: IndexService) -> None:
         json={"profile": "default", "collection": "ut_mcp", "text": "blocked"},
     )
     assert forbidden.status_code == 403
+    assert forbidden.json()["detail"] == "Authorisation failed for tool 'ingest_text'"
 
     bad_payload = client.post(
         mcp_tools_path("search"),
@@ -347,6 +348,19 @@ def test_entrypoint_and_streaming_wrappers(monkeypatch: pytest.MonkeyPatch, serv
 def test_admin_collection_create_endpoint(service: IndexService) -> None:
     response = collection_create(service, profile="default", collection="ut_collection", roles={"admin"})
     assert response == {"status": "created", "collection": "ut_collection"}
+
+
+def test_build_status_payload_counts_active_documents_from_runtime(service: IndexService) -> None:
+    service.ingest_text("default", "status_cov", "status payload active doc", "api://status-cov", actor="writer")
+    deleted_job_id = service.ingest_text("default", "status_cov", "status payload deleted doc", "api://status-deleted", actor="writer")
+    assert deleted_job_id
+    deleted_record = next(record for record in service.documents.values() if record.source == "api://status-deleted")
+    assert service.delete_by_id("default", "status_cov", str(deleted_record.record_id or deleted_record.doc_id)) is True
+
+    payload = api_server.build_status_payload(service)
+
+    assert payload["document_count"] >= 1
+    assert payload["collection_count"] >= 1
 
 
 def test_web_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:

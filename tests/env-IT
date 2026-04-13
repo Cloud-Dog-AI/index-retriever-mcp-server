@@ -1,6 +1,7 @@
 # Integration test environment
 TEST_ENV_TIER=IT
-DB_URL=sqlite+aiosqlite:///data/index-retriever-it.db
+DB_URL=sqlite+aiosqlite:///./data/index-retriever-it.db
+INDEX_RETRIEVER_DB_URL=sqlite+aiosqlite:///./data/index-retriever-it-queue.db
 CLOUD_DOG__INDEX__VDB__PROVIDER=chroma
 CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=ollama
 CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text
@@ -28,3 +29,4 @@ CLOUD_DOG__DB__DIALECT=sqlite
 CLOUD_DOG__DB__DATABASE=./data/index-retriever-it.db
 
 CLOUD_DOG__INDEX__AUTH__API_KEYS=test-api-key,valid-reader-token:reader,valid-writer-token:writer,valid-admin-token:admin
+CLOUD_DOG__INDEX__UI__AUTH_MODE=api_key

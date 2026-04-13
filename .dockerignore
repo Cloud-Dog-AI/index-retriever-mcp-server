@@ -16,3 +16,7 @@ docker-build.log
 env-*
 !defaults.yaml
 .pip.conf.build
+node_modules
+logs/
+data/
+archive/

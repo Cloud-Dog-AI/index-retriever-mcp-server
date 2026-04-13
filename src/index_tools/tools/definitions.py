@@ -33,9 +33,14 @@ class SearchResult(BaseModel):
     """SearchResult definition."""
 
     doc_id: str
+    record_id: str = ""
     chunk_id: str
     text: str
     score: float
+    source_uri: str = ""
+    content_hash: str = ""
+    lifecycle_state: str = "active"
+    is_latest: bool | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -59,6 +64,30 @@ class IngestOutput(BaseModel):
 
     job_id: str
     status: str
+
+
+class RetrieveInput(BaseModel):
+    """RetrieveInput definition."""
+
+    profile: str
+    collection: str
+    doc_id: str
+
+
+class RetrieveOutput(BaseModel):
+    """RetrieveOutput definition."""
+
+    doc_id: str
+    record_id: str = ""
+    profile: str
+    collection: str
+    source: str
+    source_uri: str = ""
+    text: str
+    content_hash: str = ""
+    lifecycle_state: str = "active"
+    is_latest: bool | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class ParsersListInput(BaseModel):
@@ -119,7 +148,11 @@ class IngestPreviewOutput(BaseModel):
     parser_provider: str = ""
     parser_version: str = ""
     ocr_mode: str = "disabled"
+    ocr_engine: str = ""
+    ocr_confidence: float | None = None
     ocr_applied: bool = False
+    page: int | None = None
+    table_id: str = ""
     table_policy: str = "table_as_markdown"
     checkpoints: list[dict[str, Any]] = Field(default_factory=list)
 
@@ -164,6 +197,8 @@ class TableExtractOutput(BaseModel):
     table_count: int
     tables: list[str] = Field(default_factory=list)
     parser_provider: str = ""
+    page: int | None = None
+    table_id: str = ""
 
 
 class GenericToolInput(BaseModel):

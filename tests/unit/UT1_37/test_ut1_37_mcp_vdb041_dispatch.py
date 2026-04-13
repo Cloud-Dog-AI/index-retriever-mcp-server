@@ -48,6 +48,35 @@ class _ToolService:
         self.calls.append(("table_extract", dict(kwargs)))
         return {"table_count": 1, "source_uri": kwargs["source_uri"]}
 
+    def retrieve(self, doc_id: str) -> dict[str, Any]:
+        self.calls.append(("retrieve", {"doc_id": doc_id}))
+        return {"doc_id": doc_id, "record_id": doc_id, "metadata": {"content_hash": "hash"}}
+
+    def delete_by_id(self, profile: str, collection: str, doc_id: str) -> bool:
+        self.calls.append(
+            ("delete_by_id", {"profile": profile, "collection": collection, "doc_id": doc_id})
+        )
+        return True
+
+    def delete_by_filter(self, profile: str, collection: str, filters: dict[str, Any]) -> int:
+        self.calls.append(
+            ("delete_by_filter", {"profile": profile, "collection": collection, "filters": dict(filters)})
+        )
+        return 2
+
+    def retention_run(self, profile: str, collection: str, older_than_days: int) -> int:
+        self.calls.append(
+            (
+                "retention_run",
+                {"profile": profile, "collection": collection, "older_than_days": older_than_days},
+            )
+        )
+        return 1
+
+    def reindex_run(self, profile: str, collection: str) -> dict[str, int]:
+        self.calls.append(("reindex_run", {"profile": profile, "collection": collection}))
+        return {"documents": 3}
+
 
 def test_required_roles_for_new_wrapper_tools() -> None:
     assert mcp_server._required_roles_for_tool("parsers_list") == {"reader", "writer", "maintainer", "admin"}
@@ -121,6 +150,51 @@ def test_execute_tool_dispatches_vdb_wrapper_calls() -> None:
     )
     assert table["table_count"] == 1
 
+    retrieved = mcp_server.execute_tool(
+        service,  # type: ignore[arg-type]
+        "retrieve",
+        {"profile": "default", "collection": "docs", "doc_id": "record-1"},
+        registry=registry,  # type: ignore[arg-type]
+        identity_roles={"reader"},
+    )
+    assert retrieved["doc_id"] == "record-1"
+
+    deleted_by_id = mcp_server.execute_tool(
+        service,  # type: ignore[arg-type]
+        "delete_by_id",
+        {"profile": "default", "collection": "docs", "doc_id": "record-2"},
+        registry=registry,  # type: ignore[arg-type]
+        identity_roles={"admin"},
+    )
+    assert deleted_by_id == {"deleted": True, "status": "ok"}
+
+    deleted_by_filter = mcp_server.execute_tool(
+        service,  # type: ignore[arg-type]
+        "delete_by_filter",
+        {"profile": "default", "collection": "docs", "filters": {"source_uri": "file://match.txt"}},
+        registry=registry,  # type: ignore[arg-type]
+        identity_roles={"admin"},
+    )
+    assert deleted_by_filter == {"deleted": 2, "status": "ok"}
+
+    retention = mcp_server.execute_tool(
+        service,  # type: ignore[arg-type]
+        "retention_run",
+        {"profile": "default", "collection": "docs", "older_than_days": "30"},
+        registry=registry,  # type: ignore[arg-type]
+        identity_roles={"admin"},
+    )
+    assert retention == {"deleted": 1, "status": "ok"}
+
+    reindex = mcp_server.execute_tool(
+        service,  # type: ignore[arg-type]
+        "reindex_run",
+        {"profile": "default", "collection": "docs"},
+        registry=registry,  # type: ignore[arg-type]
+        identity_roles={"admin"},
+    )
+    assert reindex == {"documents": 3, "status": "ok"}
+
     names = [name for name, _payload in service.calls]
     assert names == [
         "parsers_list",
@@ -129,4 +203,9 @@ def test_execute_tool_dispatches_vdb_wrapper_calls() -> None:
         "extract_only",
         "ocr_run",
         "table_extract",
+        "retrieve",
+        "delete_by_id",
+        "delete_by_filter",
+        "retention_run",
+        "reindex_run",
     ]

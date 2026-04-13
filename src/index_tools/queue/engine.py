@@ -21,6 +21,10 @@ from hashlib import sha256
 from typing import Any
 
 from index_tools.queue.models import JobRecord, JobStatus
+
+
+class JobCancelledError(RuntimeError):
+    """Raised when cooperative job execution observes a cancellation request."""
 from sqlalchemy import MetaData, create_engine, select, update
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.schema import CreateTable
@@ -569,7 +573,14 @@ class QueueEngine:
         try:
             _ = self._backend.heartbeat(job_id)
             self._run_handler(local_job)
+        except JobCancelledError:
+            current = self.get(job_id)
+            if current.status is not JobStatus.cancelled:
+                return self.cancel(job_id)
+            return current
         except TimeoutError as exc:
+            if self.get(job_id).status is JobStatus.cancelled:
+                return self.get(job_id)
             error_payload = {"type": "timeout", "message": str(exc), "attempt": attempts}
             if attempts < self._retry_max_attempts:
                 self._last_errors[job_id] = str(exc)
@@ -589,6 +600,8 @@ class QueueEngine:
             )
             raise
         except Exception as exc:
+            if self.get(job_id).status is JobStatus.cancelled:
+                return self.get(job_id)
             error_payload = {"type": type(exc).__name__, "message": str(exc), "attempt": attempts}
             if attempts < self._retry_max_attempts:
                 self._last_errors[job_id] = str(exc)
@@ -607,6 +620,8 @@ class QueueEngine:
                 audit_action="dead_letter",
             )
             raise
+        if self.get(job_id).status is JobStatus.cancelled:
+            return self.get(job_id)
         self._transition(
             job_id,
             status=JobStatus.succeeded,

@@ -41,6 +41,7 @@ from cloud_dog_vdb.capabilities.planner import plan_search as vdb_plan_search
 from cloud_dog_vdb.domain.models import CapabilityDescriptor
 from cloud_dog_vdb.ingestion import ParserIngestionOptions, build_parser_registry, ingest_document
 from cloud_dog_vdb.ingestion.ocr.planner import decide_ocr
+from cloud_dog_vdb.metadata.filters import SCALAR_FILTER_FIELDS, matches_metadata
 
 ROOT = Path(__file__).resolve().parents[1]
 _SECRET_FIELD_PATTERN = re.compile(r"(?i)(api[_-]?key|token|password|secret)\s*[:=]\s*([^\s,;]+)")
@@ -102,6 +103,27 @@ def _redact_diagnostic_detail(detail: str) -> str:
 def _dataclass_to_dict(value: Any) -> dict[str, Any]:
     names = getattr(type(value), "__dataclass_fields__", {})
     return {name: getattr(value, name) for name in names}
+
+
+def _metadata_matches_filters(metadata: dict[str, Any], filters: dict[str, Any]) -> bool:
+    canonical_filters: dict[str, Any] = {
+        key: value
+        for key, value in filters.items()
+        if key in SCALAR_FILTER_FIELDS or key == "access_tags"
+    }
+    if canonical_filters and not matches_metadata(metadata, canonical_filters):
+        return False
+    for key, expected in filters.items():
+        if key in canonical_filters:
+            continue
+        actual = metadata.get(key)
+        if isinstance(expected, (list, tuple, set)):
+            if actual not in expected:
+                return False
+            continue
+        if actual != expected:
+            return False
+    return True
 
 
 def _as_bool(raw: str | None, *, default: bool = False) -> bool:
@@ -886,7 +908,11 @@ class LiveIndexRuntime:
             "parser_provider": meta.get("parser_provider", ""),
             "parser_version": meta.get("parser_version", ""),
             "ocr_mode": meta.get("ocr_mode", ocr_mode),
+            "ocr_engine": meta.get("ocr_engine", meta.get("ocr_provider", "")),
+            "ocr_confidence": meta.get("ocr_confidence"),
             "ocr_applied": bool(meta.get("ocr_applied", False)),
+            "page": meta.get("page", meta.get("page_number")),
+            "table_id": meta.get("table_id", ""),
             "table_policy": meta.get("table_policy", table_policy),
             "checkpoints": list(result["checkpoints"]),
         }
@@ -985,6 +1011,8 @@ class LiveIndexRuntime:
             "table_count": len(table_like),
             "tables": table_like,
             "parser_provider": meta.get("parser_provider", ""),
+            "page": meta.get("page", meta.get("page_number")),
+            "table_id": meta.get("table_id", ""),
         }
 
     def _resolve_provider_id(self, provider_id: str | None) -> str:
@@ -1150,6 +1178,7 @@ class LiveIndexRuntime:
     ) -> list[dict[str, Any]]:
         resolved_provider = self._resolve_provider_id(provider_id)
         collection_name = self._collection_name(profile, collection, resolved_provider)
+        requested_filters = dict(filters or {})
         plan = self.plan_search(
             provider_id=resolved_provider,
             query=query,
@@ -1172,15 +1201,18 @@ class LiveIndexRuntime:
         out: list[dict[str, Any]] = []
         for item in response.results:
             payload = dict(item.payload)
+            metadata = dict(payload.get("metadata", {}))
+            if requested_filters and not _metadata_matches_filters(metadata, requested_filters):
+                continue
             out.append(
                 {
                     "id": item.id,
                     "score": item.score,
                     "content": payload.get("content", ""),
-                    "metadata": payload.get("metadata", {}),
+                    "metadata": metadata,
                 }
             )
-        return out
+        return out[: max(1, int(plan.get("top_k", top_k)))]
 
     def retrieve(self, profile: str, collection: str, record_id: str, provider_id: str | None = None) -> Record | None:
         resolved_provider = self._resolve_provider_id(provider_id)
