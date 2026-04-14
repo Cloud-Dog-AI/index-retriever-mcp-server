@@ -124,3 +124,45 @@ IDAM scanner shows 0 violations (fully compliant).
 
 ### CONDITIONAL PLATFORM IMPORTS
 Uses cloud_dog_idam conditionally (try/except imports). Graceful degradation for development mode without platform packages.
+
+## W28A-908a / W28A-908b Addendum
+
+### Code
+
+- Live MCP tool routing must be verified against the real runtime handlers, not inferred from docs or UI behavior. During 908b, `retrieve` and lifecycle operations needed direct fixes in `src/index_server/mcp_server.py` because the runtime dispatch path itself was incomplete.
+- Lifecycle correctness in `src/index_tools/tools/service.py` depends on local service state as well as vector-store state. Ingest must register local document state reliably, rollback must clean up on failure, and search/retrieve flows must respect local delete state even when backend delete semantics lag.
+- Metadata shape is part of the contract. `embedding_dim` and `user_id` had to be present in live metadata for ingest/search/retrieve evidence to pass consistently.
+- API compatibility details matter operationally. Error payloads needed top-level `detail`, and audit aggregation in `src/index_server/api_server.py` had to treat audit as a composite view over multiple jsonl logs rather than a single-file assumption.
+- Rich editors are not automatically the right answer for form input. For editable JSON fields in collection/source-config flows, stable textarea-style inputs with fixed ids were more reliable than Monaco-backed editing surfaces. Keep `CodeEditor` for inspection when the field is not a free-form form control.
+- Shared UI primitives are compatibility surfaces. Search input ids, accessible names, duplicate headings, and row-action structure can break broad Playwright coverage even when the backend behavior is correct.
+
+### Test Environment
+
+- The real gate for this repo is the native full-suite result, not a set of targeted green reruns. The closing summary line for 908b was `51 passed (4.3m)`, and anything less was only diagnostic evidence.
+- Historical tests rely on stable UI contracts such as `#search-query`, accessible names like `Query` or `Search query`, strict heading matches, and row-scoped actions. Before changing tests, first check whether the app regressed a long-standing contract.
+- Several failures that looked like backend defects were actually UI contract drift: missing stable ids, duplicated visible headings, text collisions after richer JSON surfaces, or control-type changes such as textbox versus select.
+- Section-level closure and suite-level closure are different claims. The later 908a evidence report showed that some requested sections were only partially proven even though the later 51-test suite was green. Future agents should map tests back to instruction sections before claiming full CRUD/ingest/search coverage.
+
+### Infrastructure
+
+- For index-retriever, UI changes are not live until the monorepo app is rebuilt and the generated bundle is copied into `index-retriever-mcp-server/ui/dist`. Rebuilding only the monorepo workspace can leave the running service on stale assets.
+- The PC23 closure path that actually worked was: native full suite green, `bash docker-build.sh`, Docker push, Terraform apply, public `/health`, then a delayed public stability recheck.
+- Public preprod health can transiently return `404` during rollout even while the container is healthy. The correct response is to verify container health, wait for the route to settle, and require a later public `200` before declaring deployment success.
+- The successful 908b image push resolved to `sha256:7acec730f7e1e7d65aa7c526ac82ec2abc795f125bb879b4bce6fc3012108480`. The Terraform resources replaced were `docker_image.indexretriever` and `docker_container.indexretriever0`.
+
+### Architecture
+
+- This service spans WebUI, API, MCP, and service-local lifecycle overlays. A change that appears local to one layer can still break the end-to-end contract if the other layers are not updated consistently.
+- Search results are not a pure reflection of vector-store state. Local lifecycle overlays and compatibility shaping are part of the intended behavior and must be preserved when refactoring ingest, delete, search, and retrieve paths.
+- Observability and audit surfaces are part of the operational contract. Error-envelope shape, audit flattening, and health/reporting behavior directly affect whether higher-level validation can prove the service works.
+
+### Related Projects
+
+- `cloud-dog-api-kit==0.4.1` from `pypi.cloud-dog.net` is the required package version for this repo’s `WebApiProxy` path. Do not modify `cloud_dog_api_kit` source directly and do not invent local intermediary versions.
+- The UI source of truth lives in `cloud-dog-ai-ui-monorepo/apps/index-retriever`, but the served runtime artifact lives in this repo. Future agents must debug both repos together when a UI fix builds cleanly but is not reflected in the running service.
+
+### Evidence and Reporting
+
+- If an instruction asks for section-by-section proof, produce section-by-section proof. The missing 908a report had to be written after the fact because a green later suite was not enough for the coordinator to close the earlier work item.
+- Use the exact summary line when the instruction requires it. For 908b, the native passing line was `51 passed (4.3m)`.
+- Record remaining proof gaps honestly. For 908a, sections `a-e` were mapped explicitly and the gaps were stated rather than hidden behind the later full-suite success.

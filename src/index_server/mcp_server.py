@@ -625,6 +625,19 @@ def execute_tool(
         )
         job_id = getattr(ingest_result, "job_id", ingest_result)
         return {"job_id": str(job_id), "status": "queued"}
+    if tool_name == "ingest_reference":
+        _enforce_collection_acl(service, roles, arguments)
+        reference_path = str(arguments.get("path") or arguments.get("uri") or "").strip()
+        if not reference_path:
+            raise ValueError("ingest_reference requires path or uri")
+        ingest_result = service.ingest_reference(
+            profile=str(arguments["profile"]),
+            collection=str(arguments["collection"]),
+            path=reference_path,
+            actor=str(arguments.get("actor", "mcp")),
+        )
+        job_id = getattr(ingest_result, "job_id", ingest_result)
+        return {"job_id": str(job_id), "status": "queued"}
     if tool_name == "parsers_list":
         return {"parsers": service.parsers_list(parser_services=arguments.get("parser_services"))}
     if tool_name == "parser_test":
@@ -705,6 +718,38 @@ def execute_tool(
                 "error": f"Search failed: {exc}",
                 "status": "error",
             }
+    if tool_name == "search_explain":
+        _enforce_collection_acl(service, roles, arguments)
+        filters = arguments.get("filters") if isinstance(arguments.get("filters"), dict) else {}
+        top_k = int(arguments.get("top_k", 10))
+        query = str(arguments["query"])
+        profile = str(arguments["profile"])
+        collection = str(arguments["collection"])
+        planned = service.search_plan(profile=profile, query=query, top_k=top_k, filters=filters)
+        results = service.search(
+            profile=profile,
+            collection=collection,
+            query=query,
+            top_k=top_k,
+            filters=filters,
+        )
+        return {
+            "query": query,
+            "profile": profile,
+            "collection": collection,
+            "plan": planned,
+            "results": [
+                {
+                    **dict(item),
+                    "similarity": {
+                        "score": float(item.get("score", 0.0)),
+                        "mode": str(planned.get("mode", "vector")),
+                        "top_k": int(planned.get("top_k", top_k)),
+                    },
+                }
+                for item in results
+            ],
+        }
     if tool_name == "retrieve":
         _enforce_collection_acl(service, roles, arguments)
         return service.retrieve(str(arguments["doc_id"]))

@@ -673,9 +673,20 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     @app.get("/auth/me")
     async def auth_me(request: Request) -> JSONResponse:
         sess = _get_session(request)
-        if not sess:
-            raise HTTPException(status_code=401, detail="Not authenticated")
-        return JSONResponse({"user": {"id": sess["user_id"], "displayName": sess["user"], "email": None, "roles": [sess["role"]], "permissions": ["*"]}})
+        if sess:
+            return JSONResponse({"user": {"id": sess["user_id"], "displayName": sess["user"], "email": None, "roles": [sess["role"]], "permissions": ["*"]}})
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        return JSONResponse(
+            {
+                "user": {
+                    "id": identity.user_id,
+                    "displayName": identity.user_id,
+                    "email": None,
+                    "roles": sorted(str(role) for role in identity.roles),
+                    "permissions": ["*"] if "admin" in identity.roles else [],
+                }
+            }
+        )
 
     @app.post("/auth/logout")
     async def auth_logout(request: Request) -> JSONResponse:

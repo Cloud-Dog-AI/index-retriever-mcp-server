@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import asyncio
+import fnmatch
 import json
 import mimetypes
 import os
@@ -2279,7 +2280,8 @@ class IndexService:
         canonical_filters: dict[str, Any] = {
             key: value
             for key, value in filters.items()
-            if key in SCALAR_FILTER_FIELDS or key == "access_tags"
+            if (key in SCALAR_FILTER_FIELDS or key == "access_tags")
+            and not (isinstance(value, str) and any(token in value for token in ("*", "?")))
         }
         if canonical_filters and not matches_metadata(metadata, canonical_filters):
             return False
@@ -2287,6 +2289,10 @@ class IndexService:
             if key in canonical_filters:
                 continue
             actual = metadata.get(key)
+            if isinstance(expected, str) and isinstance(actual, str) and any(token in expected for token in ("*", "?")):
+                if not fnmatch.fnmatch(actual, expected):
+                    return False
+                continue
             if isinstance(expected, (list, tuple, set)):
                 if actual not in expected:
                     return False

@@ -66,6 +66,15 @@ class IngestOutput(BaseModel):
     status: str
 
 
+class IngestReferenceInput(BaseModel):
+    """IngestReferenceInput definition."""
+
+    profile: str
+    collection: str
+    path: str = ""
+    uri: str = ""
+
+
 class RetrieveInput(BaseModel):
     """RetrieveInput definition."""
 
