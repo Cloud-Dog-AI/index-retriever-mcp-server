@@ -42,7 +42,8 @@ llama-index-core>=0.11,<0.12
 llama-index-readers-file>=0.2,<0.3
 llama-index-embeddings-openai>=0.2,<0.3
 llama-index-llms-openai>=0.2,<0.3
-llama-index-embeddings-huggingface>=0.2,<0.3   # optional local HF embeddings
+# Optional local HF embeddings stay out of the base image because current 0.2.x
+# releases pin against llama-index-core<0.11 and break the 0.11 runtime line.
 llama-index-llms-ollama>=0.2,<0.3              # optional Ollama-compatible
 # Optional: LangChain support if required
 langchain>=0.2,<0.4
