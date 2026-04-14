@@ -21,32 +21,36 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-COPY vendor/wheels/ /tmp/wheels/
+ARG PYPI_URL=https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     pip install --no-cache-dir \
-      /tmp/wheels/cloud_dog_config-*.whl \
-      /tmp/wheels/cloud_dog_logging-*.whl \
-      /tmp/wheels/cloud_dog_api_kit-*.whl \
-      /tmp/wheels/cloud_dog_idam-*.whl \
-      /tmp/wheels/cloud_dog_db-*.whl \
-      /tmp/wheels/cloud_dog_jobs-*.whl \
-      /tmp/wheels/cloud_dog_storage-*.whl \
-      /tmp/wheels/cloud_dog_llm-*.whl \
-      /tmp/wheels/cloud_dog_vdb-*.whl
+      --extra-index-url ${PYPI_URL} \
+      --trusted-host gitea.cloud-dog.net \
+      --trusted-host pypi.org \
+      --trusted-host files.pythonhosted.org \
+      cloud-dog-config \
+      cloud-dog-logging \
+      cloud-dog-api-kit \
+      cloud-dog-idam \
+      cloud-dog-db \
+      cloud-dog-jobs \
+      cloud-dog-storage \
+      cloud-dog-llm \
+      cloud-dog-vdb
 
-COPY requirements-docker.txt pyproject.toml README.md ./
+COPY REQUIREMENTS.txt pyproject.toml README.md ./
 COPY src/ ./src/
 COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     pip install --no-cache-dir \
-      --trusted-host pypi.cloud-dog.net \
+      --trusted-host gitea.cloud-dog.net \
       --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
-      -r requirements-docker.txt
+      -r REQUIREMENTS.txt
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     pip install --no-cache-dir \
       --no-deps \
-      --trusted-host pypi.cloud-dog.net \
+      --trusted-host gitea.cloud-dog.net \
       --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
       .
@@ -75,7 +79,7 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-COPY requirements-docker.txt pyproject.toml README.md ./
+COPY REQUIREMENTS.txt pyproject.toml README.md ./
 COPY src/ ./src/
 COPY ui/ ./ui/
 COPY database/ ./database/

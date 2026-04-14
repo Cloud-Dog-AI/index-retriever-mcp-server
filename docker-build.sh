@@ -25,41 +25,17 @@ CUSTOM_CA_CERT="${CUSTOM_CA_CERT:-/usr/local/share/ca-certificates/cloud-dog.net
 GENERIC_CA_CERT="custom-ca.crt"
 CERT_ARG=""
 PIP_CONF=".pip.conf.build"
-LOCAL_WHEEL_DIR="vendor/wheels"
-LOCAL_PLATFORM_WHEEL_GLOBS=(
-  "${LOCAL_WHEEL_DIR}/cloud_dog_config-*.whl"
-  "${LOCAL_WHEEL_DIR}/cloud_dog_logging-*.whl"
-  "${LOCAL_WHEEL_DIR}/cloud_dog_api_kit-*.whl"
-  "${LOCAL_WHEEL_DIR}/cloud_dog_idam-*.whl"
-  "${LOCAL_WHEEL_DIR}/cloud_dog_db-*.whl"
-  "${LOCAL_WHEEL_DIR}/cloud_dog_jobs-*.whl"
-  "${LOCAL_WHEEL_DIR}/cloud_dog_storage-*.whl"
-  "${LOCAL_WHEEL_DIR}/cloud_dog_llm-*.whl"
-  "${LOCAL_WHEEL_DIR}/cloud_dog_vdb-*.whl"
-)
 
 echo "=========================================="
 echo "Docker Build: ${FOLDER}/${CONTAINER}:${VERSION}"
 echo "=========================================="
-
-# ── Local wheel fallback ────────────────────────────────────────
-USE_LOCAL_PLATFORM_WHEELS=1
-shopt -s nullglob
-for pattern in "${LOCAL_PLATFORM_WHEEL_GLOBS[@]}"; do
-  matches=( ${pattern} )
-  if [[ ${#matches[@]} -eq 0 ]]; then
-    USE_LOCAL_PLATFORM_WHEELS=0
-    break
-  fi
-done
-shopt -u nullglob
 
 # ── Private PyPI credentials ─────────────────────────────────────
 PYPI_URL="${PYPI_URL:-https://pypi.cloud-dog.net/simple/}"
 PYPI_USERNAME="${PYPI_USERNAME:-}"
 PYPI_PASSWORD="${PYPI_PASSWORD:-}"
 
-if [[ ${USE_LOCAL_PLATFORM_WHEELS} -eq 0 && ( -z "${PYPI_USERNAME}" || -z "${PYPI_PASSWORD}" ) ]]; then
+if [[ -z "${PYPI_USERNAME}" || -z "${PYPI_PASSWORD}" ]]; then
   if [[ -f /opt/iac/Development/cloud-dog-ai/env-vault ]]; then
     source /opt/iac/Development/cloud-dog-ai/env-vault
     VAULT_JSON=$(curl -fsS \
@@ -80,29 +56,24 @@ print(d.get('repository',{}).get('pypi',{}).get('password',''))
   fi
 fi
 
-if [[ ${USE_LOCAL_PLATFORM_WHEELS} -eq 0 && ( -z "${PYPI_USERNAME}" || -z "${PYPI_PASSWORD}" ) ]]; then
-  echo "ERROR: PYPI_USERNAME and PYPI_PASSWORD required."
-  echo "  Set them as env vars or ensure Vault is accessible via env-vault."
-  exit 1
-fi
-
-if [[ ${USE_LOCAL_PLATFORM_WHEELS} -eq 1 ]]; then
+if [[ -n "${PYPI_USERNAME}" ]] && [[ -n "${PYPI_PASSWORD}" ]]; then
   cat > "${PIP_CONF}" << EOF
 [global]
-index-url = https://pypi.org/simple/
-trusted-host = pypi.org
-               files.pythonhosted.org
-EOF
-  echo "pip.conf generated for local platform wheel build."
-else
-  cat > "${PIP_CONF}" << EOF
-[global]
-extra-index-url = https://${PYPI_USERNAME}:${PYPI_PASSWORD}@pypi.cloud-dog.net/simple/
-trusted-host = pypi.cloud-dog.net
+extra-index-url = https://${PYPI_USERNAME}:${PYPI_PASSWORD}@${PYPI_URL#https://}
+trusted-host = $(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${PYPI_URL}').hostname or 'gitea.cloud-dog.net')")
                pypi.org
                files.pythonhosted.org
 EOF
-  echo "pip.conf generated with private PyPI auth."
+  echo "pip.conf generated with authenticated PyPI access."
+else
+  cat > "${PIP_CONF}" << EOF
+[global]
+extra-index-url = ${PYPI_URL}
+trusted-host = $(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${PYPI_URL}').hostname or 'gitea.cloud-dog.net')")
+               pypi.org
+               files.pythonhosted.org
+EOF
+  echo "pip.conf generated with anonymous PyPI access."
 fi
 
 # ── CA Certificate ───────────────────────────────────────────────
