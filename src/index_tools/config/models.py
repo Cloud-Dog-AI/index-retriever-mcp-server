@@ -24,6 +24,7 @@ class ServerEndpointConfig(BaseModel):
 
     host: str = "0.0.0.0"
     port: int
+    base_path: str = ""
 
 
 class McpServerConfig(ServerEndpointConfig):

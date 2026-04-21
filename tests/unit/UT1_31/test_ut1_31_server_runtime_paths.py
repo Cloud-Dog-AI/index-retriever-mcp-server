@@ -143,6 +143,26 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     assert unknown.status_code == 404
 
 
+def test_api_app_base_path_env_override_retains_legacy_compat(
+    monkeypatch: pytest.MonkeyPatch, service: IndexService
+) -> None:
+    monkeypatch.setenv("CLOUD_DOG__INDEX_RETRIEVER__API_SERVER__BASE_PATH", "/api/v2")
+
+    app = api_server.build_api_app(service=service)
+    client = TestClient(app)
+
+    overridden = client.get("/api/v2/health")
+    assert overridden.status_code == 200
+    assert overridden.json()["status"] == "ok"
+
+    legacy = client.get("/app/v1/health")
+    assert legacy.status_code == 200
+    assert legacy.json()["status"] == "ok"
+
+    stale_default = client.get("/api/v1/health")
+    assert stale_default.status_code == 404
+
+
 def test_api_create_runtime_app_typeerror_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     class DummyApp:
         def get(self, _path: str) -> object:

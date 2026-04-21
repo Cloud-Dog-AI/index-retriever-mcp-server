@@ -69,8 +69,7 @@ from index_tools.db import (
 )
 from index_tools.tools.service import IndexService
 
-_CANONICAL_API_BASE_PATH = "/app/v1"
-_LEGACY_API_BASE_PATH = "/api/v1"
+_LEGACY_API_BASE_PATH = "/app/v1"
 _CANONICAL_A2A_BASE_PATH = "/a2a"
 _BOOT_TIME = time.time()
 _SPA_RESERVED_SEGMENTS = {
@@ -143,6 +142,39 @@ def _read_jsonl_records_many(paths: list[str], limit: int = 200) -> list[dict[st
         combined.extend(_read_jsonl_records(path, limit=per_file_limit))
     combined.sort(key=lambda entry: _parse_log_timestamp(entry.get("timestamp")) or datetime.min.replace(tzinfo=timezone.utc))
     return combined[-limit:]
+
+
+def _normalise_route_base_path(raw: str | None, default: str) -> str:
+    """Normalise configurable route prefixes to a stable leading-slash form."""
+    value = str(raw or "").strip() or default
+    if not value.startswith("/"):
+        value = f"/{value}"
+    if value != "/" and value.endswith("/"):
+        value = value[:-1]
+    return value
+
+
+def _resolve_route_base_path(
+    configured_value: str | None,
+    *,
+    env_name: str,
+    config_key: str,
+    default: str,
+) -> str:
+    """Resolve a route prefix via cloud_dog_config, then fall back to bound config/default."""
+    try:
+        from cloud_dog_config import get_config  # type: ignore
+    except Exception:
+        get_config = None  # type: ignore[assignment]
+
+    for key in (env_name, config_key):
+        try:
+            value = get_config(key) if get_config is not None else None
+        except Exception:
+            value = None
+        if value is not None and str(value).strip():
+            return _normalise_route_base_path(str(value), default)
+    return _normalise_route_base_path(configured_value, default)
 
 
 def _api_audit_path() -> str:
@@ -606,6 +638,12 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     registry = build_registry()
     cors_origins = _local_test_cors_origins()
     app = _create_runtime_app(on_shutdown=shutdown_database, cors_origins=cors_origins or None)
+    api_base_path = _resolve_route_base_path(
+        getattr(runtime_cfg.api_server, "base_path", ""),
+        env_name="CLOUD_DOG__INDEX_RETRIEVER__API_SERVER__BASE_PATH",
+        config_key="api_server.base_path",
+        default="/api/v1",
+    )
 
     def _custom_openapi() -> dict[str, Any]:
         if app.openapi_schema and "IngestPreviewOutput" in dict(app.openapi_schema.get("components", {}).get("schemas", {})):
@@ -1298,8 +1336,8 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get("/api/status")(status)
     app.get("/api/logs")(logs)
     app.get("/api/config-events")(config_events)
-    for base_path in (_CANONICAL_API_BASE_PATH, _LEGACY_API_BASE_PATH):
-        app.get(f"{base_path}/health")(health)
+    app.get(f"{api_base_path}/health")(health)
+    app.get(f"{_LEGACY_API_BASE_PATH}/health", include_in_schema=False)(health)
 
     app.get(_CANONICAL_A2A_BASE_PATH)(a2a_root)
     app.get(f"{_CANONICAL_A2A_BASE_PATH}/health")(a2a_health)
@@ -1408,11 +1446,13 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get("/admin/ui/security")(admin_ui_security)
     app.get("/admin/ui/app.js")(admin_ui_app_js)
     app.get("/admin/ui/styles.css")(admin_ui_styles_css)
-    for base_path in (_CANONICAL_API_BASE_PATH, _LEGACY_API_BASE_PATH):
-        app.get(f"{base_path}/tools")(list_tools)
-        app.post(f"{base_path}/tools/{{tool_name}}")(call_tool)
-        # Read-only status tools accept GET (REST convention for status endpoints).
-        app.get(f"{base_path}/tools/{{tool_name}}")(call_tool)
+    app.get(f"{api_base_path}/tools")(list_tools)
+    app.post(f"{api_base_path}/tools/{{tool_name}}")(call_tool)
+    # Read-only status tools accept GET (REST convention for status endpoints).
+    app.get(f"{api_base_path}/tools/{{tool_name}}")(call_tool)
+    app.get(f"{_LEGACY_API_BASE_PATH}/tools", include_in_schema=False)(list_tools)
+    app.post(f"{_LEGACY_API_BASE_PATH}/tools/{{tool_name}}", include_in_schema=False)(call_tool)
+    app.get(f"{_LEGACY_API_BASE_PATH}/tools/{{tool_name}}", include_in_schema=False)(call_tool)
 
     app.get("/admin/profiles")(admin_profiles_list)
     app.post("/admin/profiles")(admin_profiles_create)
@@ -1445,8 +1485,8 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get("/admin/rbac-bindings")(admin_rbac_bindings_list)
     app.post("/admin/rbac-bindings")(admin_rbac_bindings_create)
     app.delete("/admin/rbac-bindings/{entity_type}/{entity_id}/{role}")(admin_rbac_bindings_delete)
-    for base_path in (_CANONICAL_API_BASE_PATH, _LEGACY_API_BASE_PATH):
-        app.post(f"{base_path}/upload")(upload_ingest)
+    app.post(f"{api_base_path}/upload")(upload_ingest)
+    app.post(f"{_LEGACY_API_BASE_PATH}/upload", include_in_schema=False)(upload_ingest)
     # W28A-648: Audit log JSONL reader for WebUI DataTable display
     @app.get("/api/audit-log")
     async def api_audit_log(
