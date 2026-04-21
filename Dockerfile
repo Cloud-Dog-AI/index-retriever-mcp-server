@@ -19,11 +19,17 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libxmlsec1-openssl \
+    libxslt1-dev \
+    pkg-config \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 ARG PYPI_URL=https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
-    pip install --no-cache-dir \
+    PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
       --extra-index-url ${PYPI_URL} \
       --trusted-host gitea.cloud-dog.net \
       --trusted-host pypi.org \
@@ -42,7 +48,7 @@ COPY REQUIREMENTS.txt pyproject.toml README.md ./
 COPY src/ ./src/
 COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
-    pip install --no-cache-dir \
+    PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
       --trusted-host gitea.cloud-dog.net \
       --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
@@ -72,6 +78,10 @@ RUN if [ -n "${CUSTOM_CA_CERT}" ] && [ -f "${CUSTOM_CA_CERT}" ]; then \
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl iproute2 netcat-openbsd procps net-tools socat \
+    libxml2 \
+    libxmlsec1 \
+    libxmlsec1-openssl \
+    libxslt1.1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
