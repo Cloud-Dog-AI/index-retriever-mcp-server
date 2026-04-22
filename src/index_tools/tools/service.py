@@ -602,7 +602,9 @@ class IndexService:
         default_backend = self._default_backend
         required_providers = {
             provider.strip().lower()
-            for provider in str(os.environ.get("INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS", "")).split(",")
+            for provider in str(_cfg("index.live_required_providers", "")
+                                or _cfg("INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS", "")
+                                or "").split(",")
             if provider.strip()
         }
         vector_stores: dict[str, Any] = {"default_backend": default_backend}
@@ -2938,11 +2940,7 @@ def _required_env(*keys: str) -> str:
 
 def _resolve_queue_database_url(audit_path: str) -> str:
     """Resolve the queue database URL, defaulting to a per-instance SQLite file."""
-    for env_key in ("INDEX_RETRIEVER_DB_URL", "DB_URL"):
-        value = str(os.environ.get(env_key, "")).strip()
-        if value:
-            return value
-    for path in ("storage.db.url", "queue.database_url", "index.db.url", "db.url"):
+    for path in ("INDEX_RETRIEVER_DB_URL", "DB_URL", "storage.db.url", "queue.database_url", "index.db.url", "db.url"):
         value = str(_cfg(path, "") or "").strip()
         if value.startswith("${") and value.endswith("}"):
             continue

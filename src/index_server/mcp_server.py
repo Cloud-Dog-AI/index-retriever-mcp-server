@@ -149,43 +149,45 @@ def _create_runtime_app(on_shutdown: Callable[[], None] | None = None) -> Any:
         if on_shutdown is not None:
             app = _attach_shutdown_lifespan(app, on_shutdown)
 
-    @app.middleware("http")
-    async def _augment_error_detail(request: Request, call_next: Callable[..., Any]) -> Any:
-        response = await call_next(request)
-        content_type = str(response.headers.get("content-type", ""))
-        if "application/json" not in content_type:
-            return response
-        if not (400 <= int(getattr(response, "status_code", 200)) < 600):
-            return response
+    middleware = getattr(app, "middleware", None)
+    if callable(middleware):
+        @middleware("http")
+        async def _augment_error_detail(request: Request, call_next: Callable[..., Any]) -> Any:
+            response = await call_next(request)
+            content_type = str(response.headers.get("content-type", ""))
+            if "application/json" not in content_type:
+                return response
+            if not (400 <= int(getattr(response, "status_code", 200)) < 600):
+                return response
 
-        body = b""
-        async for chunk in response.body_iterator:
-            body += chunk
-        if not body:
-            return response
-        try:
-            payload = json.loads(body)
-        except json.JSONDecodeError:
+            body = b""
+            async for chunk in response.body_iterator:
+                body += chunk
+            if not body:
+                return response
+            try:
+                payload = json.loads(body)
+            except json.JSONDecodeError:
+                return JSONResponse(
+                    status_code=response.status_code,
+                    content=body.decode("utf-8", errors="ignore"),
+                    media_type=response.media_type,
+                )
+            if isinstance(payload, dict) and "detail" not in payload:
+                detail = _compat_detail_from_error_body(payload)
+                if detail is not None:
+                    payload["detail"] = detail
+            headers = {
+                key: value
+                for key, value in response.headers.items()
+                if key.lower() not in {"content-length", "content-type"}
+            }
             return JSONResponse(
                 status_code=response.status_code,
-                content=body.decode("utf-8", errors="ignore"),
+                content=payload,
+                headers=headers,
                 media_type=response.media_type,
             )
-        if isinstance(payload, dict) and "detail" not in payload:
-            detail = _compat_detail_from_error_body(payload)
-            if detail is not None:
-                payload["detail"] = detail
-        headers = {
-            key: value
-            for key, value in response.headers.items()
-            if key.lower() not in {"content-length", "content-type"}
-        }
-        return JSONResponse(
-            status_code=response.status_code,
-            content=payload,
-            headers=headers,
-            media_type=response.media_type,
-        )
     return _maybe_disable_timeout_middleware(app)
 
 

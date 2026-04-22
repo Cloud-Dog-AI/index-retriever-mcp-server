@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 import json
-import os
+
 from typing import Any
 
 from cloud_dog_api_kit import create_app
@@ -105,11 +105,12 @@ class _ProxyConfigBridge:
 
 
 def _runtime_override(config: Any, env_name: str, config_key: str, default: str = "") -> str:
-    """Resolve a runtime config value from env first, then config, then default."""
-    raw = os.environ.get(env_name, "").strip()
-    if raw:
-        return raw
-    return str(config.get(config_key) or "").strip() or default
+    """Resolve a runtime config value via cloud_dog_config, then default."""
+    for key in (env_name, config_key):
+        raw = str(config.get(key) or "").strip()
+        if raw:
+            return raw
+    return default
 
 
 def _runtime_override_number(config: Any, env_name: str, config_key: str, default: float) -> int | float:
@@ -162,7 +163,12 @@ def build_web_app() -> object:
     def _runtime_config_response() -> Response:
         payload = {
             "ENV": _runtime_override(config, "CLOUD_DOG_ENVIRONMENT", "service.environment", "dev"),
-            "API_BASE_URL": api_base_url,
+            "API_BASE_URL": _runtime_override(
+                config,
+                "CLOUD_DOG__INDEX__UI__API_BASE_URL",
+                "index.ui.api_base_url",
+                api_base_url,
+            ),
         }
         payload["MCP_BASE_URL"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__MCP_BASE_URL", "index.ui.mcp_base_url", mcp_base_url)
         payload["A2A_BASE_URL"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__A2A_BASE_URL", "index.ui.a2a_base_url", a2a_base_url)

@@ -18,6 +18,7 @@ import time
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
+from pathlib import Path
 from typing import Any
 
 from index_tools.queue.models import JobRecord, JobStatus
@@ -87,6 +88,9 @@ def _ensure_sqlite_queue_schema(database_url: str) -> None:
 
     engine = create_engine(database_url, future=True)
     try:
+        database_path = getattr(engine.url, "database", None)
+        if database_path and database_path != ":memory:":
+            Path(database_path).parent.mkdir(parents=True, exist_ok=True)
         metadata = MetaData()
         tables = [builder(metadata) for builder in builders]
         with engine.begin() as conn:

@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import gzip
 import json
 import secrets
 import socket
@@ -117,8 +118,12 @@ def _read_jsonl_records(path: str, limit: int = 200) -> list[dict[str, Any]]:
     if not path_utils.exists(path):
         return []
     try:
-        lines = path_utils.read_text(path, encoding="utf-8", errors="ignore").splitlines()
-    except OSError:
+        if str(path).endswith(".gz"):
+            with gzip.open(path, mode="rt", encoding="utf-8", errors="ignore") as handle:
+                lines = handle.read().splitlines()
+        else:
+            lines = path_utils.read_text(path, encoding="utf-8", errors="ignore").splitlines()
+    except (OSError, gzip.BadGzipFile):
         return []
     records: list[dict[str, Any]] = []
     for line in lines[-limit:]:
@@ -134,14 +139,68 @@ def _read_jsonl_records(path: str, limit: int = 200) -> list[dict[str, Any]]:
     return records
 
 
+def _expand_rotated_log_paths(path: str) -> list[str]:
+    """Include plain rotated audit files so recent entries survive log rotation."""
+    directory, basename = os.path.split(path)
+    search_dir = directory or "."
+    expanded = [path]
+    try:
+        names = os.listdir(search_dir)
+    except OSError:
+        return expanded
+
+    rotated: list[tuple[int, int, str]] = []
+    prefix = f"{basename}."
+    for name in names:
+        if not name.startswith(prefix):
+            continue
+        suffix = name[len(prefix):]
+        compressed = 0
+        if suffix.endswith(".gz"):
+            suffix = suffix[:-3]
+            compressed = 1
+        if not suffix.isdigit():
+            continue
+        rotated.append((int(suffix), compressed, path_utils.join(search_dir, name)))
+
+    rotated.sort()
+    expanded.extend(item[2] for item in rotated)
+    return expanded
+
+
 def _read_jsonl_records_many(paths: list[str], limit: int = 200) -> list[dict[str, Any]]:
     """Read and sort structured records across multiple JSONL files."""
     combined: list[dict[str, Any]] = []
     per_file_limit = max(limit, 1)
+    expanded_paths: list[str] = []
+    seen: set[str] = set()
     for path in paths:
+        for expanded_path in _expand_rotated_log_paths(path):
+            if expanded_path in seen:
+                continue
+            seen.add(expanded_path)
+            expanded_paths.append(expanded_path)
+
+    for path in expanded_paths:
         combined.extend(_read_jsonl_records(path, limit=per_file_limit))
     combined.sort(key=lambda entry: _parse_log_timestamp(entry.get("timestamp")) or datetime.min.replace(tzinfo=timezone.utc))
     return combined[-limit:]
+
+
+def _mask_runtime_config(value: Any, parent_key: str = "") -> Any:
+    """Redact secret-like values before returning config to the UI."""
+    if isinstance(value, dict):
+        masked: dict[str, Any] = {}
+        for key, item in value.items():
+            lowered = str(key).lower()
+            if any(fragment in lowered for fragment in ("password", "secret", "token", "api_key", "apikey", "credential", "private_key", "key_hash")):
+                masked[key] = item if item in (None, "", [], {}) else "****"
+                continue
+            masked[key] = _mask_runtime_config(item, lowered)
+        return masked
+    if isinstance(value, list):
+        return [_mask_runtime_config(item, parent_key) for item in value]
+    return value
 
 
 def _normalise_route_base_path(raw: str | None, default: str) -> str:
@@ -214,10 +273,11 @@ def _runtime_config_payload() -> dict[str, str]:
     from cloud_dog_config import get_config  # type: ignore
 
     def _runtime_override(env_name: str, config_key: str, default: str = "") -> str:
-        raw = os.environ.get(env_name, "").strip()
-        if raw:
-            return raw
-        return str(get_config(config_key) or "").strip() or default
+        for key in (env_name, config_key):
+            raw = str(get_config(key) or "").strip()
+            if raw:
+                return raw
+        return default
 
     return {
         "ENV": _runtime_override("CLOUD_DOG_ENVIRONMENT", "service.environment", "dev"),
@@ -423,7 +483,9 @@ def build_status_payload(
     correlation_id: str | None = None,
 ) -> dict[str, Any]:
     """Build the richer runtime status payload used by the SPA."""
-    host_name = os.environ.get("HOSTNAME", "").strip()
+    from cloud_dog_config import get_config  # type: ignore
+
+    host_name = str(get_config("HOSTNAME") or "").strip()
     if not host_name:
         host_name = socket.gethostname()
     profiles = service.profiles_list()
@@ -734,6 +796,13 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         resp = JSONResponse({"ok": True})
         resp.delete_cookie(_cookie_name, path="/")
         return resp
+
+    @app.get("/api/config")
+    async def config_dump(request: Request) -> JSONResponse:
+        sess = _get_session(request)
+        if not sess:
+            _auth_or_raise(request, _headers_from_request(request))
+        return JSONResponse(_mask_runtime_config(runtime_cfg.model_dump()))
 
     def _sync_logging_correlation(request: Request) -> str:
         correlation_id = str(getattr(request.state, "correlation_id", "") or "").strip()
@@ -1499,7 +1568,6 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             "audit": [
                 "logs/index-retriever-audit-api.jsonl",
                 "logs/index-retriever-audit-mcp.jsonl",
-                "logs/audit.log.jsonl",
             ],
             "api": "logs/api_server.log",
             "web": "logs/web_server.log",
