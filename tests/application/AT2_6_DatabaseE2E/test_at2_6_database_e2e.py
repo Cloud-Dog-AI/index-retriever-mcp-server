@@ -41,7 +41,7 @@ def test_at2_6_database_e2e(tmp_path) -> None:
     )
 
     with TestClient(app) as client:
-        health = client.get("/app/v1/health", headers=_headers())
+        health = client.get("/api/v1/health", headers=_headers())
         assert health.status_code == 200
         db_probe = (health.json().get("checks") or {}).get("db") or {}
         assert bool(db_probe.get("ok")) is True

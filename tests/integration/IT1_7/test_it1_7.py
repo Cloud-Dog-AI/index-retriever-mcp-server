@@ -43,6 +43,7 @@ def _post_json(url: str, payload: dict[str, object], headers: dict[str, str]) ->
 def test_mcp_tool_execution(
     live_service: LiveIndexRuntime, runtime_mode: str, runtime_endpoints: dict[str, str] | None
 ) -> None:
+    # Covers: FR-P002
     client = TestClient(build_api_app(service=live_service)) if runtime_mode == "local-server" else None
     admin_headers = {"authorization": "Bearer valid-admin-token"}
     writer_headers = {"authorization": "Bearer valid-writer-token"}
@@ -110,6 +111,27 @@ def test_mcp_tool_execution(
     assert any((row.get("metadata") or {}).get("source_uri") == "test:w8c:step4" for row in results)
     assert any((row.get("metadata") or {}).get("filename") in {"test:w8c:step4", "w8c:step4"} for row in results)
     assert any((row.get("metadata") or {}).get("mime_type") == "text/plain" for row in results)
+
+    explained = call_tool(
+        "search_explain",
+        {
+            "profile": "default",
+            "collection": primary_collection,
+            "query": "The quick brown fox jumps over the lazy dog",
+            "top_k": 5,
+        },
+        reader_headers,
+    )
+    assert explained.get("query") == "The quick brown fox jumps over the lazy dog"
+    assert explained.get("profile") == "default"
+    assert explained.get("collection") == primary_collection
+    assert isinstance(explained.get("plan"), dict)
+    assert explained["plan"].get("mode") in {"vector", "hybrid"}
+    explained_results = explained.get("results", [])
+    assert explained_results
+    assert any("similarity" in row for row in explained_results)
+    assert any(float((row.get("similarity") or {}).get("score", 0.0)) > 0 for row in explained_results)
+    assert any((row.get("metadata") or {}).get("collection") == primary_collection for row in explained_results)
 
     _ = call_tool("admin_collection_create", {"profile": "default", "collection": iso_a}, admin_headers)
     _ = call_tool("admin_collection_create", {"profile": "default", "collection": iso_b}, admin_headers)

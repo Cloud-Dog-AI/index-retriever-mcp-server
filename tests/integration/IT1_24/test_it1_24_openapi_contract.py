@@ -74,9 +74,9 @@ def test_openapi_and_tool_contract_include_canonical_metadata_fields(
     openapi = get_openapi()
     paths = dict(openapi.get("paths", {}))
     assert "/health" in paths
-    assert "/app/v1/tools" in paths
     assert "/api/v1/tools" in paths
-    assert "/app/v1/upload" in paths
+    assert "/api/v1/upload" in paths
+    assert not any(path.startswith("/app/") for path in paths)
 
     schemas = dict(dict(openapi.get("components", {})).get("schemas", {}))
     ingest_preview = dict(dict(schemas.get("IngestPreviewOutput", {})).get("properties", {}))

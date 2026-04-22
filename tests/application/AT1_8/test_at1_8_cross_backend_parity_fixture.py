@@ -53,7 +53,7 @@ async def _run_parity_validation() -> dict[str, dict[str, Any]]:
         if backend_available(provider_id)
     ]
     if len(candidate_provider_ids) < 2:
-        pytest.skip("Fewer than two VDB backends are available for parity validation")
+        pytest.fail("Fewer than two VDB backends are available for parity validation")
 
     runtime_config = {
         "vector_stores": {
@@ -80,7 +80,7 @@ async def _run_parity_validation() -> dict[str, dict[str, Any]]:
             except Exception:
                 pass
     if len(provider_ids) < 2:
-        pytest.skip(f"Fewer than two parity-capable backends are available: blocked={blocked}")
+        pytest.fail(f"Fewer than two parity-capable backends are available: blocked={blocked}")
 
     metadata = build_metadata(
         source="file://parity/document.txt",

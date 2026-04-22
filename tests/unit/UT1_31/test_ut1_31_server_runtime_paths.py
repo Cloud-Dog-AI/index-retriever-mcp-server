@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import json
 import runpy
 import sys
 import os
@@ -82,7 +83,7 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     health = client.get("/health")
     assert health.status_code == 200
     assert health.json()["status"] == "ok"
-    namespaced_health = client.get("/app/v1/health")
+    namespaced_health = client.get("/api/v1/health")
     assert namespaced_health.status_code == 200
     assert namespaced_health.json()["status"] == "ok"
 
@@ -102,20 +103,15 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     assert unauth.headers["content-type"].startswith("application/json")
     assert "Authentication failed" in unauth.text
 
-    legacy_unauth = client.get("/api/v1/tools")
-    assert legacy_unauth.status_code == 401
-    assert legacy_unauth.headers["content-type"].startswith("application/json")
-    assert "Authentication failed" in legacy_unauth.text
-
     admin_unauth = client.get("/admin/profiles")
     assert admin_unauth.status_code == 401
     assert admin_unauth.headers["content-type"].startswith("application/json")
     assert "Authentication failed" in admin_unauth.text
 
-    unknown_legacy_api = client.get("/api/v1/profiles")
-    assert unknown_legacy_api.status_code == 404
-    assert unknown_legacy_api.headers["content-type"].startswith("application/json")
-    assert unknown_legacy_api.json() == {"detail": "Not found"}
+    unknown_api = client.get("/api/v1/profiles")
+    assert unknown_api.status_code == 404
+    assert unknown_api.headers["content-type"].startswith("application/json")
+    assert unknown_api.json() == {"detail": "Not found"}
 
     tools = client.get(api_tools_path(), headers={"x-api-key": "test-api-key"})
     assert tools.status_code == 200
@@ -193,7 +189,7 @@ def test_build_log_payload_synthesises_blank_messages(monkeypatch: pytest.Monkey
                 "message": "",
                 "action": "create",
                 "outcome": "success",
-                "target": {"name": "POST /app/v1/tools/profile_get"},
+                "target": {"name": "POST /api/v1/tools/profile_get"},
             }
         ],
     )
@@ -201,7 +197,31 @@ def test_build_log_payload_synthesises_blank_messages(monkeypatch: pytest.Monkey
     payload = api_server.build_log_payload(limit=10)
 
     assert payload["count"] == 1
-    assert payload["logs"][0]["message"] == "create POST /app/v1/tools/profile_get (success)"
+    assert payload["logs"][0]["message"] == "create POST /api/v1/tools/profile_get (success)"
+
+
+def test_read_jsonl_records_many_includes_rotated_siblings(tmp_path: Path) -> None:
+    current = tmp_path / "audit.jsonl"
+    rotated = tmp_path / "audit.jsonl.1"
+    rotated_gz = tmp_path / "audit.jsonl.2.gz"
+
+    current.write_text(json.dumps({"timestamp": "2026-04-15T07:20:36.940Z", "event_type": "security.authenticate"}) + "\n")
+    rotated.write_text(json.dumps({"timestamp": "2026-04-15T07:20:35.940Z", "details": {"profile": "w28a908b_jobs_case"}}) + "\n")
+    import gzip
+
+    with gzip.open(rotated_gz, mode="wt", encoding="utf-8") as handle:
+        handle.write(json.dumps({"timestamp": "2026-04-15T07:20:34.940Z", "details": {"job_id": "job-1"}}) + "\n")
+
+    records = api_server._read_jsonl_records_many([str(current)], limit=10)
+
+    assert len(records) == 3
+    assert any(json.dumps(entry).find("w28a908b_jobs_case") != -1 for entry in records)
+    assert any(json.dumps(entry).find("job-1") != -1 for entry in records)
+    assert [entry["timestamp"] for entry in records] == [
+        "2026-04-15T07:20:34.940Z",
+        "2026-04-15T07:20:35.940Z",
+        "2026-04-15T07:20:36.940Z",
+    ]
 
 
 def test_api_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:

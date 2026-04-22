@@ -52,6 +52,40 @@ class _ToolService:
         self.calls.append(("retrieve", {"doc_id": doc_id}))
         return {"doc_id": doc_id, "record_id": doc_id, "metadata": {"content_hash": "hash"}}
 
+    def search_plan(self, profile: str, query: str, top_k: int, filters: dict[str, Any]) -> dict[str, Any]:
+        self.calls.append(
+            (
+                "search_plan",
+                {"profile": profile, "query": query, "top_k": top_k, "filters": dict(filters)},
+            )
+        )
+        return {"mode": "vector", "top_k": top_k, "filters": dict(filters)}
+
+    def search(
+        self,
+        profile: str,
+        collection: str,
+        query: str,
+        top_k: int,
+        filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        payload = {
+            "profile": profile,
+            "collection": collection,
+            "query": query,
+            "top_k": top_k,
+            "filters": dict(filters or {}),
+        }
+        self.calls.append(("search", payload))
+        return [
+            {
+                "doc_id": "record-1",
+                "chunk_id": "chunk-1",
+                "score": 0.75,
+                "metadata": {"collection": collection},
+            }
+        ]
+
     def delete_by_id(self, profile: str, collection: str, doc_id: str) -> bool:
         self.calls.append(
             ("delete_by_id", {"profile": profile, "collection": collection, "doc_id": doc_id})
@@ -209,3 +243,40 @@ def test_execute_tool_dispatches_vdb_wrapper_calls() -> None:
         "retention_run",
         "reindex_run",
     ]
+
+
+def test_execute_tool_search_explain_returns_plan_and_scoring_metadata() -> None:
+    # Covers: FR-P002
+    service = _ToolService()
+    registry = SimpleNamespace(get=lambda _name: None)
+
+    explained = mcp_server.execute_tool(
+        service,  # type: ignore[arg-type]
+        "search_explain",
+        {
+            "profile": "default",
+            "collection": "docs",
+            "query": "alpha",
+            "top_k": 3,
+            "filters": {"tenant_id": "acme"},
+        },
+        registry=registry,  # type: ignore[arg-type]
+        identity_roles={"reader"},
+    )
+
+    assert explained["query"] == "alpha"
+    assert explained["profile"] == "default"
+    assert explained["collection"] == "docs"
+    assert explained["plan"] == {"mode": "vector", "top_k": 3, "filters": {"tenant_id": "acme"}}
+    assert explained["results"] == [
+        {
+            "doc_id": "record-1",
+            "chunk_id": "chunk-1",
+            "score": 0.75,
+            "metadata": {"collection": "docs"},
+            "similarity": {"score": 0.75, "mode": "vector", "top_k": 3},
+        }
+    ]
+
+    names = [name for name, _payload in service.calls]
+    assert names == ["search_plan", "search"]

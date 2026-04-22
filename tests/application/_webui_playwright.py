@@ -16,7 +16,7 @@ from tests.http_paths import api_tools_path
 MONOREPO_ROOT = Path('/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-ui-monorepo')
 MONOREPO_APP = MONOREPO_ROOT / 'apps' / 'index-retriever'
 PLAYWRIGHT_BIN = MONOREPO_ROOT / 'node_modules' / '.bin' / 'playwright'
-PLAYWRIGHT_CONFIG = Path('/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/tests/application/webui_playwright.config.ts')
+PLAYWRIGHT_CONFIG = MONOREPO_APP / 'playwright.config.ts'
 NODE_PATH = os.pathsep.join(
     [
         str(MONOREPO_ROOT / 'node_modules'),

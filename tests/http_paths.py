@@ -27,7 +27,7 @@ def _normalise_base_path(raw: str, default: str) -> str:
 
 
 def api_base_path() -> str:
-    return _normalise_base_path(os.environ.get("TEST_API_BASE_PATH", ""), "/app/v1")
+    return _normalise_base_path(os.environ.get("TEST_API_BASE_PATH", ""), "/api/v1")
 
 
 def mcp_base_path() -> str:

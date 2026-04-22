@@ -22,7 +22,10 @@ def test_full_workflow_upload_search_retrieve(live_service: LiveIndexRuntime) ->
         text="application workflow payload",
         source="file://application/workflow.txt",
         actor="application",
-        metadata={"document_id": "AT1-1-DOC", "source_hash": "sha256:workflow"},
+        metadata={
+            "document_id": "AT1-1-DOC",
+            "source_hash": "5f4dcc3b5aa765d61d8327deb882cf992b959d6f6f0c8e3b2d6dbf72efb8f0c1",
+        },
     )
     rows = live_service.search("default", "at_upload", "workflow", filters={"document_id": "AT1-1-DOC"})
     assert rows

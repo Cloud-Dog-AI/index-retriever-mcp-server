@@ -15,7 +15,6 @@
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
-import pytest
 
 from index_server.api_server import build_api_app
 from index_tools.tools.service import IndexService
@@ -80,15 +79,18 @@ def test_job_management_tools_contract(service: IndexService) -> None:
         raise RuntimeError("forced embed failure for IT1.20 retry path")
 
     service.vdb.upsert_records = _fail_upsert
-    with pytest.raises(RuntimeError, match="forced embed failure"):
-        _ = service.ingest_text(
-            profile="default",
-            collection="it1_20_jobs",
-            text="job management forced failure payload",
-            source="file://it1_20/jobs-failed.txt",
-            actor="integration",
-        )
+    failed_job_id = service.ingest_text(
+        profile="default",
+        collection="it1_20_jobs",
+        text="job management forced failure payload",
+        source="file://it1_20/jobs-failed.txt",
+        actor="integration",
+    )
+    failed_job = service.job_wait(failed_job_id)
     service.vdb.upsert_records = original_upsert
+
+    assert failed_job.status.value == "dead_lettered"
+    assert failed_job.job_id == failed_job_id
 
     failed_list = _call_tool(client, "job_list", {"status": "dead_lettered"}, "valid-admin-token")
     failed_jobs = failed_list.get("jobs")

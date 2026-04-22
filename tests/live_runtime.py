@@ -752,6 +752,23 @@ class LiveIndexRuntime:
             raise ValueError("Backend capabilities do not support metadata filters")
         return plan
 
+    def search_plan(
+        self,
+        profile: str,
+        query: str,
+        top_k: int = 10,
+        filters: dict[str, Any] | None = None,
+        capability_override: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        provider_id = str(self.profile_get(profile)["backend"])
+        return self.plan_search(
+            provider_id=provider_id,
+            query=query,
+            top_k=top_k,
+            filters=filters,
+            capability_override=capability_override,
+        )
+
     def _run_pipeline_preview(
         self,
         *,

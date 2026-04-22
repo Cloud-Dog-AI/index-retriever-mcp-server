@@ -41,7 +41,7 @@ def test_it2_15_database_startup_and_crud(tmp_path) -> None:
     )
 
     with TestClient(app) as client:
-        health = client.get("/app/v1/health", headers=_headers())
+        health = client.get("/api/v1/health", headers=_headers())
         assert health.status_code == 200
         payload = health.json()
         db_probe = (payload.get("checks") or {}).get("db") or {}
