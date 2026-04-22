@@ -205,17 +205,17 @@
         ]
       }
     },
-    "/app/v1/health": {
+    "/api/v1/health": {
       "get": {
         "description": "Execute health.",
-        "operationId": "health_app_v1_health_get",
+        "operationId": "health_api_v1_health_get",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Health App V1 Health Get",
+                  "title": "Response Health Api V1 Health Get",
                   "type": "object"
                 }
               }
@@ -226,10 +226,10 @@
         "summary": "Health"
       }
     },
-    "/app/v1/tools": {
+    "/api/v1/tools": {
       "get": {
         "description": "Execute list tools.",
-        "operationId": "list_tools_app_v1_tools_get",
+        "operationId": "list_tools_api_v1_tools_get",
         "responses": {
           "200": {
             "content": {
@@ -239,7 +239,7 @@
                     "additionalProperties": true,
                     "type": "object"
                   },
-                  "title": "Response List Tools App V1 Tools Get",
+                  "title": "Response List Tools Api V1 Tools Get",
                   "type": "array"
                 }
               }
@@ -250,10 +250,10 @@
         "summary": "List Tools"
       }
     },
-    "/app/v1/tools/{tool_name}": {
+    "/api/v1/tools/{tool_name}": {
       "post": {
         "description": "Execute call tool.",
-        "operationId": "call_tool_app_v1_tools__tool_name__post",
+        "operationId": "call_tool_api_v1_tools__tool_name__post",
         "parameters": [
           {
             "in": "path",
@@ -283,7 +283,7 @@
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Call Tool App V1 Tools  Tool Name  Post",
+                  "title": "Response Call Tool Api V1 Tools  Tool Name  Post",
                   "type": "object"
                 }
               }

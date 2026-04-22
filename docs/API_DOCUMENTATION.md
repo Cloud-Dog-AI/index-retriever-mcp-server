@@ -84,12 +84,11 @@ The API server (`api_server.py`) is the canonical surface. The A2A server (`a2a_
 | 10 | GET | `/api/config-events` | `config_events` | Configuration change events for SPA views |
 | 11 | GET | `/api/audit-log` | `api_audit_log` | Read JSONL audit/log entries; accepts `limit`, `log_source` params |
 
-### Canonical API Health (`/app/v1` and `/api/v1`)
+### Canonical API Health (`/api/v1`)
 
 | # | Method | Path | Handler | Description |
 |---|--------|------|---------|-------------|
-| 12 | GET | `/app/v1/health` | `health` | Canonical API health endpoint |
-| 13 | GET | `/api/v1/health` | `health` | Legacy API health endpoint |
+| 12 | GET | `/api/v1/health` | `health` | Canonical API health endpoint |
 
 ### A2A Endpoints
 
@@ -107,23 +106,19 @@ The API server (`api_server.py`) is the canonical surface. The A2A server (`a2a_
 | 18 | POST | `/tasks` | `submit_task` | Submit an A2A task |
 | 19 | POST | `/a2a/tasks` | `submit_task` | Submit an A2A task (prefixed path) |
 
-### Tool Catalogue and Execution (`/app/v1` and `/api/v1`)
+### Tool Catalogue and Execution (`/api/v1`)
 
 | # | Method | Path | Handler | Description |
 |---|--------|------|---------|-------------|
-| 20 | GET | `/app/v1/tools` | `list_tools` | List all registered tools with schemas |
-| 21 | POST | `/app/v1/tools/{tool_name}` | `call_tool` | Execute a tool by name |
-| 22 | GET | `/app/v1/tools/{tool_name}` | `call_tool` | Execute read-only status tools via GET |
-| 23 | GET | `/api/v1/tools` | `list_tools` | Legacy: list tools |
-| 24 | POST | `/api/v1/tools/{tool_name}` | `call_tool` | Legacy: execute tool |
-| 25 | GET | `/api/v1/tools/{tool_name}` | `call_tool` | Legacy: execute read-only status tools via GET |
+| 20 | GET | `/api/v1/tools` | `list_tools` | List all registered tools with schemas |
+| 21 | POST | `/api/v1/tools/{tool_name}` | `call_tool` | Execute a tool by name |
+| 22 | GET | `/api/v1/tools/{tool_name}` | `call_tool` | Execute read-only status tools via GET |
 
 ### File Upload
 
 | # | Method | Path | Handler | Description |
 |---|--------|------|---------|-------------|
-| 26 | POST | `/app/v1/upload` | `upload_ingest` | Multipart file upload ingestion (profile, collection, metadata_json, upload) |
-| 27 | POST | `/api/v1/upload` | `upload_ingest` | Legacy: multipart file upload ingestion |
+| 26 | POST | `/api/v1/upload` | `upload_ingest` | Multipart file upload ingestion (profile, collection, metadata_json, upload) |
 
 ### Admin -- Profiles
 
@@ -380,12 +375,12 @@ curl -X POST http://localhost:8083/auth/login \
 
 ### List Tools (API key auth)
 ```bash
-curl -H "X-API-Key: your-api-key" http://localhost:8083/app/v1/tools
+curl -H "X-API-Key: your-api-key" http://localhost:8083/api/v1/tools
 ```
 
 ### Execute a Tool
 ```bash
-curl -X POST http://localhost:8083/app/v1/tools/search \
+curl -X POST http://localhost:8083/api/v1/tools/search \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{"query": "search terms", "profile": "default", "collection": "my_collection"}'
@@ -393,7 +388,7 @@ curl -X POST http://localhost:8083/app/v1/tools/search \
 
 ### File Upload Ingestion
 ```bash
-curl -X POST http://localhost:8083/app/v1/upload \
+curl -X POST http://localhost:8083/api/v1/upload \
   -H "X-API-Key: your-api-key" \
   -F "profile=default" \
   -F "collection=my_collection" \

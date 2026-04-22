@@ -1,6 +1,6 @@
 # Agent Lessons — index-retriever-mcp-server
 
-This file captures the main lessons learned while completing the W28A-602 platform-adoption work and the later W28A-878, W28A-882, and W28A-884 deploy, preprod, and metadata-uplift investigations. Read it before making code, test, doc, or deployment changes in this repository.
+This file captures lessons learned from W28A-602 (platform adoption), W28A-878/882/884 (deploy, preprod, metadata uplift), W28A-908a/908b (lifecycle/deploy), and W28A-964 (comprehensive sweep). Read it before making code, test, doc, or deployment changes in this repository.
 
 ## Code
 
@@ -15,6 +15,10 @@ This file captures the main lessons learned while completing the W28A-602 platfo
 - Legacy ingest paths in `src/index_tools/tools/service.py` still shape metadata locally and generate UUID-based `doc_id` values. Do not extend that pattern further; the intended direction is package-owned canonical metadata and deterministic IDs from `cloud_dog_vdb`.
 - `build_metadata()` in `src/index_tools/pipeline/metadata.py` is only a basic compatibility helper today. It does not represent the full canonical metadata contract needed for lineage, governance, lifecycle, or embedding reproducibility.
 - When touching retrieval or delete logic, assume the current `doc_id`/`chunk_id` behavior is transitional. Search and retrieve surfaces still expose stable IDs, but the metadata uplift work showed that the service and package are not yet aligned on the canonical identity model.
+- **Zero `os.environ.get()` in service code is an absolute rule.** W28A-964 found 5 violations across `service.py`, `web_server.py`, and `api_server.py`. ALL were replaced with `config.get()` / `get_config()` / `_cfg()` calls via `cloud_dog_config`. Adding QT allowlist entries instead of fixing the code is NOT acceptable — the coordinator rejected it. If you need a runtime config value, use `cloud_dog_config.get_config(key)` which already resolves env vars through its precedence chain (`os.environ → env file → config.yaml → defaults.yaml`).
+- The `_runtime_override()` pattern in both `web_server.py` and `api_server.py` originally used `os.environ.get()` then fell back to `config.get()`. The correct replacement iterates `get_config()` over both the env-var-style key and the dotted config key, then falls through to the default. `get_config("CLOUD_DOG__INDEX__UI__API_BASE_URL")` returns `None` when the env var is unset — it does NOT auto-resolve to the API server's listen address.
+- The `ThreadPoolExecutor` in `service.py:580` runs the asyncio event loop that hosts MCP/tool handlers. It is NOT a job queue and cannot be routed through `cloud_dog_jobs`. The QT bespoke check legitimately excludes it by filtering on the `"index-service-async-loop"` thread name prefix and `tools/service.py` path.
+- `_resolve_queue_database_url()` in `service.py` had a separate `os.environ.get()` chain before falling through to `_cfg()`. Merging the env-key names (`INDEX_RETRIEVER_DB_URL`, `DB_URL`) into the existing `_cfg()` candidate list eliminated the bespoke env read while preserving the same resolution order.
 
 ## Test Environment
 
@@ -30,6 +34,12 @@ This file captures the main lessons learned while completing the W28A-602 platfo
 - Full deployment verification for this service needs more than `/health`. Recent preprod work showed that `/api-docs` and a 60-second stability recheck catch failures that a first-pass health probe can miss.
 - The repository already has broad backend/parser coverage, but it does not yet have uplift-complete metadata parity coverage. If you change metadata behavior, add tests for deterministic IDs, lineage fields, lifecycle fields, provenance fields, and cross-backend round-trip parity instead of only updating the nearest UT.
 - `UT1_17` only proves the basic metadata helper surface. It is not sufficient evidence for canonical metadata changes.
+- **All tests MUST run foreground (PC27).** Commands piped through `tee` to a log file may appear to run "in background" (exit code 144) when the shell process is killed before the pipe drains, but the log file captures the real result. Verify the log contents, not the exit code.
+- **Logs MUST go to `working/` not `/tmp/` (PC29).** Use `tee working/w28a-NNN-tier.log` for all test runs.
+- `pytest.skip()` is FORBIDDEN in IT/AT tests per RULES §5.3.10. Use `pytest.fail()` instead. The QT compliance test (`test_rc06_no_pytest_skip_in_it_at`) enforces this and will fail if any `pytest.skip` appears in IT/AT test files.
+- The `env-UT` file contains `${vault.dev.models...}` expressions that cause `bad substitution` errors when sourced directly with bash. Do NOT `source tests/env-UT` before running tests. Instead, pass the env file via `--env tests/env-UT` and only source `env-vault` for Vault token resolution.
+- The service must be started with explicit `CLOUD_DOG__INDEX__AUTH__API_KEYS` containing the Playwright test tokens (`valid-admin-token:admin`, `valid-reader-token:reader`, `valid-writer-token:writer`) for Playwright tests to work. The `env-IT` file has this value but `server_control.sh --env` does not reliably propagate it to child processes. Set it in the shell environment before calling `server_control.sh`.
+- W28A-964 final verified counts: QT 47, UT 137, ST 25, IT 46, AT 24, PW 54 = **333 passed, 0 failed, 0 skipped**.
 
 ## Infrastructure
 
@@ -42,6 +52,9 @@ This file captures the main lessons learned while completing the W28A-602 platfo
 - If `server_control.sh` still depends on `ss`, the runtime image must include `iproute2`. This was the direct cause of the preprod `indexretriever0` startup failure during W28A-878.
 - This repo’s Docker build can fail for non-code reasons when `vendor/wheels` is stale. The `cloud_dog_api_kit` wheel in the vendored set had to be refreshed to `0.4.1` before the image could be rebuilt successfully.
 - For preprod rollout, the real acceptance loop was: local Docker check -> registry push -> Terraform apply -> public `/health` -> public `/api-docs` -> 60-second `/health` stability. Stopping earlier creates false confidence.
+- **Vite preview must use the monorepo's local `vite` binary** (`../../node_modules/.bin/vite preview`), not `npx vite preview`. A global `npx` install ignores the project's `vite.config.ts` proxy rules, which means API calls from the SPA hit 404 instead of being proxied to the backend on port 8074.
+- The `INDEX_RETRIEVER_API_PROXY_TARGET` env var controls where vite preview proxies API requests. Set it to `http://127.0.0.1:8074` before starting preview: `INDEX_RETRIEVER_API_PROXY_TARGET=http://127.0.0.1:8074 ../../node_modules/.bin/vite preview --port 5197`.
+- When code changes affect `_runtime_config_payload()` in `api_server.py`, the running service must be RESTARTED before testing. The old process still serves the old runtime-config.js, which can cause Playwright to connect to the wrong API base URL.
 
 ## Architecture
 
@@ -60,6 +73,9 @@ This file captures the main lessons learned while completing the W28A-602 platfo
 - The service/package boundary around metadata is currently documented better than it is implemented. `index-retriever-mcp-server` should own transport, auth, jobs, audit, and request shaping; `cloud_dog_vdb` should own canonical metadata schema, validation, deterministic IDs, provenance normalization, lifecycle helpers, and backend-portable filter semantics.
 - Treat service-local metadata defaults as transition code, not architecture. The metadata uplift review confirmed that the long-term architecture is package-first for metadata logic.
 - Requirements and architecture docs can drift behind package claims. Before implementing more metadata work, check `docs/REQUIREMENTS.md`, `docs/ARCHITECTURE.md`, `docs/API_DOCUMENTATION.md`, and the actual `cloud_dog_vdb` code together; higher-level package docs currently overstate what the validator and ingestion pipeline really enforce.
+- **60 MCP tools** are the current registered inventory. The registry in `src/index_tools/tools/registry.py` (lines 91-152) is the single source of truth. `docs/REQUIREMENTS.md` §7.7 and `docs/MCP_DOCUMENTATION.md` must match exactly. `UT1_40` enforces the count at test time.
+- The service uses 9 of 10 platform packages. `cloud_dog_cache` is N/A because the service does not perform caching operations. All other packages are imported and actively used.
+- The `_normalise_api_host()` function in `web_server.py` converts wildcard bind addresses (`0.0.0.0`, `::`) to `127.0.0.1` for the internal reverse-proxy bridge. This is a legitimate loopback reference, not a hardcoded URL — it's allowlisted in the QT compliance conftest.
 
 ## Related Projects
 
@@ -71,6 +87,8 @@ This file captures the main lessons learned while completing the W28A-602 platfo
 - The index-retriever app in `cloud-dog-ai-ui-monorepo/apps/index-retriever` is the source of truth for Playwright behavior, but local Playwright failures can still be caused by how this service repo or Vite preview serves the built bundle. Debug both repos together.
 - `cloud_dog_vdb` is already the correct long-term home for canonical metadata work, but its current implementation is still partial. The validator only enforces a narrow five-field core, and the ingestion pipeline adds some provenance without yet enforcing the full uplift contract.
 - For metadata work, always inspect the actual package code under `cloud-dog-ai-platform-standards/packages/backend/platform-vdb/cloud_dog_vdb/`, not just the package `README.md` or `ARCHITECTURE.md`. The package docs currently describe a more complete metadata model than the code actually implements.
+- `cloud_dog_config.get_config()` resolves env-var-style keys (e.g. `CLOUD_DOG__INDEX__UI__API_BASE_URL`) through its full precedence chain. It returns `None` when neither the env var nor the config path has a value — it does NOT synthesise a value from related config. This means replacing `os.environ.get(key)` with `get_config(key)` is a safe 1:1 substitution for absent vars.
+- `README.md` platform package version constraints must match `pyproject.toml`. W28A-964 found all versions were stale (e.g. `>=0.1.0` when `pyproject.toml` required `>=0.3.1`). `cloud_dog_storage` was also missing entirely from the README table.
 
 ## Deployment
 
@@ -80,6 +98,8 @@ This file captures the main lessons learned while completing the W28A-602 platfo
 - Preprod smoke should include real authenticated tool operations, not just `/health`. Creating and deleting a collection on preprod provided a useful end-to-end proof after deploy.
 - A Terraform apply is not evidence that the service is healthy. W28A-878 reached successful apply while `indexretriever0` was still failing at container startup.
 - For this service specifically, `/api-docs` is part of the externally checked surface. A deploy is not convincingly green if `/health` is `200` but `/api-docs` is still broken.
+- **After code changes, always rebuild Docker AND redeploy.** W28A-964's first deploy used the pre-fix code. The second deploy with the `os.environ.get()` fixes produced a different image digest. Always verify the deployed digest matches the latest build.
+- W28A-964 final image digest: `sha256:476b0a16c43e6a8c8338b6e9a4a71478d7ef4f24fe540fe68c70f04b2e9ac745`. Preprod health confirmed OK with 60-second stability re-check.
 
 ## Evidence and Reporting
 
@@ -87,12 +107,16 @@ This file captures the main lessons learned while completing the W28A-602 platfo
 - Logout screenshots can duplicate login screenshots if they are captured only after redirect. Capture the open user-menu/sign-out state if a distinct logout artifact is required.
 - Do not claim 100% completion until all of these are done when instructed: full uninterrupted test run, Docker build, deploy, preprod smoke, and post-deploy WebUI smoke.
 - If a report is about metadata uplift or deploy closure, tie every claim back to current code, current docs, current tests, or live command output. The recent work exposed several places where package intent, service docs, and real implementation were not yet the same thing.
+- **Do not claim "complete" until bespoke greps are clean.** W28A-964 was initially rejected because the agent allowlisted `os.environ.get()` violations instead of fixing them. The coordinator's independent grep found 5 remaining violations. The rule is zero bespoke code, not "zero after exemptions".
+- **Exit code 144 from piped commands does not mean the test failed.** When a long-running `pytest | tee` command is killed by the tool harness timeout, the exit code is 144 (SIGPIPE/SIGKILL) but the tee'd log file contains the real pytest result. Always check the log file contents.
 
 ## Documentation
 
 - `docs/REQUIREMENTS.md` and `docs/ARCHITECTURE.md` are not passive reference files in this repo. They are operational guardrails and need updating when the real contract changes.
 - The canonical metadata model now has an explicit Phase 1 requirements/architecture baseline in those docs. Future metadata work should update code against that baseline rather than inventing field names or ownership rules ad hoc.
 - `docs/API_DOCUMENTATION.md` still lags the metadata uplift. If a later change alters ingest/search/retrieve metadata contracts, update API docs in the same instruction rather than leaving requirements and API docs out of sync.
+- **`docs/TESTS.md` must include exact pass counts** from the most recent sweep run, not just tier presence flags. W28A-964 added a `Last Run` column with exact per-tier pass counts and a Playwright row.
+- **`README.md` package versions must track `pyproject.toml`** exactly. Do not use loose `>=0.1.0` when pyproject.toml requires `>=0.3.1`. Also ensure all 9 used platform packages appear in the table (cloud_dog_storage was missing before W28A-964).
 
 ## W28A-682 — Job Compliance Fix
 
@@ -166,3 +190,73 @@ Uses cloud_dog_idam conditionally (try/except imports). Graceful degradation for
 - If an instruction asks for section-by-section proof, produce section-by-section proof. The missing 908a report had to be written after the fact because a green later suite was not enough for the coordinator to close the earlier work item.
 - Use the exact summary line when the instruction requires it. For 908b, the native passing line was `51 passed (4.3m)`.
 - Record remaining proof gaps honestly. For 908a, sections `a-e` were mapped explicitly and the gaps were stated rather than hidden behind the later full-suite success.
+
+## W28A-970d Addendum
+
+### Code
+
+- API route prefixing is now config-driven. `defaults.yaml` is the source of truth for API/Web/MCP/A2A `base_path`, and `api_server.py` must resolve the live prefix from config rather than from a module literal.
+- `_CANONICAL_API_BASE_PATH` should stay gone. A grep for that literal is a useful final guard because the coordinator explicitly re-checks for its removal.
+- `ServerEndpointConfig.base_path` is part of the runtime contract now. If a future change adds or refactors server bindings, preserve `base_path` support across the endpoint model rather than treating it as API-only.
+- The service currently supports both the configured API base path and the legacy `/app/v1/*` compatibility surface. Removing the compatibility routes will break established smoke and preprod expectations unless the rollout is coordinated.
+- The `CLOUD_DOG__INDEX_RETRIEVER__API_SERVER__BASE_PATH` namespace is the one that matters for this feature. Preprod still carried older `CLOUD_DOG__INDEX__API_SERVER__*` host/port keys, but no new base-path override.
+- The narrow packaging fix that made the image boot was not just version pinning. The working combination was:
+  - `lxml==5.2.2`
+  - `xmlsec>=1.3.14,<1.4`
+  - source-building `lxml` and `xmlsec` in Docker
+  - installing runtime/system XML libs
+  - adding `zlib1g-dev` so the source build can link cleanly
+
+### Test Environment
+
+- The right proof for `base_path` is a three-way health check under an explicit override:
+  - `/api/v2/health` -> `200`
+  - `/app/v1/health` -> `200`
+  - `/api/v1/health` -> `404`
+- For this repo, targeted UT/IT evidence is enough to prove the code path before a deploy attempt, but not enough to prove the release chain. The actual 970d closure still required clean-checkout build, local Docker smoke, registry push, Terraform apply, and preprod curl.
+- When testing Docker images locally, curling from inside the running container is more trustworthy than relying only on host-published ports. During 970d, the container was healthy internally while host-side published-port curls were being reset and would have been misleading if treated as the primary signal.
+- Keep logs for each pin attempt. The 970d packaging diagnosis depended on being able to distinguish:
+  - runtime import mismatch
+  - builder-stage link failure (`cannot find -lz`)
+  - final clean import and smoke success
+
+### Infrastructure
+
+- Do not build release images from the dirty working tree in this repo. The correct release-safe path is:
+  - stage only owned hunks
+  - commit/push
+  - fresh clone
+  - rebuild there
+  - preserve the original dirty worktree untouched
+- `ui/dist` is not tracked in git for this service. A fresh checkout does not contain the UI artefact needed by `Dockerfile`, so release builds currently require either:
+  - a coordinator-approved bit-identical copy from the local worktree, or
+  - a future packaging fix outside the feature scope
+- If the fresh-checkout Docker build suddenly fails on `COPY ui/ ./ui/`, that is a packaging/layout issue, not necessarily a code regression in the feature being deployed.
+- The active PC23 Terraform path for this service is under `/opt/iac/Development/cloud-dog-ai/.w28a936-cloud-dog-repo/terraform/server0.viewdeck.com/27 MLAgents`, and the operational resource target remains `docker_container.indexretriever0`.
+- A successful image deploy does not imply the new route prefix is live. Terraform replaced the container on 970d, but preprod still served `/api/v1` because the container environment did not set `CLOUD_DOG__INDEX_RETRIEVER__API_SERVER__BASE_PATH`.
+
+### Architecture
+
+- This service now has a clear separation between code capability and environment activation for API base paths:
+  - code can support arbitrary configured prefixes
+  - environment config decides which prefix is actually live
+- `defaults.yaml` currently makes `/api/v1` the default API base path. That means a deploy with no override is expected to stay on `/api/v1` even after the PS-92 compliance code lands.
+- Route compatibility is layered:
+  - root `/health` remains available
+  - default API path is config-driven
+  - `/app/v1/*` remains as compatibility
+  This layering needs to be understood before claiming a live path regression or a failed deploy.
+
+### Related Projects
+
+- The served UI artefact still comes from `cloud-dog-ai-ui-monorepo/apps/index-retriever`, but the deployable image expects the built assets to exist inside this repo under `ui/dist`. Agents need to reason about both repos together during release work.
+- The `xmlsec`/`lxml` boot failure surfaced through `cloud_dog_idam` / `python3-saml`, so platform package compatibility can block an otherwise unrelated feature deploy. Treat platform package upgrades and container build behavior as part of the dependency surface, not as separate concerns.
+
+### Evidence and Reporting
+
+- Distinguish three states clearly in reports:
+  - code path proven locally
+  - image built and booted cleanly
+  - deployed environment actually configured to expose the new path
+- For this repo, “deployed” and “new base path live” are not equivalent statements. 970d succeeded as a deploy, but `/api/v2` was still not live on preprod because the environment override was absent.
+- When a waiver is used for `ui/dist` copying, record the exact source/destination and preserve a hash manifest proving bit-identity. That evidence was required to keep the release path defensible.

@@ -127,15 +127,14 @@ The runtime exposes these logical surfaces:
 
 | Surface | Canonical path | Primary code |
 |---|---|---|
-| API | `/app/v1` | `src/index_server/api_server.py` |
-| Legacy API alias | `/api/v1` | `src/index_server/api_server.py` |
+| API | `/api/v1` | `src/index_server/api_server.py` |
 | MCP | `/mcp` | `src/index_server/mcp_server.py` |
 | A2A | `/a2a` | `src/index_server/api_server.py` |
 | A2A (standalone) | `/a2a` | `src/index_server/a2a_server.py` (reuses API app) |
 | Web | `/` (SPA + proxy) | `src/index_server/web_server.py` |
 | Admin API | `/admin/*` | `src/index_server/api_server.py` |
 | Admin UI (legacy) | `/admin/ui/*` | `src/index_server/api_server.py` |
-| Health | `/health`, `/ready`, `/live`, `/app/v1/health`, `/api/v1/health` | `src/index_server/api_server.py` |
+| Health | `/health`, `/ready`, `/live`, `/api/v1/health` | `src/index_server/api_server.py` |
 
 The MCP runtime is registered through `cloud_dog_api_kit.register_mcp_contract(...)`, with legacy tools alias support enabled for compatibility.
 
@@ -378,12 +377,11 @@ The full route inventory is maintained in `docs/API_DOCUMENTATION.md`. Key route
 | Health | GET | `/health`, `/ready`, `/live` | Platform health probes (DB, VDB, embedding) |
 | Status | GET | `/status`, `/api/status` | Runtime status metrics |
 | Logs | GET | `/api/logs`, `/api/config-events`, `/api/audit-log` | Observability and audit log access |
-| API health | GET | `/app/v1/health`, `/api/v1/health` | Per-surface health |
+| API health | GET | `/api/v1/health` | Per-surface health |
 | A2A | GET | `/a2a`, `/a2a/health`, `/a2a/events` | A2A service descriptor and health |
 | A2A agent | GET, POST | `/.well-known/agent.json`, `/tasks`, `/a2a/tasks` | A2A agent card and task submission |
-| Tools | GET, POST | `/app/v1/tools`, `/app/v1/tools/{tool_name}` | Tool catalogue and execution |
-| Tools (legacy) | GET, POST | `/api/v1/tools`, `/api/v1/tools/{tool_name}` | Legacy tool catalogue and execution |
-| Upload | POST | `/app/v1/upload`, `/api/v1/upload` | Multipart file upload ingestion |
+| Tools | GET, POST | `/api/v1/tools`, `/api/v1/tools/{tool_name}` | Tool catalogue and execution |
+| Upload | POST | `/api/v1/upload` | Multipart file upload ingestion |
 | Admin profiles | GET, POST, PUT, DELETE | `/admin/profiles`, `/admin/profiles/{id}` | Profile CRUD |
 | Admin users | GET, POST, PUT, DELETE | `/admin/users`, `/admin/users/{id}` | User CRUD |
 | Admin groups | GET, POST, PUT, DELETE | `/admin/groups`, `/admin/groups/{id}` | Group CRUD |
@@ -888,7 +886,7 @@ These are implementation facts, not documentation gaps. They should be used to p
 
 For external integrators, the recommended stable integration choices are:
 
-- use the HTTP API under `/app/v1` as the primary contract,
+- use the HTTP API under `/api/v1` as the primary contract,
 - use `/mcp` when integrating from MCP-aware clients,
 - use `/a2a` only when you need agent interoperability contracts,
 - rely on the tool catalogue rather than transport-specific custom paths,

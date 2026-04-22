@@ -114,7 +114,7 @@ Primary goals:
 - All operations SHALL be available via API (no UI-only behaviour).
 
 ### FR-01A Canonical route-prefix contract (W14A-04)
-- Canonical API base path SHALL be `/app/v1`.
+- Canonical API base path SHALL be `/api/v1`.
 - Canonical MCP base path SHALL be `/mcp` and catalogue path SHALL be `GET /mcp/tools`.
 - Canonical Web base path SHALL be `/`.
 - Canonical A2A base path SHALL be `/a2a`.
@@ -123,7 +123,7 @@ Primary goals:
   - `TEST_MCP_BASE_PATH`
   - `TEST_WEB_BASE_PATH`
   - `TEST_A2A_BASE_PATH`
-- Legacy API path `/api/v1` MAY remain as temporary compatibility alias, but tests and docs SHALL use canonical `/app/v1`.
+- A legacy API alias MAY remain temporarily for backwards compatibility, but tests and docs SHALL use canonical `/api/v1`.
 
 ### FR-01B A2A auth contract parity (W14B-03)
 - API runtime SHALL expose `/a2a` and `/a2a/health`.

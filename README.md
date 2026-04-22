@@ -41,7 +41,7 @@ Detailed architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 | Interface | Base Path | Transport | Reference |
 |---|---|---|---|
-| REST API | `/app/v1` | HTTP/JSON | [docs/API-REFERENCE.md#rest-api](docs/API-REFERENCE.md#rest-api) |
+| REST API | `/api/v1` | HTTP/JSON | [docs/API-REFERENCE.md#rest-api](docs/API-REFERENCE.md#rest-api) |
 | MCP API | `/mcp` | Streamable HTTP MCP | [docs/API-REFERENCE.md#mcp-tools](docs/API-REFERENCE.md#mcp-tools) |
 | A2A | `/a2a` | HTTP/JSON (auth-gated) | [docs/API-REFERENCE.md#a2a-endpoints](docs/API-REFERENCE.md#a2a-endpoints) |
 
@@ -54,14 +54,15 @@ Deployment profiles and Vault wiring: [docs/DEPLOY.md](docs/DEPLOY.md)
 
 | Package | Version Constraint | Role |
 |---|---|---|
-| `cloud_dog_config` | `>=0.1.0` | layered config and Vault resolution |
-| `cloud_dog_logging` | `>=0.1.0` | structured logs and audit trail |
-| `cloud_dog_api_kit` | `>=0.1.0` | API and MCP app factory |
-| `cloud_dog_idam` | `>=0.1.0` | auth and RBAC enforcement |
-| `cloud_dog_jobs` | `>=0.1.0` | job queue abstraction |
+| `cloud_dog_config` | `>=0.3.1` | layered config and Vault resolution |
+| `cloud_dog_logging` | `>=0.3.3` | structured logs and audit trail |
+| `cloud_dog_api_kit` | `>=0.4.1` | API and MCP app factory |
+| `cloud_dog_idam` | `>=0.2.0` | auth and RBAC enforcement |
+| `cloud_dog_jobs` | `>=0.3.0` | job queue abstraction |
 | `cloud_dog_db` | `>=0.1.0` | DB runtime helper |
-| `cloud_dog_llm` | `>=0.1.0` | embedding/provider integration |
-| `cloud_dog_vdb` | `>=0.5.0` | VDB + parser/OCR abstraction |
+| `cloud_dog_llm` | `>=0.2.1` | embedding/provider integration |
+| `cloud_dog_vdb` | `>=0.5.2` | VDB + parser/OCR abstraction |
+| `cloud_dog_storage` | `>=0.1.1` | storage backends and path utilities |
 
 ## Standards Alignment
 

@@ -12,15 +12,13 @@
 | Method | Path | Description | Auth | Request | Response | Errors |
 |---|---|---|---|---|---|---|
 | GET | `/health` | Service health probe | No | None | `{"status":"ok"}` + checks | `500` |
-| GET | `/app/v1/health` | Canonical API health | No | None | `{"status":"ok"}` + checks | `500` |
-| GET | `/app/v1/tools` | List tool catalogue | Yes | None | Tool schema array | `401`,`403` |
-| POST | `/app/v1/tools/{tool_name}` | Execute tool | Yes | JSON payload | Tool-specific JSON | `400`,`401`,`403`,`404` |
-| GET | `/api/v1/tools` | Legacy alias tool list | Yes | None | Tool schema array | `401`,`403` |
-| POST | `/api/v1/tools/{tool_name}` | Legacy alias tool call | Yes | JSON payload | Tool-specific JSON | `400`,`401`,`403`,`404` |
+| GET | `/api/v1/health` | Canonical API health | No | None | `{"status":"ok"}` + checks | `500` |
+| GET | `/api/v1/tools` | List tool catalogue | Yes | None | Tool schema array | `401`,`403` |
+| POST | `/api/v1/tools/{tool_name}` | Execute tool | Yes | JSON payload | Tool-specific JSON | `400`,`401`,`403`,`404` |
 
 ## MCP Tools
 
-MCP tool schemas are exposed by `GET /mcp/tools` (and legacy alias where enabled).
+MCP tool schemas are exposed by `GET /mcp/tools`.
 
 ### `profiles_list`
 
