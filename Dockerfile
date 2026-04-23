@@ -27,11 +27,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-ARG PYPI_URL=https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple
+# Install platform packages from internal PyPI (pypi.cloud-dog.net) per §3.2.0.
+ARG PYPI_URL=https://pypi.cloud-dog.net/simple
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
       --extra-index-url ${PYPI_URL} \
-      --trusted-host gitea.cloud-dog.net \
+      --trusted-host pypi.cloud-dog.net \
       --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
       cloud-dog-config \
@@ -49,14 +50,14 @@ COPY src/ ./src/
 COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
-      --trusted-host gitea.cloud-dog.net \
+      --trusted-host pypi.cloud-dog.net \
       --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
       -r REQUIREMENTS.txt
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     pip install --no-cache-dir \
       --no-deps \
-      --trusted-host gitea.cloud-dog.net \
+      --trusted-host pypi.cloud-dog.net \
       --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
       .
