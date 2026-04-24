@@ -1,0 +1,73 @@
+# index-retriever-mcp-server — bootstrap seed (W28A-F-RF-07-L3)
+#
+# Canonical admin-state spec applied on every IndexService startup, so that
+# in-memory user/group/collection/api-key registries re-converge to the same
+# stable identities after every container restart. Closes F-RF-07-L3 (admin
+# state non-durable across restart) + F-RF-07-L4 (a2a_server 4th process not
+# reprovisioned).
+#
+# Source of truth: W28A-RF-04 Phase B provisioning (per
+# `cloud-dog-ai-platform-standards/working/W28A-RF-04-REPORT.md` §Phase B).
+# Re-confirmed live during W28A-RF-07-L1-APPLY (data-level reprovision).
+#
+# RULES.md §9.2 — token VALUES are NEVER stored here. Only Vault path
+# references (token_vault_path: "<kv-path>:<dotted.json.path>") that resolve
+# at apply-time using the service's VAULT_ADDR/VAULT_TOKEN env (injected by TF).
+
+bootstrap:
+
+  groups:
+    - name: ragflow
+      roles: []
+
+  users:
+    - username: gary
+      display_name: gary
+      enabled: true
+      roles:
+        - maintainer
+        - ragflow0-access
+        - tb-access
+      groups:
+        - ragflow
+
+    - username: colin
+      display_name: colin
+      enabled: true
+      roles:
+        - maintainer
+        - ragflow1-access
+        - tb-access
+      groups:
+        - ragflow
+
+  collections:
+    - name: ragflow0
+      profile: default
+      allowed_roles:
+        - admin
+        - ragflow0-access
+      description: "gary's tenant-private RAG collection"
+
+    - name: ragflow1
+      profile: default
+      allowed_roles:
+        - admin
+        - ragflow1-access
+      description: "colin's tenant-private RAG collection"
+
+    - name: transparentborders
+      profile: default
+      allowed_roles:
+        - admin
+        - tb-access
+      description: "shared TB collection (gary + colin)"
+
+  api_keys:
+    - name: gary-ragflow-scoped
+      username: gary
+      token_vault_path: "cloud_dog_ai/config:dev.services.index-retriever.gary_api_key"
+
+    - name: colin-ragflow-scoped
+      username: colin
+      token_vault_path: "cloud_dog_ai/config:dev.services.index-retriever.colin_api_key"

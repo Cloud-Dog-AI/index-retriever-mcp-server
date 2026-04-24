@@ -95,6 +95,9 @@ COPY src/ ./src/
 COPY ui/ ./ui/
 COPY database/ ./database/
 COPY defaults.yaml server_control.sh docker-entrypoint.sh healthcheck.sh ./
+# W28A-F-RF-07-L3 — durable admin-state seed (users/groups/collections/api-keys).
+# Token VALUES are not in this file; only Vault path references — see §9.2.
+COPY config/ ./config/
 
 RUN mkdir -p /app/logs /app/data /app/.pids /app/certs && \
     chmod +x /app/docker-entrypoint.sh /app/healthcheck.sh /app/server_control.sh

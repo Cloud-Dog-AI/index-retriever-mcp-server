@@ -551,6 +551,19 @@ class IndexService:
         self._auth_api_keys: dict[str, set[str]] = {}
         self._auth_api_keys_bound = False
         self.queue.register_handler("ingest_text", self._process_ingest_text_job)
+        # W28A-F-RF-07-L3: durable admin state via bootstrap-seed. Each of the
+        # four service processes (api_server, web_server, mcp_server, a2a_server)
+        # constructs its own IndexService with empty in-memory admin stores.
+        # The seed re-applies the desired users / groups / collections / api-keys
+        # on every startup so admin state survives container restarts. If a seed
+        # file exists AND contains api-keys but Vault is unreachable, this
+        # raises BootstrapSeedError — by design (no silent empty-state start).
+        try:
+            from index_tools.bootstrap import maybe_apply_bootstrap_seed
+        except Exception:  # pragma: no cover — import-time failure of the loader
+            maybe_apply_bootstrap_seed = None  # type: ignore[assignment]
+        if maybe_apply_bootstrap_seed is not None:
+            maybe_apply_bootstrap_seed(self)
 
     def _run_async(self, coro: Any) -> Any:
         try:
