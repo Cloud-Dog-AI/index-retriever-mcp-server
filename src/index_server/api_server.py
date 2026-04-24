@@ -28,6 +28,17 @@ from typing import Any
 
 from cloud_dog_api_kit import LifecycleHooks, create_app, create_health_router  # type: ignore
 from cloud_dog_api_kit.a2a.card import create_a2a_card_router, A2ASkill
+# W28A-1002-EXTEND-R2 Phase B — adopt cloud_dog_api_kit.a2a.events RESTPollAdapter
+# with legacy-contract-mode kwargs (F-3o closed by R1b 0.12.0). Preserves the
+# existing external contract for `GET /a2a/events` (envelope_shape=events_only,
+# order=newest_first, event_id_format=uuid_string, field_mapping aliases
+# entity_type/entity_id/created_at). The canonical PS-72 §A2A-change-events
+# envelope is authoritative; this is a presentation-layer transform.
+from cloud_dog_api_kit.a2a.events import (  # type: ignore
+    ConfigChangeEvent as _A2AConfigChangeEvent,
+    EventBroadcaster as _A2AEventBroadcaster,
+    RESTPollAdapter as _A2ARESTPollAdapter,
+)
 import cloud_dog_idam  # type: ignore
 from cloud_dog_storage import path_utils
 from cloud_dog_logging.correlation import get_correlation_id as get_logging_correlation_id
@@ -682,6 +693,81 @@ def handle_ingest_text(
     return {"job_id": job_id}
 
 
+class _ServiceBackedBroadcaster:
+    """Minimal EventBroadcaster adapter wrapping ``IndexService.a2a_events``.
+
+    W28A-1002-EXTEND-R2 Phase B — the index-retriever bespoke event store
+    lives on ``IndexService.a2a_events: list[ConfigEventRecord]``. Rather
+    than duplicating state through a second broadcaster (which would
+    require rewiring 20 ``_emit_config_event`` call-sites), this adapter
+    synthesises ``ConfigChangeEvent`` instances on-demand from the
+    existing list.
+
+    Only ``history()`` is used by ``RESTPollAdapter``; ``publish`` and
+    ``subscribe`` are implemented as minimal no-ops to satisfy the
+    Protocol's runtime_checkable shape (unused for REST-poll adoption).
+    """
+
+    def __init__(self, service: Any) -> None:
+        self._service = service
+
+    async def publish(self, event: _A2AConfigChangeEvent) -> _A2AConfigChangeEvent:
+        # Not used by RESTPollAdapter; provided only to satisfy the
+        # EventBroadcaster Protocol shape. Publishing would require
+        # threading through the bespoke _emit_config_event pipeline
+        # which is beyond R2 scope (see constraints: a2a_server.py
+        # replacement only).
+        return event
+
+    def subscribe(self):  # type: ignore[no-untyped-def]
+        # Unused by RESTPollAdapter. Return an empty async iterator.
+        async def _empty():
+            if False:
+                yield  # pragma: no cover
+        return _empty()
+
+    def history(self, after_id: int = 0, limit: int = 100) -> list[_A2AConfigChangeEvent]:
+        """Synthesise ConfigChangeEvent objects from IndexService.a2a_events.
+
+        The bespoke event_id is a UUID string; RESTPollAdapter requires
+        a monotonic integer. We use the positional index (1-based) in
+        the underlying list as the synthetic event_id. ``after_id`` filters
+        strictly greater than the synthetic id. This preserves pagination
+        semantics while keeping the bespoke UUID-backed ordering intact.
+        """
+        records = list(getattr(self._service, "a2a_events", []) or [])
+        out: list[_A2AConfigChangeEvent] = []
+        for idx, record in enumerate(records, start=1):
+            if idx <= int(after_id or 0):
+                continue
+            # Best-effort mapping from bespoke ConfigEventRecord to
+            # canonical ConfigChangeEvent. The ``payload`` dict from the
+            # bespoke record becomes ``after`` on the canonical event;
+            # field_mapping later renames it back to ``payload`` in the
+            # wire format.
+            created_at = getattr(record, "created_at", None)
+            out.append(
+                _A2AConfigChangeEvent(
+                    service="index-retriever-mcp-server",
+                    resource=str(getattr(record, "entity_type", "")),
+                    action=str(getattr(record, "action", "")),
+                    identifier=str(getattr(record, "entity_id", "")),
+                    actor=str(getattr(record, "actor", "")) or None,
+                    correlation_id=None,
+                    before=None,
+                    after=dict(getattr(record, "payload", {}) or {}),
+                    outcome="success",
+                    timestamp=created_at if created_at is not None else _A2AConfigChangeEvent.__dataclass_fields__["timestamp"].default_factory(),  # type: ignore[union-attr]
+                    event_id=idx,
+                )
+            )
+        if limit <= 0:
+            return []
+        if len(out) > limit:
+            out = out[-limit:]
+        return out
+
+
 def build_api_app(service: IndexService | None = None, *, surface_name: str = "api_server") -> Any:
     """Execute build api app."""
     # Covers: FR-01, FR-01A, FR-17
@@ -986,10 +1072,68 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         _ = _a2a_auth_or_raise(request, _headers_from_request(request))
         return build_health_payload(active_service, correlation_id=get_logging_correlation_id(), db_runtime=db_runtime)
 
-    def a2a_events(request: Request) -> dict[str, Any]:
-        """Expose configuration change events via the A2A interface."""
+    # W28A-1002-EXTEND-R2 Phase B — cloud_dog_api_kit.a2a.events RESTPollAdapter
+    # adoption. Legacy-contract-mode kwargs (0.12.0; F-3o closure) preserve the
+    # bespoke external contract: {"events": [...]} envelope (no cursor),
+    # newest-first order, UUID-string event_ids, legacy field names
+    # entity_type/entity_id/created_at. The canonical PS-72 §A2A-change-events
+    # envelope is authoritative internally; field_mapping + envelope_shape +
+    # order + event_id_format are presentation-layer transforms over the
+    # common broadcaster surface.
+    _a2a_events_broadcaster: _A2AEventBroadcaster = _ServiceBackedBroadcaster(active_service)  # type: ignore[assignment]
+    _a2a_events_rest_poll = _A2ARESTPollAdapter(
+        _a2a_events_broadcaster,
+        mount_path=f"{_CANONICAL_A2A_BASE_PATH}/events",
+        envelope_shape="events_only",
+        field_mapping={
+            "resource": "entity_type",
+            "identifier": "entity_id",
+            "timestamp": "created_at",
+            "after": "payload",
+        },
+        order="newest_first",
+        event_id_format="uuid_string",
+    )
+    # Extract the RESTPollAdapter's internal GET handler closure so we can
+    # invoke it from within our auth-guarded route. The adapter's router
+    # contains a single GET route at mount_path; route.endpoint is the
+    # ``poll(since, limit)`` async closure bound to the adapter's configured
+    # broadcaster / envelope / field_mapping / order / event_id_format.
+    _a2a_events_adapter_router = _a2a_events_rest_poll.router()
+    _a2a_events_poll_endpoint: Any = None
+    for _route in _a2a_events_adapter_router.routes:
+        if getattr(_route, "path", None) == f"{_CANONICAL_A2A_BASE_PATH}/events":
+            _a2a_events_poll_endpoint = getattr(_route, "endpoint", None)
+            break
+    if _a2a_events_poll_endpoint is None:  # pragma: no cover — defensive
+        raise RuntimeError(
+            "Failed to extract RESTPollAdapter poll endpoint for /a2a/events adoption"
+        )
+
+    async def a2a_events(request: Request) -> Response:
+        """Expose configuration change events via the A2A interface.
+
+        Delegates to the cloud_dog_api_kit.a2a.events RESTPollAdapter (0.12.0)
+        configured with legacy-contract-mode kwargs. Auth enforced here before
+        dispatching to the adapter's poll closure so the external contract
+        (401 on missing/invalid X-API-Key) is preserved.
+        """
         _ = _a2a_auth_or_raise(request, _headers_from_request(request))
-        return {"events": active_service.a2a_config_events()}
+        since_raw = request.query_params.get("since", "0")
+        limit_raw = request.query_params.get("limit")
+        try:
+            since_val = max(0, int(since_raw))
+        except (TypeError, ValueError):
+            since_val = 0
+        limit_val: int | None
+        if limit_raw is None or str(limit_raw).strip() == "":
+            limit_val = None
+        else:
+            try:
+                limit_val = max(1, int(limit_raw))
+            except (TypeError, ValueError):
+                limit_val = None
+        return await _a2a_events_poll_endpoint(since=since_val, limit=limit_val)
 
     def runtime_config() -> Response:
         """Serve the runtime config bootstrap for the SPA."""

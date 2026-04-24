@@ -332,6 +332,11 @@ def test_mcp_build_app_typeerror_fallback(monkeypatch: pytest.MonkeyPatch, servi
         def post(self, _path: str, **kwargs: object) -> object:
             return lambda fn: fn
 
+        # Added for cloud_dog_api_kit>=0.9.0 mcp.transport.register_mcp_routes
+        # which also registers a DELETE handler. W28A-1002-EXTEND-R2 Phase B.
+        def delete(self, _path: str, **kwargs: object) -> object:
+            return lambda fn: fn
+
     def fake_create_app(**kwargs: object) -> DummyApp:
         if "title" in kwargs:
             raise TypeError("legacy signature")
