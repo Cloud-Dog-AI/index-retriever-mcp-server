@@ -20,7 +20,7 @@ set -euo pipefail
 VERSION="${1:-latest}"
 CONTAINER="index-retriever-mcp-server"
 FOLDER="cloud-dog"
-REGISTRY="<internal-registry>:443"
+REGISTRY="registry.cloud-dog.net:443:443"
 CUSTOM_CA_CERT="${CUSTOM_CA_CERT:-/usr/local/share/ca-certificates/cloud-dog.net.ca.crt}"
 GENERIC_CA_CERT="custom-ca.crt"
 CERT_ARG=""
