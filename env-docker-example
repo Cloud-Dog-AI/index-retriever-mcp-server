@@ -54,21 +54,21 @@ CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text
 
 # ---- external connection set (all-4-in-one) ----
 # 1) Embedding endpoint
-CLOUD_DOG__INDEX__EMBEDDING__BASE_URL=https://llm1.cloud-dog.net
-EMBED_BASE_URL=https://llm1.cloud-dog.net
+CLOUD_DOG__INDEX__EMBEDDING__BASE_URL=https://llm.example.com
+EMBED_BASE_URL=https://llm.example.com
 # EMBED_API_KEY should normally be provided by Vault/runtime secret injection.
 EMBED_API_KEY=
 
 # 2) Chroma endpoint
-CLOUD_DOG__INDEX__VDB__CHROMA_URL=https://chroma.cloud-dog.net
-CHROMA_URL=https://chroma.cloud-dog.net
+CLOUD_DOG__INDEX__VDB__CHROMA_URL=https://chroma.example.com
+CHROMA_URL=https://chroma.example.com
 # Optional when Chroma auth is enabled:
 # CLOUD_DOG__INDEX__VDB__CHROMA_AUTH_TOKEN=<inject-from-vault>
 # CHROMA_AUTH_TOKEN=<inject-from-vault>
 
 # 3) Qdrant endpoint
-CLOUD_DOG__INDEX__VDB__QDRANT_URL=http://vdb1.app.vpc0.cloud-dog.net:6333
-QDRANT_URL=http://vdb1.app.vpc0.cloud-dog.net:6333
+CLOUD_DOG__INDEX__VDB__QDRANT_URL=http://<internal-ip>:6333
+QDRANT_URL=http://<internal-ip>:6333
 # Optional when Qdrant API-key auth is enabled:
 # CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY=<inject-from-vault>
 # QDRANT_API_KEY=<inject-from-vault>
@@ -96,17 +96,17 @@ CLOUD_DOG__INDEX__MCP_AUDIT_PATH=/app/logs/index-retriever-audit-mcp.jsonl
 CLOUD_DOG__INDEX__STORAGE__AUDIT__PATH=/app/logs/index-retriever-audit.log
 
 # ---- vault bootstrap (token externalised) ----
-VAULT_ADDR=https://vault0.cloud-dog.net
+VAULT_ADDR=https://vault.example.com
 # VAULT_TOKEN is intentionally external (env-vault/orchestrator secret manager)
 VAULT_MOUNT_POINT=cloud_dog_ai
 VAULT_CONFIG_PATH=config
-CLOUD_DOG__VAULT__ADDR=https://vault0.cloud-dog.net
+CLOUD_DOG__VAULT__ADDR=https://vault.example.com
 CLOUD_DOG__VAULT__MOUNT_POINT=cloud_dog_ai
 CLOUD_DOG__VAULT__CONFIG_PATH=config
 
 # ---- optional runtime hints ----
 INDEX_RETRIEVER_LIVE_USE_VAULT_FALLBACK=true
-NO_PROXY=127.0.0.1,localhost,.cloud-dog.net
+NO_PROXY=127.0.0.1,localhost
 
 CLOUD_DOG__DB__DIALECT=sqlite
 CLOUD_DOG__DB__DATABASE=/app/data/index-retriever-preprod.db

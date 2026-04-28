@@ -41,7 +41,7 @@ def _build_client(host: str, port: int, ssl: bool) -> chromadb.ClientAPI:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Delete orphaned test collections from Chroma.")
-    parser.add_argument("--host", default="chroma.cloud-dog.net")
+    parser.add_argument("--host", default="chroma.example.com")
     parser.add_argument("--port", type=int, default=443)
     parser.add_argument("--ssl", action="store_true", default=True)
     parser.add_argument("--no-ssl", dest="ssl", action="store_false")

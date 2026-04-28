@@ -224,13 +224,13 @@ def test_http_vault_client_normalises_path(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setitem(__import__("sys").modules, "requests", _FakeRequests())
 
     client = bootstrap_mod._HttpVaultClient(
-        addr="https://vault0.cloud-dog.net",
+        addr="https://vault.example.com",
         token="test-token",
         mount="cloud_dog_ai",
     )
     payload = client.read("secret/cloud_dog_ai/config")
     assert payload == {"foo": "bar"}
-    assert captured["url"] == "https://vault0.cloud-dog.net/v1/cloud_dog_ai/data/config"
+    assert captured["url"] == "https://vault.example.com/v1/cloud_dog_ai/data/config"
     assert captured["headers"]["X-Vault-Token"] == "test-token"
 
 

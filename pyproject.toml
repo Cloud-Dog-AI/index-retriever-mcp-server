@@ -12,7 +12,7 @@ authors = [
   { name = "Cloud-Dog, Viewdeck Engineering Limited" }
 ]
 dependencies = [
-    # Platform packages (from https://pypi.cloud-dog.net/simple/)
+    # Platform packages (from internal PyPI)
     "cloud_dog_config>=0.3.1",
     "cloud_dog_logging>=0.3.3",
     "cloud_dog_api_kit==0.12.1",

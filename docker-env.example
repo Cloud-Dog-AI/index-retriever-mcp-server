@@ -35,7 +35,7 @@ CLOUD_DOG__INDEX__LLM__MODEL=qwen3:14b
 CLOUD_DOG__INDEX__LLM__BASE_URL=http://host.docker.internal:11434
 
 # ── Vault (optional — for credential resolution) ────────────────
-VAULT_ADDR=https://vault0.cloud-dog.net
+VAULT_ADDR=https://vault.example.com
 VAULT_TOKEN=
 CLOUD_DOG__VAULT__MOUNT_POINT=cloud_dog_ai
 CLOUD_DOG__VAULT__CONFIG_PATH=config
