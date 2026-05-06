@@ -35,7 +35,10 @@ def _utc_timestamp() -> str:
 
 def _resolve_filename(source_uri: str) -> str:
     parsed = urlparse(source_uri)
-    candidate = parsed.path if parsed.scheme else source_uri
+    if parsed.scheme:
+        candidate = parsed.path or parsed.netloc
+    else:
+        candidate = source_uri
     return path_utils.name(unquote(candidate)) or source_uri
 
 
@@ -59,8 +62,21 @@ def _resolve_source_type(source_uri: str) -> str:
     return "other"
 
 
-def build_metadata(source: str, content: bytes, profile: str, collection: str) -> dict[str, Any]:
-    """Build consistent metadata for ingestion records."""
+def build_metadata(
+    source: str,
+    content: bytes,
+    profile: str,
+    collection: str,
+    caller_metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build consistent metadata for ingestion records.
+
+    When *caller_metadata* contains a ``mime_type`` key, that value is
+    used instead of the heuristic resolved from *source*.  This lets the
+    upload handler supply the correct MIME type inferred from the original
+    filename even when the ``upload://`` URI scheme would confuse
+    ``mimetypes.guess_type``.
+    """
     # Covers: FR-10, FR-14
     source_uri = normalise_source_uri(source)
     content_text = content.decode("utf-8", errors="replace")
@@ -69,7 +85,8 @@ def build_metadata(source: str, content: bytes, profile: str, collection: str) -
     record_id = compute_record_id(doc_id, 0)
     timestamp = _utc_timestamp()
     filename = _resolve_filename(source_uri)
-    mime_type = _resolve_mime_type(source_uri, filename)
+    caller = caller_metadata if isinstance(caller_metadata, dict) else {}
+    mime_type = str(caller.get("mime_type", "")).strip() or _resolve_mime_type(source_uri, filename)
     metadata: dict[str, Any] = {
         "doc_id": doc_id,
         "record_id": record_id,

@@ -260,3 +260,18 @@ Uses cloud_dog_idam conditionally (try/except imports). Graceful degradation for
   - deployed environment actually configured to expose the new path
 - For this repo, “deployed” and “new base path live” are not equivalent statements. 970d succeeded as a deploy, but `/api/v2` was still not live on preprod because the environment override was absent.
 - When a waiver is used for `ui/dist` copying, record the exact source/destination and preserve a hash manifest proving bit-identity. That evidence was required to keep the release path defensible.
+
+## W28A Playwright 3-Failure Investigation (2026-05-06)
+
+### Code
+
+- The `upload://` URI scheme breaks `urlparse()` path extraction. `urlparse("upload://filename.pdf")` puts `filename.pdf` in `netloc`, not `path`. This means `_resolve_filename()` and `_resolve_mime_type()` in `pipeline/metadata.py` both fail to extract the filename, defaulting MIME type to `text/plain` for all uploaded files regardless of extension. Fix requires checking `netloc` as fallback when `path` is empty for non-standard schemes.
+- `ingest_upload()` correctly infers MIME type from the filename and passes it in the metadata dict to `ingest_text()`. However, the pipeline's `build_metadata()` constructs metadata from scratch based on `source_uri` and does NOT honour caller-supplied MIME type. The upload handler's MIME type is lost during the pipeline phase.
+
+### Test Environment
+
+- The source-config "Test" button invokes `ingest_reference` on the running service. When PW tests run against preprod, any filesystem source config pointing to a local `/tmp/` path will fail with a 500 error because that file does not exist inside the preprod container. Tests exercising the source-config probe must either use server-accessible paths or conditionally skip the probe step when `E2E_USE_EXISTING_SERVER=1`.
+
+### Infrastructure
+
+- ChromaDB server at `chroma.cloud-dog.net` runs version 1.0.0 (confirmed via `/api/v2/version`). The client library in the container is `chromadb==0.5.23`. The chroma v1 API endpoints return 410 ("deprecated"). This version mismatch causes intermittent search failures: ingest jobs report success but search may return 0 results. Manual probing confirmed basic chroma ingest+search CAN work, but the PW parity test's specific flow consistently returns 0 results within the 60s timeout. Aligning client and server versions is required for reliable chroma backend operation.

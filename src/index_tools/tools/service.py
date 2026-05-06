@@ -983,6 +983,7 @@ class IndexService:
             content=text.encode(),
             profile=profile,
             collection=collection,
+            caller_metadata=metadata if isinstance(metadata, dict) else None,
         )
         document_metadata = _merge_document_metadata(
             document_metadata,
