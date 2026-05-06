@@ -605,9 +605,10 @@ class IndexService:
         if get_vdb_client is None:
             raise RuntimeError("cloud_dog_vdb is required")
 
-        profile_default = _nested_mapping(self._runtime_tree, "profiles", "default")
-        profile_vdb = _nested_mapping(profile_default, "vdb")
-        profile_chroma = _nested_mapping(profile_vdb, "chroma")
+        # A123: profile_vdb / profile_chroma were used by the old silent
+        # local_mode fallback. The new contract derives chroma_local_mode
+        # purely from tier + explicit env flag, so the profile_default
+        # snippet is no longer needed here.
         index_vdb = _nested_mapping(self._runtime_tree, "index", "vdb")
 
         chroma_url = str(index_vdb.get("chroma_url", "")).strip()
@@ -622,11 +623,27 @@ class IndexService:
         }
         vector_stores: dict[str, Any] = {"default_backend": default_backend}
 
-        chroma_local_mode = not self._live_backend_mode or (
-            str(profile_vdb.get("type", "")).strip().lower() == "chroma"
-            and str(profile_chroma.get("mode", "")).strip().lower() == "local"
-            and not chroma_url
-        )
+        # A123/A117 root-cause fix: the previous fallback dropped chroma into
+        # in-memory local_mode whenever the *defaults.yaml* profile happened to
+        # carry `vdb.chroma.mode: local` and the operator hadn't supplied
+        # CHROMA_URL — even in a live preprod tier. That made every chroma
+        # profile silently store data in transient process memory using the
+        # `deterministic_vector` hash fallback, and it disappeared on every
+        # container restart. The new contract is explicit:
+        #   - non-live tier (default for unit tests): always local_mode
+        #   - live tier (ST/IT/AT/CT): local_mode requires an explicit opt-in
+        #     via CLOUD_DOG__INDEX__VDB__CHROMA_LOCAL_MODE=true. If chroma_url
+        #     is empty and the explicit flag is unset, the chroma backend is
+        #     simply not registered, so creating a profile with
+        #     `backend: chroma` fails loudly. RULES §1.4 — fail loud, never
+        #     silently substitute.
+        chroma_local_mode_flag = str(
+            _env_or_default("CLOUD_DOG__INDEX__VDB__CHROMA_LOCAL_MODE", "")
+        ).strip().lower() in {"1", "true", "yes", "on"}
+        if self._live_backend_mode:
+            chroma_local_mode = chroma_local_mode_flag
+        else:
+            chroma_local_mode = True
         if chroma_url or chroma_local_mode:
             vector_stores["chroma"] = {
                 "enabled": True,
@@ -2159,12 +2176,40 @@ class IndexService:
             payload.update(capability_override)
         return CapabilityDescriptor(**payload)
 
-    def _get_document_record(self, doc_id: str) -> DocumentRecord:
+    def _get_document_record(
+        self,
+        doc_id: str,
+        profile: str | None = None,
+        collection: str | None = None,
+    ) -> DocumentRecord:
+        """Return a stored document record.
+
+        A123 fix: optional ``profile`` / ``collection`` scope the lookup so
+        we never surface a record from a different profile when the same
+        record_id (deterministic hash of doc_id+chunk_index) was used for
+        parallel ingests across two backends. When the caller does not
+        supply these (legacy path, internal reindex/delete, A2A skill where
+        the contract is doc_id-only), we keep the historical
+        first-match-wins behaviour for backward compatibility.
+        """
+        def _matches_scope(rec: DocumentRecord) -> bool:
+            if profile is not None and rec.profile != profile:
+                return False
+            if collection is not None and rec.collection != collection:
+                return False
+            return True
+
         record = self.documents.get(doc_id)
-        if record is not None:
+        if record is not None and _matches_scope(record):
             return record
         for candidate in self.documents.values():
-            if candidate.doc_id == doc_id or str(candidate.metadata.get("doc_id", "")) == doc_id:
+            if not (
+                candidate.doc_id == doc_id
+                or str(candidate.metadata.get("doc_id", "")) == doc_id
+                or candidate.record_id == doc_id
+            ):
+                continue
+            if _matches_scope(candidate):
                 return candidate
         raise KeyError(doc_id)
 
@@ -2378,9 +2423,24 @@ class IndexService:
         rows_with_order.sort(key=lambda item: (-item[0], -item[1], str(item[2]["doc_id"])))
         return [payload for _score, _created, payload in rows_with_order[: max(1, top_k)]]
 
-    def retrieve(self, doc_id: str) -> dict[str, Any]:
-        """Execute retrieve."""
-        record = self._get_document_record(doc_id)
+    def retrieve(
+        self,
+        doc_id: str,
+        profile: str | None = None,
+        collection: str | None = None,
+    ) -> dict[str, Any]:
+        """Execute retrieve.
+
+        A123 fix: when ``profile`` and/or ``collection`` are supplied (the
+        canonical case from /api/v1/tools/retrieve via RetrieveInput), the
+        record returned MUST belong to that profile/collection. Previously
+        the handler ignored those arguments and returned whichever record
+        the in-memory ``self.documents`` happened to hold under the doc_id —
+        which is keyed by record_id and therefore overwrites identical
+        chunks ingested under different profiles. That caused chroma-profile
+        retrieves to surface qdrant-profile records (A117 §10 row 3).
+        """
+        record = self._get_document_record(doc_id, profile=profile, collection=collection)
         return {
             "doc_id": record.doc_id,
             "record_id": record.record_id or record.doc_id,

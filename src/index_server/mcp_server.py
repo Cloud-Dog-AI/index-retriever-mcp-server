@@ -754,7 +754,13 @@ def execute_tool(
         }
     if tool_name == "retrieve":
         _enforce_collection_acl(service, roles, arguments)
-        return service.retrieve(str(arguments["doc_id"]))
+        # A123 fix: pass profile + collection so retrieve filters records
+        # to the requested scope (RetrieveInput already requires both).
+        return service.retrieve(
+            str(arguments["doc_id"]),
+            profile=str(arguments.get("profile")) if arguments.get("profile") else None,
+            collection=str(arguments.get("collection")) if arguments.get("collection") else None,
+        )
     if tool_name == "delete_by_id":
         _enforce_collection_acl(service, roles, arguments)
         deleted = service.delete_by_id(
