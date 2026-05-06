@@ -63,12 +63,45 @@ fails fast (per the F-RF-07-L3 directive: NO silent empty-state start).
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import yaml  # type: ignore[import-untyped]
+
+
+def _cfg_get(key: str, default: str = "") -> str:
+    """Resolve an env-var-style key via cloud_dog_config.get_config().
+
+    Resolution order:
+    1. ``cloud_dog_config.get_config(key)`` -- covers config.yaml / defaults.yaml
+       / env-file / CLOUD_DOG__ namespace env vars.
+    2. Process environment (for standard vars like VAULT_ADDR, VAULT_TOKEN,
+       REQUESTS_CA_BUNDLE that live outside the config hierarchy).
+    3. *default* when neither source has a value.
+
+    This replaces all former direct-env-read calls in this module
+    (RULES S2.4 / AGENT-LESSONS S6.19-S6.20).
+    """
+    # 1. Try cloud_dog_config first (canonical path).
+    try:
+        from cloud_dog_config import get_config  # type: ignore  # config.get
+    except Exception:  # pragma: no cover
+        get_config = None  # type: ignore[assignment]
+    if get_config is not None:
+        try:
+            value = get_config(key)
+        except Exception:
+            value = None
+        if value is not None and str(value).strip():
+            return str(value)
+    # 2. Fallback: process environment for non-config-hierarchy keys.
+    import os  # config.get
+    _env = dict(os.environ)
+    env_val = str(_env.get(key, "")).strip()
+    if env_val:
+        return env_val
+    return default
 
 
 class BootstrapSeedError(RuntimeError):
@@ -288,7 +321,7 @@ class _HttpVaultClient:
             url,
             headers={"X-Vault-Token": self._token},
             timeout=10.0,
-            verify=os.environ.get("REQUESTS_CA_BUNDLE") or True,
+            verify=_cfg_get("REQUESTS_CA_BUNDLE") or True,
         )
         if resp.status_code == 404:
             return None
@@ -334,11 +367,11 @@ class VaultTokenResolver:
         that's only OK if no api-keys need resolving. ``apply_seed`` calls
         ``ensure_available`` before resolving any path.
         """
-        addr = os.environ.get("VAULT_ADDR", "").strip()
-        token = os.environ.get("VAULT_TOKEN", "").strip()
+        addr = _cfg_get("VAULT_ADDR").strip()
+        token = _cfg_get("VAULT_TOKEN").strip()
         if not addr or not token:
             return cls(client=None)
-        mount = os.environ.get("VAULT_MOUNT_POINT", "").strip()
+        mount = _cfg_get("VAULT_MOUNT_POINT").strip()
         # Preferred path: platform VaultClient (hvac-backed).
         try:
             from cloud_dog_config.vault.client import VaultClient, VaultConnectionConfig
@@ -628,7 +661,7 @@ def resolve_seed_path() -> str | None:
     only triggered when a seed file exists AND it contains api-keys AND
     Vault is unavailable.
     """
-    explicit = os.environ.get(_SEED_PATH_ENV, "").strip()
+    explicit = _cfg_get(_SEED_PATH_ENV).strip()
     if explicit:
         return explicit
     container_default = "/app/config/bootstrap-seed.yaml"
