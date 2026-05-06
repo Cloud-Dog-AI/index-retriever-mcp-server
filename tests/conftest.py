@@ -78,6 +78,24 @@ def _resolve_env_value(raw_value: str) -> str:
     client = _vault_client()
     if client is None:
         return value
+    try:
+        from tests.live_runtime import load_vault_dev_config  # noqa: WPS433
+
+        dev_config = load_vault_dev_config(required=False)
+        if dev_config:
+            current: object = dev_config
+            path_parts = match.group(1).split(".")
+            for part in path_parts[2:] if path_parts[:2] == ["vault", "dev"] else path_parts[1:]:
+                if not isinstance(current, dict) or part not in current:
+                    current = None
+                    break
+                current = current[part]
+            if isinstance(current, (str, int, float, bool)):
+                resolved_text = str(current).strip()
+                if resolved_text:
+                    return resolved_text
+    except Exception:
+        pass
     resolved = resolve_vault_identifier(match.group(1), vault=client)
     if isinstance(resolved, (str, int, float, bool)):
         resolved_text = str(resolved).strip()

@@ -1782,12 +1782,17 @@ class IndexService:
         self._require_admin(roles)
         collection_key = self._collection_key(profile, collection)
         prior_value = self._collection_payload(self._ensure_collection_record(profile, collection))
-        self._run_async(
-            self.vdb.delete_collection(
-                self._backend_collection_name(profile, collection, provider_id=self._profile_provider(profile)),
-                provider_id=self._profile_provider(profile),
+        try:
+            self._run_async(
+                self.vdb.delete_collection(
+                    self._backend_collection_name(profile, collection, provider_id=self._profile_provider(profile)),
+                    provider_id=self._profile_provider(profile),
+                )
             )
-        )
+        except Exception:
+            # VDB backend may be unavailable or the collection may not exist
+            # in VDB (backend_binding_pending). Proceed with in-memory removal.
+            pass
         self.collection_roles.pop(collection_key, None)
         self.collections.pop(collection_key, None)
         self.audit_logger.log_admin_action(

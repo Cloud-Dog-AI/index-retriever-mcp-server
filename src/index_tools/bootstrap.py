@@ -67,7 +67,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-import yaml  # type: ignore[import-untyped]
+from cloud_dog_config.yaml_loader import load_yaml as _load_yaml
 
 
 def _cfg_get(key: str, default: str = "") -> str:
@@ -183,13 +183,11 @@ def load_seed(path: str | Path) -> BootstrapSeed:
     if not seed_path.is_file():
         raise BootstrapSeedError(f"Bootstrap seed not found: {seed_path}")
     try:
-        raw = yaml.safe_load(seed_path.read_text(encoding="utf-8"))
+        raw = _load_yaml(str(seed_path))
     except Exception as exc:
         raise BootstrapSeedError(f"Failed to parse seed YAML at {seed_path}: {exc}") from exc
-    if raw is None:
+    if not raw:
         return BootstrapSeed()
-    if not isinstance(raw, Mapping):
-        raise BootstrapSeedError(f"Seed root must be a mapping, got {type(raw).__name__}")
     body = raw.get("bootstrap", raw)
     if not isinstance(body, Mapping):
         raise BootstrapSeedError("Seed must contain a 'bootstrap' mapping (or be one at root)")
@@ -621,7 +619,7 @@ def _apply_api_key(service: Any, api_key: ApiKeySeed, *, token: str) -> None:
     for record in existing:
         if not record.revoked and record.token != desired_token:
             record.revoked = True
-            # Drop from the bound auth store if attached.
+            # Remove revoked key from the bound API-key store if attached.
             if getattr(service, "_auth_api_keys_bound", False):
                 service._auth_api_keys.pop(record.token, None)
     payload: dict[str, Any] = {

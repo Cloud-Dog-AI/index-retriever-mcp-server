@@ -136,7 +136,7 @@ class LocalIndexRuntime:
             raise ValueError(f"Unknown provider: {provider_id}")
         if record_id not in self._service.documents:
             return None
-        payload = self._service.retrieve(record_id)
+        payload = self._service.retrieve(record_id, profile=profile, collection=collection)
         return SimpleNamespace(
             record_id=record_id,
             content=str(payload.get("text", "")),

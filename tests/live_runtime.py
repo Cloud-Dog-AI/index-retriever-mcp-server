@@ -138,6 +138,10 @@ def _extract_dev_section(payload: dict[str, Any]) -> dict[str, Any]:
         return payload["dev"]
     if isinstance(payload.get("json"), dict) and isinstance(payload["json"].get("dev"), dict):
         return payload["json"]["dev"]
+    if isinstance(payload.get("json"), str):
+        parsed = json.loads(payload["json"])
+        if isinstance(parsed.get("dev"), dict):
+            return parsed["dev"]
     if isinstance(payload.get("content"), str):
         parsed = json.loads(payload["content"])
         if isinstance(parsed.get("dev"), dict):

@@ -48,8 +48,15 @@ class _ToolService:
         self.calls.append(("table_extract", dict(kwargs)))
         return {"table_count": 1, "source_uri": kwargs["source_uri"]}
 
-    def retrieve(self, doc_id: str) -> dict[str, Any]:
-        self.calls.append(("retrieve", {"doc_id": doc_id}))
+    def retrieve(
+        self,
+        doc_id: str,
+        profile: str | None = None,
+        collection: str | None = None,
+    ) -> dict[str, Any]:
+        self.calls.append(
+            ("retrieve", {"doc_id": doc_id, "profile": profile, "collection": collection})
+        )
         return {"doc_id": doc_id, "record_id": doc_id, "metadata": {"content_hash": "hash"}}
 
     def search_plan(self, profile: str, query: str, top_k: int, filters: dict[str, Any]) -> dict[str, Any]:

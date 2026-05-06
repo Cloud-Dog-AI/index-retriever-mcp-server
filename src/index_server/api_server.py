@@ -415,6 +415,15 @@ def _local_test_cors_origins() -> list[str]:
             f"{http_scheme}://{host}:{port}",
             f"{https_scheme}://{host}:{port}",
         ])
+    # Playwright Vite preview server (port 5197) needs CORS access to the
+    # API server during E2E tests when runtime-config.js resolves
+    # API_BASE_URL to the direct backend address instead of the proxy origin.
+    pw_preview_port = 5197
+    if pw_preview_port != port:
+        origins.extend([
+            f"{http_scheme}://{loopback_v4}:{pw_preview_port}",
+            f"{http_scheme}://{loopback_name}:{pw_preview_port}",
+        ])
     return origins
 
 
@@ -476,13 +485,26 @@ def build_health_payload(
     request_id = correlation_id or get_logging_correlation_id()
     active_service = service or IndexService(audit_path=_api_audit_path())
     db_probe = database_health(db_runtime)
+    try:
+        vdb_check: Any = active_service.backend_health_check()
+    except Exception as exc:
+        vdb_check = {"status": "error", "message": str(exc)}
+    try:
+        embedding_check: Any = active_service.embedding_health_check()
+    except Exception as exc:
+        embedding_check = {"status": "error", "message": str(exc)}
+    overall = "ok"
+    for check in (db_probe, vdb_check, embedding_check):
+        if isinstance(check, dict) and check.get("status") == "error":
+            overall = "degraded"
+            break
     return {
-        "status": "ok",
+        "status": overall,
         "correlation_id": request_id,
         "checks": {
             "db": db_probe,
-            "vdb": active_service.backend_health_check(),
-            "embedding": active_service.embedding_health_check(),
+            "vdb": vdb_check,
+            "embedding": embedding_check,
         },
     }
 
@@ -1639,7 +1661,13 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         """Retrieve a document by ID via the IndexService."""
         payload = _parse_a2a_input(text)
         doc_id = payload.get("doc_id") or payload.get("id") or text.strip()
-        return active_service.retrieve(doc_id)
+        profile = payload.get("profile")
+        collection = payload.get("collection")
+        return active_service.retrieve(
+            doc_id,
+            profile=str(profile) if profile else None,
+            collection=str(collection) if collection else None,
+        )
 
     # A2A agent card and task submission router
     _a2a_skills = [

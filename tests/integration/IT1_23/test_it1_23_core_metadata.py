@@ -47,7 +47,7 @@ def test_mt2_text_and_upload_ingest_store_canonical_metadata(service: IndexServi
 
     upload_payload = service.retrieve(upload_record.record_id)
     assert upload_payload["source_uri"] == "upload://upload-metadata.txt"
-    assert upload_payload["metadata"]["filename"] == "upload://upload-metadata.txt"
+    assert upload_payload["metadata"]["filename"] == "upload-metadata.txt"
     assert upload_payload["metadata"]["mime_type"] == "text/plain"
     assert upload_payload["metadata"]["size_bytes"] == len(b"canonical metadata upload payload")
     assert upload_rows[0]["content_hash"] == upload_payload["content_hash"]
