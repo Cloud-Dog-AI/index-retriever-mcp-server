@@ -43,7 +43,7 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
       cloud-dog-jobs \
       cloud-dog-storage \
       cloud-dog-llm \
-      cloud-dog-vdb
+      cloud-dog-vdb>=0.5.4
 
 COPY REQUIREMENTS.txt pyproject.toml README.md ./
 COPY src/ ./src/

@@ -44,13 +44,17 @@ if [[ -z "${PYPI_USERNAME}" || -z "${PYPI_PASSWORD}" ]]; then
     PYPI_USERNAME=$(echo "${VAULT_JSON}" | python3 -c "
 import json,sys
 root=json.load(sys.stdin).get('data',{}).get('data',{})
-d=root.get('dev',{}) or root.get('json',{}).get('dev',{})
+blob=root.get('json','{}')
+parsed=json.loads(blob) if isinstance(blob,str) else blob
+d=parsed.get('dev',{}) or root.get('dev',{})
 print(d.get('repository',{}).get('pypi',{}).get('username',''))
 " 2>/dev/null || echo "")
     PYPI_PASSWORD=$(echo "${VAULT_JSON}" | python3 -c "
 import json,sys
 root=json.load(sys.stdin).get('data',{}).get('data',{})
-d=root.get('dev',{}) or root.get('json',{}).get('dev',{})
+blob=root.get('json','{}')
+parsed=json.loads(blob) if isinstance(blob,str) else blob
+d=parsed.get('dev',{}) or root.get('dev',{})
 print(d.get('repository',{}).get('pypi',{}).get('password',''))
 " 2>/dev/null || echo "")
   fi
