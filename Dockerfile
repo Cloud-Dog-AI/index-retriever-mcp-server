@@ -33,7 +33,6 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
       --extra-index-url ${PYPI_URL} \
       --trusted-host pypi.cloud-dog.net \
-      --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
       cloud-dog-config \
       cloud-dog-logging \
@@ -51,14 +50,12 @@ COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
       --trusted-host pypi.cloud-dog.net \
-      --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
       -r REQUIREMENTS.txt
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     pip install --no-cache-dir \
       --no-deps \
       --trusted-host pypi.cloud-dog.net \
-      --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
       .
 
