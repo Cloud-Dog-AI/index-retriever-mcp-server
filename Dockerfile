@@ -3,7 +3,7 @@
 # Multi-stage build: proxy/CA support, private PyPI auth via BuildKit secret, non-root runtime.
 
 # ── Builder ──────────────────────────────────────────────────────
-FROM python:3.11-slim AS builder
+FROM python:3.12-slim AS builder
 
 ARG HTTP_PROXY HTTPS_PROXY NO_PROXY http_proxy https_proxy no_proxy
 ENV HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY} NO_PROXY=${NO_PROXY} \
@@ -60,7 +60,7 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
       .
 
 # ── Final ────────────────────────────────────────────────────────
-FROM python:3.11-slim
+FROM python:3.12-slim
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 LABEL org.opencontainers.image.vendor="Cloud-Dog, Viewdeck Engineering Limited"
 
@@ -84,7 +84,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 COPY REQUIREMENTS.txt pyproject.toml README.md ./

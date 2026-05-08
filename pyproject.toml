@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "index-retriever-mcp-server"
 version = "0.1.3RC1"
 description = "API-first MCP server for vector database indexing, searching, and retrieval for agentic flows."
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
 authors = [
   { name = "Cloud-Dog, Viewdeck Engineering Limited" }
@@ -88,13 +88,13 @@ dev = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B", "SIM"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
