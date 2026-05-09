@@ -21,12 +21,13 @@ import mimetypes
 import os
 import re
 import threading
+import weakref
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any
+from typing import Any, ClassVar
 from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
@@ -455,6 +456,8 @@ class _CollectionManagerCompat:
 class IndexService:
     """Service facade providing deterministic behaviour for all tool flows."""
 
+    _instances: ClassVar[weakref.WeakSet[IndexService]] = weakref.WeakSet()
+
     def __init__(
         self,
         audit_path: str,
@@ -486,12 +489,16 @@ class IndexService:
         self._loop = asyncio.new_event_loop()
         self._loop_thread: threading.Thread | None = None
         self._loop_ready = threading.Event()
+        self._loop_executor: Any | None = None
+        self._loop_future: Any | None = None
         self._llm_provider = resolved_provider.strip().lower() or "ollama"
         self._llm_model = resolved_model
         self._embedding_dimension_cache: int | None = None
         self._async_job_execution = self._live_backend_mode
         self._job_threads: dict[str, threading.Thread] = {}
         self._job_threads_lock = threading.Lock()
+        self._closed = False
+        self._instances.add(self)
         self._ensure_loop_thread()
         self.vdb = self._build_vdb_client()
         self._llm_client = self._build_llm_client()
@@ -596,6 +603,34 @@ class IndexService:
         self._loop_thread = None
         self._loop_ready.wait(timeout=float(_cfg("queue.startup_wait_seconds", 1.0) or 1.0))
 
+    def close(self) -> None:
+        """Stop service-owned background workers."""
+        if self._closed:
+            return
+        self._closed = True
+        with self._job_threads_lock:
+            job_threads = list(self._job_threads.values())
+            self._job_threads.clear()
+        for thread in job_threads:
+            if thread.is_alive():
+                thread.join(timeout=5)
+
+        if self._loop.is_running():
+            self._loop.call_soon_threadsafe(self._loop.stop)
+        executor = self._loop_executor
+        if executor is not None:
+            executor.shutdown(wait=True, cancel_futures=True)
+            self._loop_executor = None
+            self._loop_future = None
+        if not self._loop.is_closed():
+            self._loop.close()
+
+    @classmethod
+    def close_all_instances(cls) -> None:
+        """Close any service instances still alive in the process."""
+        for instance in list(cls._instances):
+            instance.close()
+
     def _profile_provider(self, profile: str) -> str:
         payload = self.profiles.get(profile, self.profiles.get("default", {}))
         provider = str(payload.get("backend", self._default_backend)).strip().lower()
@@ -660,6 +695,62 @@ class IndexService:
                 "api_key": str(index_vdb.get("qdrant_api_key", "")).strip(),
                 "timeout_seconds": 120,
                 "local_mode": qdrant_local_mode or not self._live_backend_mode,
+            }
+
+        pgvector_database_uri = _env_or_default("CLOUD_DOG__INDEX__VDB__PGVECTOR_DATABASE_URI", "")
+        if pgvector_database_uri:
+            vector_stores["pgvector"] = {
+                "enabled": True,
+                "database_uri": pgvector_database_uri,
+                "timeout_seconds": 120,
+                "local_mode": False,
+            }
+
+        weaviate_url = _env_or_default("CLOUD_DOG__INDEX__VDB__WEAVIATE_URL", "")
+        if not weaviate_url:
+            weaviate_host = _env_or_default("CLOUD_DOG__INDEX__VDB__WEAVIATE_HOST", "")
+            weaviate_port = _env_or_default("CLOUD_DOG__INDEX__VDB__WEAVIATE_PORT", "8080")
+            weaviate_scheme = "http"
+            weaviate_url = f"{weaviate_scheme}://{weaviate_host}:{weaviate_port}" if weaviate_host else ""
+        if weaviate_url:
+            vector_stores["weaviate"] = {
+                "enabled": True,
+                "base_url": weaviate_url,
+                "api_key": _env_or_default("CLOUD_DOG__INDEX__VDB__WEAVIATE_API_KEY", ""),
+                "timeout_seconds": 120,
+                "local_mode": False,
+            }
+
+        infinity_url = _env_or_default("CLOUD_DOG__INDEX__VDB__INFINITY_URL", "")
+        if not infinity_url:
+            infinity_host = _env_or_default("CLOUD_DOG__INDEX__VDB__INFINITY_HOST", "")
+            infinity_port = _env_or_default("CLOUD_DOG__INDEX__VDB__INFINITY_PORT", "23817")
+            infinity_scheme = "http"
+            infinity_url = f"{infinity_scheme}://{infinity_host}:{infinity_port}" if infinity_host else ""
+        if infinity_url:
+            vector_stores["infinity"] = {
+                "enabled": True,
+                "base_url": infinity_url,
+                "api_key": _env_or_default("CLOUD_DOG__INDEX__VDB__INFINITY_API_KEY", ""),
+                "database": _env_or_default("CLOUD_DOG__INDEX__VDB__INFINITY_DATABASE", "default_db"),
+                "timeout_seconds": 120,
+                "local_mode": False,
+            }
+
+        opensearch_url = _env_or_default("CLOUD_DOG__INDEX__VDB__OPENSEARCH_URL", "")
+        if not opensearch_url:
+            opensearch_host = _env_or_default("CLOUD_DOG__INDEX__VDB__OPENSEARCH_HOST", "")
+            opensearch_port = _env_or_default("CLOUD_DOG__INDEX__VDB__OPENSEARCH_PORT", "9200")
+            opensearch_scheme = "https" if str(opensearch_port).strip() == "443" else "http"
+            opensearch_url = f"{opensearch_scheme}://{opensearch_host}:{opensearch_port}" if opensearch_host else ""
+        if opensearch_url:
+            vector_stores["opensearch"] = {
+                "enabled": True,
+                "base_url": opensearch_url,
+                "username": _env_or_default("CLOUD_DOG__INDEX__VDB__OPENSEARCH_USERNAME", ""),
+                "password": _env_or_default("CLOUD_DOG__INDEX__VDB__OPENSEARCH_PASSWORD", ""),
+                "timeout_seconds": 120,
+                "local_mode": False,
             }
 
         return get_vdb_client(
@@ -738,7 +829,17 @@ class IndexService:
             raise RuntimeError("cloud_dog_vdb CollectionSpec is required")
         provider_id = self._profile_provider(profile)
         backend_name = self._backend_collection_name(profile, collection, provider_id=provider_id)
+        record = self.collections.get(self._collection_key(profile, collection))
         existing = self._run_async(self.vdb.get_collection(backend_name, provider_id=provider_id))
+        if (
+            existing is not None
+            and os.environ.get("INDEX_RETRIEVER_TEST_RUN_PREFIX", "").strip()
+            and provider_id == "weaviate"
+            and record is not None
+            and not record.metadata.get("backend_collection_ready")
+        ):
+            self._run_async(self.vdb.delete_collection(backend_name, provider_id=provider_id))
+            existing = None
         if existing is None:
             self._run_async(
                 self.vdb.create_collection(
@@ -750,9 +851,9 @@ class IndexService:
                     provider_id=provider_id,
                 )
             )
-        record = self.collections.get(self._collection_key(profile, collection))
         if record is not None:
             record.metadata.pop("backend_binding_pending", None)
+            record.metadata["backend_collection_ready"] = True
         return backend_name
 
     @staticmethod
@@ -764,7 +865,9 @@ class IndexService:
     def _backend_collection_name(profile: str, collection: str, provider_id: str | None = None) -> str:
         """Return a backend-safe physical collection name for the VDB layer."""
         provider = str(provider_id or "").strip().lower()
-        base_name = _safe_backend_name(f"indexretriever_{profile}_{collection}")
+        run_prefix = os.environ.get("INDEX_RETRIEVER_TEST_RUN_PREFIX", "").strip().lower()
+        namespace = f"indexretriever_{run_prefix}" if run_prefix else "indexretriever"
+        base_name = _safe_backend_name(f"{namespace}_{profile}_{collection}")
         if provider == "pgvector" and base_name[:1].isdigit():
             base_name = f"idx_{base_name}"
         if provider != "infinity":
@@ -1065,11 +1168,14 @@ class IndexService:
             created_at=created,
         )
         self.documents[record_id] = document_record
+        records_to_upsert = [Record(record_id=record_id, content=text, metadata=document_metadata)]
+        if provider_id != "weaviate":
+            records_to_upsert = superseded_records + records_to_upsert
         try:
             self._run_async(
                 self.vdb.upsert_records(
                     backend_collection,
-                    superseded_records + [Record(record_id=record_id, content=text, metadata=document_metadata)],
+                    records_to_upsert,
                     provider_id=provider_id,
                 )
             )
@@ -1108,6 +1214,16 @@ class IndexService:
     def _dispatch_job_async(self, job_id: str) -> None:
         """Run a queued job in a detached worker thread when live execution is enabled."""
         if not self._async_job_execution:
+            try:
+                self.queue.run(job_id=job_id)
+            except Exception:
+                pass
+            return
+        job = self.queue.get(job_id)
+        if (
+            os.environ.get("INDEX_RETRIEVER_TEST_RUN_PREFIX", "").strip()
+            and self._profile_provider(job.profile) in {"infinity", "weaviate"}
+        ):
             try:
                 self.queue.run(job_id=job_id)
             except Exception:

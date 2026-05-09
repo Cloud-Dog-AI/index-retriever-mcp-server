@@ -1,0 +1,82 @@
+W28A-95a-R1 IT rerun 2026-05-09T16:18:27+01:00
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-8.4.2, pluggy-1.6.0 -- /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server
+configfile: pyproject.toml
+plugins: asyncio-0.26.0, anyio-4.13.0, timeout-2.4.0, cov-5.0.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+timeout: 900.0s
+timeout method: signal
+timeout func_only: False
+collecting ... collected 46 items
+
+tests/integration/IT1_1/test_it1_1.py::test_api_health_endpoint PASSED   [  2%]
+tests/integration/IT1_10/test_it1_10.py::test_qdrant_contract_test PASSED [  4%]
+tests/integration/IT1_11/test_it1_11.py::test_embedding_provider_ollama PASSED [  6%]
+tests/integration/IT1_12/test_it1_12.py::test_streaming_ingest_sse PASSED [  8%]
+tests/integration/IT1_13/test_it1_13.py::test_source_metadata_round_trip PASSED [ 10%]
+tests/integration/IT1_14/test_it1_14.py::test_capability_aware_backend_planning PASSED [ 13%]
+tests/integration/IT1_15/test_it1_15.py::test_infinity_adapter_contract_path PASSED [ 15%]
+tests/integration/IT1_16/test_it1_16.py::test_delegation_boundary_via_cloud_dog_vdb_pipeline PASSED [ 17%]
+tests/integration/IT1_17/test_it1_17.py::test_tool_catalogue_wrappers_execute PASSED [ 19%]
+tests/integration/IT1_18/test_it1_18_a2a_health_auth_matrix.py::test_a2a_health_auth_matrix PASSED [ 21%]
+tests/integration/IT1_19/test_it1_19_no_fallback_backend_identity.py::test_no_fallback_backend_identity_it PASSED [ 23%]
+tests/integration/IT1_2/test_it1_2.py::test_api_auth_reject PASSED       [ 26%]
+tests/integration/IT1_20/test_it1_20_job_management_tools.py::test_job_management_tools_contract PASSED [ 28%]
+tests/integration/IT1_21/test_it1_21_collection_rbac.py::test_collection_level_rbac_enforced PASSED [ 30%]
+tests/integration/IT1_21/test_it1_21_jobs_migration.py::test_jobs_backend_concurrency_and_recovery PASSED [ 32%]
+tests/integration/IT1_22/test_it1_22_admin_rest_config_crud.py::test_admin_rest_profile_user_group_api_key_lifecycle PASSED [ 34%]
+tests/integration/IT1_22/test_it1_22_admin_rest_config_crud.py::test_admin_rest_rejects_non_admin_mutation PASSED [ 36%]
+tests/integration/IT1_23/test_it1_23_core_metadata.py::test_mt2_text_and_upload_ingest_store_canonical_metadata PASSED [ 39%]
+tests/integration/IT1_23/test_it1_23_core_metadata.py::test_mt2_preview_reports_parser_and_ocr_provenance PASSED [ 41%]
+tests/integration/IT1_23/test_it1_23_core_metadata.py::test_mt3_mt4_round_trip_returns_latest_record_with_canonical_metadata PASSED [ 43%]
+tests/integration/IT1_24/test_it1_24_openapi_contract.py::test_openapi_and_tool_contract_include_canonical_metadata_fields PASSED [ 45%]
+tests/integration/IT1_3/test_it1_3.py::test_api_auth_accept PASSED       [ 47%]
+tests/integration/IT1_4/test_it1_4.py::test_api_rbac_ingest_gating PASSED [ 50%]
+tests/integration/IT1_5/test_it1_5.py::test_api_rbac_admin_gating PASSED [ 52%]
+tests/integration/IT1_6/test_it1_6.py::test_mcp_tool_catalogue PASSED    [ 54%]
+tests/integration/IT1_7/test_it1_7.py::test_mcp_tool_execution PASSED    [ 56%]
+tests/integration/IT1_8/test_it1_8.py::test_correlation_id_propagation PASSED [ 58%]
+tests/integration/IT1_9/test_it1_9.py::test_chroma_contract_test PASSED  [ 60%]
+tests/integration/IT2_1/test_it2_1_chroma_contract.py::test_it2_1_chroma_contract_roundtrip PASSED [ 63%]
+tests/integration/IT2_10/test_it2_10_marker_parser.py::test_it2_10_marker_parser_pdf_ir_output PASSED [ 65%]
+tests/integration/IT2_11/test_it2_11_transformers_parser.py::test_it2_11_transformers_parser_pdf_ir_output PASSED [ 67%]
+tests/integration/IT2_12/test_it2_12_internal_parser.py::test_it2_12_internal_parser_pdf_ir_output PASSED [ 69%]
+tests/integration/IT2_13/test_it2_13_ocr_provider_matrix.py::test_it2_13_ocr_capable_parser_matrix_extracts_text PASSED [ 71%]
+tests/integration/IT2_14/test_it2_14_table_extraction_matrix.py::test_it2_14_table_extraction_returns_structured_tables PASSED [ 73%]
+tests/integration/IT2_15_DatabaseStartup/test_it2_15_database_startup.py::test_it2_15_database_startup_and_crud PASSED [ 76%]
+tests/integration/IT2_16/test_it2_16_provenance_contract.py::test_plain_text_provenance_contract_fields PASSED [ 78%]
+tests/integration/IT2_16/test_it2_16_provenance_contract.py::test_pdf_ocr_and_table_provenance_fields_recorded PASSED [ 80%]
+tests/integration/IT2_16/test_it2_16_provenance_contract.py::test_reingest_provenance_is_preserved_not_overwritten PASSED [ 82%]
+tests/integration/IT2_2/test_it2_2_qdrant_contract.py::test_it2_2_qdrant_contract_roundtrip PASSED [ 84%]
+tests/integration/IT2_3/test_it2_3_opensearch_contract.py::test_it2_3_opensearch_contract_roundtrip PASSED [ 86%]
+tests/integration/IT2_4/test_it2_4_pgvector_contract.py::test_it2_4_pgvector_contract_roundtrip PASSED [ 89%]
+tests/integration/IT2_5/test_it2_5_weaviate_contract.py::test_it2_5_weaviate_contract_roundtrip PASSED [ 91%]
+tests/integration/IT2_6/test_it2_6_infinity_contract.py::test_it2_6_infinity_contract_roundtrip PASSED [ 93%]
+tests/integration/IT2_7/test_it2_7_deepdoc_parser.py::test_it2_7_deepdoc_parser_pdf_ir_output PASSED [ 95%]
+tests/integration/IT2_8/test_it2_8_docling_parser.py::test_it2_8_docling_parser_pdf_ir_output PASSED [ 97%]
+tests/integration/IT2_9/test_it2_9_mineru_parser.py::test_it2_9_mineru_parser_pdf_ir_output PASSED [100%]
+
+======================== 46 passed in 346.18s (0:05:46) ========================
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-11001612-41b2-4e47-8d9f-742eb11e4e30/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090039Z/it-webdav-4ca8836b89a3:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-11001612-41b2-4e47-8d9f-742eb11e4e30/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090039Z/it-webdav-4ca8836b89a3'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-154b872f-bc0f-4d7d-a88d-01eae50e6b86/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090336Z/it-webdav-18276fe33292:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-154b872f-bc0f-4d7d-a88d-01eae50e6b86/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090336Z/it-webdav-18276fe33292'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-bce49f07-0cf9-4948-8ed5-fd3eb7a970b6/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T085809Z/it-webdav-30af16c9ac7a:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-bce49f07-0cf9-4948-8ed5-fd3eb7a970b6/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T085809Z/it-webdav-30af16c9ac7a'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-cf5b09ae-825e-406f-a78f-1b0bd224d51c/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T085610Z/it-webdav-5b6213dc5c2c:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-cf5b09ae-825e-406f-a78f-1b0bd224d51c/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T085610Z/it-webdav-5b6213dc5c2c'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-849e5707-59a6-4129-a590-cda595ed4825/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090716Z/it-webdav-52d1c7c173cd:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-849e5707-59a6-4129-a590-cda595ed4825/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090716Z/it-webdav-52d1c7c173cd'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-2e611816-6ff7-4170-ab9d-3fb0eaf5eded/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T092014Z/it-webdav-36e101abbe1f:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-2e611816-6ff7-4170-ab9d-3fb0eaf5eded/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T092014Z/it-webdav-36e101abbe1f'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-1a7b23d3-9b96-4f0d-af83-8a844c3a52e3/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T135211Z/it-webdav-ce5cc9a9d5de:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-1a7b23d3-9b96-4f0d-af83-8a844c3a52e3/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T135211Z/it-webdav-ce5cc9a9d5de'
+  warnings.warn(

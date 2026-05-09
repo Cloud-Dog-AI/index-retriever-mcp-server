@@ -69,7 +69,7 @@ except ImportError:  # pragma: no cover - optional runtime dependency
 
 from index_server.admin_ui import admin_ui_script, admin_ui_styles, profiles_page, security_page
 from index_server.auth.middleware import AuthMiddleware, AuthResult
-from index_server.logging_runtime import init_platform_logging
+from index_server.logging_runtime import init_platform_logging, shutdown_platform_logging
 from index_server.mcp_server import build_registry, execute_tool
 from index_server.runtime_config import resolve_server_binding
 from index_tools.config.loader import load_runtime_config, runtime_env_files
@@ -807,7 +807,12 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         bind_auth_api_keys(auth.api_keys)
     registry = build_registry()
     cors_origins = _local_test_cors_origins()
-    app = _create_runtime_app(on_shutdown=shutdown_database, cors_origins=cors_origins or None)
+    def _shutdown_runtime() -> None:
+        active_service.close()
+        shutdown_database()
+        shutdown_platform_logging()
+
+    app = _create_runtime_app(on_shutdown=_shutdown_runtime, cors_origins=cors_origins or None)
     api_base_path = _resolve_route_base_path(
         getattr(runtime_cfg.api_server, "base_path", ""),
         env_name="CLOUD_DOG__INDEX_RETRIEVER__API_SERVER__BASE_PATH",

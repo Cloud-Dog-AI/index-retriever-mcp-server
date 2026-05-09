@@ -18,9 +18,11 @@ import os
 import re
 import socket
 import sys
+from collections.abc import Iterator
 from contextlib import suppress
 from functools import lru_cache
 from pathlib import Path
+from uuid import uuid4
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -43,6 +45,14 @@ _LIVE_REQUIRED_TIERS = {"ST", "IT", "AT", "CT", "QT"}
 _RUNTIME_MODES = {"local-server", "local-docker", "remote-runtime"}
 _EXTERNAL_ENDPOINT_MODES = {"local-docker", "remote-runtime"}
 _VAULT_REF_PATTERN = re.compile(r"^\$\{(vault\.[^}]+)\}$")
+
+
+def _ensure_test_run_prefix() -> str:
+    token = os.environ.get("INDEX_RETRIEVER_TEST_RUN_PREFIX", "").strip().lower()
+    if not token:
+        token = f"r{uuid4().hex[:8]}"
+        os.environ["INDEX_RETRIEVER_TEST_RUN_PREFIX"] = token
+    return token
 
 
 @lru_cache(maxsize=1)
@@ -289,6 +299,9 @@ def load_env_files(env_args: list[str]) -> dict[str, str]:
             if overlay.exists() and overlay.is_file():
                 loaded.update(_load_env_file(overlay, override=True))
 
+    if os.environ.get("TEST_ENV_TIER", "").strip().upper() in _LIVE_REQUIRED_TIERS:
+        loaded["INDEX_RETRIEVER_TEST_RUN_PREFIX"] = _ensure_test_run_prefix()
+
     return loaded
 
 
@@ -301,10 +314,14 @@ def env(env_tiers: list[str]) -> str:
 
 
 @pytest.fixture()
-def service(tmp_path: Path) -> IndexService:
+def service(tmp_path: Path) -> Iterator[IndexService]:
     """Provide a per-test in-memory index service."""
     audit_path = tmp_path / "audit.jsonl"
-    return IndexService(audit_path=str(audit_path))
+    instance = IndexService(audit_path=str(audit_path))
+    try:
+        yield instance
+    finally:
+        instance.close()
 
 
 @pytest.fixture()
@@ -359,6 +376,16 @@ def live_service(live_service_preflight: None) -> LiveIndexRuntime:
     finally:
         runtime.cleanup()
         resolve_live_runtime_config.cache_clear()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def shutdown_platform_logging_before_pytest_exit() -> Iterator[None]:
+    """Stop platform logging workers before pytest closes captured streams."""
+    yield
+    IndexService.close_all_instances()
+    from index_server.logging_runtime import shutdown_platform_logging
+
+    shutdown_platform_logging()
 
 
 @pytest.fixture(scope="session", autouse=True)

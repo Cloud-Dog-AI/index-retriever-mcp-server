@@ -637,6 +637,7 @@ class LiveIndexRuntime:
         self.job_queue = JobQueue(SQLQueueBackend(self._config.queue_db_url))
 
         self._collections: set[tuple[str, str]] = set()
+        self._logical_collections: set[tuple[str, str, str]] = set()
         self._stream_sessions: dict[str, dict[str, Any]] = {}
         self._profiles: dict[str, dict[str, Any]] = {
             "default": {"enabled": True, "backend": self._config.default_backend}
@@ -1059,6 +1060,7 @@ class LiveIndexRuntime:
             )
         )
         self._collections.add((resolved_provider, name))
+        self._logical_collections.add((resolved_provider, profile, collection))
         return name
 
     def ingest_text(
@@ -1438,6 +1440,11 @@ class LiveIndexRuntime:
         prefix = f"{self._namespace}_{profile}_"
         names = self._list_collection_names(self._config.default_backend)
         out = [name.removeprefix(prefix) for name in names if name.startswith(prefix)]
+        out.extend(
+            collection
+            for provider_id, logical_profile, collection in self._logical_collections
+            if provider_id == self._config.default_backend and logical_profile == profile
+        )
         return sorted(out)
 
     def admin_collection_delete(self, profile: str, collection: str, roles: set[str]) -> None:
@@ -1447,6 +1454,7 @@ class LiveIndexRuntime:
         with suppress(Exception):
             self._run(self.vdb_client.delete_collection(collection_name, provider_id=self._config.default_backend))
         self._collections.discard((self._config.default_backend, collection_name))
+        self._logical_collections.discard((self._config.default_backend, profile, collection))
         for key, value in list(self._source_records.items()):
             if value.record.collection_name == collection_name:
                 del self._source_records[key]

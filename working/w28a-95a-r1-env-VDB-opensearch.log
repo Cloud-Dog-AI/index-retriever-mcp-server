@@ -1,0 +1,106 @@
+W28A-95a-R1 full VDB opensearch 2026-05-09T16:02:43+01:00
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-8.4.2, pluggy-1.6.0 -- /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server
+configfile: pyproject.toml
+plugins: asyncio-0.26.0, anyio-4.13.0, timeout-2.4.0, cov-5.0.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+timeout: 900.0s
+timeout method: signal
+timeout func_only: False
+collecting ... collected 70 items
+
+tests/integration/IT1_1/test_it1_1.py::test_api_health_endpoint PASSED   [  1%]
+tests/integration/IT1_10/test_it1_10.py::test_qdrant_contract_test PASSED [  2%]
+tests/integration/IT1_11/test_it1_11.py::test_embedding_provider_ollama PASSED [  4%]
+tests/integration/IT1_12/test_it1_12.py::test_streaming_ingest_sse PASSED [  5%]
+tests/integration/IT1_13/test_it1_13.py::test_source_metadata_round_trip PASSED [  7%]
+tests/integration/IT1_14/test_it1_14.py::test_capability_aware_backend_planning PASSED [  8%]
+tests/integration/IT1_15/test_it1_15.py::test_infinity_adapter_contract_path PASSED [ 10%]
+tests/integration/IT1_16/test_it1_16.py::test_delegation_boundary_via_cloud_dog_vdb_pipeline PASSED [ 11%]
+tests/integration/IT1_17/test_it1_17.py::test_tool_catalogue_wrappers_execute PASSED [ 12%]
+tests/integration/IT1_18/test_it1_18_a2a_health_auth_matrix.py::test_a2a_health_auth_matrix PASSED [ 14%]
+tests/integration/IT1_19/test_it1_19_no_fallback_backend_identity.py::test_no_fallback_backend_identity_it PASSED [ 15%]
+tests/integration/IT1_2/test_it1_2.py::test_api_auth_reject PASSED       [ 17%]
+tests/integration/IT1_20/test_it1_20_job_management_tools.py::test_job_management_tools_contract PASSED [ 18%]
+tests/integration/IT1_21/test_it1_21_collection_rbac.py::test_collection_level_rbac_enforced PASSED [ 20%]
+tests/integration/IT1_21/test_it1_21_jobs_migration.py::test_jobs_backend_concurrency_and_recovery PASSED [ 21%]
+tests/integration/IT1_22/test_it1_22_admin_rest_config_crud.py::test_admin_rest_profile_user_group_api_key_lifecycle PASSED [ 22%]
+tests/integration/IT1_22/test_it1_22_admin_rest_config_crud.py::test_admin_rest_rejects_non_admin_mutation PASSED [ 24%]
+tests/integration/IT1_23/test_it1_23_core_metadata.py::test_mt2_text_and_upload_ingest_store_canonical_metadata PASSED [ 25%]
+tests/integration/IT1_23/test_it1_23_core_metadata.py::test_mt2_preview_reports_parser_and_ocr_provenance PASSED [ 27%]
+tests/integration/IT1_23/test_it1_23_core_metadata.py::test_mt3_mt4_round_trip_returns_latest_record_with_canonical_metadata PASSED [ 28%]
+tests/integration/IT1_24/test_it1_24_openapi_contract.py::test_openapi_and_tool_contract_include_canonical_metadata_fields PASSED [ 30%]
+tests/integration/IT1_3/test_it1_3.py::test_api_auth_accept PASSED       [ 31%]
+tests/integration/IT1_4/test_it1_4.py::test_api_rbac_ingest_gating PASSED [ 32%]
+tests/integration/IT1_5/test_it1_5.py::test_api_rbac_admin_gating PASSED [ 34%]
+tests/integration/IT1_6/test_it1_6.py::test_mcp_tool_catalogue PASSED    [ 35%]
+tests/integration/IT1_7/test_it1_7.py::test_mcp_tool_execution PASSED    [ 37%]
+tests/integration/IT1_8/test_it1_8.py::test_correlation_id_propagation PASSED [ 38%]
+tests/integration/IT1_9/test_it1_9.py::test_chroma_contract_test PASSED  [ 40%]
+tests/integration/IT2_1/test_it2_1_chroma_contract.py::test_it2_1_chroma_contract_roundtrip PASSED [ 41%]
+tests/integration/IT2_10/test_it2_10_marker_parser.py::test_it2_10_marker_parser_pdf_ir_output PASSED [ 42%]
+tests/integration/IT2_11/test_it2_11_transformers_parser.py::test_it2_11_transformers_parser_pdf_ir_output PASSED [ 44%]
+tests/integration/IT2_12/test_it2_12_internal_parser.py::test_it2_12_internal_parser_pdf_ir_output PASSED [ 45%]
+tests/integration/IT2_13/test_it2_13_ocr_provider_matrix.py::test_it2_13_ocr_capable_parser_matrix_extracts_text PASSED [ 47%]
+tests/integration/IT2_14/test_it2_14_table_extraction_matrix.py::test_it2_14_table_extraction_returns_structured_tables PASSED [ 48%]
+tests/integration/IT2_15_DatabaseStartup/test_it2_15_database_startup.py::test_it2_15_database_startup_and_crud PASSED [ 50%]
+tests/integration/IT2_16/test_it2_16_provenance_contract.py::test_plain_text_provenance_contract_fields PASSED [ 51%]
+tests/integration/IT2_16/test_it2_16_provenance_contract.py::test_pdf_ocr_and_table_provenance_fields_recorded PASSED [ 52%]
+tests/integration/IT2_16/test_it2_16_provenance_contract.py::test_reingest_provenance_is_preserved_not_overwritten PASSED [ 54%]
+tests/integration/IT2_2/test_it2_2_qdrant_contract.py::test_it2_2_qdrant_contract_roundtrip PASSED [ 55%]
+tests/integration/IT2_3/test_it2_3_opensearch_contract.py::test_it2_3_opensearch_contract_roundtrip PASSED [ 57%]
+tests/integration/IT2_4/test_it2_4_pgvector_contract.py::test_it2_4_pgvector_contract_roundtrip PASSED [ 58%]
+tests/integration/IT2_5/test_it2_5_weaviate_contract.py::test_it2_5_weaviate_contract_roundtrip PASSED [ 60%]
+tests/integration/IT2_6/test_it2_6_infinity_contract.py::test_it2_6_infinity_contract_roundtrip PASSED [ 61%]
+tests/integration/IT2_7/test_it2_7_deepdoc_parser.py::test_it2_7_deepdoc_parser_pdf_ir_output PASSED [ 62%]
+tests/integration/IT2_8/test_it2_8_docling_parser.py::test_it2_8_docling_parser_pdf_ir_output PASSED [ 64%]
+tests/integration/IT2_9/test_it2_9_mineru_parser.py::test_it2_9_mineru_parser_pdf_ir_output PASSED [ 65%]
+tests/application/AT1_1/test_at1_1.py::test_full_workflow_upload_search_retrieve PASSED [ 67%]
+tests/application/AT1_2/test_at1_2.py::test_full_workflow_deduplicate_skip PASSED [ 68%]
+tests/application/AT1_2/test_at1_2.py::test_full_workflow_reindex_replace_on_change_or_stale PASSED [ 70%]
+tests/application/AT1_3/test_at1_3.py::test_full_workflow_profile_collection_lifecycle PASSED [ 71%]
+tests/application/AT1_4/test_at1_4.py::test_full_workflow_retention_enforcement PASSED [ 72%]
+tests/application/AT1_5/test_at1_5.py::test_full_workflow_multi_backend_switch PASSED [ 74%]
+tests/application/AT1_6/test_at1_6.py::test_runtime_matrix_api_and_mcp_transport PASSED [ 75%]
+tests/application/AT1_7/test_at1_7.py::test_multi_profile_cross_backend_metadata_parity PASSED [ 77%]
+tests/application/AT1_8/test_at1_8_a2a_flow.py::test_a2a_namespace_and_shared_auth_flow PASSED [ 78%]
+tests/application/AT1_8/test_at1_8_cross_backend_parity_fixture.py::test_cross_backend_parity_fixture_and_contract PASSED [ 80%]
+tests/application/AT1_9/test_at1_9_no_fallback_backend_identity.py::test_no_fallback_backend_identity_at PASSED [ 81%]
+tests/application/AT2_1/test_at2_1_multi_backend_consistency_chroma_qdrant.py::test_at2_1_chroma_qdrant_consistency PASSED [ 82%]
+tests/application/AT2_2/test_at2_2_multi_backend_consistency_pgvector_opensearch.py::test_at2_2_pgvector_opensearch_consistency PASSED [ 84%]
+tests/application/AT2_3/test_at2_3_multi_parser_quality_comparison.py::test_at2_3_multi_parser_quality_matrix PASSED [ 85%]
+tests/application/AT2_4/test_at2_4_multi_embedding_models.py::test_at2_4_embedding_model_matrix PASSED [ 87%]
+tests/application/AT2_5/test_at2_5_full_pipeline_e2e_per_backend.py::test_at2_5_full_pipeline_e2e_per_available_backend PASSED [ 88%]
+tests/application/AT2_6_DatabaseE2E/test_at2_6_database_e2e.py::test_at2_6_database_e2e PASSED [ 90%]
+tests/application/AT_WEBUI_AuthDashboard/test_webui_auth_dashboard.py::test_webui_auth_dashboard PASSED [ 91%]
+tests/application/AT_WEBUI_CollectionCrud/test_webui_collection_crud.py::test_webui_collection_crud PASSED [ 92%]
+tests/application/AT_WEBUI_CollectionEdit/test_webui_collection_edit.py::test_webui_collection_edit PASSED [ 94%]
+tests/application/AT_WEBUI_FileUpload/test_webui_file_upload.py::test_webui_file_upload PASSED [ 95%]
+tests/application/AT_WEBUI_ProfileCrud/test_webui_profile_crud.py::test_webui_profile_crud PASSED [ 97%]
+tests/application/AT_WEBUI_SecurityAdmin/test_webui_security_admin.py::test_webui_security_admin PASSED [ 98%]
+tests/application/AT_WEBUI_SourceConfig/test_webui_source_config.py::test_webui_source_config PASSED [100%]
+
+======================== 70 passed in 897.04s (0:14:57) ========================
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-c412cbaa-ebf3-4168-abec-faff1d8e52f0/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T135211Z/it-webdav-ce5cc9a9d5de:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-c412cbaa-ebf3-4168-abec-faff1d8e52f0/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T135211Z/it-webdav-ce5cc9a9d5de'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-f01ec700-ff9c-450d-95fe-f4deea854c0f/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T092014Z/it-webdav-36e101abbe1f:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-f01ec700-ff9c-450d-95fe-f4deea854c0f/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T092014Z/it-webdav-36e101abbe1f'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-4df6be2f-9c57-4d8f-bbf8-eb8a0ddd532c/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090716Z/it-webdav-52d1c7c173cd:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-4df6be2f-9c57-4d8f-bbf8-eb8a0ddd532c/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090716Z/it-webdav-52d1c7c173cd'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-2ea9f30a-bef7-4bc6-a01e-0b3b27101973/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T085610Z/it-webdav-5b6213dc5c2c:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-2ea9f30a-bef7-4bc6-a01e-0b3b27101973/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T085610Z/it-webdav-5b6213dc5c2c'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-183ab53e-70cd-489e-986f-081a0b48efa5/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T085809Z/it-webdav-30af16c9ac7a:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-183ab53e-70cd-489e-986f-081a0b48efa5/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T085809Z/it-webdav-30af16c9ac7a'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-1f46a941-8bed-4ce0-b296-fdfc4f15f45e/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090336Z/it-webdav-18276fe33292:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-1f46a941-8bed-4ce0-b296-fdfc4f15f45e/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090336Z/it-webdav-18276fe33292'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-04c67211-7b5c-4e19-8842-a0a23ff3aa33/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090039Z/it-webdav-4ca8836b89a3:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-04c67211-7b5c-4e19-8842-a0a23ff3aa33/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090039Z/it-webdav-4ca8836b89a3'
+  warnings.warn(

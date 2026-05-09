@@ -54,7 +54,7 @@ from fastapi import Request
 from starlette.responses import JSONResponse
 
 from index_server.auth.middleware import AuthMiddleware
-from index_server.logging_runtime import init_platform_logging
+from index_server.logging_runtime import init_platform_logging, shutdown_platform_logging
 from index_server.runtime_config import resolve_server_binding
 from index_tools.config.loader import runtime_env_files
 from index_tools.db import database_health, initialise_database, shutdown_database
@@ -890,7 +890,12 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
     # Share user store with auth middleware for disabled-user checks when available.
     if hasattr(active_service, "users"):
         auth._user_store = active_service.users
-    app = _create_runtime_app(on_shutdown=shutdown_database)
+    def _shutdown_runtime() -> None:
+        active_service.close()
+        shutdown_database()
+        shutdown_platform_logging()
+
+    app = _create_runtime_app(on_shutdown=_shutdown_runtime)
 
     def _sync_logging_correlation(request: Request) -> str:
         correlation_id = str(getattr(request.state, "correlation_id", "") or "").strip()

@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import socket
 from typing import Any
 
@@ -81,3 +82,16 @@ def init_platform_logging(surface_name: str) -> None:
     except Exception:
         config = _FallbackConfig()
     setup_logging(build_platform_log_config(config, surface_name=surface_name))
+
+
+def shutdown_platform_logging() -> None:
+    """Stop platform logging background workers before process streams close."""
+    try:
+        import cloud_dog_logging  # type: ignore
+
+        shutdown_integrity_verifier = cloud_dog_logging._shutdown_integrity_verifier  # type: ignore[attr-defined]
+    except Exception:
+        return
+    shutdown_integrity_verifier()
+    with contextlib.suppress(Exception):
+        cloud_dog_logging._integrity_verifier = None  # type: ignore[attr-defined]
