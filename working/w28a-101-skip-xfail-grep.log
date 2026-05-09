@@ -1,0 +1,17 @@
+W28A-101a skip/xfail grep 2026-05-09T22:57:23+01:00
+tests/quality/QT_COMPLIANCE/test_qt_rules_compliance.py:165:            if "pytest.skip(" in line:
+tests/quality/QT_COMPLIANCE/test_qt_rules_compliance.py:168:    assert not violations, "RC-06 pytest.skip found in IT/AT:\n" + "\n".join(violations)
+tests/parser/PT1_3/test_pt1_3_parser_throughput_comparison.py:26:        pytest.skip("Insufficient parser providers configured for PT1.3")
+tests/parser/PT1_1/test_pt1_1_backend_ingest_baseline.py:28:        pytest.skip("No VDB backends configured for PT1.1")
+tests/parser/PT1_2/test_pt1_2_backend_search_latency.py:28:        pytest.skip("No VDB backends configured for PT1.2")
+tests/integration/IT2_5/test_it2_5_weaviate_contract.py:23:pytestmark = pytest.mark.skipif(
+tests/integration/IT2_2/test_it2_2_qdrant_contract.py:23:pytestmark = pytest.mark.skipif(
+tests/integration/IT2_11/test_it2_11_transformers_parser.py:24:pytestmark = pytest.mark.skipif(
+tests/integration/IT2_3/test_it2_3_opensearch_contract.py:23:pytestmark = pytest.mark.skipif(
+tests/integration/IT2_7/test_it2_7_deepdoc_parser.py:24:pytestmark = pytest.mark.skipif(
+tests/integration/IT2_4/test_it2_4_pgvector_contract.py:23:pytestmark = pytest.mark.skipif(
+tests/integration/IT2_9/test_it2_9_mineru_parser.py:25:pytestmark = pytest.mark.skipif(
+tests/integration/IT2_1/test_it2_1_chroma_contract.py:23:pytestmark = pytest.mark.skipif(
+tests/integration/IT2_10/test_it2_10_marker_parser.py:25:pytestmark = pytest.mark.skipif(
+tests/integration/IT2_8/test_it2_8_docling_parser.py:24:pytestmark = pytest.mark.skipif(
+tests/integration/IT2_6/test_it2_6_infinity_contract.py:23:pytestmark = pytest.mark.skipif(

@@ -1,0 +1,61 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-8.4.2, pluggy-1.6.0 -- /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server
+configfile: pyproject.toml
+plugins: asyncio-0.26.0, anyio-4.13.0, timeout-2.4.0, cov-5.0.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+timeout: 900.0s
+timeout method: signal
+timeout func_only: False
+collecting ... collected 47 items
+
+tests/quality/QT_COMPLIANCE/test_qt_migration_completeness.py::test_no_yaml_safe_load_for_config PASSED [  2%]
+tests/quality/QT_COMPLIANCE/test_qt_migration_completeness.py::test_no_raw_fastapi_instantiation PASSED [  4%]
+tests/quality/QT_COMPLIANCE/test_qt_migration_completeness.py::test_no_bespoke_auth_hooks PASSED [  6%]
+tests/quality/QT_COMPLIANCE/test_qt_migration_completeness.py::test_cloud_dog_config_drives_loader PASSED [  8%]
+tests/quality/QT_COMPLIANCE/test_qt_migration_completeness.py::test_os_environ_usage_is_confined_to_runtime_boundaries PASSED [ 10%]
+tests/quality/QT_COMPLIANCE/test_qt_package_adoption.py::test_config_package_adoption PASSED [ 12%]
+tests/quality/QT_COMPLIANCE/test_qt_package_adoption.py::test_logging_package_adoption PASSED [ 14%]
+tests/quality/QT_COMPLIANCE/test_qt_package_adoption.py::test_api_package_adoption PASSED [ 17%]
+tests/quality/QT_COMPLIANCE/test_qt_package_adoption.py::test_idam_package_adoption PASSED [ 19%]
+tests/quality/QT_COMPLIANCE/test_qt_package_adoption.py::test_db_and_vdb_package_adoption PASSED [ 21%]
+tests/quality/QT_COMPLIANCE/test_qt_package_adoption.py::test_pyproject_declares_required_platform_packages PASSED [ 23%]
+tests/quality/QT_COMPLIANCE/test_qt_rules_compliance.py::test_rc01_no_hardcoded_urls_or_loopback PASSED [ 25%]
+tests/quality/QT_COMPLIANCE/test_qt_rules_compliance.py::test_rc02_no_hardcoded_credentials PASSED [ 27%]
+tests/quality/QT_COMPLIANCE/test_qt_rules_compliance.py::test_rc03_external_imports_not_scattered PASSED [ 29%]
+tests/quality/QT_COMPLIANCE/test_qt_rules_compliance.py::test_rc04_headers_and_docstring_coverage PASSED [ 31%]
+tests/quality/QT_COMPLIANCE/test_qt_rules_compliance.py::test_rc05_no_mocking_patterns_in_it_at PASSED [ 34%]
+tests/quality/QT_COMPLIANCE/test_qt_rules_compliance.py::test_rc06_no_pytest_skip_in_it_at PASSED [ 36%]
+tests/quality/QT_COMPLIANCE/test_qt_rules_compliance.py::test_rc07_no_raw_vault_template_in_py_tests PASSED [ 38%]
+tests/quality/QT_COMPLIANCE/test_qt_rules_compliance.py::test_rc08_tier_env_files_are_connected_to_runtime PASSED [ 40%]
+tests/quality/QT_COMPLIANCE/test_qt_rules_compliance.py::test_rc09_no_stub_placeholders PASSED [ 42%]
+tests/quality/QT_COMPLIANCE/test_qt_rules_compliance.py::test_rc10_no_american_spelling_in_user_facing_errors PASSED [ 44%]
+tests/quality/QT_COMPLIANCE/test_qt_traceability.py::test_traceability_source_docs_exist PASSED [ 46%]
+tests/quality/QT_COMPLIANCE/test_qt_traceability.py::test_delivery_matrix_generated_for_all_requirements PASSED [ 48%]
+tests/quality/QT_COMPLIANCE/test_qt_traceability.py::test_traceability_gap_report_generated PASSED [ 51%]
+tests/quality/QT_COMPLIANCE/test_qt_vault_config_contract.py::test_defaults_yaml_exists PASSED [ 53%]
+tests/quality/QT_COMPLIANCE/test_qt_vault_config_contract.py::test_defaults_yaml_has_no_literal_secrets PASSED [ 55%]
+tests/quality/QT_COMPLIANCE/test_qt_vault_config_contract.py::test_env_files_have_valid_vault_expression_syntax PASSED [ 57%]
+tests/quality/QT_COMPLIANCE/test_qt_vault_config_contract.py::test_sensitive_env_keys_use_vault_or_explicit_test_values PASSED [ 59%]
+tests/quality/QT_COMPLIANCE/test_qt_vault_config_contract.py::test_no_literal_secrets_in_source PASSED [ 61%]
+tests/quality/QT_COMPLIANCE/test_qt_vault_config_contract.py::test_env_tiers_exist PASSED [ 63%]
+tests/quality/QT_COMPLIANCE/test_qt_vault_config_contract.py::test_env_files_avoid_obvious_literal_secret_values PASSED [ 65%]
+tests/quality/QT_LoggingCompliance/test_logging_compliance.py::test_defaults_yaml_has_integrity_config PASSED [ 68%]
+tests/quality/QT_LoggingCompliance/test_logging_compliance.py::test_defaults_yaml_has_rotation_config PASSED [ 70%]
+tests/quality/QT_LoggingCompliance/test_logging_compliance.py::test_defaults_yaml_has_retention_config PASSED [ 72%]
+tests/quality/QT_LoggingCompliance/test_logging_compliance.py::test_audit_events_doc_exists PASSED [ 74%]
+tests/quality/QT_PACKAGE_COMPLIANCE/test_package_compliance.py::TestPackageCompliance::test_no_bespoke_logging PASSED [ 76%]
+tests/quality/QT_PACKAGE_COMPLIANCE/test_package_compliance.py::TestPackageCompliance::test_no_bespoke_config_manager PASSED [ 78%]
+tests/quality/QT_PACKAGE_COMPLIANCE/test_package_compliance.py::TestPackageCompliance::test_no_bespoke_auth PASSED [ 80%]
+tests/quality/QT_PACKAGE_COMPLIANCE/test_package_compliance.py::TestPackageCompliance::test_no_memory_queue PASSED [ 82%]
+tests/quality/QT_PACKAGE_COMPLIANCE/test_package_compliance.py::TestPackageCompliance::test_no_direct_llm_calls PASSED [ 85%]
+tests/quality/QT_PACKAGE_COMPLIANCE/test_package_compliance.py::TestPackageCompliance::test_no_hardcoded_secrets PASSED [ 87%]
+tests/quality/QT_PACKAGE_COMPLIANCE/test_package_compliance.py::TestPackageCompliance::test_no_internal_hostnames PASSED [ 89%]
+tests/quality/QT_PACKAGE_COMPLIANCE/test_package_compliance.py::TestPackageCompliance::test_ui_dist_exists PASSED [ 91%]
+tests/quality/QT_PACKAGE_COMPLIANCE/test_package_compliance.py::TestPackageCompliance::test_runtime_config_endpoint PASSED [ 93%]
+tests/quality/QT_PACKAGE_COMPLIANCE/test_package_compliance.py::TestPackageCompliance::test_server_control_exists PASSED [ 95%]
+tests/quality/QT_PACKAGE_COMPLIANCE/test_package_compliance.py::TestPackageCompliance::test_licence_exists PASSED [ 97%]
+tests/quality/QT_PACKAGE_COMPLIANCE/test_package_compliance.py::TestPackageCompliance::test_readme_exists PASSED [100%]
+
+============================== 47 passed in 2.62s ==============================
