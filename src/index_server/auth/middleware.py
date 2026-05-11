@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import secrets
 from dataclasses import dataclass
 from queue import Queue
 from threading import Thread
@@ -69,6 +70,12 @@ class AuthMiddleware:
     def _load_api_keys(cls) -> dict[str, set[str]]:
         """Load API-key role mappings from runtime env."""
         keys: dict[str, set[str]] = {}
+
+        def _add_key(raw_value: str | None, roles: set[str]) -> None:
+            token = str(raw_value or "").strip()
+            if token:
+                keys[token] = set(roles)
+
         raw = _config_or_env(
             "index.auth.api_keys",
             "CLOUD_DOG__INDEX__AUTH__API_KEYS",
@@ -87,6 +94,23 @@ class AuthMiddleware:
                         roles = parsed_roles
                 if token:
                     keys[token] = roles
+
+        _add_key(
+            _config_or_env("index.auth.admin_api_key", "CLOUD_DOG__INDEX__AUTH__ADMIN_API_KEY"),
+            {"admin", "maintainer", "writer", "reader"},
+        )
+        _add_key(
+            _config_or_env("index.auth.maintainer_api_key", "CLOUD_DOG__INDEX__AUTH__MAINTAINER_API_KEY"),
+            {"maintainer", "writer", "reader"},
+        )
+        _add_key(
+            _config_or_env("index.auth.writer_api_key", "CLOUD_DOG__INDEX__AUTH__WRITER_API_KEY"),
+            {"writer", "reader"},
+        )
+        _add_key(
+            _config_or_env("index.auth.reader_api_key", "CLOUD_DOG__INDEX__AUTH__READER_API_KEY"),
+            {"reader"},
+        )
 
         a2a_key = _config_or_env(
             "test.a2a_api_key",
@@ -183,6 +207,8 @@ class AuthMiddleware:
         key = self._resolve_api_key(headers)
         if not key:
             raise PermissionError("Authentication failed")
+        if not any(secrets.compare_digest(key, candidate) for candidate in self.api_keys):
+            raise PermissionError("Authentication failed")
         self._refresh_api_key_provider_if_needed()
 
         try:
@@ -197,7 +223,7 @@ class AuthMiddleware:
         except AuthenticationError as exc:
             raise PermissionError("Authentication failed") from exc
 
-        roles = set(self.api_keys.get(key, {str(result.user.role)}))
+        roles = set(self.api_keys[key])
         user_id = str(result.user.user_id)
         # Reject disabled users — check the service user store if available
         if hasattr(self, '_user_store') and self._user_store is not None:

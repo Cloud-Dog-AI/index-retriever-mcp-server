@@ -52,6 +52,25 @@ def test_api_key_env_mapping_parses_roles_and_skips_empty(monkeypatch: pytest.Mo
     assert bare.roles == {"admin", "maintainer", "writer", "reader"}
 
 
+def test_role_specific_api_key_env_mapping_separates_rbac_roles(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("CLOUD_DOG__INDEX__AUTH__API_KEYS", raising=False)
+    monkeypatch.delenv("TEST_A2A_API_KEY", raising=False)
+    monkeypatch.setenv("CLOUD_DOG__INDEX__AUTH__ADMIN_API_KEY", "admin-role-key")
+    monkeypatch.setenv("CLOUD_DOG__INDEX__AUTH__WRITER_API_KEY", "writer-role-key")
+    monkeypatch.setenv("CLOUD_DOG__INDEX__AUTH__READER_API_KEY", "reader-role-key")
+
+    auth = AuthMiddleware()
+
+    assert auth.authenticate_api_key({"x-api-key": "admin-role-key"}).roles == {
+        "admin",
+        "maintainer",
+        "writer",
+        "reader",
+    }
+    assert auth.authenticate_api_key({"x-api-key": "writer-role-key"}).roles == {"writer", "reader"}
+    assert auth.authenticate_api_key({"x-api-key": "reader-role-key"}).roles == {"reader"}
+
+
 def test_auth_middleware_refreshes_provider_after_runtime_key_update() -> None:
     auth = AuthMiddleware(api_keys={"bootstrap-key": {"admin"}})
     auth.api_keys["fresh-key"] = {"admin"}

@@ -1193,6 +1193,37 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             return _spa_not_built_response()
         return FileResponse(index_path)
 
+    def api_docs_page() -> HTMLResponse:
+        """Serve the stable API-docs page contract expected by WebUI gates."""
+        openapi_json_url = "/openapi.json"
+        docs_url = "/docs"
+        body = f"""<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>API Docs</title>
+    <style>
+      body {{ margin: 0; font-family: sans-serif; color: #0f172a; background: #f8fafc; }}
+      main {{ min-height: 100vh; padding: 1.5rem; box-sizing: border-box; }}
+      header {{ display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }}
+      h1 {{ margin: 0; font-size: 1.5rem; }}
+      a {{ color: #0369a1; font-weight: 600; }}
+      iframe {{ width: 100%; height: calc(100vh - 6rem); border: 1px solid #cbd5e1; border-radius: 0.75rem; background: white; }}
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>API Docs</h1>
+        <nav><a href="{openapi_json_url}">OpenAPI JSON</a></nav>
+      </header>
+      <iframe title="API documentation" src="{docs_url}"></iframe>
+    </main>
+  </body>
+</html>"""
+        return HTMLResponse(content=body)
+
     def spa_fallback(path: str) -> Response:
         """Serve the SPA entrypoint for client-routed paths."""
         first_segment = path.split("/", 1)[0]
@@ -1692,6 +1723,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get("/admin/ui/security")(admin_ui_security)
     app.get("/admin/ui/app.js")(admin_ui_app_js)
     app.get("/admin/ui/styles.css")(admin_ui_styles_css)
+    app.get("/api-docs", include_in_schema=False)(api_docs_page)
     app.get(f"{api_base_path}/tools")(list_tools)
     app.post(f"{api_base_path}/tools/{{tool_name}}")(call_tool)
     # Read-only status tools accept GET (REST convention for status endpoints).

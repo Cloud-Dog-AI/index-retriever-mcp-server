@@ -63,6 +63,33 @@ def _cfg_val(key: str, default: Any) -> Any:
     except Exception:
         return default
 
+
+def _run_async_blocking(coro: Any) -> Any:
+    """Run a coroutine from sync tool code, including inside an active loop."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+
+    result: dict[str, Any] = {}
+
+    def _runner() -> None:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result["value"] = loop.run_until_complete(coro)
+        except BaseException as exc:  # noqa: BLE001
+            result["error"] = exc
+        finally:
+            loop.close()
+
+    thread = threading.Thread(target=_runner, daemon=True)
+    thread.start()
+    thread.join()
+    if "error" in result:
+        raise result["error"]
+    return result.get("value")
+
 try:
     from cloud_dog_idam import APIKeyManager, GroupService, UserService
     from cloud_dog_idam.domain.enums import UserStatus as IDAMUserStatus
@@ -2760,7 +2787,7 @@ class IndexService:
         bridge = _PreviewVdbBridge()
         checkpoints: list[dict[str, Any]] = []
         try:
-            record_ids = asyncio.run(
+            record_ids = _run_async_blocking(
                 ingest_document(
                     bridge,
                     "__preview__",
@@ -2834,7 +2861,7 @@ class IndexService:
         filename = _infer_filename(source_uri)
         mime_type = _infer_mime_type(filename)
         try:
-            healthy, ir = asyncio.run(
+            healthy, ir = _run_async_blocking(
                 _parser_probe(
                     provider=provider,
                     sample_text=sample_text,
