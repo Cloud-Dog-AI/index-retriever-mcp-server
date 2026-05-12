@@ -748,3 +748,11 @@ Status labels:
 - `NEW`: Structured metadata/config/result inspection views SHALL use `JsonExplorer` instead of raw JSON blocks where hierarchical inspection is required.
 - `NEW`: Code/content/result viewers and editors SHALL use `CodeViewer` and `CodeEditor` where extracted text, prompt/config JSON, diff-like content, or preview payloads require governed editor/viewer behavior.
 - `NEW`: API/MCP/A2A documentation surfaces SHALL use `ApiDocsPanel` with tabbed documentation where multiple protocol/reference families are presented together.
+
+## PS-40 / W28A-619 Logging and Audit Requirements
+
+The service MUST use `cloud_dog_logging` as the only application and audit logging implementation. Raw stdlib logging setup, direct `logging.getLogger()` calls, bespoke audit emitters, and print-based operational logging are not compliant except inside the platform logging package itself.
+
+Every auditable event MUST emit a PS-40/NIST AU-3 audit record with: `event_type`, `action`, `timestamp`, `service`, `component`, `service_instance`, `environment`, `source_host`, `source_process`, `source_application`, `source_address` where available, `destination_address` where available, `outcome`, actor identity including user/service/system plus account/process/device identifiers where available, `target`, `process_id`, `affected_files` where relevant, `correlation_id`, `trace_id`, and `request_id`.
+
+Auditable events MUST include authentication and authorisation decisions, user/group/API-key/RBAC changes, profile/collection/source/ingest/search/retrieve/delete/retention/reindex/parser/OCR operations, MCP/A2A/API calls, job lifecycle changes, configuration changes, data access and mutation, denials, failures, and privileged operations. Secrets MUST be redacted before persistence. Tests MUST cover schema fields, event coverage, redaction, append-only audit persistence, retention/integrity, and WebUI observability rendering/filtering.
