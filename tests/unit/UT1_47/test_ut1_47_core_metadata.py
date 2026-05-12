@@ -46,6 +46,41 @@ def test_mt1_build_metadata_emits_canonical_fields_and_passes_validation() -> No
     assert validate_metadata(metadata) == []
 
 
+def test_mt1_build_metadata_emits_metadata_pack_aliases() -> None:
+    payload = b"hello metadata pack"
+    source = "file://docs/metadata-pack.md"
+
+    metadata = build_metadata(
+        source,
+        payload,
+        profile="tenant-a",
+        collection="collection-a",
+        caller_metadata={
+            "title": "Metadata Pack",
+            "language": "en",
+            "authoritative_source": True,
+            "visibility": "restricted",
+            "retention_class": "regulated",
+        },
+    )
+
+    assert metadata["document_id"] == metadata["doc_id"]
+    assert metadata["index_record_id"] == metadata["record_id"]
+    assert metadata["dataset_id"] == "tenant-a"
+    assert metadata["collection_id"] == "collection-a"
+    assert metadata["title"] == "Metadata Pack"
+    assert metadata["language"] == "en"
+    assert metadata["status"] == "active"
+    assert metadata["authoritative_source"] is True
+    assert metadata["chunking_strategy"] == metadata["chunker"]
+    assert metadata["pipeline_version"] == metadata["chunker_version"]
+    assert metadata["normalisation_version"] == "v1"
+    assert metadata["index_family"] == "index-retriever"
+    assert metadata["visibility"] == "restricted"
+    assert metadata["access_scope"] == "tenant-a"
+    assert metadata["retention_class"] == "regulated"
+
+
 def test_mt1_metadata_validation_rejects_invalid_enum_and_timestamp() -> None:
     metadata = build_metadata("file://docs/invalid-check.txt", b"hello", profile="default", collection="kb")
 
@@ -94,6 +129,11 @@ def test_mt4_ingest_populates_embedding_dim_and_user_id(service: IndexService) -
 
     assert record.metadata["embedding_dim"] == service._embedding_dimension()
     assert record.metadata["user_id"] == "writer-user"
+    assert record.metadata["embedding_dimensions"] == service._embedding_dimension()
+    assert record.metadata["document_id"] == record.doc_id
+    assert record.metadata["index_record_id"] == record.record_id
+    assert record.metadata["collection_id"] == "mt4_identity"
+    assert record.metadata["status"] == "active"
 
 
 def test_mt4_changed_content_marks_old_record_superseded_and_hides_it_from_default_search(
@@ -108,6 +148,7 @@ def test_mt4_changed_content_marks_old_record_superseded_and_hides_it_from_defau
     assert old_record.doc_id != new_record.doc_id
     assert old_record.record_id != new_record.record_id
     assert old_record.metadata["lifecycle_state"] == "superseded"
+    assert old_record.metadata["status"] == "superseded"
     assert old_record.metadata["is_latest"] is False
     assert old_record.metadata["supersedes"] == new_record.record_id
     assert new_record.metadata["is_latest"] is True
@@ -119,11 +160,59 @@ def test_mt4_changed_content_marks_old_record_superseded_and_hides_it_from_defau
     assert all(row["is_latest"] is not False for row in rows)
 
 
+def test_mt4_search_filters_support_metadata_pack_fields_and_date_operators(service: IndexService) -> None:
+    old_created = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    new_created = datetime(2026, 2, 1, tzinfo=timezone.utc)
+    service.ingest_text(
+        "default",
+        "mt4_filter_pack",
+        "older policy payload",
+        "file://mt4/filter-old.md",
+        actor="writer",
+        metadata={"language": "en", "authoritative_source": True, "index_version": "v1"},
+        created_at=old_created,
+    )
+    service.ingest_text(
+        "default",
+        "mt4_filter_pack",
+        "newer policy payload",
+        "file://mt4/filter-new.md",
+        actor="writer",
+        metadata={"language": "fr", "authoritative_source": False, "index_version": "v2"},
+        created_at=new_created,
+    )
+
+    newer_rows = service.search(
+        "default",
+        "mt4_filter_pack",
+        "policy payload",
+        top_k=10,
+        filters={"created_at": {"gte": "2026-01-15T00:00:00Z"}},
+    )
+    assert [row["source_uri"] for row in newer_rows] == ["file://mt4/filter-new.md"]
+
+    exact_rows = service.search(
+        "default",
+        "mt4_filter_pack",
+        "policy payload",
+        top_k=10,
+        filters={
+            "dataset_id": "default",
+            "collection_id": "mt4_filter_pack",
+            "language": "en",
+            "authoritative_source": True,
+            "index_version": "v1",
+        },
+    )
+    assert [row["source_uri"] for row in exact_rows] == ["file://mt4/filter-old.md"]
+
+
 def test_mt5_deleted_record_is_hidden_from_search_results(service: IndexService) -> None:
     service.ingest_text("default", "mt5_delete", "delete me payload", "api://mt5/delete", actor="writer")
 
     record = next(record for record in service.documents.values() if record.collection == "mt5_delete")
     assert service.delete_by_id("default", "mt5_delete", str(record.record_id or record.doc_id)) is True
+    assert record.metadata["status"] == "deleted"
 
     rows = service.search("default", "mt5_delete", "delete me payload", top_k=10)
     assert rows == []

@@ -50,6 +50,12 @@ def test_mt2_text_and_upload_ingest_store_canonical_metadata(service: IndexServi
     assert upload_payload["metadata"]["filename"] == "upload-metadata.txt"
     assert upload_payload["metadata"]["mime_type"] == "text/plain"
     assert upload_payload["metadata"]["size_bytes"] == len(b"canonical metadata upload payload")
+    assert upload_payload["metadata"]["document_id"] == upload_payload["doc_id"]
+    assert upload_payload["metadata"]["index_record_id"] == upload_payload["record_id"]
+    assert upload_payload["metadata"]["collection_id"] == "it_mt2_upload"
+    assert upload_payload["metadata"]["embedding_dimensions"] == upload_payload["metadata"]["embedding_dim"]
+    assert upload_payload["metadata"]["status"] == "active"
+    assert upload_payload["metadata"]["index_family"] == "index-retriever"
     assert upload_rows[0]["content_hash"] == upload_payload["content_hash"]
 
 
@@ -99,5 +105,48 @@ def test_mt3_mt4_round_trip_returns_latest_record_with_canonical_metadata(servic
     assert retrieved["source_uri"] == "file://integration/it-mt34.txt"
     assert retrieved["content_hash"] == latest_record.metadata["content_hash"]
     assert retrieved["metadata"]["parser_provider"] == "internal"
+    assert retrieved["metadata"]["document_id"] == retrieved["doc_id"]
+    assert retrieved["metadata"]["index_record_id"] == retrieved["record_id"]
+    assert retrieved["metadata"]["dataset_id"] == "default"
+    assert retrieved["metadata"]["collection_id"] == "it_mt34"
+    assert retrieved["metadata"]["chunking_strategy"] == "token_chunks"
     assert old_record.metadata["lifecycle_state"] == "superseded"
+    assert old_record.metadata["status"] == "superseded"
     assert old_record.metadata["is_latest"] is False
+
+
+def test_mt3_filters_support_required_metadata_pack_management_fields(service: IndexService) -> None:
+    service.ingest_text(
+        "default",
+        "it_mt3_filters",
+        "english authoritative metadata filter payload",
+        "file://integration/metadata-filter-en.md",
+        actor="integration",
+        metadata={"language": "en", "authoritative_source": True, "index_version": "v1"},
+    )
+    service.ingest_text(
+        "default",
+        "it_mt3_filters",
+        "french draft metadata filter payload",
+        "file://integration/metadata-filter-fr.md",
+        actor="integration",
+        metadata={"language": "fr", "authoritative_source": False, "index_version": "v2"},
+    )
+
+    rows = service.search(
+        "default",
+        "it_mt3_filters",
+        "metadata filter payload",
+        top_k=10,
+        filters={
+            "dataset_id": "default",
+            "collection_id": "it_mt3_filters",
+            "language": "fr",
+            "authoritative_source": False,
+            "index_version": "v1",
+        },
+    )
+
+    assert len(rows) == 1
+    assert rows[0]["source_uri"] == "file://integration/metadata-filter-fr.md"
+    assert rows[0]["metadata"]["document_id"] == rows[0]["doc_id"]

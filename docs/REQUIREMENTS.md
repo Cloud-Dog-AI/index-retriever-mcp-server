@@ -331,6 +331,15 @@ The system SHALL support ingestion of:
 - `cloud_dog_vdb` SHALL own canonical metadata schema definition, validation, deterministic identifier helpers, parser/OCR/table provenance normalization, and backend-portable lifecycle/filter semantics.
 - Service-local metadata shaping that duplicates package-owned canonical rules SHALL be treated as transitional only and SHALL be retired as the package uplift lands.
 
+#### FR-10B.10 Metadata-pack compatibility and management filters
+- The implementation SHALL preserve compatibility with the archived metadata-pack baseline in `cloud-dog-ai-platform-standards/archive/working-2026-05/evidence-dirs/metadata-pack/`.
+- Every ingested record SHALL emit the metadata-pack identity aliases `document_id` and `index_record_id` alongside the active `doc_id` and `record_id` fields until downstream callers have migrated.
+- Every ingested record SHALL emit the metadata-pack management fields `dataset_id`, `collection_id`, `title`, `language`, `status`, `authoritative_source`, `updated_at`, `embedding_dimensions`, `embedding_version`, `index_version`, `pipeline_version`, `chunking_strategy`, `normalisation_version`, `index_family`, `visibility`, `access_scope`, and `retention_class`.
+- Search, retrieve, delete-by-filter, retention, and lifecycle operations SHALL keep `status` aligned with `lifecycle_state` so records can be filtered by active, superseded, deleted, or archived state.
+- Metadata filters SHALL support exact filtering for the metadata-pack mandatory query baseline: `tenant_id`, `dataset_id`, `collection_id`, `document_id`, `chunk_id`, `status`, `language`, `source_type`, `authoritative_source`, `updated_at`, `ingested_at`, `embedding_model`, and `index_version`.
+- Local and backend-backed filtering SHALL support comparison operator objects for time/window filters where the API/MCP caller supplies `gt`, `gte`, `lt`, `lte`, `eq`, `ne`, or `in` forms.
+- Unit and integration tests SHALL prove metadata-pack field emission, retrieve/search round-trip, lifecycle status alignment, and date/operator filtering.
+
 ### FR-11 Deduplication
 - The system SHALL detect duplicates using configurable strategies:
   - size + mtime,

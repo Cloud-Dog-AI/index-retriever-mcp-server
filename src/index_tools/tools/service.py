@@ -155,7 +155,18 @@ _PROTECTED_METADATA_FIELDS = frozenset(
         "embedding_model",
         "chunker",
         "chunker_version",
+        "collection_id",
         "token_count",
+        "dataset_id",
+        "document_id",
+        "embedding_dimensions",
+        "embedding_version",
+        "index_family",
+        "index_record_id",
+        "index_version",
+        "normalisation_version",
+        "pipeline_version",
+        "status",
         "parser_name",
         "parser_version",
         "parser_provider",
@@ -209,6 +220,86 @@ def _merge_document_metadata(
     if extras:
         document_metadata["extras"] = extras
     return document_metadata
+
+
+def _apply_metadata_pack_aliases(metadata: dict[str, Any]) -> dict[str, Any]:
+    """Mirror the archived metadata-pack field names onto the active contract."""
+    doc_id = str(metadata.get("doc_id", ""))
+    record_id = str(metadata.get("record_id", doc_id))
+    profile = str(metadata.get("profile") or metadata.get("tenant_id") or "")
+    collection = str(metadata.get("collection") or "")
+    lifecycle_state = str(metadata.get("lifecycle_state", "active"))
+    chunker = str(metadata.get("chunker") or "token_chunks")
+    chunker_version = str(metadata.get("chunker_version") or "v1")
+
+    metadata["document_id"] = doc_id
+    metadata["index_record_id"] = record_id
+    metadata["dataset_id"] = str(metadata.get("dataset_id") or profile)
+    metadata["collection_id"] = str(metadata.get("collection_id") or collection)
+    metadata["status"] = lifecycle_state
+    metadata.setdefault("updated_at", metadata.get("modified_at") or metadata.get("created_at"))
+    metadata.setdefault("language", "und")
+    metadata.setdefault("title", metadata.get("filename") or metadata.get("source_uri") or doc_id)
+    metadata.setdefault("authoritative_source", False)
+    metadata["embedding_dimensions"] = metadata.get("embedding_dim")
+    metadata.setdefault("embedding_version", metadata.get("embedding_model") or "")
+    metadata["chunking_strategy"] = chunker
+    metadata["pipeline_version"] = chunker_version
+    metadata.setdefault("normalisation_version", "v1")
+    metadata.setdefault("index_version", chunker_version)
+    metadata.setdefault("index_family", "index-retriever")
+    metadata.setdefault("visibility", "tenant")
+    metadata.setdefault("access_scope", profile or "default")
+    metadata.setdefault("retention_class", None)
+    return metadata
+
+
+def _metadata_compare_value(value: Any) -> Any:
+    if isinstance(value, str):
+        text = value.strip()
+        try:
+            return datetime.fromisoformat(text.replace("Z", "+00:00"))
+        except ValueError:
+            return text
+    return value
+
+
+def _metadata_operator_match(actual: Any, expected: dict[str, Any]) -> bool:
+    if actual is None:
+        return False
+    actual_value = _metadata_compare_value(actual)
+    for operator, raw_expected in expected.items():
+        expected_value = _metadata_compare_value(raw_expected)
+        if operator in {"eq", "$eq"}:
+            if actual_value != expected_value:
+                return False
+            continue
+        if operator in {"ne", "$ne"}:
+            if actual_value == expected_value:
+                return False
+            continue
+        if operator in {"gte", "$gte"}:
+            if actual_value < expected_value:
+                return False
+            continue
+        if operator in {"gt", "$gt"}:
+            if actual_value <= expected_value:
+                return False
+            continue
+        if operator in {"lte", "$lte"}:
+            if actual_value > expected_value:
+                return False
+            continue
+        if operator in {"lt", "$lt"}:
+            if actual_value >= expected_value:
+                return False
+            continue
+        if operator in {"in", "$in"}:
+            if not isinstance(raw_expected, (list, tuple, set)) or actual_value not in raw_expected:
+                return False
+            continue
+        return False
+    return True
 
 
 def _normalise_provenance_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
@@ -1149,6 +1240,7 @@ class IndexService:
         document_metadata["parser_name"] = str(document_metadata.get("parser_name") or "internal")
         document_metadata["parser_provider"] = str(document_metadata.get("parser_provider") or "internal")
         document_metadata.setdefault("indexing_signature", self._llm_model)
+        document_metadata = _apply_metadata_pack_aliases(document_metadata)
         metadata_errors = validate_metadata(document_metadata)
         if metadata_errors:
             raise ValueError(f"Invalid document metadata: {'; '.join(metadata_errors)}")
@@ -1167,6 +1259,7 @@ class IndexService:
             ):
                 superseded_snapshots.append((existing, dict(existing.metadata)))
                 existing.metadata.update(mark_superseded(existing.metadata, new_record_id=record_id))
+                _apply_metadata_pack_aliases(existing.metadata)
                 superseded_record_ids.append(str(existing.record_id or existing.doc_id))
                 superseded_records.append(
                     Record(
@@ -2490,6 +2583,7 @@ class IndexService:
             key: value
             for key, value in filters.items()
             if (key in SCALAR_FILTER_FIELDS or key == "access_tags")
+            and not isinstance(value, dict)
             and not (isinstance(value, str) and any(token in value for token in ("*", "?")))
         }
         if canonical_filters and not matches_metadata(metadata, canonical_filters):
@@ -2504,6 +2598,10 @@ class IndexService:
                 continue
             if isinstance(expected, (list, tuple, set)):
                 if actual not in expected:
+                    return False
+                continue
+            if isinstance(expected, dict):
+                if not _metadata_operator_match(actual, expected):
                     return False
                 continue
             if actual != expected:
@@ -2622,6 +2720,7 @@ class IndexService:
         )
         if record is not None and record.profile == profile and record.collection == collection:
             record.metadata.update(mark_deleted(record.metadata))
+            _apply_metadata_pack_aliases(record.metadata)
             return True
         return deleted
 
@@ -2646,6 +2745,7 @@ class IndexService:
         )
         for value in matched_records:
             value.metadata.update(mark_deleted(value.metadata))
+            _apply_metadata_pack_aliases(value.metadata)
         return max(deleted, len(matched_records))
 
     def retention_run(self, profile: str, collection: str, older_than_days: int) -> int:
