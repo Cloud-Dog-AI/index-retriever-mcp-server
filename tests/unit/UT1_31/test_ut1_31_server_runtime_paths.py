@@ -501,6 +501,11 @@ def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch
     assert spa_admin.status_code == 200
     assert "id='root'" in spa_admin.text
 
+    collections_ui = client.get("/collections")
+    assert collections_ui.status_code == 200
+    assert "Collection inventory" in collections_ui.text
+    assert 'data-testid="collections-table-body"' in collections_ui.text
+
     proxied_admin = client.get("/admin/profiles")
     assert proxied_admin.status_code == 401
     assert proxied_admin.json() == {"detail": "Authentication failed"}
