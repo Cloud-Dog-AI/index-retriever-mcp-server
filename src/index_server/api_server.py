@@ -67,7 +67,7 @@ try:
 except ImportError:  # pragma: no cover - optional runtime dependency
     psutil = None
 
-from index_server.admin_ui import admin_ui_script, admin_ui_styles, profiles_page, security_page
+from index_server.admin_ui import admin_ui_script, admin_ui_styles, collections_page, profiles_page, security_page
 from index_server.auth.middleware import AuthMiddleware, AuthResult
 from index_server.logging_runtime import init_platform_logging, shutdown_platform_logging
 from index_server.mcp_server import build_registry, execute_tool
@@ -1174,6 +1174,14 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         """Serve the legacy profile management page."""
         return HTMLResponse(content=profiles_page())
 
+    def admin_ui_collections() -> HTMLResponse:
+        """Serve the collection inventory page."""
+        return HTMLResponse(content=collections_page())
+
+    def collections_ui() -> HTMLResponse:
+        """Serve the user-facing collection inventory route."""
+        return HTMLResponse(content=collections_page())
+
     def admin_ui_security() -> HTMLResponse:
         """Serve the legacy security management page."""
         return HTMLResponse(content=security_page())
@@ -1720,6 +1728,8 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     app.get("/admin/ui")(admin_ui_root)
     app.get("/admin/ui/profiles")(admin_ui_profiles)
+    app.get("/admin/ui/collections")(admin_ui_collections)
+    app.get("/collections")(collections_ui)
     app.get("/admin/ui/security")(admin_ui_security)
     app.get("/admin/ui/app.js")(admin_ui_app_js)
     app.get("/admin/ui/styles.css")(admin_ui_styles_css)

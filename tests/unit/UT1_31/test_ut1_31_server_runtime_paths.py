@@ -65,6 +65,16 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     assert "Profile management" in legacy_profiles.text
     assert 'data-testid="profile-roles"' in legacy_profiles.text
 
+    legacy_collections = client.get("/admin/ui/collections")
+    assert legacy_collections.status_code == 200
+    assert "Collection inventory" in legacy_collections.text
+    assert 'data-testid="collections-table-body"' in legacy_collections.text
+
+    collections_route = client.get("/collections")
+    assert collections_route.status_code == 200
+    assert "Collection inventory" in collections_route.text
+    assert "/admin/collections" in collections_route.text
+
     legacy_security = client.get("/admin/ui/security")
     assert legacy_security.status_code == 200
     assert "Identity and key control" in legacy_security.text
@@ -75,6 +85,7 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     legacy_js = client.get("/admin/ui/app.js")
     assert legacy_js.status_code == 200
     assert "function createProfile" in legacy_js.text
+    assert "function refreshCollections" in legacy_js.text
 
     legacy_css = client.get("/admin/ui/styles.css")
     assert legacy_css.status_code == 200

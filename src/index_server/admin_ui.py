@@ -369,6 +369,24 @@ async function refreshProfiles() {
   }
 }
 
+async function refreshCollections() {
+  const profileNode = el("collections-profile");
+  const profile = profileNode ? profileNode.value.trim() || "default" : "default";
+  try {
+    const payload = await requestJson("GET", `/admin/collections?profile=${encodeURIComponent(profile)}`);
+    renderRows("collections-table-body", payload.collections || [], [
+      "profile",
+      "collection",
+      "description",
+      "allowed_roles",
+      "metadata"
+    ]);
+    setResult("collections-result", payload);
+  } catch (error) {
+    setResult("collections-result", error, true);
+  }
+}
+
 async function createProfile() {
   const profile = el("profile-id").value.trim();
   const backend = el("profile-backend").value.trim();
@@ -610,6 +628,10 @@ function bootstrapProfiles() {
   wire("profile-delete", deleteProfile);
 }
 
+function bootstrapCollections() {
+  wire("collections-refresh", refreshCollections);
+}
+
 function bootstrapSecurity() {
   wire("users-refresh", refreshUsers);
   wire("user-create", createUser);
@@ -628,9 +650,13 @@ function bootstrapSecurity() {
 window.addEventListener("DOMContentLoaded", () => {
   bootstrapAuthForm();
   bootstrapProfiles();
+  bootstrapCollections();
   bootstrapSecurity();
   if (el("profiles-table-body")) {
     void refreshProfiles();
+  }
+  if (el("collections-table-body")) {
+    void refreshCollections();
   }
   if (el("users-table-body")) {
     void refreshUsers();
@@ -646,6 +672,7 @@ window.addEventListener("DOMContentLoaded", () => {
 def _shell(title: str, description: str, current: str, body: str) -> str:
     """Render the shared page chrome around a route-specific body."""
     profiles_current = 'aria-current="page"' if current == "profiles" else ""
+    collections_current = 'aria-current="page"' if current == "collections" else ""
     security_current = 'aria-current="page"' if current == "security" else ""
     return f"""
 <!DOCTYPE html>
@@ -661,6 +688,7 @@ def _shell(title: str, description: str, current: str, body: str) -> str:
       <section class="hero">
         <div class="nav" aria-label="Admin navigation">
           <a href="/admin/ui/profiles" {profiles_current}>Profiles</a>
+          <a href="/admin/ui/collections" {collections_current}>Collections</a>
           <a href="/admin/ui/security" {security_current}>Security</a>
         </div>
         <div class="stack">
@@ -747,6 +775,47 @@ def profiles_page() -> str:
         title="Index profile control",
         description="Create, update, list, and delete runtime profiles through the admin HTTP API.",
         current="profiles",
+        body=body,
+    )
+
+
+def collections_page() -> str:
+    """Return the collection inventory page."""
+    body = """
+<section class="panel stack">
+  <h2>Collection inventory</h2>
+  <p class="muted">Lists runtime collections from <span class="token">/admin/collections</span> using the saved session token.</p>
+  <div class="form-grid">
+    <label>
+      Profile
+      <input data-testid="collections-profile" type="text" autocomplete="off" value="default">
+    </label>
+  </div>
+  <div class="actions">
+    <button class="secondary" data-testid="collections-refresh" type="button">Refresh collections</button>
+  </div>
+  <div class="result" data-testid="collections-result" aria-live="polite"></div>
+  <div class="stack">
+    <h3>Collections</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Profile</th>
+          <th>Collection</th>
+          <th>Description</th>
+          <th>Allowed roles</th>
+          <th>Metadata</th>
+        </tr>
+      </thead>
+      <tbody data-testid="collections-table-body"></tbody>
+    </table>
+  </div>
+</section>
+""".strip()
+    return _shell(
+        title="Index collection inventory",
+        description="Inspect live retrieval collections through the admin HTTP API.",
+        current="collections",
         body=body,
     )
 
