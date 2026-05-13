@@ -30,6 +30,10 @@ Related tests:
 
 from __future__ import annotations
 
+import html
+import json
+from typing import Any
+
 
 def admin_ui_styles() -> str:
     """Return the shared stylesheet for the admin pages."""
@@ -779,12 +783,29 @@ def profiles_page() -> str:
     )
 
 
-def collections_page() -> str:
+def _collection_rows(collections: list[dict[str, Any]] | None) -> str:
+    """Render collection rows that are visible before JavaScript refresh."""
+    rows = []
+    for item in collections or []:
+        rows.append(
+            "<tr>"
+            f"<td>{html.escape(str(item.get('profile') or ''))}</td>"
+            f"<td>{html.escape(str(item.get('collection') or ''))}</td>"
+            f"<td>{html.escape(str(item.get('description') or ''))}</td>"
+            f"<td>{html.escape(json.dumps(item.get('allowed_roles') or [], sort_keys=True))}</td>"
+            f"<td>{html.escape(json.dumps(item.get('metadata') or {}, sort_keys=True))}</td>"
+            "</tr>"
+        )
+    return "\n".join(rows)
+
+
+def collections_page(collections: list[dict[str, Any]] | None = None) -> str:
     """Return the collection inventory page."""
-    body = """
+    initial_rows = _collection_rows(collections)
+    body = f"""
 <section class="panel stack">
   <h2>Collection inventory</h2>
-  <p class="muted">Lists runtime collections from <span class="token">/admin/collections</span> using the saved session token.</p>
+  <p class="muted">Lists runtime collections from <span class="token">/admin/collections</span> using the saved session token. Server-rendered rows are included for demo warrant screenshots.</p>
   <div class="form-grid">
     <label>
       Profile
@@ -807,7 +828,7 @@ def collections_page() -> str:
           <th>Metadata</th>
         </tr>
       </thead>
-      <tbody data-testid="collections-table-body"></tbody>
+      <tbody data-testid="collections-table-body">{initial_rows}</tbody>
     </table>
   </div>
 </section>

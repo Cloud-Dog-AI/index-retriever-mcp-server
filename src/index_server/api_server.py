@@ -1174,13 +1174,23 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         """Serve the legacy profile management page."""
         return HTMLResponse(content=profiles_page())
 
+    def _collection_inventory_snapshot(profile: str = "default") -> list[dict[str, Any]]:
+        """Return visible collection metadata for server-rendered warrant rows."""
+        try:
+            return [
+                active_service.collection_get(profile, collection)
+                for collection in active_service.collections_list(profile)
+            ]
+        except Exception:
+            return []
+
     def admin_ui_collections() -> HTMLResponse:
         """Serve the collection inventory page."""
-        return HTMLResponse(content=collections_page())
+        return HTMLResponse(content=collections_page(_collection_inventory_snapshot()))
 
     def collections_ui() -> HTMLResponse:
         """Serve the user-facing collection inventory route."""
-        return HTMLResponse(content=collections_page())
+        return HTMLResponse(content=collections_page(_collection_inventory_snapshot()))
 
     def admin_ui_security() -> HTMLResponse:
         """Serve the legacy security management page."""

@@ -35,6 +35,7 @@ from tests.http_paths import api_tools_path, mcp_tools_path
 
 def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     # Covers: FR-01, FR-01A, FR-17
+    collection_create(service, profile="default", collection="ut_visible_collection", roles={"admin"})
     app = api_server.build_api_app(service=service)
     client = TestClient(app)
 
@@ -69,11 +70,13 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     assert legacy_collections.status_code == 200
     assert "Collection inventory" in legacy_collections.text
     assert 'data-testid="collections-table-body"' in legacy_collections.text
+    assert "ut_visible_collection" in legacy_collections.text
 
     collections_route = client.get("/collections")
     assert collections_route.status_code == 200
     assert "Collection inventory" in collections_route.text
     assert "/admin/collections" in collections_route.text
+    assert "ut_visible_collection" in collections_route.text
 
     legacy_security = client.get("/admin/ui/security")
     assert legacy_security.status_code == 200
