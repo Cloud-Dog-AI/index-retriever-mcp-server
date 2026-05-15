@@ -1329,7 +1329,15 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     def admin_users_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, {"admin"})
-        return {"users": active_service.users_list()}
+        users = active_service.users_list()
+        result: dict[str, Any] = {"users": users}
+        if not users:
+            result["bootstrap_hint"] = (
+                "No users configured. Create a bootstrap-seed.yaml with user "
+                "entries and set INDEX_RETRIEVER_BOOTSTRAP_SEED_PATH, or use "
+                "POST /admin/users to create the first admin user."
+            )
+        return result
 
     def admin_users_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))

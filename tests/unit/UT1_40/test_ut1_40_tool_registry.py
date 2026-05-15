@@ -31,5 +31,6 @@ def test_ut_40_tool_registry_contract_fields() -> None:
         assert isinstance(tool.get("name"), str)
         assert tool["name"]
         assert isinstance(tool.get("description"), str)
+        assert tool["description"], f"Tool {tool['name']!r} has blank description"
         assert isinstance(tool.get("handler"), str)
         assert tool["handler"]
