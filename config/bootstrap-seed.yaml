@@ -66,8 +66,8 @@ bootstrap:
   api_keys:
     - name: gary-ragflow-scoped
       username: gary
-      token_vault_path: "cloud_dog_ai/config:dev.services.index-retriever.gary_api_key"
+      token_vault_path: "cloud_dog_ai/config:dev.services.indexretriever0.gary_api_key"
 
     - name: colin-ragflow-scoped
       username: colin
-      token_vault_path: "cloud_dog_ai/config:dev.services.index-retriever.colin_api_key"
+      token_vault_path: "cloud_dog_ai/config:dev.services.indexretriever0.colin_api_key"

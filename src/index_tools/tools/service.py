@@ -657,6 +657,25 @@ class IndexService:
                 "roles": {"reader", "writer", "maintainer", "admin"},
             }
         }
+        # W28A-295: load additional profiles from config (defaults.yaml + env merge).
+        # The runtime tree profiles section may define profiles beyond 'default' (e.g.
+        # multilang with bge-m3). Env-var overrides for the top-level index.* settings
+        # must NOT erase YAML-defined profiles.
+        yaml_profiles = _nested_mapping(self._runtime_tree, "profiles")
+        for pname, pcfg in yaml_profiles.items():
+            if pname == "default" or not isinstance(pcfg, dict):
+                continue
+            if not pcfg.get("enabled", True):
+                continue
+            vdb_cfg = _nested_mapping(pcfg, "vdb")
+            embed_cfg = _nested_mapping(pcfg, "embeddings")
+            self.profiles[pname] = {
+                "enabled": True,
+                "backend": str(vdb_cfg.get("type", self._default_backend)).strip().lower(),
+                "roles": {"reader", "writer", "maintainer", "admin"},
+                "embeddings": embed_cfg,
+                "vdb": vdb_cfg,
+            }
         self.collections: dict[str, CollectionRecord] = {}
         self.collection_roles: dict[str, set[str]] = {}
         self.source_configs: dict[str, SourceConfigRecord] = {}
