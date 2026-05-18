@@ -812,7 +812,10 @@ class IndexService:
         chroma_local_mode_flag = str(
             _env_or_default("CLOUD_DOG__INDEX__VDB__CHROMA_LOCAL_MODE", "")
         ).strip().lower() in {"1", "true", "yes", "on"}
-        if self._live_backend_mode:
+        # W28A-296: if a remote Chroma URL is configured, never use local mode.
+        if chroma_url:
+            chroma_local_mode = False
+        elif self._live_backend_mode:
             chroma_local_mode = chroma_local_mode_flag
         else:
             chroma_local_mode = True
@@ -824,6 +827,9 @@ class IndexService:
                 "local_mode": chroma_local_mode,
             }
 
+        # W28A-296: if a remote Qdrant URL is configured, NEVER use local mode
+        # regardless of env tier. Local mode stores data in process memory which
+        # is lost on every container restart — a silent data-loss defect on preprod.
         qdrant_local_mode = not qdrant_url and "qdrant" in required_providers
         if qdrant_url or qdrant_local_mode:
             vector_stores["qdrant"] = {
@@ -831,7 +837,7 @@ class IndexService:
                 "base_url": qdrant_url,
                 "api_key": str(index_vdb.get("qdrant_api_key", "")).strip(),
                 "timeout_seconds": 120,
-                "local_mode": qdrant_local_mode or not self._live_backend_mode,
+                "local_mode": not bool(qdrant_url),
             }
 
         pgvector_database_uri = _env_or_default("CLOUD_DOG__INDEX__VDB__PGVECTOR_DATABASE_URI", "")

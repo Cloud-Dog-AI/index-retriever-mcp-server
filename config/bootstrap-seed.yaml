@@ -63,11 +63,7 @@ bootstrap:
         - tb-access
       description: "shared TB collection (gary + colin)"
 
-  api_keys:
-    - name: gary-ragflow-scoped
-      username: gary
-      token_vault_path: "cloud_dog_ai/config:dev.services.indexretriever0.gary_api_key"
-
-    - name: colin-ragflow-scoped
-      username: colin
-      token_vault_path: "cloud_dog_ai/config:dev.services.indexretriever0.colin_api_key"
+  # api_keys: removed — vault paths dev.services.indexretriever0.{gary,colin}_api_key
+  # do not exist. Per-user API keys are managed via admin API at runtime.
+  # Auth uses CLOUD_DOG__INDEX__AUTH__ADMIN_API_KEY from env vars.
+  # Ref: W28A-295, coordinator note 2026-05-18 Issue 1.
