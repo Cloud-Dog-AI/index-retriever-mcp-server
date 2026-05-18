@@ -85,6 +85,38 @@ profiles:
       top_k_default: 10
       score_threshold: 0.0
 
+  multilang:
+    enabled: true
+    vdb:
+      type: "chroma"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH:./data/chroma}"
+        collection: "multilang"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_MULTILANG_BASE_URL:${EMBED_BASE_URL:https://llm2.cloud-dog.net}}"
+        api_key: "${EMBED_API_KEY || ''}"
+        model: "bge-m3:567m"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT:./uploads}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0
+
 rbac:
   enabled: true
   default_deny: true
