@@ -22,3 +22,5 @@ CLOUD_DOG__DB__DIALECT=sqlite
 CLOUD_DOG__DB__DATABASE=./data/index-retriever-ut.db
 
 CLOUD_DOG__INDEX__AUTH__API_KEYS=test-api-key,valid-reader-token:reader,valid-writer-token:writer,valid-admin-token:admin
+CLOUD_DOG__INDEX__VDB__CHROMA_LOCAL_MODE=true
+CLOUD_DOG__INDEX__VDB__CHROMA_URL=

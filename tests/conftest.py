@@ -313,8 +313,79 @@ def env(env_tiers: list[str]) -> str:
     return env_tiers[0]
 
 
+def _install_ut_embedding_mock() -> None:
+    """W28A-323: Replace OllamaEmbeddingProvider.embed with a deterministic
+    SHA256-based mock so UT tests never hit live Ollama endpoints.
+
+    Applied once at module load when TEST_ENV_TIER=UT.
+    """
+    from hashlib import sha256
+
+    async def _hash_embed(self: Any, text: str) -> list[float]:
+        # Produce a deterministic 768-dimension vector (nomic-embed-text size).
+        digest = sha256(text.encode("utf-8")).digest()
+        vec: list[float] = []
+        for i in range(768):
+            vec.append(round(digest[i % 32] / 255.0 + (i % 7) * 0.001, 6))
+        return vec
+
+    try:
+        from cloud_dog_vdb.embeddings.providers import OllamaEmbeddingProvider, OpenAIEmbeddingProvider
+        OllamaEmbeddingProvider.embed = _hash_embed  # type: ignore[assignment]
+        OpenAIEmbeddingProvider.embed = _hash_embed  # type: ignore[assignment]
+    except ImportError:
+        pass
+
+    try:
+        import cloud_dog_vdb.embeddings.providers as _emb_providers
+        _original_build = _emb_providers.build_embedding_provider
+
+        def _mock_build(config: Any) -> Any:
+            class _HashProv:
+                async def embed(self, text: str) -> list[float]:
+                    digest = sha256(text.encode("utf-8")).digest()
+                    return [round(digest[i % 32] / 255.0 + (i % 7) * 0.001, 6) for i in range(768)]
+            return _HashProv()
+
+        _emb_providers.build_embedding_provider = _mock_build  # type: ignore[assignment]
+    except (ImportError, AttributeError):
+        pass
+
+    # Also patch the Chroma adapter's _embed_text directly so already-
+    # created adapter instances use the mock.
+    try:
+        from cloud_dog_vdb.adapters.chroma import ChromaAdapter
+
+        async def _mock_embed_text(self: Any, text: str, dim: int) -> list[float]:
+            digest = sha256(text.encode("utf-8")).digest()
+            return [round(digest[i % 32] / 255.0 + (i % 7) * 0.001, 6) for i in range(dim)]
+
+        async def _mock_embed_many(self: Any, texts: list, dim: int) -> list:
+            return [await _mock_embed_text(self, t, dim) for t in texts]
+
+        ChromaAdapter._embed_text = _mock_embed_text  # type: ignore[assignment]
+        ChromaAdapter._embed_many = _mock_embed_many  # type: ignore[assignment]
+    except (ImportError, AttributeError):
+        pass
+
+
+_ut_embedding_mock_installed = False
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _install_embedding_mock_after_env_load() -> None:
+    """W28A-323: install embedding mock AFTER the env file has been loaded,
+    so TEST_ENV_TIER is available."""
+    global _ut_embedding_mock_installed
+    if _ut_embedding_mock_installed:
+        return
+    if os.environ.get("TEST_ENV_TIER", "").upper() == "UT":
+        _install_ut_embedding_mock()
+        _ut_embedding_mock_installed = True
+
+
 @pytest.fixture()
-def service(tmp_path: Path) -> Iterator[IndexService]:
+def service(tmp_path: Path, _install_embedding_mock_after_env_load: None) -> Iterator[IndexService]:
     """Provide a per-test in-memory index service."""
     audit_path = tmp_path / "audit.jsonl"
     instance = IndexService(audit_path=str(audit_path))

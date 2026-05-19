@@ -20,6 +20,7 @@ import sys
 import os
 from types import SimpleNamespace
 from pathlib import Path
+from datetime import datetime, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -29,7 +30,7 @@ from index_server.admin.endpoints import collection_create
 from index_server.main import main
 from index_server.runtime_config import ServerBinding
 from index_server.streaming import ingest_stream_close, ingest_stream_event, ingest_stream_session_start
-from index_tools.tools.service import IndexService
+from index_tools.tools.service import DocumentRecord, IndexService
 from tests.http_paths import api_tools_path, mcp_tools_path
 
 
@@ -411,15 +412,42 @@ def test_admin_collection_create_endpoint(service: IndexService) -> None:
 
 
 def test_build_status_payload_counts_active_documents_from_runtime(service: IndexService) -> None:
-    service.ingest_text("default", "status_cov", "status payload active doc", "api://status-cov", actor="writer")
-    deleted_job_id = service.ingest_text("default", "status_cov", "status payload deleted doc", "api://status-deleted", actor="writer")
-    assert deleted_job_id
-    deleted_record = next(record for record in service.documents.values() if record.source == "api://status-deleted")
-    assert service.delete_by_id("default", "status_cov", str(deleted_record.record_id or deleted_record.doc_id)) is True
+    collection_create(service, profile="default", collection="status_cov", roles={"admin"})
+    created_at = datetime.now(timezone.utc)
+    service.documents["active-status-cov"] = DocumentRecord(
+        doc_id="active-status-cov",
+        record_id="active-status-cov",
+        profile="default",
+        collection="status_cov",
+        source="api://status-cov",
+        text="status payload active doc",
+        metadata={
+            "doc_id": "active-status-cov",
+            "record_id": "active-status-cov",
+            "lifecycle_state": "active",
+            "is_latest": True,
+        },
+        created_at=created_at,
+    )
+    service.documents["deleted-status-cov"] = DocumentRecord(
+        doc_id="deleted-status-cov",
+        record_id="deleted-status-cov",
+        profile="default",
+        collection="status_cov",
+        source="api://status-deleted",
+        text="status payload deleted doc",
+        metadata={
+            "doc_id": "deleted-status-cov",
+            "record_id": "deleted-status-cov",
+            "lifecycle_state": "deleted",
+            "is_latest": True,
+        },
+        created_at=created_at,
+    )
 
     payload = api_server.build_status_payload(service)
 
-    assert payload["document_count"] >= 1
+    assert payload["document_count"] == 1
     assert payload["collection_count"] >= 1
 
 

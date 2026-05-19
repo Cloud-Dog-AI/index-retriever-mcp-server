@@ -17,7 +17,6 @@ from __future__ import annotations
 import asyncio
 import fnmatch
 import json
-import logging
 import mimetypes
 import os
 import re
@@ -33,8 +32,7 @@ from typing import Any, ClassVar
 from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
-logger = logging.getLogger(__name__)
-
+from cloud_dog_logging import get_logger
 from cloud_dog_vdb.lifecycle.manager import mark_deleted, mark_superseded
 from cloud_dog_vdb.metadata.filters import SCALAR_FILTER_FIELDS, matches_metadata
 from cloud_dog_vdb.metadata.identity import compute_content_hash, normalise_source_uri
@@ -48,6 +46,8 @@ from index_tools.pipeline.chunking import token_chunks
 from index_tools.pipeline.metadata import build_metadata
 from index_tools.queue.engine import JobCancelledError, QueueEngine
 from index_tools.queue.models import JobRecord, JobStatus
+
+logger = get_logger(__name__)
 from index_tools.config.loader import runtime_env_files
 
 try:
@@ -800,9 +800,9 @@ class IndexService:
             for pname in list(self.profiles.keys()):
                 try:
                     dim = self._embedding_dimension()
-                    logger.info("W28A-323 embedder warm-up for profile %s: dim=%s", pname, dim)
+                    logger.info("W28A-323 embedder warm-up completed", profile=pname, dimension=dim)
                 except Exception as exc:
-                    logger.warning("W28A-323 embedder warm-up failed for profile %s: %s", pname, exc)
+                    logger.warning("W28A-323 embedder warm-up failed", profile=pname, error=str(exc))
 
         t = threading.Thread(target=_warmup, daemon=True, name="embedder-warmup")
         t.start()
