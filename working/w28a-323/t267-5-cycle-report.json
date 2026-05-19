@@ -1,0 +1,30 @@
+{
+  "started_at": "2026-05-19T20:39:06Z",
+  "topics": [
+    {
+      "topic": "Russia Ukraine sanctions May 2026",
+      "wall_clock_s": 1617.1,
+      "chunks_matching_before": 2,
+      "chunks_matching_after": 2,
+      "delta_chunks": 0,
+      "seen_urls_before": 6,
+      "seen_urls_after": 5,
+      "delta_seen_urls": -1,
+      "manifest": null
+    }
+  ],
+  "summary": {
+    "seen_urls_before": 6,
+    "seen_urls_after": 5,
+    "new_urls_added": -1,
+    "topics_run": 1,
+    "per_outlet_total": {
+      "ua-kyiv-independent": 2,
+      "isw": 1,
+      "ua-suspilne": 2
+    },
+    "per_language_total": {
+      "?": 5
+    }
+  }
+}
