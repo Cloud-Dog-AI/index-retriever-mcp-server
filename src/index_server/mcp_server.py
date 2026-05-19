@@ -230,7 +230,7 @@ def _required_roles_for_tool(tool_name: str) -> set[str]:
         return {"writer", "maintainer", "admin"}
     if tool_name in {"delete_by_id", "delete_by_filter", "retention_run", "reindex_run"}:
         return {"maintainer", "admin"}
-    if tool_name in {"backend_health_check", "embedding_health_check"}:
+    if tool_name in {"backend_health_check", "embedding_health_check", "ingest_health"}:
         return {"reader", "writer", "maintainer", "admin"}
     return {"admin"}
 
@@ -841,6 +841,8 @@ def execute_tool(
         return service.backend_health_check()
     if tool_name == "embedding_health_check":
         return service.embedding_health_check()
+    if tool_name == "ingest_health":
+        return service.ingest_health()
     if tool_name == "queue_status":
         return _normalise_queue_status(service.queue_status())
     if tool_name == "ingest_stream_open":

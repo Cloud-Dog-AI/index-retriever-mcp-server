@@ -162,6 +162,7 @@ def build_default_tool_registry() -> ToolRegistry:
         # -- Health --
         ToolSpec(name="backend_health_check", input_model=GenericToolInput, output_model=BackendHealthOutput, description="Check connectivity and health of the vector database backend."),
         ToolSpec(name="embedding_health_check", input_model=GenericToolInput, output_model=EmbeddingHealthOutput, description="Check connectivity and health of the embedding model provider."),
+        ToolSpec(name="ingest_health", input_model=GenericToolInput, output_model=GenericToolOutput, description="Return per-profile ingest pipeline health: queue depth, concurrency slots, embedder warm status, and last ingest latency."),
     ]
     for spec in specs:
         registry.register(spec)

@@ -17,10 +17,12 @@ from __future__ import annotations
 import asyncio
 import fnmatch
 import json
+import logging
 import mimetypes
 import os
 import re
 import threading
+import time
 import weakref
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -30,6 +32,8 @@ from types import MappingProxyType
 from typing import Any, ClassVar
 from urllib.parse import unquote, urlparse
 from uuid import uuid4
+
+logger = logging.getLogger(__name__)
 
 from cloud_dog_vdb.lifecycle.manager import mark_deleted, mark_superseded
 from cloud_dog_vdb.metadata.filters import SCALAR_FILTER_FIELDS, matches_metadata
@@ -616,6 +620,17 @@ class IndexService:
         self._job_threads: dict[str, threading.Thread] = {}
         self._job_threads_lock = threading.Lock()
         self._closed = False
+        # W28A-323: per-profile ingest concurrency cap. Serialises embedding
+        # calls within the same profile to avoid Ollama contention that causes
+        # 480s tail-latency timeouts. Cross-profile calls run in parallel.
+        _max_per_profile = int(os.environ.get(
+            "CLOUD_DOG__INDEX__INGEST__MAX_CONCURRENCY_PER_PROFILE", "1"
+        ))
+        self._ingest_semaphores: dict[str, threading.Semaphore] = {}
+        self._ingest_semaphore_max = max(1, _max_per_profile)
+        self._ingest_semaphore_lock = threading.Lock()
+        self._ingest_last_latency: dict[str, float] = {}
+        self._ingest_queue_depth: dict[str, int] = {}
         self._instances.add(self)
         self._ensure_loop_thread()
         self.vdb = self._build_vdb_client()
@@ -708,6 +723,8 @@ class IndexService:
             maybe_apply_bootstrap_seed = None  # type: ignore[assignment]
         if maybe_apply_bootstrap_seed is not None:
             maybe_apply_bootstrap_seed(self)
+        # W28A-323: warm-up embedder models at startup.
+        self._warm_embedders()
 
     def _run_async(self, coro: Any) -> Any:
         try:
@@ -761,6 +778,61 @@ class IndexService:
             self._loop_future = None
         if not self._loop.is_closed():
             self._loop.close()
+
+    def _get_ingest_semaphore(self, profile: str) -> threading.Semaphore:
+        """Return (lazily creating) the per-profile ingest semaphore."""
+        with self._ingest_semaphore_lock:
+            if profile not in self._ingest_semaphores:
+                self._ingest_semaphores[profile] = threading.Semaphore(self._ingest_semaphore_max)
+            return self._ingest_semaphores[profile]
+
+    def _warm_embedders(self) -> None:
+        """W28A-323: pre-load embedder models at startup to avoid cold-start latency.
+
+        Runs in a daemon thread to avoid blocking service startup. Failures
+        are logged as warnings — actual ingest calls will trigger lazy load.
+        Skipped in test mode (UT/ST) where no live embedder is available.
+        """
+        if not self._live_backend_mode:
+            return
+
+        def _warmup() -> None:
+            for pname in list(self.profiles.keys()):
+                try:
+                    dim = self._embedding_dimension()
+                    logger.info("W28A-323 embedder warm-up for profile %s: dim=%s", pname, dim)
+                except Exception as exc:
+                    logger.warning("W28A-323 embedder warm-up failed for profile %s: %s", pname, exc)
+
+        t = threading.Thread(target=_warmup, daemon=True, name="embedder-warmup")
+        t.start()
+
+    def ingest_health(self) -> dict[str, Any]:
+        """W28A-323: return per-profile ingest pipeline health."""
+        profiles_status: dict[str, dict[str, Any]] = {}
+        for pname in list(self.profiles.keys()):
+            sem = self._get_ingest_semaphore(pname)
+            # Semaphore._value is the internal counter (available permits)
+            available = getattr(sem, "_value", self._ingest_semaphore_max)
+            queue_depth = self._ingest_queue_depth.get(pname, 0)
+            last_latency = self._ingest_last_latency.get(pname)
+            # Probe embedder warm status
+            embedder_warm = False
+            try:
+                if self._llm_client is not None:
+                    embedder_warm = True
+                elif self.embedding_adapter is not None:
+                    embedder_warm = True
+            except Exception:
+                pass
+            profiles_status[pname] = {
+                "queue_depth": queue_depth,
+                "available_slots": available,
+                "max_concurrency": self._ingest_semaphore_max,
+                "embedder_warm": embedder_warm,
+                "last_latency_ms": round(last_latency * 1000, 1) if last_latency is not None else None,
+            }
+        return {"ok": True, "profiles": profiles_status}
 
     @classmethod
     def close_all_instances(cls) -> None:
@@ -1189,7 +1261,31 @@ class IndexService:
         )
 
     def _process_ingest_text_job(self, job: JobRecord) -> None:
-        """Execute the ingest pipeline for a queued job record."""
+        """Execute the ingest pipeline for a queued job record.
+
+        W28A-323: acquires a per-profile semaphore to serialise embedding calls
+        within the same profile, preventing Ollama contention that causes 480s
+        tail-latency timeouts.
+        """
+        payload = dict(job.payload)
+        profile = str(payload["profile"])
+        sem = self._get_ingest_semaphore(profile)
+        self._ingest_queue_depth[profile] = self._ingest_queue_depth.get(profile, 0) + 1
+        t0 = time.monotonic()
+        try:
+            sem.acquire()
+            try:
+                self._process_ingest_text_job_inner(job)
+            finally:
+                sem.release()
+        finally:
+            elapsed = time.monotonic() - t0
+            self._ingest_last_latency[profile] = elapsed
+            depth = self._ingest_queue_depth.get(profile, 1)
+            self._ingest_queue_depth[profile] = max(0, depth - 1)
+
+    def _process_ingest_text_job_inner(self, job: JobRecord) -> None:
+        """Execute the ingest pipeline (called under per-profile semaphore)."""
         payload = dict(job.payload)
         profile = str(payload["profile"])
         collection = str(payload["collection"])

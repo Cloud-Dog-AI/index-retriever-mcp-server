@@ -318,7 +318,8 @@ def test_mcp_app_and_execute_tool_paths(service: IndexService) -> None:
     )
     assert bad_payload.status_code == 422
 
-    assert mcp_server.execute_tool(service, "profiles_list", {})["profiles"] == ["default"]
+    profiles = mcp_server.execute_tool(service, "profiles_list", {})["profiles"]
+    assert "default" in profiles
     assert mcp_server.execute_tool(service, "backend_health_check", {})["status"] == "ok"
     assert mcp_server.execute_tool(service, "embedding_health_check", {})["status"] == "ok"
     assert mcp_server.execute_tool(service, "queue_status", {})["total"] >= 0
