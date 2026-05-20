@@ -20,7 +20,7 @@ def test_ut_40_tool_registry_contract_fields() -> None:
     registry = build_default_tool_registry()
     tools = registry.list_tools()
     assert tools
-    assert len(tools) == 61
+    assert len(tools) == 66
 
     names = [str(tool["name"]) for tool in tools]
     assert len(names) == len(set(names))

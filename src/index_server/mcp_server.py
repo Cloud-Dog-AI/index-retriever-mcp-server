@@ -232,6 +232,12 @@ def _required_roles_for_tool(tool_name: str) -> set[str]:
         return {"maintainer", "admin"}
     if tool_name in {"backend_health_check", "embedding_health_check", "ingest_health"}:
         return {"reader", "writer", "maintainer", "admin"}
+    if tool_name in {"file_list", "file_get", "file_download"}:
+        return {"reader", "writer", "maintainer", "admin"}
+    if tool_name == "file_upload":
+        return {"writer", "maintainer", "admin"}
+    if tool_name == "file_delete":
+        return {"maintainer", "admin"}
     return {"admin"}
 
 
@@ -843,6 +849,23 @@ def execute_tool(
         return service.embedding_health_check()
     if tool_name == "ingest_health":
         return service.ingest_health()
+    # PS-78 File Lifecycle (W28C-427 IDX-SNAG-002)
+    if tool_name == "file_upload":
+        return service.file_upload(
+            filename=str(arguments.get("filename", "upload")),
+            content=str(arguments.get("content", "")),
+            profile=str(arguments.get("profile", "default")),
+            actor=str(arguments.get("actor", "mcp")),
+            metadata=arguments.get("metadata") if isinstance(arguments.get("metadata"), dict) else None,
+        )
+    if tool_name == "file_list":
+        return {"files": service.file_list(profile=arguments.get("profile"))}
+    if tool_name == "file_get":
+        return service.file_get(str(arguments["file_id"]))
+    if tool_name == "file_download":
+        return service.file_download(str(arguments["file_id"]))
+    if tool_name == "file_delete":
+        return service.file_delete(str(arguments["file_id"]), actor=str(arguments.get("actor", "mcp")))
     if tool_name == "queue_status":
         return _normalise_queue_status(service.queue_status())
     if tool_name == "ingest_stream_open":

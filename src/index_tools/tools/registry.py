@@ -163,6 +163,12 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="backend_health_check", input_model=GenericToolInput, output_model=BackendHealthOutput, description="Check connectivity and health of the vector database backend."),
         ToolSpec(name="embedding_health_check", input_model=GenericToolInput, output_model=EmbeddingHealthOutput, description="Check connectivity and health of the embedding model provider."),
         ToolSpec(name="ingest_health", input_model=GenericToolInput, output_model=GenericToolOutput, description="Return per-profile ingest pipeline health: queue depth, concurrency slots, embedder warm status, and last ingest latency."),
+        # -- PS-78 File Lifecycle (W28C-427 IDX-SNAG-002) --
+        ToolSpec(name="file_upload", input_model=GenericToolInput, output_model=GenericToolOutput, description="Upload a file to service storage. Returns file_id and metadata."),
+        ToolSpec(name="file_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List stored files with optional profile/collection filter."),
+        ToolSpec(name="file_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Get metadata for a stored file by ID."),
+        ToolSpec(name="file_download", input_model=GenericToolInput, output_model=GenericToolOutput, description="Download stored file content by ID. Returns base64-encoded content."),
+        ToolSpec(name="file_delete", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a stored file by ID."),
     ]
     for spec in specs:
         registry.register(spec)

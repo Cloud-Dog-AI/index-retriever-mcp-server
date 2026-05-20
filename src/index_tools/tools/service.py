@@ -697,6 +697,7 @@ class IndexService:
         self.documents: dict[str, DocumentRecord] = {}
         self.idempotency: dict[str, str] = {}
         self.stream_sessions: dict[str, StreamSession] = {}
+        self._stored_files: dict[str, dict[str, Any]] = {}  # W28C-427 IDX-SNAG-002 PS-78 file store
         self._job_handlers: dict[str, Any] = {}
         self.collection_manager = _CollectionManagerCompat(self)
         self.users: dict[str, UserRecord] = {}
@@ -2244,9 +2245,20 @@ class IndexService:
         return queued_job.job_id
 
     def ingest_reference(self, profile: str, collection: str, path: str, actor: str) -> str:
-        """Execute ingest reference."""
+        """Execute ingest reference.
+
+        W28C-427 IDX-SNAG-004: routes through the connector resolver so
+        HTTP, S3, WebDAV, FTP, GDrive, and filesystem URIs are all supported.
+        Falls back to direct path_utils.read_bytes for plain filesystem paths.
+        """
         # Covers: FR-08
-        payload = path_utils.read_bytes(path)
+        try:
+            from index_tools.connectors.resolver import resolve_source, fetch_source
+            plan = resolve_source(path)
+            payload = fetch_source(plan)
+        except (ValueError, NotImplementedError):
+            # Fallback for plain local paths or unsupported schemes
+            payload = path_utils.read_bytes(path)
         return self.ingest_text(
             profile=profile,
             collection=collection,
@@ -2961,6 +2973,81 @@ class IndexService:
             }
         except Exception:
             return {"status": "error", "provider": self._llm_provider, "model": self._llm_model, "dimensions": 0}
+
+    # -- PS-78 File Lifecycle (W28C-427 IDX-SNAG-002) --
+
+    def file_upload(self, filename: str, content: bytes | str, *, profile: str = "default", actor: str = "system", metadata: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Upload a file to service storage. Returns file_id and metadata."""
+        import base64
+        from hashlib import sha256 as _sha256
+        raw = content if isinstance(content, bytes) else (base64.b64decode(content) if content.startswith(("data:", "base64:")) or len(content) > 200 else content.encode("utf-8"))
+        file_id = _sha256(raw).hexdigest()[:24]
+        record = {
+            "file_id": file_id,
+            "filename": filename,
+            "profile": profile,
+            "size_bytes": len(raw),
+            "content_hash": _sha256(raw).hexdigest(),
+            "actor": actor,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            **(metadata or {}),
+        }
+        self._stored_files[file_id] = {"record": record, "content": raw}
+        self.audit_logger.log(
+            event_type="file.upload",
+            actor=actor,
+            action="create",
+            outcome="success",
+            target_type="file",
+            target_id=file_id,
+            details={"filename": filename, "size_bytes": len(raw), "profile": profile},
+        )
+        return record
+
+    def file_list(self, *, profile: str | None = None) -> list[dict[str, Any]]:
+        """List stored files, optionally filtered by profile."""
+        results = []
+        for fid, entry in self._stored_files.items():
+            rec = entry["record"]
+            if profile and rec.get("profile") != profile:
+                continue
+            results.append(rec)
+        return results
+
+    def file_get(self, file_id: str) -> dict[str, Any]:
+        """Get metadata for a stored file by ID."""
+        entry = self._stored_files.get(file_id)
+        if entry is None:
+            raise KeyError(f"File not found: {file_id}")
+        return entry["record"]
+
+    def file_download(self, file_id: str) -> dict[str, Any]:
+        """Download stored file content by ID. Returns base64-encoded content."""
+        import base64
+        entry = self._stored_files.get(file_id)
+        if entry is None:
+            raise KeyError(f"File not found: {file_id}")
+        content_b64 = base64.b64encode(entry["content"]).decode("ascii")
+        return {
+            **entry["record"],
+            "content_base64": content_b64,
+        }
+
+    def file_delete(self, file_id: str, *, actor: str = "system") -> dict[str, str]:
+        """Delete a stored file by ID."""
+        entry = self._stored_files.pop(file_id, None)
+        if entry is None:
+            raise KeyError(f"File not found: {file_id}")
+        self.audit_logger.log(
+            event_type="file.delete",
+            actor=actor,
+            action="delete",
+            outcome="success",
+            target_type="file",
+            target_id=file_id,
+            details={"filename": entry["record"].get("filename", "")},
+        )
+        return {"file_id": file_id, "status": "deleted"}
 
     def _run_pipeline_preview(
         self,
