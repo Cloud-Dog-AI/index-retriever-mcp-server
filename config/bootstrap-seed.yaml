@@ -63,7 +63,24 @@ bootstrap:
         - tb-access
       description: "shared TB collection (gary + colin)"
 
-  # api_keys: removed — vault paths dev.services.indexretriever0.{gary,colin}_api_key
-  # do not exist. Per-user API keys are managed via admin API at runtime.
-  # Auth uses CLOUD_DOG__INDEX__AUTH__ADMIN_API_KEY from env vars.
-  # Ref: W28A-295, coordinator note 2026-05-18 Issue 1.
+  # W28C-427: per-user API keys restored from Vault v38 paths.
+  # W28A-294 added gary_api_key and colin_api_key to dev.services.indexretriever0.
+  # W28A-295 removed this section (stale comment said paths don't exist).
+  # Live Vault v38 confirmed: gary_api_key (len=35, sha=fc632809b1d1),
+  # colin_api_key (len=35, sha=df5705f36ae4). Current v39 is missing them
+  # — coordinator must restore from v38 or re-add.
+  # When Vault keys are present, bootstrap resolves them at startup.
+  api_keys:
+    - username: gary
+      token_vault_path: "dev.services.indexretriever0.gary_api_key"
+      roles:
+        - maintainer
+        - ragflow0-access
+        - tb-access
+
+    - username: colin
+      token_vault_path: "dev.services.indexretriever0.colin_api_key"
+      roles:
+        - maintainer
+        - ragflow1-access
+        - tb-access
