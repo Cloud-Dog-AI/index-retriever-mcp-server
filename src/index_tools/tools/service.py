@@ -1856,6 +1856,7 @@ class IndexService:
         records: list[dict[str, Any]] = []
         for key_id in sorted(self.api_keys.keys()):
             record = self.api_keys[key_id]
+            token_hash = sha256(record.token.encode("utf-8")).hexdigest()
             records.append(
                 {
                     "key_id": record.key_id,
@@ -1864,6 +1865,8 @@ class IndexService:
                     "capabilities": sorted(record.capabilities),
                     "user_id": record.user_id,
                     "revoked": record.revoked,
+                    "token_length": len(record.token),
+                    "sha256_prefix": token_hash[:12],
                 }
             )
         return records
@@ -1982,6 +1985,62 @@ class IndexService:
             entity_type="api_key",
             entity_id=key_id,
             action="revoked",
+            actor=actor,
+            payload=result,
+        )
+        return result
+
+    def admin_api_key_revoke_token_hash(
+        self,
+        sha256_prefix: str,
+        roles: set[str],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Revoke API keys, including orphaned auth tokens, by SHA-256 prefix."""
+        self._require_admin(roles)
+        prefix = str(sha256_prefix or "").strip().lower()
+        if len(prefix) < 8 or any(ch not in "0123456789abcdef" for ch in prefix):
+            raise ValueError("sha256_prefix must be at least 8 hexadecimal characters")
+
+        revoked_key_ids: list[str] = []
+        for key_id, record in sorted(self.api_keys.items()):
+            token_hash = sha256(record.token.encode("utf-8")).hexdigest()
+            if token_hash.startswith(prefix):
+                if not record.revoked:
+                    record.revoked = True
+                    revoked_key_ids.append(key_id)
+                idam_key_id = self._idam_api_key_refs.get(key_id, "")
+                if self._idam_api_keys is not None and idam_key_id:
+                    self._idam_api_keys.revoke(idam_key_id)
+                self._sync_auth_api_key_record(record)
+
+        orphaned_tokens_revoked = 0
+        if self._auth_api_keys_bound:
+            for token in list(self._auth_api_keys.keys()):
+                token_hash = sha256(token.encode("utf-8")).hexdigest()
+                if token_hash.startswith(prefix):
+                    self._auth_api_keys.pop(token, None)
+                    orphaned_tokens_revoked += 1
+
+        result = {
+            "sha256_prefix": prefix,
+            "revoked_key_ids": revoked_key_ids,
+            "orphaned_tokens_revoked": orphaned_tokens_revoked,
+            "revoked_count": len(revoked_key_ids) + orphaned_tokens_revoked,
+        }
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="revoke_token_hash",
+            target_type="api_key",
+            target_id=prefix,
+            target_name="sha256_prefix",
+            new_value=result,
+        )
+        self._emit_config_event(
+            entity_type="api_key",
+            entity_id=prefix,
+            action="revoked_token_hash",
             actor=actor,
             payload=result,
         )
@@ -2303,6 +2362,37 @@ class IndexService:
         """Return one saved source configuration entry."""
         return self._source_config_payload(self.source_configs[source_id])
 
+    @staticmethod
+    def _validate_source_config_policy(source_type: str, uri: str) -> None:
+        """Validate connector policy before a source config can be stored."""
+        normalised_type = str(source_type or "").strip().lower()
+        if normalised_type not in {"filesystem", "http", "s3", "webdav", "ftp", "gdrive"}:
+            raise ValueError(f"Unsupported source type: {source_type!r}")
+        if normalised_type == "gdrive":
+            from index_tools.connectors.gdrive import resolve as gdrive_resolve
+            _ = gdrive_resolve(uri)
+            return
+        if normalised_type == "webdav":
+            from index_tools.connectors.webdav import resolve as webdav_resolve
+            _ = webdav_resolve(uri)
+            return
+        if normalised_type == "ftp":
+            from index_tools.connectors.ftp import resolve as ftp_resolve
+            _ = ftp_resolve(uri)
+            return
+        if normalised_type == "s3":
+            from index_tools.connectors.s3 import resolve as s3_resolve
+            _ = s3_resolve(uri)
+            return
+        if normalised_type == "http":
+            from index_tools.connectors.http import resolve as http_resolve
+            _ = http_resolve(uri)
+            return
+        from urllib.parse import urlparse
+        parsed = urlparse(uri)
+        if parsed.scheme and parsed.scheme != "file":
+            raise ValueError(f"Invalid filesystem URI scheme: {parsed.scheme}")
+
     def admin_source_config_create(
         self,
         source_id: str,
@@ -2314,10 +2404,13 @@ class IndexService:
         self._require_admin(roles)
         if source_id in self.source_configs:
             raise ValueError(f"Source config already exists: {source_id}")
+        source_type = str(payload.get("source_type", "filesystem") or "filesystem")
+        uri = str(payload.get("uri", ""))
+        self._validate_source_config_policy(source_type, uri)
         record = SourceConfigRecord(
             source_id=source_id,
-            source_type=str(payload.get("source_type", "filesystem") or "filesystem"),
-            uri=str(payload.get("uri", "")),
+            source_type=source_type,
+            uri=uri,
             schedule=str(payload.get("schedule", "")),
             profile=str(payload.get("profile", "default")),
             collection=str(payload.get("collection", "w12_documents")),
@@ -2363,6 +2456,7 @@ class IndexService:
             record.source_type = str(payload.get("source_type") or "filesystem")
         if "uri" in payload:
             record.uri = str(payload.get("uri") or "")
+        self._validate_source_config_policy(record.source_type, record.uri)
         if "schedule" in payload:
             record.schedule = str(payload.get("schedule") or "")
         if "profile" in payload:
@@ -2980,7 +3074,20 @@ class IndexService:
         """Upload a file to service storage. Returns file_id and metadata."""
         import base64
         from hashlib import sha256 as _sha256
-        raw = content if isinstance(content, bytes) else (base64.b64decode(content) if content.startswith(("data:", "base64:")) or len(content) > 200 else content.encode("utf-8"))
+        if isinstance(content, bytes):
+            raw = content
+        else:
+            text_content = str(content)
+            is_base64 = False
+            if text_content.startswith("data:") and "," in text_content:
+                text_content = text_content.split(",", 1)[1]
+                is_base64 = True
+            elif text_content.startswith("base64:"):
+                text_content = text_content.removeprefix("base64:")
+                is_base64 = True
+            elif len(text_content) > 200:
+                is_base64 = True
+            raw = base64.b64decode(text_content) if is_base64 else text_content.encode("utf-8")
         file_id = _sha256(raw).hexdigest()[:24]
         record = {
             "file_id": file_id,

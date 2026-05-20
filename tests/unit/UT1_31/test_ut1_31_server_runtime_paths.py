@@ -14,10 +14,12 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import runpy
 import sys
 import os
+from hashlib import sha256
 from types import SimpleNamespace
 from pathlib import Path
 from datetime import datetime, timezone
@@ -131,6 +133,87 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     tools = client.get(api_tools_path(), headers={"x-api-key": "test-api-key"})
     assert tools.status_code == 200
     assert isinstance(tools.json(), list)
+
+    service._auth_api_keys["unit_orphan_for_hash_revoke"] = {"reader"}
+    revoke_hash = client.post(
+        "/admin/api-keys/revoke-token",
+        headers={"authorization": "Bearer valid-admin-token"},
+        json={"sha256_prefix": sha256("unit_orphan_for_hash_revoke".encode("utf-8")).hexdigest()[:12]},
+    )
+    assert revoke_hash.status_code == 200, revoke_hash.text
+    assert revoke_hash.json()["api_key"]["orphaned_tokens_revoked"] == 1
+    orphan_denied = client.get("/api/v1/tools", headers={"x-api-key": "unit_orphan_for_hash_revoke"})
+    assert orphan_denied.status_code == 401
+
+    file_upload = client.post(
+        "/api/v1/files/upload_base64",
+        headers={"authorization": "Bearer valid-admin-token"},
+        json={
+            "filename": "ut-file-lifecycle.txt",
+            "content_base64": base64.b64encode(b"unit file lifecycle").decode("ascii"),
+            "profile": "default",
+        },
+    )
+    assert file_upload.status_code == 200, file_upload.text
+    file_id = file_upload.json()["file"]["file_id"]
+
+    file_list = client.get("/api/v1/files?profile=default", headers={"authorization": "Bearer valid-admin-token"})
+    assert file_list.status_code == 200
+    assert any(item["file_id"] == file_id for item in file_list.json()["files"])
+
+    file_get = client.get(f"/api/v1/files/{file_id}", headers={"authorization": "Bearer valid-admin-token"})
+    assert file_get.status_code == 200
+    assert file_get.json()["file"]["filename"] == "ut-file-lifecycle.txt"
+
+    file_download = client.get(f"/api/v1/files/{file_id}/download", headers={"authorization": "Bearer valid-admin-token"})
+    assert file_download.status_code == 200
+    assert base64.b64decode(file_download.json()["file"]["content_base64"]) == b"unit file lifecycle"
+
+    file_delete = client.delete(f"/api/v1/files/{file_id}", headers={"authorization": "Bearer valid-admin-token"})
+    assert file_delete.status_code == 200
+    assert file_delete.json()["file"]["status"] == "deleted"
+
+    file_missing = client.get(f"/api/v1/files/{file_id}", headers={"authorization": "Bearer valid-admin-token"})
+    assert file_missing.status_code == 404
+
+    card = client.get("/.well-known/agent.json")
+    assert card.status_code == 200
+    card_skills = {item["id"] for item in card.json()["skills"]}
+    assert {"file_upload", "file_list", "file_get", "file_download", "file_delete"}.issubset(card_skills)
+
+    a2a_missing_auth = client.post(
+        "/a2a/tasks",
+        json={"id": "ut-a2a-denied", "skill_id": "file_list", "input": {"text": "{}"}},
+    )
+    assert a2a_missing_auth.status_code == 401
+
+    a2a_upload = client.post(
+        "/a2a/tasks",
+        headers={"authorization": "Bearer valid-admin-token"},
+        json={
+            "id": "ut-a2a-upload",
+            "skill_id": "file_upload",
+            "input": {"text": json.dumps({"filename": "ut-a2a.txt", "content": "a2a lifecycle", "profile": "default"})},
+        },
+    )
+    assert a2a_upload.status_code == 200, a2a_upload.text
+    a2a_file_id = a2a_upload.json()["output"]["json"]["file_id"]
+
+    a2a_download = client.post(
+        "/a2a/tasks",
+        headers={"authorization": "Bearer valid-admin-token"},
+        json={"id": "ut-a2a-download", "skill_id": "file_download", "input": {"text": json.dumps({"file_id": a2a_file_id})}},
+    )
+    assert a2a_download.status_code == 200, a2a_download.text
+    encoded = a2a_download.json()["output"]["json"]["content_base64"]
+    assert base64.b64decode(encoded) == b"a2a lifecycle"
+
+    a2a_delete = client.post(
+        "/a2a/tasks",
+        headers={"authorization": "Bearer valid-admin-token"},
+        json={"id": "ut-a2a-delete", "skill_id": "file_delete", "input": {"text": json.dumps({"file_id": a2a_file_id})}},
+    )
+    assert a2a_delete.status_code == 200, a2a_delete.text
 
     forbidden = client.post(
         api_tools_path("ingest_text"),

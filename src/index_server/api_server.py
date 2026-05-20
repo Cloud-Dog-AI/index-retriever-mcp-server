@@ -1435,13 +1435,31 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     def admin_api_keys_delete(key_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, {"admin"})
-        return {
-            "api_key": active_service.admin_api_key_revoke(
-                key_id=key_id,
+        try:
+            return {
+                "api_key": active_service.admin_api_key_revoke(
+                    key_id=key_id,
+                    roles=identity.roles,
+                    actor=identity.user_id,
+                )
+            }
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"API key not found: {key_id}") from exc
+
+    def admin_api_keys_revoke_token(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"admin"})
+        try:
+            result = active_service.admin_api_key_revoke_token_hash(
+                sha256_prefix=str(payload["sha256_prefix"]),
                 roles=identity.roles,
                 actor=identity.user_id,
             )
-        }
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="API key not found") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"api_key": result}
 
     def admin_collections_list(profile: str = "default", request: Request = None) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
@@ -1598,6 +1616,79 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         )
         return result
 
+    def files_list(profile: str | None = None, request: Request = None) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        return {"files": active_service.file_list(profile=profile)}
+
+    async def files_upload(
+        request: Request,
+        profile: str = Form(default="default"),
+        metadata_json: str = Form(default="{}"),
+        upload: UploadFile = File(...),
+    ) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"writer", "maintainer", "admin"})
+        try:
+            metadata = json.loads(metadata_json or "{}")
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=400, detail="metadata_json must be valid JSON") from exc
+        if not isinstance(metadata, dict):
+            raise HTTPException(status_code=400, detail="metadata_json must decode to an object")
+        content = await upload.read()
+        return {
+            "file": active_service.file_upload(
+                filename=str(upload.filename or "upload.bin"),
+                content=content,
+                profile=profile,
+                actor=identity.user_id,
+                metadata=metadata,
+            )
+        }
+
+    def files_upload_base64(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"writer", "maintainer", "admin"})
+        metadata = payload.get("metadata")
+        if metadata is not None and not isinstance(metadata, dict):
+            raise HTTPException(status_code=400, detail="metadata must be an object")
+        content = payload.get("content_base64", payload.get("content", ""))
+        if "content_base64" in payload and not str(content).startswith("base64:"):
+            content = f"base64:{content}"
+        return {
+            "file": active_service.file_upload(
+                filename=str(payload.get("filename", "upload.bin")),
+                content=str(content),
+                profile=str(payload.get("profile", "default")),
+                actor=identity.user_id,
+                metadata=metadata if isinstance(metadata, dict) else None,
+            )
+        }
+
+    def files_get(file_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        try:
+            return {"file": active_service.file_get(file_id)}
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"File not found: {file_id}") from exc
+
+    def files_download(file_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        try:
+            return {"file": active_service.file_download(file_id)}
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"File not found: {file_id}") from exc
+
+    def files_delete(file_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, {"maintainer", "admin"})
+        try:
+            return {"file": active_service.file_delete(file_id, actor=identity.user_id)}
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"File not found: {file_id}") from exc
+
     assets_dir = _ui_assets_dir()
     if path_utils.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="ui-assets")
@@ -1731,6 +1822,100 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             collection=str(collection) if collection else None,
         )
 
+    def _a2a_task_payload(body: dict[str, Any]) -> tuple[str, str, dict[str, Any]]:
+        skill_id = str(body.get("skill_id") or body.get("skill") or "").strip()
+        input_data = body.get("input", {})
+        input_text = input_data.get("text", "") if isinstance(input_data, dict) else str(input_data)
+        payload = _parse_a2a_input(str(input_text or ""))
+        if isinstance(input_data, dict):
+            for key, value in input_data.items():
+                if key != "text":
+                    payload[key] = value
+        return str(body.get("id", "")), skill_id, payload
+
+    def _execute_a2a_skill(
+        *,
+        request: Request,
+        identity: AuthResult,
+        skill_id: str,
+        payload: dict[str, Any],
+    ) -> Any:
+        tool_map = {
+            "file_upload": "file_upload",
+            "file_list": "file_list",
+            "file_get": "file_get",
+            "file_download": "file_download",
+            "file_delete": "file_delete",
+            "source_config_create": "admin_source_config_create",
+            "source_config_list": "source_configs_list",
+            "source_config_get": "source_config_get",
+            "source_config_update": "admin_source_config_update",
+            "source_config_delete": "admin_source_config_delete",
+            "profiles_list": "profiles_list",
+            "collection_list": "collections_list",
+            "backend_health_check": "backend_health_check",
+            "ingest_health": "ingest_health",
+            "ingest_text": "ingest_text",
+            "search": "search",
+        }
+        if skill_id == "retrieve":
+            return _handle_retrieve(json.dumps(payload))
+        tool_name = tool_map.get(skill_id)
+        if tool_name is None:
+            raise HTTPException(status_code=404, detail=f"Unknown A2A skill: {skill_id}")
+        try:
+            return execute_tool(
+                service=active_service,
+                tool_name=tool_name,
+                arguments={**payload, "actor": identity.user_id},
+                registry=registry,
+                identity_roles=identity.roles,
+            )
+        except PermissionError as exc:
+            _log_auth_event(
+                request,
+                actor=identity.user_id,
+                outcome="failure",
+                action="authorise",
+                roles=identity.roles,
+                auth_mechanism=identity.token_type,
+                reason=str(exc),
+            )
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    async def a2a_submit_task(request: Request) -> JSONResponse:
+        identity = _a2a_auth_or_raise(request, _headers_from_request(request))
+        try:
+            body = await request.json()
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=400, detail="A2A task body must be JSON") from exc
+        if not isinstance(body, dict):
+            raise HTTPException(status_code=400, detail="A2A task body must be an object")
+        task_id, skill_id, payload = _a2a_task_payload(body)
+        task_id = task_id or secrets.token_hex(12)
+        result = _execute_a2a_skill(
+            request=request,
+            identity=identity,
+            skill_id=skill_id,
+            payload=payload,
+        )
+        return JSONResponse(
+            {
+                "id": task_id,
+                "status": "completed",
+                "skill_id": skill_id,
+                "output": {
+                    "type": "json",
+                    "json": result,
+                    "text": json.dumps(result, sort_keys=True, default=str),
+                },
+            }
+        )
+
     # A2A agent card and task submission router
     # W28C-427 IDX-SNAG-003: expanded A2A skills to cover admin, file, health, and source-config.
     _a2a_skills = [
@@ -1746,9 +1931,17 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         A2ASkill(id="backend_health_check", name="Backend Health", description="Vector database backend health check"),
         A2ASkill(id="file_upload", name="File Upload", description="Upload a file to service storage (PS-78)"),
         A2ASkill(id="file_list", name="File List", description="List stored service files (PS-78)"),
+        A2ASkill(id="file_get", name="File Metadata", description="Get stored service file metadata (PS-78)"),
+        A2ASkill(id="file_download", name="File Download", description="Download stored service file content (PS-78)"),
+        A2ASkill(id="file_delete", name="File Delete", description="Delete a stored service file (PS-78)"),
         A2ASkill(id="source_config_create", name="Create Source Config", description="Create a connector source configuration"),
         A2ASkill(id="source_config_list", name="List Source Configs", description="List connector source configurations"),
+        A2ASkill(id="source_config_get", name="Get Source Config", description="Read a connector source configuration"),
+        A2ASkill(id="source_config_update", name="Update Source Config", description="Update a connector source configuration"),
+        A2ASkill(id="source_config_delete", name="Delete Source Config", description="Delete a connector source configuration"),
     ]
+    app.post(f"{_CANONICAL_A2A_BASE_PATH}/tasks")(a2a_submit_task)
+    app.post("/tasks")(a2a_submit_task)
     _a2a_card_router = create_a2a_card_router(
         name="index-retriever",
         description="Index retriever A2A server for vector database search and document ingestion",
@@ -1789,6 +1982,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.delete("/admin/groups/{group_id}")(admin_groups_delete)
     app.get("/admin/api-keys")(admin_api_keys_list)
     app.post("/admin/api-keys")(admin_api_keys_create)
+    app.post("/admin/api-keys/revoke-token")(admin_api_keys_revoke_token)
     app.delete("/admin/api-keys/{key_id}")(admin_api_keys_delete)
     app.get("/admin/collections")(admin_collections_list)
     app.post("/admin/collections")(admin_collections_create)
@@ -1803,6 +1997,18 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get("/admin/rbac-bindings")(admin_rbac_bindings_list)
     app.post("/admin/rbac-bindings")(admin_rbac_bindings_create)
     app.delete("/admin/rbac-bindings/{entity_type}/{entity_id}/{role}")(admin_rbac_bindings_delete)
+    app.get(f"{api_base_path}/files")(files_list)
+    app.post(f"{api_base_path}/files/upload")(files_upload)
+    app.post(f"{api_base_path}/files/upload_base64")(files_upload_base64)
+    app.get(f"{api_base_path}/files/{{file_id}}")(files_get)
+    app.get(f"{api_base_path}/files/{{file_id}}/download")(files_download)
+    app.delete(f"{api_base_path}/files/{{file_id}}")(files_delete)
+    app.get(f"{_LEGACY_API_BASE_PATH}/files", include_in_schema=False)(files_list)
+    app.post(f"{_LEGACY_API_BASE_PATH}/files/upload", include_in_schema=False)(files_upload)
+    app.post(f"{_LEGACY_API_BASE_PATH}/files/upload_base64", include_in_schema=False)(files_upload_base64)
+    app.get(f"{_LEGACY_API_BASE_PATH}/files/{{file_id}}", include_in_schema=False)(files_get)
+    app.get(f"{_LEGACY_API_BASE_PATH}/files/{{file_id}}/download", include_in_schema=False)(files_download)
+    app.delete(f"{_LEGACY_API_BASE_PATH}/files/{{file_id}}", include_in_schema=False)(files_delete)
     app.post(f"{api_base_path}/upload")(upload_ingest)
     app.post(f"{_LEGACY_API_BASE_PATH}/upload", include_in_schema=False)(upload_ingest)
     # W28A-648: Audit log JSONL reader for WebUI DataTable display

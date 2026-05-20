@@ -13,12 +13,9 @@ Routes source URIs to the appropriate connector module based on scheme.
 
 from __future__ import annotations
 
-import logging
 from urllib.parse import urlparse
 
 from index_tools.connectors.models import FetchPlan
-
-logger = logging.getLogger(__name__)
 
 # Supported source types and their schemes.
 SUPPORTED_SOURCE_TYPES = [
@@ -43,16 +40,21 @@ def resolve_source(uri: str, *, allowed_roots: list[str] | None = None) -> Fetch
     parsed = urlparse(uri)
     scheme = (parsed.scheme or "").lower()
 
-    # Filesystem: no scheme or file:// scheme
-    if not scheme or scheme == "file":
-        from index_tools.connectors.filesystem import resolve as fs_resolve
-        roots = allowed_roots or ["."]
-        return fs_resolve(roots, uri.replace("file://", "", 1) if scheme == "file" else uri)
+    # Google Drive shared links use HTTPS, so detect them before generic HTTP.
+    if scheme == "gdrive" or "drive.google.com" in uri or "docs.google.com" in uri:
+        from index_tools.connectors.gdrive import resolve as gdrive_resolve
+        return gdrive_resolve(uri)
 
     # HTTP/HTTPS
     if scheme in {"http", "https"}:
         from index_tools.connectors.http import resolve as http_resolve
         return http_resolve(uri)
+
+    # Filesystem: no scheme or file:// scheme
+    if not scheme or scheme == "file":
+        from index_tools.connectors.filesystem import resolve as fs_resolve
+        roots = allowed_roots or ["."]
+        return fs_resolve(roots, uri.replace("file://", "", 1) if scheme == "file" else uri)
 
     # S3
     if scheme == "s3":
@@ -68,11 +70,6 @@ def resolve_source(uri: str, *, allowed_roots: list[str] | None = None) -> Fetch
     if scheme in {"ftp", "ftps"}:
         from index_tools.connectors.ftp import resolve as ftp_resolve
         return ftp_resolve(uri)
-
-    # Google Drive
-    if scheme == "gdrive" or "drive.google.com" in uri:
-        from index_tools.connectors.gdrive import resolve as gdrive_resolve
-        return gdrive_resolve(uri)
 
     raise ValueError(f"Unsupported source scheme: {scheme!r}")
 

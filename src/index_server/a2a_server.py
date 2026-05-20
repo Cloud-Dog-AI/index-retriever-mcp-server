@@ -36,8 +36,16 @@ AGENT_CARD: dict[str, Any] = {
         {"id": "profiles_list", "name": "List Profiles", "description": "List configured storage profiles"},
         {"id": "ingest_health", "name": "Ingest Health", "description": "Per-profile ingest pipeline health status"},
         {"id": "backend_health_check", "name": "Backend Health", "description": "Vector database backend health check"},
+        {"id": "file_upload", "name": "File Upload", "description": "Upload a file to service storage (PS-78)"},
+        {"id": "file_list", "name": "File List", "description": "List stored service files (PS-78)"},
+        {"id": "file_get", "name": "File Metadata", "description": "Get stored service file metadata (PS-78)"},
+        {"id": "file_download", "name": "File Download", "description": "Download stored service file content (PS-78)"},
+        {"id": "file_delete", "name": "File Delete", "description": "Delete a stored service file (PS-78)"},
         {"id": "source_config_create", "name": "Create Source Config", "description": "Create a connector source configuration"},
         {"id": "source_config_list", "name": "List Source Configs", "description": "List connector source configurations"},
+        {"id": "source_config_get", "name": "Get Source Config", "description": "Read a connector source configuration"},
+        {"id": "source_config_update", "name": "Update Source Config", "description": "Update a connector source configuration"},
+        {"id": "source_config_delete", "name": "Delete Source Config", "description": "Delete a connector source configuration"},
     ],
 }
 

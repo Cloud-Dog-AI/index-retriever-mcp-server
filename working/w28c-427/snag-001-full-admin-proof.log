@@ -4,11 +4,11 @@ Timestamp: 2026-05-20T12:08:24+01:00
 --- 1. List existing keys ---
 {"ok":true,"data":{"api_keys":[{"key_id":"052cc6426e2f","label":"colin-w28c427","roles":["maintainer","ragflow1-access","tb-access"],"capabilities":[],"user_id":null,"revoked":false},{"key_id":"4f4cd259ecc0","label":"4f4cd259ecc0","roles":["maintainer","ragflow0-access","tb-access"],"capabilities":[],"user_id":null,"revoked":false},{"key_id":"639397337b93","label":"gary-w28c427","roles":["maintainer","ragflow0-access","tb-access"],"capabilities":[],"user_id":null,"revoked":false},{"key_id":"f772581b45f9","label":"f772581b45f9","roles":["maintainer","ragflow1-access","tb-access"],"capabilities":[],"user_id":null,"revoked":false}]},"meta":{"request_id":"7a11d56398334e86acc7872b56b1c586","correlation_id":null,"version":"v1"}}
 --- 2. Create gary key with roles ---
-{"ok":true,"data":{"api_key":{"key_id":"59ea340b19d9","token":"cd_c40ac467f57b4adfb2805102fe143a42","label":"gary-snag001-r4","roles":["maintainer","ragflow0-access","tb-access"],"capabilities":[],"user_id":null,"revoked":false},"status":"ok"},"meta":{"request_id":"4e23607f15594aa4a000e6544b7d54f6","correlation_id":null,"version":"v1"}}
+{"ok":true,"data":{"api_key":{"key_id":"59ea340b19d9","token":"<REDACTED len=35 sha256_prefix=0cdee59cf574>","label":"gary-snag001-r4","roles":["maintainer","ragflow0-access","tb-access"],"capabilities":[],"user_id":null,"revoked":false},"status":"ok"},"meta":{"request_id":"4e23607f15594aa4a000e6544b7d54f6","correlation_id":null,"version":"v1"}}
 gary_key_id=59ea340b19d9 gary_token_len=35
 
 --- 3. Create colin key with roles ---
-{"ok":true,"data":{"api_key":{"key_id":"afa860de636d","token":"cd_dad2a1356efc4082b0aa1f7dc88bf990","label":"colin-snag001-r4","roles":["maintainer","ragflow1-access","tb-access"],"capabilities":[],"user_id":null,"revoked":false},"status":"ok"},"meta":{"request_id":"4f16eadd9181450ba34045729b5411ea","correlation_id":null,"version":"v1"}}
+{"ok":true,"data":{"api_key":{"key_id":"afa860de636d","token":"<REDACTED len=35 sha256_prefix=b2bfba730eb0>","label":"colin-snag001-r4","roles":["maintainer","ragflow1-access","tb-access"],"capabilities":[],"user_id":null,"revoked":false},"status":"ok"},"meta":{"request_id":"4f16eadd9181450ba34045729b5411ea","correlation_id":null,"version":"v1"}}
 colin_key_id=afa860de636d colin_token_len=35
 
 --- 4. Gary auth (valid) ---

@@ -23,9 +23,11 @@ def _extract_file_id(reference: str) -> str:
     text = reference.strip()
     if not text:
         return ""
+    parsed = urlparse(text)
+    if parsed.scheme == "gdrive":
+        return (parsed.netloc or parsed.path.lstrip("/")).strip()
     if "://" not in text and "/" not in text:
         return text
-    parsed = urlparse(text)
     if parsed.netloc in {"drive.google.com", "docs.google.com"}:
         parts = [item for item in parsed.path.split("/") if item]
         if "d" in parts:

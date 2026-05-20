@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+from hashlib import sha256
+
 import pytest
 
 from index_server.mcp_server import execute_tool
@@ -76,7 +78,16 @@ def test_service_admin_config_crud_and_mcp_parity(service: IndexService) -> None
     )["api_key"]
     assert api_key["token"].startswith("cd_")
     assert service.api_keys_list()[0]["key_id"] == "cfg-key"
+    assert "token" not in service.api_keys_list()[0]
+    assert service.api_keys_list()[0]["token_length"] == len(api_key["token"])
+    assert service.api_keys_list()[0]["sha256_prefix"] == sha256(api_key["token"].encode("utf-8")).hexdigest()[:12]
     assert api_key["token"] in service._auth_api_keys
+
+    service._auth_api_keys["cd_orphaned_security_token"] = {"reader"}
+    orphan_prefix = sha256("cd_orphaned_security_token".encode("utf-8")).hexdigest()[:12]
+    orphan_revoke = service.admin_api_key_revoke_token_hash(orphan_prefix, roles={"admin"}, actor="cfg-admin")
+    assert orphan_revoke["orphaned_tokens_revoked"] == 1
+    assert "cd_orphaned_security_token" not in service._auth_api_keys
 
     events = execute_tool(
         service=service,
