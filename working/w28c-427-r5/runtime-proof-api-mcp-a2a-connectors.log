@@ -1,0 +1,67 @@
+{"api_base": "https://indexretriever0.cloud-dog.net:8443", "phase": "admin_token_ready", "sha256_prefix": "4c806362b613", "token_length": 12}
+{"no_token_status": 401, "phase": "api_file_auth_baseline"}
+{"content_sha256_prefix": "e1f4552dd0e2", "file_id": "e1f4552dd0e2a2e8b2e25401", "filename": "w28c427r5-api-1dc75e18.txt", "phase": "api_file_upload", "status": 200}
+{"contains_uploaded_file": true, "phase": "api_file_list", "status": 200}
+{"contains_uploaded_file": true, "phase": "api_file_legacy_list", "status": 200}
+{"filename": "w28c427r5-api-1dc75e18.txt", "phase": "api_file_get", "status": 200}
+{"content_sha256_prefix": "e1f4552dd0e2", "decoded_bytes": 57, "matches_upload": true, "phase": "api_file_download", "status": 200}
+{"delete_status": "deleted", "phase": "api_file_delete", "status": 200}
+{"phase": "api_file_get_after_delete", "status": 404}
+{"no_token_status": 401, "phase": "api_source_config_auth_baseline"}
+{"phase": "api_source_config_create", "returned_source_type": "filesystem", "source_id": "w28c427r5-api-filesystem-72e8c4", "source_type": "filesystem", "status": 200}
+{"phase": "api_source_config_get", "source_id": "w28c427r5-api-filesystem-72e8c4", "source_type": "filesystem", "status": 200, "uri_sha256_prefix": "2688aee21fff"}
+{"enabled": false, "phase": "api_source_config_update", "schedule": "manual", "source_id": "w28c427r5-api-filesystem-72e8c4", "source_type": "filesystem", "status": 200}
+{"phase": "api_source_config_create", "returned_source_type": "http", "source_id": "w28c427r5-api-http-e1665a", "source_type": "http", "status": 200}
+{"phase": "api_source_config_get", "source_id": "w28c427r5-api-http-e1665a", "source_type": "http", "status": 200, "uri_sha256_prefix": "e64643cc5ede"}
+{"enabled": false, "phase": "api_source_config_update", "schedule": "manual", "source_id": "w28c427r5-api-http-e1665a", "source_type": "http", "status": 200}
+{"phase": "api_source_config_create", "returned_source_type": "s3", "source_id": "w28c427r5-api-s3-68f2c0", "source_type": "s3", "status": 200}
+{"phase": "api_source_config_get", "source_id": "w28c427r5-api-s3-68f2c0", "source_type": "s3", "status": 200, "uri_sha256_prefix": "f13fcdececd7"}
+{"enabled": false, "phase": "api_source_config_update", "schedule": "manual", "source_id": "w28c427r5-api-s3-68f2c0", "source_type": "s3", "status": 200}
+{"phase": "api_source_config_create", "returned_source_type": "webdav", "source_id": "w28c427r5-api-webdav-bfb825", "source_type": "webdav", "status": 200}
+{"phase": "api_source_config_get", "source_id": "w28c427r5-api-webdav-bfb825", "source_type": "webdav", "status": 200, "uri_sha256_prefix": "b6f0b79437a9"}
+{"enabled": false, "phase": "api_source_config_update", "schedule": "manual", "source_id": "w28c427r5-api-webdav-bfb825", "source_type": "webdav", "status": 200}
+{"phase": "api_source_config_create", "returned_source_type": "ftp", "source_id": "w28c427r5-api-ftp-4a33dc", "source_type": "ftp", "status": 200}
+{"phase": "api_source_config_get", "source_id": "w28c427r5-api-ftp-4a33dc", "source_type": "ftp", "status": 200, "uri_sha256_prefix": "6dfe5c6b7d30"}
+{"enabled": false, "phase": "api_source_config_update", "schedule": "manual", "source_id": "w28c427r5-api-ftp-4a33dc", "source_type": "ftp", "status": 200}
+{"phase": "api_source_config_create", "returned_source_type": "gdrive", "source_id": "w28c427r5-api-gdrive-f46d2e", "source_type": "gdrive", "status": 200}
+{"phase": "api_source_config_get", "source_id": "w28c427r5-api-gdrive-f46d2e", "source_type": "gdrive", "status": 200, "uri_sha256_prefix": "7502323df158"}
+{"enabled": false, "phase": "api_source_config_update", "schedule": "manual", "source_id": "w28c427r5-api-gdrive-f46d2e", "source_type": "gdrive", "status": 200}
+{"created_count_expected": 6, "created_count_seen": 6, "phase": "api_source_config_list", "status": 200}
+{"case": "ssh", "detail_prefix": "Unsupported source type: 'ssh'", "phase": "api_source_config_reject", "status": 400}
+{"case": "bad_gdrive", "detail_prefix": "Google Drive file ID is required", "phase": "api_source_config_reject", "status": 400}
+{"delete_status": "ok", "phase": "api_source_config_delete", "source_id": "w28c427r5-api-filesystem-72e8c4", "status": 200}
+{"delete_status": "ok", "phase": "api_source_config_delete", "source_id": "w28c427r5-api-http-e1665a", "status": 200}
+{"delete_status": "ok", "phase": "api_source_config_delete", "source_id": "w28c427r5-api-s3-68f2c0", "status": 200}
+{"delete_status": "ok", "phase": "api_source_config_delete", "source_id": "w28c427r5-api-webdav-bfb825", "status": 200}
+{"delete_status": "ok", "phase": "api_source_config_delete", "source_id": "w28c427r5-api-ftp-4a33dc", "status": 200}
+{"delete_status": "ok", "phase": "api_source_config_delete", "source_id": "w28c427r5-api-gdrive-f46d2e", "status": 200}
+{"phase": "api_source_config_list_after_delete", "remaining_created_count": 0, "status": 200}
+{"has_file_lifecycle_tools": true, "has_source_config_tools": true, "phase": "mcp_tools_list", "status": 200}
+{"jsonrpc_error_present": true, "no_token_http_status": 401, "phase": "mcp_auth_baseline", "tool": "file_delete"}
+{"content_sha256_prefix": "43f109b1d18d", "file_id": "43f109b1d18d2a16b4dc4d13", "jsonrpc_error_present": false, "phase": "mcp_file_upload", "status": 200}
+{"contains_uploaded_file": true, "jsonrpc_error_present": false, "phase": "mcp_file_list", "status": 200}
+{"filename": "w28c427r5-mcp-c96b571d.txt", "jsonrpc_error_present": false, "phase": "mcp_file_get", "status": 200}
+{"content_sha256_prefix": "43f109b1d18d", "decoded_bytes": 57, "jsonrpc_error_present": false, "matches_upload": true, "phase": "mcp_file_download", "status": 200}
+{"delete_status": "deleted", "jsonrpc_error_present": false, "phase": "mcp_file_delete", "status": 200}
+{"jsonrpc_error_present": false, "phase": "mcp_source_config_create", "source_id": "w28c427r5-mcp-gdrive-db316d", "source_type": "gdrive", "status": 200}
+{"jsonrpc_error_present": false, "phase": "mcp_source_config_get", "source_id": "w28c427r5-mcp-gdrive-db316d", "source_type": "gdrive", "status": 200}
+{"enabled": false, "jsonrpc_error_present": false, "phase": "mcp_source_config_update", "schedule": "manual", "status": 200}
+{"contains_created_source_config": true, "jsonrpc_error_present": false, "phase": "mcp_source_config_list", "status": 200}
+{"delete_status": "ok", "jsonrpc_error_present": false, "phase": "mcp_source_config_delete", "status": 200}
+{"case": "ssh", "jsonrpc_error_present": true, "phase": "mcp_source_config_reject", "status": 422}
+{"has_file_lifecycle_skills": true, "has_source_config_skills": true, "phase": "a2a_card_skill_inventory", "status": 200}
+{"no_token_status": 401, "phase": "a2a_auth_baseline", "url": "https://indexretriever0.cloud-dog.net/a2a/tasks"}
+{"path": "websecure_path", "phase": "a2a_profiles_task", "profiles_count": 2, "status": 200, "task_status": "completed"}
+{"path": "direct_entrypoint", "phase": "a2a_profiles_task", "profiles_count": 2, "status": 200, "task_status": "completed"}
+{"content_sha256_prefix": "9b184a66708f", "file_id": "9b184a66708f7f43093a6b93", "phase": "a2a_file_upload", "status": 200, "task_status": "completed"}
+{"contains_uploaded_file": true, "phase": "a2a_file_list", "status": 200}
+{"filename": "w28c427r5-a2a-898ad671.txt", "phase": "a2a_file_get", "status": 200}
+{"content_sha256_prefix": "9b184a66708f", "decoded_bytes": 57, "matches_upload": true, "phase": "a2a_file_download", "status": 200}
+{"delete_status": "deleted", "phase": "a2a_file_delete", "status": 200}
+{"phase": "a2a_file_get_after_delete", "status": 404}
+{"phase": "a2a_source_config_create", "source_id": "w28c427r5-a2a-webdav-ebeb30", "source_type": "webdav", "status": 200}
+{"phase": "a2a_source_config_get", "source_id": "w28c427r5-a2a-webdav-ebeb30", "source_type": "webdav", "status": 200}
+{"enabled": false, "phase": "a2a_source_config_update", "schedule": "manual", "status": 200}
+{"contains_created_source_config": true, "phase": "a2a_source_config_list", "status": 200}
+{"delete_status": "ok", "phase": "a2a_source_config_delete", "status": 200}
+{"case": "ssh", "phase": "a2a_source_config_reject", "status": 400}
