@@ -1,25 +1,26 @@
 === Ukraine v7 ingest cycle — 1 topic(s) ===
 
-baseline seen-urls register rows: 6
+baseline seen-urls register rows: 3
 
 ========== TOPIC [1/1]: 'Russia Ukraine sanctions May 2026' ==========
-  [node_finished] begin  elapsed=0.0015400450211018324s output[:200]=''
-  [node_finished] SetupNode  elapsed=27.154307250166312s output[:200]=''
-  [node_finished] Topic  elapsed=0.0010078400373458862s output[:200]=''
-  [node_finished] DiscoveryNode  elapsed=80.25882636406459s output[:200]='{"name": "complete_task", "arguments": "{\\"topic\\":\\"Russia Ukraine sanctions May 2026\\",\\"captured_at\\":\\"2026-05-19\\",\\"seen_url_count_before\\":5,\\"per_source_search_hits\\":{\\"ua-kyiv-independent\\":'
-  [node_finished] IngestNode  elapsed=1509.2739685699344s output[:200]=''
-  [node_finished] Topic  elapsed=0.001028100959956646s output[:200]=''
-  [node_finished] TopicLoop  elapsed=1589.5478022929747s output[:200]=''
+  [node_finished] begin  elapsed=0.000770587008446455s output[:200]=''
+  [node_finished] SetupNode  elapsed=25.138258880004287s output[:200]=''
+  [node_finished] Topic  elapsed=0.001063516829162836s output[:200]=''
+  [node_finished] DiscoveryNode  elapsed=90.61658480786718s output[:200]='{"name": "complete_task", "arguments": {"answer":"{\\n  \\"topic\\": \\"Russia Ukraine sanctions May 2026\\",\\n  \\"captured_at\\": \\"2026-05-19\\",\\n  \\"seen_url_count_before\\": 3,\\n  \\"per_source_search_hit'
+  [node_finished] IngestNode  elapsed=1027.8966071039904s output[:200]=''
+  [node_finished] Topic  elapsed=0.0010628639720380306s output[:200]=''
+  [node_finished] TopicLoop  elapsed=1118.5275914110243s output[:200]=''
 
-Wall-clock: 1617.1s   events: 7
+Wall-clock: 1144.0s   events: 7
 
   delta chunks (topic-matching): +0
-  delta seen-urls register: +-1
+  delta seen-urls register: +2
 
 
 ========== CYCLE COMPLETE ==========
-  seen-urls register: 6 → 5  (+-1)
+  seen-urls register: 3 → 5  (+2)
   per outlet: {'ua-kyiv-independent': 2, 'isw': 1, 'ua-suspilne': 2}
   per language: {'?': 5}
 
 Report saved to working/w28a-323/t267-5-cycle-report.json
+n
