@@ -2993,14 +2993,15 @@ class IndexService:
             **(metadata or {}),
         }
         self._stored_files[file_id] = {"record": record, "content": raw}
-        self.audit_logger.log(
-            event_type="file.upload",
+        self.audit_logger.log_admin_action(
             actor=actor,
-            action="create",
-            outcome="success",
+            roles=set(),
+            action="file.upload",
             target_type="file",
             target_id=file_id,
-            details={"filename": filename, "size_bytes": len(raw), "profile": profile},
+            filename=filename,
+            size_bytes=len(raw),
+            profile=profile,
         )
         return record
 
@@ -3038,14 +3039,13 @@ class IndexService:
         entry = self._stored_files.pop(file_id, None)
         if entry is None:
             raise KeyError(f"File not found: {file_id}")
-        self.audit_logger.log(
-            event_type="file.delete",
+        self.audit_logger.log_admin_action(
             actor=actor,
-            action="delete",
-            outcome="success",
+            roles=set(),
+            action="file.delete",
             target_type="file",
             target_id=file_id,
-            details={"filename": entry["record"].get("filename", "")},
+            filename=entry["record"].get("filename", ""),
         )
         return {"file_id": file_id, "status": "deleted"}
 

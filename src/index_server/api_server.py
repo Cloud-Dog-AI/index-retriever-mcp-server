@@ -1732,10 +1732,22 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         )
 
     # A2A agent card and task submission router
+    # W28C-427 IDX-SNAG-003: expanded A2A skills to cover admin, file, health, and source-config.
     _a2a_skills = [
-        A2ASkill(id="ingest_text", name="Ingest Text", description="Ingest text into the vector database", handler=_handle_ingest_text),
-        A2ASkill(id="search", name="Search", description="Semantic search across indexed documents", handler=_handle_search),
-        A2ASkill(id="retrieve", name="Retrieve", description="Retrieve documents by ID or metadata", handler=_handle_retrieve),
+        A2ASkill(id="ingest_text", name="Ingest Text", description="Ingest text into a profiled collection with embedding and indexing", handler=_handle_ingest_text),
+        A2ASkill(id="ingest_upload", name="Ingest Upload", description="Upload a file for chunking, embedding, and indexing"),
+        A2ASkill(id="ingest_reference", name="Ingest Reference", description="Ingest content from a URI (HTTP, S3, FTP, filesystem, etc.)"),
+        A2ASkill(id="search", name="Search", description="Vector similarity search across indexed collections", handler=_handle_search),
+        A2ASkill(id="retrieve", name="Retrieve", description="Retrieve a specific document by ID", handler=_handle_retrieve),
+        A2ASkill(id="collection_create", name="Create Collection", description="Create a new indexed collection within a profile"),
+        A2ASkill(id="collection_list", name="List Collections", description="List collections for a profile"),
+        A2ASkill(id="profiles_list", name="List Profiles", description="List configured storage profiles"),
+        A2ASkill(id="ingest_health", name="Ingest Health", description="Per-profile ingest pipeline health status"),
+        A2ASkill(id="backend_health_check", name="Backend Health", description="Vector database backend health check"),
+        A2ASkill(id="file_upload", name="File Upload", description="Upload a file to service storage (PS-78)"),
+        A2ASkill(id="file_list", name="File List", description="List stored service files (PS-78)"),
+        A2ASkill(id="source_config_create", name="Create Source Config", description="Create a connector source configuration"),
+        A2ASkill(id="source_config_list", name="List Source Configs", description="List connector source configurations"),
     ]
     _a2a_card_router = create_a2a_card_router(
         name="index-retriever",
