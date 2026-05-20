@@ -71,14 +71,16 @@ bootstrap:
   # — coordinator must restore from v38 or re-add.
   # When Vault keys are present, bootstrap resolves them at startup.
   api_keys:
-    - username: gary
+    - name: gary
+      username: gary
       token_vault_path: "dev.services.indexretriever0.gary_api_key"
       roles:
         - maintainer
         - ragflow0-access
         - tb-access
 
-    - username: colin
+    - name: colin
+      username: colin
       token_vault_path: "dev.services.indexretriever0.colin_api_key"
       roles:
         - maintainer

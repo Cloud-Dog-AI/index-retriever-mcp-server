@@ -113,6 +113,14 @@ def test_load_seed_parses_canonical_shape(tmp_path: Path) -> None:
     )
 
 
+def test_repo_default_bootstrap_seed_is_parseable() -> None:
+    """The container-baked default seed must not crash service startup."""
+    repo_root = Path(__file__).resolve().parents[3]
+    seed = load_seed(repo_root / "config" / "bootstrap-seed.yaml")
+    assert {item.name for item in seed.api_keys} == {"gary", "colin"}
+    assert {item.username for item in seed.api_keys} == {"gary", "colin"}
+
+
 def test_load_seed_missing_file_raises(tmp_path: Path) -> None:
     with pytest.raises(BootstrapSeedError, match="not found"):
         load_seed(tmp_path / "nope.yaml")
