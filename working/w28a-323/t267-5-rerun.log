@@ -1,0 +1,22 @@
+=== Ukraine v7 ingest cycle — 1 topic(s) ===
+
+baseline seen-urls register rows: 5
+
+========== TOPIC [1/1]: 'Ukraine EU sanctions' ==========
+  [node_finished] begin  elapsed=0.0006489132065325975s output[:200]=''
+  [node_finished] SetupNode  elapsed=26.290590150048956s output[:200]=''
+  [node_finished] Topic  elapsed=0.0008908461313694715s output[:200]=''
+  [node_finished] DiscoveryNode  elapsed=462.6348883728497s output[:200]='{"name": "complete_task", "arguments": "{\\"topic\\":\\"Ukraine EU sanctions\\",\\"captured_at\\":\\"2026-05-20\\",\\"seen_url_count_before\\":5,\\"per_source_search_hits\\":{\\"ua-kyiv-independent\\":2,\\"isw\\":2,\\'
+
+Wall-clock: 1800.1s   events: 4
+
+  delta chunks (topic-matching): +0
+  delta seen-urls register: +3
+
+
+========== CYCLE COMPLETE ==========
+  seen-urls register: 5 → 8  (+3)
+  per outlet: {'ua-kyiv-independent': 3, 'ru-meduza-ru': 1, 'isw': 2, 'ua-suspilne': 2}
+  per language: {'?': 8}
+
+Report saved to working/w28a-323/t267-5-rerun-report.json

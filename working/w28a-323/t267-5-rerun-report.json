@@ -1,0 +1,31 @@
+{
+  "started_at": "2026-05-20T06:02:41Z",
+  "topics": [
+    {
+      "topic": "Ukraine EU sanctions",
+      "wall_clock_s": 1800.1,
+      "chunks_matching_before": 2,
+      "chunks_matching_after": 2,
+      "delta_chunks": 0,
+      "seen_urls_before": 5,
+      "seen_urls_after": 8,
+      "delta_seen_urls": 3,
+      "manifest": null
+    }
+  ],
+  "summary": {
+    "seen_urls_before": 5,
+    "seen_urls_after": 8,
+    "new_urls_added": 3,
+    "topics_run": 1,
+    "per_outlet_total": {
+      "ua-kyiv-independent": 3,
+      "ru-meduza-ru": 1,
+      "isw": 2,
+      "ua-suspilne": 2
+    },
+    "per_language_total": {
+      "?": 8
+    }
+  }
+}
