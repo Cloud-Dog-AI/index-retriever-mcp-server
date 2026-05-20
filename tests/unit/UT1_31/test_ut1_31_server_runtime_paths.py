@@ -145,6 +145,34 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     orphan_denied = client.get("/api/v1/tools", headers={"x-api-key": "unit_orphan_for_hash_revoke"})
     assert orphan_denied.status_code == 401
 
+    bad_source_type = client.post(
+        "/admin/source-configs",
+        headers={"authorization": "Bearer valid-admin-token"},
+        json={
+            "source_id": "ut-bad-source-type",
+            "source_type": "ssh",
+            "uri": "ssh://example.com/source.txt",
+            "profile": "default",
+            "collection": "ut_api",
+        },
+    )
+    assert bad_source_type.status_code == 400
+    assert "Unsupported source type" in bad_source_type.text
+
+    bad_gdrive = client.post(
+        "/admin/source-configs",
+        headers={"authorization": "Bearer valid-admin-token"},
+        json={
+            "source_id": "ut-bad-gdrive",
+            "source_type": "gdrive",
+            "uri": "https://example.com/not-drive",
+            "profile": "default",
+            "collection": "ut_api",
+        },
+    )
+    assert bad_gdrive.status_code == 400
+    assert "Google Drive file ID is required" in bad_gdrive.text
+
     file_upload = client.post(
         "/api/v1/files/upload_base64",
         headers={"authorization": "Bearer valid-admin-token"},

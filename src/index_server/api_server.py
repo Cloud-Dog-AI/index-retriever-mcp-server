@@ -1522,41 +1522,57 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     def admin_source_configs_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, {"admin"})
-        source_id = str(payload["source_id"])
-        return {
-            "source_config": active_service.admin_source_config_create(
-                source_id=source_id,
-                roles=identity.roles,
-                payload=payload,
-                actor=identity.user_id,
-            )
-        }
+        source_id = str(payload.get("source_id", ""))
+        if not source_id:
+            raise HTTPException(status_code=400, detail="source_id is required")
+        try:
+            return {
+                "source_config": active_service.admin_source_config_create(
+                    source_id=source_id,
+                    roles=identity.roles,
+                    payload=payload,
+                    actor=identity.user_id,
+                )
+            }
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     def admin_source_configs_get(source_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
-        return {"source_config": active_service.source_config_get(source_id)}
+        try:
+            return {"source_config": active_service.source_config_get(source_id)}
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Source config not found: {source_id}") from exc
 
     def admin_source_configs_update(source_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, {"admin"})
-        return {
-            "source_config": active_service.admin_source_config_update(
-                source_id=source_id,
-                roles=identity.roles,
-                payload=payload,
-                actor=identity.user_id,
-            )
-        }
+        try:
+            return {
+                "source_config": active_service.admin_source_config_update(
+                    source_id=source_id,
+                    roles=identity.roles,
+                    payload=payload,
+                    actor=identity.user_id,
+                )
+            }
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Source config not found: {source_id}") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     def admin_source_configs_delete(source_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, {"admin"})
-        active_service.admin_source_config_delete(
-            source_id=source_id,
-            roles=identity.roles,
-            actor=identity.user_id,
-        )
+        try:
+            active_service.admin_source_config_delete(
+                source_id=source_id,
+                roles=identity.roles,
+                actor=identity.user_id,
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Source config not found: {source_id}") from exc
         return {"status": "ok", "source_id": source_id}
 
     def admin_rbac_bindings_list(request: Request) -> dict[str, Any]:
