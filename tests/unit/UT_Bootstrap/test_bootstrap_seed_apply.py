@@ -117,8 +117,8 @@ def test_repo_default_bootstrap_seed_is_parseable() -> None:
     """The container-baked default seed must not crash service startup."""
     repo_root = Path(__file__).resolve().parents[3]
     seed = load_seed(repo_root / "config" / "bootstrap-seed.yaml")
-    assert {item.name for item in seed.api_keys} == {"gary", "colin"}
-    assert {item.username for item in seed.api_keys} == {"gary", "colin"}
+    assert {item.username for item in seed.users} == {"gary", "colin"}
+    assert seed.api_keys == []
 
 
 def test_load_seed_missing_file_raises(tmp_path: Path) -> None:
@@ -182,6 +182,37 @@ def test_resolver_resolves_canonical_envelope() -> None:
         "cloud_dog_ai/config:dev.services.index-retriever.gary_api_key"
     )
     assert token == "cd_TEST_GARY_TOKEN"
+
+
+def test_resolver_resolves_platform_json_mapping_envelope() -> None:
+    resolver = _build_resolver(
+        {
+            "secret/config": {
+                "json": {
+                    "dev": {
+                        "services": {
+                            "indexretriever0": {
+                                "gary_api_key": "cd_TEST_GARY_TOKEN",
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+    assert resolver.resolve("config:dev.services.indexretriever0.gary_api_key") == "cd_TEST_GARY_TOKEN"
+
+
+def test_resolver_resolves_platform_content_envelope() -> None:
+    resolver = _build_resolver(
+        {
+            "secret/config": {
+                "content": '{"dev":{"services":{"indexretriever0":{"gary_api_key":"cd_TEST_GARY_TOKEN"}}}}',
+                "sha256": "unused",
+            }
+        }
+    )
+    assert resolver.resolve("config:dev.services.indexretriever0.gary_api_key") == "cd_TEST_GARY_TOKEN"
 
 
 def test_resolver_missing_segment_raises() -> None:

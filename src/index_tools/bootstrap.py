@@ -339,7 +339,8 @@ class VaultTokenResolver:
     """Resolve ``token_vault_path`` references against live Vault.
 
     The path format is ``<kv-path>:<dotted.json.path>``, e.g.
-    ``cloud_dog_ai/config:dev.services.index-retriever.gary_api_key``.
+    ``config:dev.services.index-retriever.gary_api_key`` when the active
+    Vault mount is already ``cloud_dog_ai``.
 
     The KV path is read via the platform ``VaultClient`` using the active
     ``VAULT_ADDR`` / ``VAULT_TOKEN`` env vars. The KV value is expected to be
@@ -426,14 +427,29 @@ class VaultTokenResolver:
             ) from exc
         if data is None:
             raise BootstrapSeedError(f"Vault path not found: {kv_path}")
-        # The platform Vault layout sometimes wraps the body in {"json": "<json-string>"}.
-        if isinstance(data, Mapping) and isinstance(data.get("json"), str):
-            try:
-                data = json.loads(data["json"])
-            except Exception as exc:
-                raise BootstrapSeedError(
-                    f"Failed to parse Vault json envelope at {kv_path}: {exc}"
-                ) from exc
+        # The platform Vault layout can wrap the body as either
+        # {"json": "<json-string>"}, {"json": {...}}, or {"content": "<json>"}.
+        while isinstance(data, Mapping):
+            if isinstance(data.get("json"), str):
+                try:
+                    data = json.loads(data["json"])
+                except Exception as exc:
+                    raise BootstrapSeedError(
+                        f"Failed to parse Vault json envelope at {kv_path}: {exc}"
+                    ) from exc
+                continue
+            if isinstance(data.get("json"), Mapping):
+                data = data["json"]
+                continue
+            if isinstance(data.get("content"), str):
+                try:
+                    data = json.loads(data["content"])
+                except Exception as exc:
+                    raise BootstrapSeedError(
+                        f"Failed to parse Vault content envelope at {kv_path}: {exc}"
+                    ) from exc
+                continue
+            break
         if not isinstance(data, Mapping):
             raise BootstrapSeedError(
                 f"Vault content at {kv_path} is not a mapping (got {type(data).__name__})"
