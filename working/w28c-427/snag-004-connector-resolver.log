@@ -1,0 +1,8 @@
+Supported: ['filesystem', 'http', 's3', 'webdav', 'ftp', 'gdrive']
+  filesystem: source_type=filesystem location=/tmp/test.txt
+  http: source_type=http location=https://example.com/doc.txt
+  s3: source_type=s3 location=s3://bucket/key
+  webdav: source_type=webdav location=webdav://server/path
+  ftp: source_type=ftp location=ftp://server/file.txt
+  gdrive: ERROR ValueError: Google Drive file ID is required
+  magnet: correctly denied: Unsupported source scheme: 'magnet'

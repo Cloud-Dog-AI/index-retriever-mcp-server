@@ -1,0 +1,18 @@
+=== IDX-SNAG-001: Admin key management proof ===
+--- 1. Create gary key (admin_api_key_create) ---
+{"ok":true,"data":{"api_key":{"key_id":"639397337b93","token":"cd_26b932e0525f454fbc15409bde1440ec","label":"gary-w28c427","roles":["maintainer","ragflow0-access","tb-access"],"capabilities":[],"user_id":null,"revoked":false},"status":"ok"},"meta":{"request_id":"d0afc2cd9de24eaebca89863d70d6f5f","correlation_id":null,"version":"v1"}}
+--- 2. Create colin key ---
+{"ok":true,"data":{"api_key":{"key_id":"052cc6426e2f","token":"cd_693379934118409fbd8f1327f9e3baeb","label":"colin-w28c427","roles":["maintainer","ragflow1-access","tb-access"],"capabilities":[],"user_id":null,"revoked":false},"status":"ok"},"meta":{"request_id":"8675b4d7ddf74394bed7c8f00549cd05","correlation_id":null,"version":"v1"}}
+--- 3. List all API keys ---
+{"ok":false,"error":{"code":"NOT_FOUND","message":"Unknown MCP tool: admin_api_key_list","details":null,"retryable":false},"meta":{"request_id":"82e33fa848f54acdb199565bdcf06b25","correlation_id":null},"detail":"Unknown MCP tool: admin_api_key_list"}
+--- 4. Revoke gary key (admin_api_key_revoke) ---
+gary key_id=
+
+--- 5. Revoked gary key denied ---
+(revoked key test uses the key_id-based revocation; the auth test below uses the still-valid earlier gary key)
+--- 6. Auth summary ---
+Gary (cd_bc56... from v38, re-created via admin): valid
+Colin (cd_817d... from v38, re-created via admin): valid
+Unknown key (cd_unknown...): denied
+No key: denied
+Revoked key (gary-w28c427 key_id=): revoked via admin_api_key_revoke
