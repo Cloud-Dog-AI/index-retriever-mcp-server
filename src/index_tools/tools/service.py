@@ -191,6 +191,58 @@ def _redact_diagnostic_detail(text: str) -> str:
     return _SECRET_FIELD_PATTERN.sub(r"\1=[REDACTED]", text)
 
 
+class EmbeddingBatchError(RuntimeError):
+    """W28D-440E1: Structured embedding failure with chunk/provider context."""
+
+    def __init__(
+        self,
+        *,
+        batch_start: int,
+        batch_size: int,
+        chunk_count: int,
+        embedding_model: str,
+        provider: str,
+        provider_error: str,
+        profile: str,
+        collection: str,
+    ) -> None:
+        self.batch_start = batch_start
+        self.batch_size = batch_size
+        self.chunk_count = chunk_count
+        self.embedding_model = embedding_model
+        self.provider = provider
+        self.provider_error = _redact_diagnostic_detail(provider_error)
+        self.profile = profile
+        self.collection = collection
+        # Extract HTTP status from error string if present
+        self.provider_http_status = self._extract_http_status(provider_error)
+        super().__init__(
+            f"Embedding failed at batch starting chunk {batch_start}: {self.provider_error}"
+        )
+
+    @staticmethod
+    def _extract_http_status(error_str: str) -> int | None:
+        import re as _re
+        m = _re.search(r"\b([45]\d{2})\b", error_str)
+        return int(m.group(1)) if m else None
+
+    def to_error_details(self) -> dict[str, Any]:
+        return {
+            "type": "EmbeddingBatchError",
+            "message": str(self),
+            "chunk_count": self.chunk_count,
+            "failed_chunk_index": self.batch_start,
+            "batch_size": self.batch_size,
+            "embedding_model": self.embedding_model,
+            "provider": self.provider,
+            "provider_http_status": self.provider_http_status,
+            "profile": self.profile,
+            "collection": self.collection,
+            "retryable": self.provider_http_status in (500, 502, 503, 504) if self.provider_http_status else True,
+            "suggested_action": "retry_later_or_ingest_compact_extract",
+        }
+
+
 def _descriptor_to_dict(descriptor: Any) -> dict[str, Any]:
     names = getattr(type(descriptor), "__dataclass_fields__", {})
     return {name: getattr(descriptor, name) for name in names}
@@ -1395,7 +1447,7 @@ class IndexService:
             phase="embedding_upsert",
             percentage=75,
             message="upserting document into vector store",
-            extra={"doc_id": doc_id, "record_id": record_id},
+            extra={"doc_id": doc_id, "record_id": record_id, "chunk_count": len(chunks)},
         )
         self._raise_if_job_cancelled(job.job_id)
         created = created_at or datetime.now(timezone.utc)  # noqa: UP017
@@ -1410,17 +1462,46 @@ class IndexService:
             created_at=created,
         )
         self.documents[record_id] = document_record
-        records_to_upsert = [Record(record_id=record_id, content=text, metadata=document_metadata)]
+        # W28D-440E1: batch upsert with per-chunk records for large payloads.
+        # Build one Record per chunk so each gets its own embedding call,
+        # preventing Ollama 500 errors from oversized single-text embeddings.
+        chunk_records: list[Any] = []
+        for ci, chunk_text in enumerate(chunks):
+            chunk_meta = dict(document_metadata)
+            chunk_meta["chunk_index"] = ci
+            chunk_meta["chunk_count"] = len(chunks)
+            chunk_rid = f"{record_id}__chunk_{ci}" if len(chunks) > 1 else record_id
+            chunk_records.append(Record(record_id=chunk_rid, content=chunk_text, metadata=chunk_meta))
+        records_to_upsert = chunk_records
         if provider_id != "weaviate":
             records_to_upsert = superseded_records + records_to_upsert
+        # W28D-440E1: batch upsert in groups of INGEST_BATCH_SIZE to avoid
+        # overwhelming the embedding backend with too many records at once.
+        batch_size = int(os.environ.get("INDEX_RETRIEVER_INGEST_BATCH_SIZE", "10"))
         try:
-            self._run_async(
-                self.vdb.upsert_records(
-                    backend_collection,
-                    records_to_upsert,
-                    provider_id=provider_id,
-                )
-            )
+            for batch_start in range(0, len(records_to_upsert), batch_size):
+                batch = records_to_upsert[batch_start:batch_start + batch_size]
+                self._raise_if_job_cancelled(job.job_id)
+                try:
+                    self._run_async(
+                        self.vdb.upsert_records(
+                            backend_collection,
+                            batch,
+                            provider_id=provider_id,
+                        )
+                    )
+                except Exception as embed_exc:
+                    # W28D-440E1: wrap with structured embedding failure details
+                    raise EmbeddingBatchError(
+                        batch_start=batch_start,
+                        batch_size=len(batch),
+                        chunk_count=len(chunks),
+                        embedding_model=self._llm_model,
+                        provider=self._llm_provider,
+                        provider_error=str(embed_exc),
+                        profile=profile,
+                        collection=collection,
+                    ) from embed_exc
             self._raise_if_job_cancelled(job.job_id)
         except Exception:
             self.documents.pop(record_id, None)

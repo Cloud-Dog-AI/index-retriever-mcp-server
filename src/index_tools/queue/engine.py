@@ -606,7 +606,10 @@ class QueueEngine:
         except Exception as exc:
             if self.get(job_id).status is JobStatus.cancelled:
                 return self.get(job_id)
-            error_payload = {"type": type(exc).__name__, "message": str(exc), "attempt": attempts}
+            error_payload: dict[str, Any] = {"type": type(exc).__name__, "message": str(exc), "attempt": attempts}
+            # W28D-440E1: include structured details from EmbeddingBatchError
+            if hasattr(exc, "to_error_details") and callable(exc.to_error_details):
+                error_payload["details"] = exc.to_error_details()
             if attempts < self._retry_max_attempts:
                 self._last_errors[job_id] = str(exc)
                 self._mark_retry_wait(job_id)
