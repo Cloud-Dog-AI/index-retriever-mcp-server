@@ -1,0 +1,29 @@
+# W28D-440E1 Live Large-Payload Smoke — Sendback Correction
+# Date: 2026-05-24
+# Service: indexretriever0.cloud-dog.net (deployed commit ac392ac)
+
+## Large Payload Ingest (≥50 chunks)
+
+Payload: 29,059 chars, 69 chunks (chunk_size=64, chunk_overlap=8)
+Source: file-mcp:demo27/w28d-440e1-large-smoke-50plus.md
+Profile: default
+Collection: w28d-440e1-large-smoke
+
+Job ID: 45ab6b7b-232d-433d-80b7-0c5148955cb1
+Status: succeeded
+Attempt: 1
+Last Error: None
+Progress chunk_count: 69
+
+## Large Payload Search (source_uri filter)
+
+Query: "transparent borders trade indicators"
+Filters: {"source_uri": "file-mcp:demo27/w28d-440e1-large-smoke-50plus.md"}
+Results: 1
+  source_uri=file-mcp:demo27/w28d-440e1-large-smoke-50plus.md score=1.000
+
+## Credential Source
+Vault read path: $VAULT_ADDR/v1/cloud_dog_ai/data/config → data.data.json.dev.services.indexretriever0.api_key
+All values: [REDACTED]
+
+LIVE_LARGE_PAYLOAD_SMOKE: PASS (69 chunks > 50 minimum)

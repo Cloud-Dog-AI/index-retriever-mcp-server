@@ -20,7 +20,7 @@ from index_tools.tools.service import EmbeddingBatchError, IndexService
 
 
 def _large_markdown(word_count: int = 2400) -> str:
-    """Generate a synthetic Markdown payload that produces >=37 chunks."""
+    """Generate a synthetic Markdown payload that produces >=50 chunks."""
     lines = []
     for i in range(word_count // 20):
         lines.append(
@@ -64,17 +64,17 @@ def service(tmp_path: Path) -> IndexService:
 class TestIngestTextLargePayload:
     """Requirement: test_ingest_text_large_markdown_payload_succeeds_or_preflight_rejects"""
 
-    def test_large_payload_chunks_into_at_least_37(self):
+    def test_large_payload_chunks_into_at_least_50(self):
         text = _large_markdown()
         chunks = token_chunks(text, chunk_size=64, chunk_overlap=8)
-        assert len(chunks) >= 37, f"Expected >=37 chunks, got {len(chunks)}"
+        assert len(chunks) >= 50, f"Expected >=50 chunks, got {len(chunks)}"
         assert len(text) >= 16000, f"Expected >=16000 chars, got {len(text)}"
 
     def test_large_payload_ingest_succeeds(self, service: IndexService):
-        """Large Markdown payload (>=37 chunks) should succeed through batched upsert."""
+        """Large Markdown payload (>=50 chunks) should succeed through batched upsert."""
         text = _large_markdown()
         chunks = token_chunks(text, chunk_size=64, chunk_overlap=8)
-        assert len(chunks) >= 37
+        assert len(chunks) >= 50
 
         job_id = service.ingest_text(
             profile="default",
