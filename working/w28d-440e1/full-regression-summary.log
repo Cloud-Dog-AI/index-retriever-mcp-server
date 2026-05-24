@@ -1,0 +1,5 @@
+tests/unit/UT_W28D440E1/test_ingest_text_robustness.py::TestSearchSourceUriFilter::test_source_uri_filter_excludes_non_matching PASSED [ 98%]
+tests/unit/test_w28a295_multiprofile_load.py::test_multilang_profile_registered PASSED [ 99%]
+tests/unit/test_w28a295_multiprofile_load.py::test_default_profile_preserved PASSED [100%]
+
+============================= 178 passed in 56.56s =============================

@@ -1,0 +1,39 @@
+# W28D-440E1 Live Smoke — Post-Deploy Verification
+# Date: 2026-05-24
+# Service: indexretriever0.cloud-dog.net
+
+## Health Check
+GET https://indexretriever0.cloud-dog.net/health → 200
+status=ok, vdb=qdrant ok, embedding=ollama/nomic-embed-text ok
+
+## Compact Source-Hunt Ingest (default profile, w28d-440e1-smoke collection)
+Method: MCP tools/call ingest_text
+Text: ~320 chars, DEMO-027 compact source-hunt extract
+Source: file-mcp:demo27/w28d-440e1-smoke-compact.md
+Job ID: cda56b60-adb5-43c0-9c31-629287eb832a
+Status: succeeded
+Attempt: 1
+Last Error: None
+
+## Search with source_uri Filter
+Method: MCP tools/call search
+Query: "WHO transparent borders"
+Filters: {"source_uri": "file-mcp:demo27/w28d-440e1-smoke-compact.md"}
+Results: 1
+  source_uri=file-mcp:demo27/w28d-440e1-smoke-compact.md score=0.351
+
+## Source URI Filter Proof
+The search returned exactly 1 result matching the filtered source_uri.
+The source_uri field is already in cloud_dog_vdb SCALAR_FILTER_FIELDS
+and is supported by _metadata_matches_filters in the service search path.
+
+## Profile Note
+The live service has profiles: default, multilang.
+demo27-transparent-borders profile is loaded by expert-agent via bootstrap seed,
+not by the index-retriever defaults.yaml. Smoke used default profile.
+
+## Credential Source
+Vault read path: $VAULT_ADDR/v1/cloud_dog_ai/data/config → data.data.json.dev.services.indexretriever0.api_key
+All values: [REDACTED]
+
+LIVE_SMOKE: PASS
