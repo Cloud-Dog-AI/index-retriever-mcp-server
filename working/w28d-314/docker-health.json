@@ -1,0 +1,1 @@
+{"status":"ok","application":"index-retriever-mcp-server","version":"0.1.0","env_file":null,"checks":{"db":{"status":"ok","ok":true,"probe":{"ok":true,"result":1}},"vdb":{"status":"ok","detail":{"status":"ok","provider":"chroma","backend":"chroma"}},"embedding":{"status":"ok","detail":{"status":"ok","provider":"ollama","model":"nomic-embed-text","dimensions":8}}}}

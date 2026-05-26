@@ -36,12 +36,12 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
       --trusted-host files.pythonhosted.org \
       cloud-dog-config \
       cloud-dog-logging \
-      cloud-dog-api-kit==0.12.2 \
+      cloud-dog-api-kit==0.13.0 \
       cloud-dog-idam \
       cloud-dog-db \
-      cloud-dog-jobs \
+      cloud-dog-jobs==0.4.0 \
       cloud-dog-storage \
-      cloud-dog-llm \
+      cloud-dog-llm==0.3.0 \
       cloud-dog-vdb>=0.5.4
 
 COPY REQUIREMENTS.txt pyproject.toml README.md ./

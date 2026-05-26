@@ -763,6 +763,8 @@ class IndexService:
         self._auth_api_keys: dict[str, set[str]] = {}
         self._auth_api_keys_bound = False
         self.queue.register_handler("ingest_text", self._process_ingest_text_job)
+        self.queue.register_handler("retention_run", self._process_retention_job)
+        self.queue.register_handler("reindex_run", self._process_reindex_job)
         # W28A-F-RF-07-L3: durable admin state via bootstrap-seed. Each of the
         # four service processes (api_server, web_server, mcp_server, a2a_server)
         # constructs its own IndexService with empty in-memory admin stores.
@@ -2379,6 +2381,7 @@ class IndexService:
                 "created_at": created_at.isoformat() if created_at is not None else "",
             },
             actor=actor,
+            resources={"embedding-pool": 1},
         )
         self._dispatch_job_async(queued_job.job_id)
         self.idempotency[request_key] = queued_job.job_id
@@ -3084,6 +3087,58 @@ class IndexService:
             )
         )
         return {"documents": doc_count}
+
+    def retention_run_async(self, profile: str, collection: str, older_than_days: int, actor: str) -> str:
+        """Enqueue a retention run as a queued job."""
+        queued_job = self.queue.enqueue(
+            JobRecord(
+                job_id=str(uuid4()),
+                profile=profile,
+                collection=collection,
+                job_type="retention_run",
+                server_id=self.queue.server_id,
+            ),
+            payload={"profile": profile, "collection": collection, "older_than_days": older_than_days, "actor": actor},
+            actor=actor,
+        )
+        self._dispatch_job_async(queued_job.job_id)
+        return queued_job.job_id
+
+    def _process_retention_job(self, job: JobRecord) -> None:
+        """Job handler for retention_run."""
+        payload = dict(job.payload)
+        profile = payload["profile"]
+        collection = payload["collection"]
+        older_than_days = int(payload["older_than_days"])
+        self.queue.record_progress(job.job_id, phase="running", percentage=20, message="retention run started")
+        deleted_count = self.retention_run(profile, collection, older_than_days)
+        self.queue.record_progress(job.job_id, phase="completed", percentage=100, message=f"deleted {deleted_count} documents")
+
+    def reindex_run_async(self, profile: str, collection: str, actor: str) -> str:
+        """Enqueue a reindex run as a queued job."""
+        queued_job = self.queue.enqueue(
+            JobRecord(
+                job_id=str(uuid4()),
+                profile=profile,
+                collection=collection,
+                job_type="reindex_run",
+                server_id=self.queue.server_id,
+            ),
+            payload={"profile": profile, "collection": collection, "actor": actor},
+            actor=actor,
+            resources={"embedding-pool": 1},
+        )
+        self._dispatch_job_async(queued_job.job_id)
+        return queued_job.job_id
+
+    def _process_reindex_job(self, job: JobRecord) -> None:
+        """Job handler for reindex_run."""
+        payload = dict(job.payload)
+        profile = payload["profile"]
+        collection = payload["collection"]
+        self.queue.record_progress(job.job_id, phase="running", percentage=20, message="reindex run started")
+        result = self.reindex_run(profile, collection)
+        self.queue.record_progress(job.job_id, phase="completed", percentage=100, message=f"reindex complete: {result}")
 
     def job_list(self, limit: int | None = None) -> list[JobRecord]:
         """Execute job list."""

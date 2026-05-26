@@ -1,0 +1,6 @@
+Name: cloud-dog-jobs
+Version: 0.4.0
+Name: cloud-dog-api-kit
+Version: 0.13.0
+Name: cloud-dog-llm
+Version: 0.3.0

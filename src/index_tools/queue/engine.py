@@ -403,6 +403,7 @@ class QueueEngine:
         payload: dict[str, Any] | None = None,
         actor: str | None = None,
         priority: int = 0,
+        resources: dict[str, int] | None = None,
     ) -> JobRecord:
         """Persist a queued job."""
         now = job.created_at
@@ -429,6 +430,7 @@ class QueueEngine:
             progress={"phase": "created", "percentage": 0, "message": "job created"},
             run_timeout_ms=self._timeout_seconds * 1000,
             claim_timeout_ms=self._claim_timeout_seconds * 1000,
+            resources=dict(resources) if resources else {},
         )
         self._backend.enqueue(queued_job)
         self._transition(
