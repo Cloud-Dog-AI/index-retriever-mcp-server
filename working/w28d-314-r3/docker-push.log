@@ -1,0 +1,47 @@
+The push refers to repository [registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server]
+fe0983ad8950: Preparing
+eff44a199afd: Preparing
+e1ee3be34f1e: Preparing
+7d4ae3c83545: Preparing
+5ec7186ccebb: Preparing
+6ce603fd67bb: Preparing
+7e3f0488b34a: Preparing
+6b39bd7df303: Preparing
+241518d2afd1: Preparing
+e9ab118c9075: Preparing
+1065cb78dbfa: Preparing
+6ce603fd67bb: Waiting
+08b1db7d0679: Preparing
+7e3f0488b34a: Waiting
+6b39bd7df303: Waiting
+740ba541ea48: Preparing
+1065cb78dbfa: Waiting
+241518d2afd1: Waiting
+e9ab118c9075: Waiting
+23ed4b6439ad: Preparing
+08b1db7d0679: Waiting
+740ba541ea48: Waiting
+fae8529c7ef7: Preparing
+1361e0a963c6: Preparing
+fae8529c7ef7: Waiting
+79dd1f4c855c: Preparing
+1361e0a963c6: Waiting
+79dd1f4c855c: Waiting
+5ec7186ccebb: Pushed
+eff44a199afd: Pushed
+e1ee3be34f1e: Pushed
+7d4ae3c83545: Pushed
+6b39bd7df303: Pushed
+6ce603fd67bb: Pushed
+1065cb78dbfa: Layer already exists
+7e3f0488b34a: Pushed
+fe0983ad8950: Pushed
+08b1db7d0679: Layer already exists
+740ba541ea48: Layer already exists
+23ed4b6439ad: Layer already exists
+fae8529c7ef7: Layer already exists
+1361e0a963c6: Layer already exists
+79dd1f4c855c: Layer already exists
+241518d2afd1: Pushed
+e9ab118c9075: Pushed
+latest: digest: sha256:1b916e555f3a1b856cfad7dd8a5caaa57eaf084f2a0eb15876d667aef79ed469 size: 3880

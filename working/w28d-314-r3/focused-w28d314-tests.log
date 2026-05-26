@@ -1,0 +1,40 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-8.4.2, pluggy-1.6.0 -- /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server
+configfile: pyproject.toml
+plugins: asyncio-0.26.0, anyio-4.13.0, timeout-2.4.0, cov-5.0.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+timeout: 30.0s
+timeout method: signal
+timeout func_only: False
+collecting ... collected 5 items
+
+tests/unit/UT1_45/test_w28d314_resource_pool_and_job_types.py::test_enqueue_passes_resources_to_job_constructor PASSED [ 20%]
+tests/unit/UT1_45/test_w28d314_resource_pool_and_job_types.py::test_enqueue_without_resources_defaults_empty PASSED [ 40%]
+tests/unit/UT1_45/test_w28d314_resource_pool_and_job_types.py::test_retention_run_handler_registered_and_executes PASSED [ 60%]
+tests/unit/UT1_45/test_w28d314_resource_pool_and_job_types.py::test_reindex_run_handler_registered_and_executes PASSED [ 80%]
+tests/unit/UT1_45/test_w28d314_resource_pool_and_job_types.py::test_package_version_pins PASSED [100%]
+
+============================== 5 passed in 0.75s ===============================
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-01c910ba-3dc8-4585-8d85-bd7733a06809/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T135211Z/it-webdav-ce5cc9a9d5de:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-01c910ba-3dc8-4585-8d85-bd7733a06809/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T135211Z/it-webdav-ce5cc9a9d5de'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-bea65c3a-6269-4fcf-a79a-12a9e7b4552c/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T092014Z/it-webdav-36e101abbe1f:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-bea65c3a-6269-4fcf-a79a-12a9e7b4552c/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T092014Z/it-webdav-36e101abbe1f'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-e82ba8e1-e8ee-4b50-bad4-dca23511cf2e/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090716Z/it-webdav-52d1c7c173cd:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-e82ba8e1-e8ee-4b50-bad4-dca23511cf2e/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090716Z/it-webdav-52d1c7c173cd'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-e583090a-2659-4cca-8150-b11d878293f5/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T085610Z/it-webdav-5b6213dc5c2c:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-e583090a-2659-4cca-8150-b11d878293f5/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T085610Z/it-webdav-5b6213dc5c2c'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-c0edbe9e-5ad4-4c05-864e-8f1eae64207d/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T085809Z/it-webdav-30af16c9ac7a:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-c0edbe9e-5ad4-4c05-864e-8f1eae64207d/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T085809Z/it-webdav-30af16c9ac7a'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-a92e0f49-54d2-4f4a-8518-14802a031015/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090336Z/it-webdav-18276fe33292:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-a92e0f49-54d2-4f4a-8518-14802a031015/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090336Z/it-webdav-18276fe33292'
+  warnings.warn(
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:103: PytestWarning: (rm_rf) unknown function <built-in function scandir> when removing /tmp/pytest-of-gary/garbage-0b37146a-0711-442f-907d-1c0915a92038/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090039Z/it-webdav-4ca8836b89a3:
+<class 'PermissionError'>: [Errno 1] Operation not permitted: '/tmp/pytest-of-gary/garbage-0b37146a-0711-442f-907d-1c0915a92038/test_container_remote_storage_0/workspace/logs/snapshots.webdav/20260507T090039Z/it-webdav-4ca8836b89a3'
+  warnings.warn(
