@@ -284,3 +284,22 @@ Uses cloud_dog_idam conditionally (try/except imports). Graceful degradation for
 - The `_cfg_get()` helper pattern matches the boundary-module pattern used in `auth/middleware.py` (`_config_or_env`) and `db/runtime.py` (`_env_value`): try `cloud_dog_config` first, fall back to process env via `dict(os.environ)` indirection. The indirection avoids the QT regex pattern `os.environ.get(` while maintaining runtime correctness.
 - Docstrings mentioning `os.environ.get()` literally trigger the QT compliance scanner regex. Rephrase to avoid the pattern.
 - QT test `test_os_environ_usage_is_confined_to_runtime_boundaries` now passes (was previously FAIL because `bootstrap.py` was not in the allowed boundary-module set).
+
+## W28D-443 Named Profile Durability (2026-05-28)
+
+> See platform AGENT-LESSONS.md §6.68.
+
+### Runtime Contract
+
+- Named Index-Retriever profiles are either durable product contract or explicitly deprecated product contract. They cannot be silently replaced by `profile=default` plus isolated collections without a coordinator/product decision.
+- For Transparent Borders report generation, the currently open named profiles are:
+  - `demo27-transparent-borders`
+  - `transparent-borders-report-generation-country-reports`
+  - `transparent-borders-report-generation-knowledge`
+  - `transparent-borders-report-generation-web-support`
+
+### Evidence Contract
+
+- Profile durability proof must show `profiles_list` returning each named profile, `ingest_text` succeeding against each profile, `job_wait` reaching `succeeded`, and `search` returning the newly ingested marker from the same profile/collection.
+- The same proof must be repeated after service restart or Terraform redeploy. A one-shot API success before restart is not durability evidence.
+- If the chosen fix is deprecation, the report must document default-profile plus collection isolation as the supported model and prove all demo runners/configs use that model consistently.
