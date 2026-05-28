@@ -1,0 +1,30 @@
+# docker_container.indexretriever0:
+resource "docker_container" "indexretriever0" {
+    attach                                      = false
+    bridge                                      = [90mnull[0m[0m
+    command                                     = [
+        "all",
+    ]
+    container_read_refresh_timeout_milliseconds = 15000
+    cpu_set                                     = [90mnull[0m[0m
+    cpu_shares                                  = 0
+    domainname                                  = [90mnull[0m[0m
+    entrypoint                                  = [
+        "/app/docker-entrypoint.sh",
+    ]
+    env                                         = (sensitive value)
+    hostname                                    = "indexretriever0.app.vpc0.cloud-dog.net"
+    id                                          = "87217961af6cd2b17134efa68932ad35de888f5222e7d2bf5c20c2ad9c6bc4d6"
+    image                                       = "sha256:a642f14c7fc736ec200b8b22fce215c2d10eda0bf0c310c349d06bc730539cd3"
+    init                                        = false
+    ipc_mode                                    = "private"
+    log_driver                                  = "json-file"
+    logs                                        = false
+    max_retry_count                             = 0
+    memory                                      = 0
+    memory_swap                                 = 0
+    must_run                                    = true
+    name                                        = "indexretriever0.app.vpc0.cloud-dog.net"
+    network_data                                = [
+        {
+            gateway                   = "10.26.2.1"

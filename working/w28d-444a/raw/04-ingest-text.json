@@ -1,0 +1,1 @@
+{"jsonrpc":"2.0","id":4,"result":{"content":[{"type":"text","text":"{\"job_id\": \"7ca607c5-fb4a-4005-81ea-97a32778ed91\", \"status\": \"queued\"}"}],"isError":false,"structuredContent":{"job_id":"7ca607c5-fb4a-4005-81ea-97a32778ed91","status":"queued"}}}

@@ -1,0 +1,10 @@
+# docker_image.indexretriever:
+resource "docker_image" "indexretriever" {
+    id            = "sha256:a642f14c7fc736ec200b8b22fce215c2d10eda0bf0c310c349d06bc730539cd3registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server:latest"
+    image_id      = "sha256:a642f14c7fc736ec200b8b22fce215c2d10eda0bf0c310c349d06bc730539cd3"
+    name          = "registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server:latest"
+    pull_triggers = [
+        "sha256:aaa34d67545ed899c55950d9e7a56389d5641f51c8b6e8b7ec18293c3b6d14ed",
+    ]
+    repo_digest   = "registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server@sha256:aaa34d67545ed899c55950d9e7a56389d5641f51c8b6e8b7ec18293c3b6d14ed"
+}
