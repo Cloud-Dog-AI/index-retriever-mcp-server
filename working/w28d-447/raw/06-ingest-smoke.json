@@ -1,0 +1,17 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"job_id\": \"fc1b7d60-2e28-421a-be80-4da2de30309b\", \"status\": \"queued\"}"
+      }
+    ],
+    "isError": false,
+    "structuredContent": {
+      "job_id": "fc1b7d60-2e28-421a-be80-4da2de30309b",
+      "status": "queued"
+    }
+  }
+}
