@@ -1,0 +1,4 @@
+=== 05 search smoke marker ===
+Result count: 2
+  [0] text=W28D-447 corrected smoke marker 20260528T195604Z
+  [1] text=W28D-447 live recovery smoke marker 20260528T174248Z

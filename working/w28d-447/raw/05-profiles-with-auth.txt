@@ -1,2 +1,0 @@
-Profiles: []
-nato-doctrine: False

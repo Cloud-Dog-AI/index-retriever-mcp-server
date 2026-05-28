@@ -1,1 +1,0 @@
-Search result: {"results": [{"doc_id": "875358bb34bce9e201bc1282dd213c32dfcd35f911c825798bd3235c3c16bf07", "record_id": "4aa03f81aae72fe4e7765433b7a36f9fc9c9d76bfa1bd781e48bcf3642002dbd", "chunk_id": "4aa03f81aae72fe4e7765433b7a36f9fc9c9d76bfa1bd781e48bcf3642002dbd", "text": "W28D-447 live recovery smoke marker 20

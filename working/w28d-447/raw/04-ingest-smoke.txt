@@ -1,0 +1,3 @@
+=== 04 ingest_text smoke ===
+job_id: 6855158a-729a-44f8-8d9f-1f36776f029c
+status: queued
