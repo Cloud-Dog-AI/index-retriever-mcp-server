@@ -153,6 +153,114 @@ profiles:
       top_k_default: 10
       score_threshold: 0.0
 
+  ukraine-researcher:
+    enabled: true
+    vdb:
+      type: "${CLOUD_DOG__INDEX__VDB__PROVIDER:chroma}"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH:./data/chroma}"
+        collection: "ukraine-researcher"
+      qdrant:
+        url: "${QDRANT_URL:http://localhost:6333}"
+        api_key: "${CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY || ''}"
+        collection: "ukraine-researcher"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
+        api_key: "${EMBED_API_KEY || ''}"
+        model: "nomic-embed-text"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT:./uploads}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0
+
+  transparent-borders-research:
+    enabled: true
+    vdb:
+      type: "${CLOUD_DOG__INDEX__VDB__PROVIDER:chroma}"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH:./data/chroma}"
+        collection: "transparent-borders-research"
+      qdrant:
+        url: "${QDRANT_URL:http://localhost:6333}"
+        api_key: "${CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY || ''}"
+        collection: "transparent-borders-research"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
+        api_key: "${EMBED_API_KEY || ''}"
+        model: "nomic-embed-text"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT:./uploads}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0
+
+  transparent-borders-report-generation:
+    enabled: true
+    vdb:
+      type: "${CLOUD_DOG__INDEX__VDB__PROVIDER:chroma}"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH:./data/chroma}"
+        collection: "transparent-borders-report-generation"
+      qdrant:
+        url: "${QDRANT_URL:http://localhost:6333}"
+        api_key: "${CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY || ''}"
+        collection: "transparent-borders-report-generation"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
+        api_key: "${EMBED_API_KEY || ''}"
+        model: "nomic-embed-text"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT:./uploads}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0
+
   demo27-transparent-borders:
     enabled: true
     vdb:

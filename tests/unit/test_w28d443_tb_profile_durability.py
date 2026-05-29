@@ -4,6 +4,9 @@ import pytest
 
 
 TB_PROFILES = [
+    "ukraine-researcher",
+    "transparent-borders-research",
+    "transparent-borders-report-generation",
     "demo27-transparent-borders",
     "transparent-borders-report-generation-country-reports",
     "transparent-borders-report-generation-knowledge",
