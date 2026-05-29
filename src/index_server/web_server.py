@@ -100,7 +100,7 @@ class _ProxyConfigBridge:
         if key == "web_server.verify_tls":
             return False
         if key == "api_server.api_key":
-            return self._config.get("test.api_key") or self._config.get("auth.admin_token") or default
+            return self._config.get("api_server.api_key") or self._config.get("test.api_key") or self._config.get("auth.admin_token") or default
         value = self._config.get(key)
         return default if value is None else value
 
