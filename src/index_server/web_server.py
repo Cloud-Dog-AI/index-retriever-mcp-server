@@ -201,7 +201,7 @@ def build_web_app() -> object:
         headers = {
             key: value
             for key, value in request.headers.items()
-            if key.lower() not in {"host", "content-length"}
+            if key.lower() not in {"host", "content-length", "authorization"}
         }
         body = await request.body()
         json_body: Any = None

@@ -547,6 +547,7 @@ class GroupRecord:
     group_id: str
     roles: set[str]
     members: set[str] = field(default_factory=set)
+    description: str = ""
 
 
 @dataclass(slots=True)
@@ -1826,6 +1827,7 @@ class IndexService:
         record = self.groups[group_id]
         return {
             "group_id": record.group_id,
+            "description": record.description,
             "roles": sorted(record.roles),
             "members": sorted(record.members),
         }
@@ -1846,6 +1848,7 @@ class IndexService:
             group_id=group_id,
             roles=set(str(item) for item in payload.get("roles", [])),
             members=set(str(item) for item in payload.get("members", [])),
+            description=str(payload.get("description", "")),
         )
         self.groups[group_id] = record
         self._sync_idam_group(group_id)
@@ -1886,6 +1889,8 @@ class IndexService:
             record.roles = set(str(item) for item in payload["roles"])
         if "members" in payload:
             record.members = set(str(item) for item in payload["members"])
+        if "description" in payload:
+            record.description = str(payload["description"])
         self._sync_idam_group(group_id)
         for member in sorted(prior_members.union(record.members)):
             self._refresh_auth_api_keys_for_user(member)
