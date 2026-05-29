@@ -17,10 +17,21 @@
 bootstrap:
 
   groups:
+    - name: administrators
+      roles:
+        - admin
     - name: ragflow
       roles: []
 
   users:
+    - username: admin
+      display_name: Administrator
+      enabled: true
+      roles:
+        - admin
+      groups:
+        - administrators
+
     - username: gary
       display_name: gary
       enabled: true
