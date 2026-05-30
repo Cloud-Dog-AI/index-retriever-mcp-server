@@ -1,0 +1,100 @@
+{
+  "instruction": "W28A-350",
+  "service": "index-retriever",
+  "displayName": "Index-Retriever",
+  "preprodUrl": "https://indexretriever0.cloud-dog.net",
+  "startedAt": "2026-05-30T17:31:55.345Z",
+  "checks": [
+    {
+      "id": "shell",
+      "label": "Cross-cutting shell, nav, footer, login/session state",
+      "status": "PASS",
+      "details": [
+        "check completed"
+      ]
+    },
+    {
+      "id": "datatable-name",
+      "label": "DataTable Name columns are not buttons",
+      "status": "PASS",
+      "details": [
+        "check completed"
+      ]
+    },
+    {
+      "id": "users",
+      "label": "Users page seeded users and admin role badge",
+      "status": "FAIL",
+      "details": [
+        "Seeded user admin does not show admin role as a badge/status element"
+      ],
+      "screenshot": "/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/working/evidence/w28a-350-webui-conformance/screenshots/index-retriever/users.png"
+    },
+    {
+      "id": "groups",
+      "label": "Groups seeded data and create/edit/delete persistence",
+      "status": "FAIL",
+      "details": [
+        "locator.click: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /^delete$/i }).first()\u001b[22m\n\u001b[2m    - locator resolved to <button class=\"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 px-3 text-sm\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m  - element was detached from the DOM, retrying\u001b[22m\n"
+      ],
+      "screenshot": "/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/working/evidence/w28a-350-webui-conformance/screenshots/index-retriever/groups.png"
+    },
+    {
+      "id": "rbac",
+      "label": "RBAC seeded bindings and add/remove persistence",
+      "status": "PASS",
+      "details": [
+        "check completed"
+      ]
+    },
+    {
+      "id": "api-docs",
+      "label": "API Docs PS-74/PS-77 presentation",
+      "status": "PASS",
+      "details": [
+        "check completed"
+      ]
+    },
+    {
+      "id": "mcp-console",
+      "label": "MCP Console PS-72 list/select/invoke/response",
+      "status": "PASS",
+      "details": [
+        "check completed"
+      ]
+    },
+    {
+      "id": "a2a-console",
+      "label": "A2A Console PS-72 card/events/safe call/response",
+      "status": "PASS",
+      "details": [
+        "check completed"
+      ]
+    },
+    {
+      "id": "jobs",
+      "label": "Jobs PS-76 columns/status/actions/pagination/detail",
+      "status": "PASS",
+      "details": [
+        "check completed"
+      ]
+    }
+  ],
+  "consoleMessages": [
+    "warning: An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing.",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "networkFailures": [
+    "404 GET https://indexretriever0.cloud-dog.net/a2a/.well-known/agent.json",
+    "404 POST https://indexretriever0.cloud-dog.net/api/v1/tools/tool_list",
+    "404 POST https://indexretriever0.cloud-dog.net/api/v1/tools/tool_list",
+    "404 POST https://indexretriever0.cloud-dog.net/api/v1/tools/tool_list",
+    "404 GET https://indexretriever0.cloud-dog.net/a2a/.well-known/agent.json"
+  ],
+  "trace": "/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/working/evidence/w28a-350-webui-conformance/traces/index-retriever-post-login-trace.zip",
+  "finishedAt": "2026-05-30T17:33:53.156Z"
+}
