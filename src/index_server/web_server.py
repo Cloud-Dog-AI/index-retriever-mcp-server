@@ -290,32 +290,7 @@ def build_web_app() -> object:
 
     @app.api_route("/auth/{path:path}", methods=["GET", "POST"])
     async def auth_proxy(path: str, request: Request) -> Response:
-        """Proxy auth requests WITHOUT injecting the admin API key.
-
-        Auth endpoints must receive the browser's own credentials (cookies/headers)
-        so the session/login flow works correctly. Injecting the admin key would
-        make /auth/me always return the admin identity regardless of session state.
-        """
-        fwd_headers = {
-            key: value
-            for key, value in request.headers.items()
-            if key.lower() not in {"host", "content-length"}
-        }
-        body = await request.body()
-        async with httpx.AsyncClient(base_url=api_base_url, verify=False, timeout=30) as client:
-            resp = await client.request(
-                request.method,
-                f"/auth/{path}",
-                content=body if body else None,
-                headers=fwd_headers,
-                cookies=dict(request.cookies),
-            )
-        return Response(
-            content=resp.content,
-            status_code=resp.status_code,
-            media_type=resp.headers.get("content-type", "application/json"),
-            headers={k: v for k, v in resp.headers.items() if k.lower() not in {"content-length", "transfer-encoding"}},
-        )
+        return await _proxy_request(f"/auth/{path}", request)
 
     @app.get("/openapi.json")
     async def openapi_proxy(request: Request) -> Response:
