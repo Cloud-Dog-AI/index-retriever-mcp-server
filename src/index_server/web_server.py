@@ -24,6 +24,7 @@ from cloud_dog_api_kit import create_app
 from cloud_dog_api_kit.web.proxy import WebApiProxy
 from cloud_dog_config import load_config  # type: ignore
 from cloud_dog_storage import path_utils
+import httpx
 from fastapi import HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
