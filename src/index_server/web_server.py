@@ -268,6 +268,59 @@ def build_web_app() -> object:
         """Proxy JSON-capable API requests through the thin web surface."""
         return await _proxy_request(path, request)
 
+    @app.api_route("/api/v1/tools/{tool_name}", methods=["POST"])
+    async def api_tool_proxy(tool_name: str, request: Request) -> Response:
+        """Route tool calls to the MCP server which owns the live IndexService state."""
+        body = await request.body()
+        tool_args: dict = {}
+        if body:
+            try:
+                tool_args = json.loads(body)
+            except json.JSONDecodeError:
+                pass
+        jsonrpc_payload = {
+            "jsonrpc": "2.0",
+            "id": "web-tool-proxy",
+            "method": "tools/call",
+            "params": {"name": tool_name, "arguments": tool_args},
+        }
+        async with httpx.AsyncClient(base_url=mcp_base_url, verify=False, timeout=60) as client:
+            resp = await client.post(
+                "/mcp",
+                json=jsonrpc_payload,
+                headers={"Content-Type": "application/json", "Accept": "application/json, text/event-stream",
+                         "X-API-Key": str(proxy_config.get("api_server.api_key", "") or "")},
+            )
+        try:
+            rpc_result = resp.json()
+            structured = rpc_result.get("result", {}).get("structuredContent")
+            if structured is not None:
+                return Response(content=json.dumps(structured), media_type="application/json")
+            content_items = rpc_result.get("result", {}).get("content", [])
+            if content_items and isinstance(content_items[0], dict) and content_items[0].get("text"):
+                return Response(content=content_items[0]["text"], media_type="application/json")
+        except Exception:
+            pass
+        return Response(content=resp.content, status_code=resp.status_code, media_type="application/json")
+
+    @app.api_route("/api/v1/tools", methods=["GET"])
+    async def api_tools_list(request: Request) -> Response:
+        """List tools via MCP server."""
+        jsonrpc_payload = {"jsonrpc": "2.0", "id": "web-tools-list", "method": "tools/list"}
+        async with httpx.AsyncClient(base_url=mcp_base_url, verify=False, timeout=30) as client:
+            resp = await client.post(
+                "/mcp",
+                json=jsonrpc_payload,
+                headers={"Content-Type": "application/json", "Accept": "application/json, text/event-stream",
+                         "X-API-Key": str(proxy_config.get("api_server.api_key", "") or "")},
+            )
+        try:
+            rpc_result = resp.json()
+            tools = rpc_result.get("result", {}).get("tools", [])
+            return Response(content=json.dumps(tools), media_type="application/json")
+        except Exception:
+            return Response(content=resp.content, status_code=resp.status_code, media_type="application/json")
+
     @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     async def api_proxy(path: str, request: Request) -> Response:
         return await _proxy_request(f"/api/{path}", request)
