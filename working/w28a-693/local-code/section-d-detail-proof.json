@@ -1,5 +1,6 @@
 {
-  "tabs": [
+  "job_id": "3c1fedf7-d3d2-4f4f-b1db-d8da7206de55",
+  "tabs_clicked": [
     "Overview",
     "Parameters",
     "Input ref",
@@ -8,5 +9,11 @@
     "Lifecycle log",
     "Raw"
   ],
-  "escapeClosed": true
+  "controls_visible": [
+    "Copy Job ID",
+    "Retry",
+    "Cancel",
+    "Delete"
+  ],
+  "escape_closed": true
 }

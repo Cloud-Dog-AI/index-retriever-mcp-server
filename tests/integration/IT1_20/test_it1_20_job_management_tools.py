@@ -31,9 +31,40 @@ def _call_tool(client: TestClient, tool_name: str, payload: dict[str, object], t
     return response.json()
 
 
+def _post_tool(client: TestClient, tool_name: str, payload: dict[str, object], token: str):
+    return client.post(
+        api_tools_path(tool_name),
+        json=payload,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+
+def _current_user_id(client: TestClient, token: str) -> str:
+    response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200, response.text
+    user = response.json().get("user")
+    assert isinstance(user, dict)
+    return str(user["id"])
+
+
+def _job_actor(job: dict[str, object]) -> str:
+    payload = job.get("payload")
+    nested = payload if isinstance(payload, dict) else {}
+    for key in ("request_auth_identity", "user_id", "actor"):
+        value = job.get(key)
+        if value:
+            return str(value)
+    for key in ("request_auth_identity", "user_id", "actor"):
+        value = nested.get(key)
+        if value:
+            return str(value)
+    return ""
+
+
 def test_job_management_tools_contract(service: IndexService) -> None:
     # Covers: FR-07
     client = TestClient(build_api_app(service=service))
+    writer_actor = _current_user_id(client, "valid-writer-token")
 
     _ = _call_tool(
         client,
@@ -56,10 +87,32 @@ def test_job_management_tools_contract(service: IndexService) -> None:
     job_id = str(queued["job_id"])
     assert queued["status"] == "queued"
 
+    admin_queued = _call_tool(
+        client,
+        "ingest_text",
+        {
+            "profile": "default",
+            "collection": "it1_20_jobs",
+            "text": "job management admin owned payload",
+            "source": "file://it1_20/jobs-admin-owned.txt",
+        },
+        "valid-admin-token",
+    )
+    admin_job_id = str(admin_queued["job_id"])
+
     listed = _call_tool(client, "job_list", {}, "valid-admin-token")
     jobs = listed.get("jobs")
     assert isinstance(jobs, list)
     assert any(str(item.get("job_id", "")) == job_id for item in jobs)
+    assert any(str(item.get("job_id", "")) == admin_job_id for item in jobs)
+
+    writer_list = _call_tool(client, "job_list", {"limit": 2000}, "valid-writer-token")
+    writer_jobs = writer_list.get("jobs")
+    assert isinstance(writer_jobs, list)
+    assert all(_job_actor(item) == writer_actor for item in writer_jobs if isinstance(item, dict))
+    assert all(str(item.get("job_id", "")) != admin_job_id for item in writer_jobs if isinstance(item, dict))
+    assert _post_tool(client, "job_get", {"job_id": admin_job_id}, "valid-writer-token").status_code == 403
+    assert _post_tool(client, "job_cancel", {"job_id": admin_job_id}, "valid-writer-token").status_code == 403
 
     succeeded_only = _call_tool(client, "job_list", {"status": "succeeded"}, "valid-admin-token")
     succeeded_jobs = succeeded_only.get("jobs")
@@ -71,6 +124,12 @@ def test_job_management_tools_contract(service: IndexService) -> None:
     assert isinstance(cancelled_job, dict)
     assert cancelled_job.get("job_id") == job_id
     assert str(cancelled_job.get("status", "")).lower() == "cancelled"
+
+    writer_cancelled = _call_tool(client, "job_cancel", {"job_id": job_id}, "valid-writer-token")
+    writer_cancelled_job = writer_cancelled.get("job")
+    assert isinstance(writer_cancelled_job, dict)
+    assert writer_cancelled_job.get("job_id") == job_id
+    assert str(writer_cancelled_job.get("status", "")).lower() == "cancelled"
 
     deleted = _call_tool(client, "job_delete", {"job_id": job_id}, "valid-admin-token")
     assert deleted.get("job_id") == job_id
@@ -103,14 +162,31 @@ def test_job_management_tools_contract(service: IndexService) -> None:
     failed_list = _call_tool(client, "job_list", {"status": "dead_lettered"}, "valid-admin-token")
     failed_jobs = failed_list.get("jobs")
     assert isinstance(failed_jobs, list)
-    assert failed_jobs, "Expected at least one failed job from forced failure path"
-    failed_job_id = str(failed_jobs[-1]["job_id"])
+    assert any(str(item.get("job_id", "")) == failed_job_id for item in failed_jobs if isinstance(item, dict))
 
     retried = _call_tool(client, "job_retry", {"job_id": failed_job_id}, "valid-admin-token")
     retried_job = retried.get("job")
     assert isinstance(retried_job, dict)
     assert retried_job.get("job_id") == failed_job_id
     assert str(retried_job.get("status", "")).lower() in {"queued", "running", "succeeded"}
+
+    service.vdb.upsert_records = _fail_upsert
+    writer_failed_job_id = service.ingest_text(
+        profile="default",
+        collection="it1_20_jobs",
+        text="job management writer-owned forced failure payload",
+        source="file://it1_20/jobs-writer-failed.txt",
+        actor=writer_actor,
+    )
+    writer_failed_job = service.job_wait(writer_failed_job_id)
+    service.vdb.upsert_records = original_upsert
+    assert writer_failed_job.status.value == "dead_lettered"
+
+    writer_retry = _call_tool(client, "job_retry", {"job_id": writer_failed_job_id}, "valid-writer-token")
+    writer_retry_job = writer_retry.get("job")
+    assert isinstance(writer_retry_job, dict)
+    assert writer_retry_job.get("job_id") == writer_failed_job_id
+    assert str(writer_retry_job.get("status", "")).lower() in {"queued", "running", "succeeded"}
 
     queue_status = _call_tool(client, "queue_status", {}, "valid-admin-token")
     assert isinstance(queue_status.get("queue_depth"), int)

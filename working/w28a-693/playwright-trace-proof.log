@@ -1,0 +1,10 @@
+[docker html trace bundle]
+  4492336  2026-06-01 00:26   test.trace
+  4572708  2026-06-01 00:26   1-trace.trace
+  3372027  2026-06-01 00:26   1-trace.network
+   330378  2026-06-01 00:26   0-trace.network
+[local-code html trace bundle]
+  4809791  2026-06-01 00:40   test.trace
+  9321934  2026-06-01 00:40   1-trace.trace
+  1227517  2026-06-01 00:40   1-trace.network
+   383910  2026-06-01 00:40   0-trace.network

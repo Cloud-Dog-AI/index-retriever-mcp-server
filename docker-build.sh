@@ -26,6 +26,11 @@ GENERIC_CA_CERT="custom-ca.crt"
 CERT_ARG=""
 PIP_CONF=".pip.conf.build"
 
+cleanup() {
+  rm -f "${PIP_CONF}" "./${GENERIC_CA_CERT}"
+}
+trap cleanup EXIT
+
 echo "=========================================="
 echo "Docker Build: ${FOLDER}/${CONTAINER}:${VERSION}"
 echo "=========================================="
@@ -65,6 +70,7 @@ if [[ -n "${PYPI_USERNAME}" ]] && [[ -n "${PYPI_PASSWORD}" ]]; then
 [global]
 extra-index-url = https://${PYPI_USERNAME}:${PYPI_PASSWORD}@${PYPI_URL#https://}
 trusted-host = $(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${PYPI_URL}').hostname or 'gitea.cloud-dog.net')")
+               pypi.org
                files.pythonhosted.org
 EOF
   echo "pip.conf generated with authenticated PyPI access."
@@ -73,6 +79,7 @@ else
 [global]
 extra-index-url = ${PYPI_URL}
 trusted-host = $(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${PYPI_URL}').hostname or 'gitea.cloud-dog.net')")
+               pypi.org
                files.pythonhosted.org
 EOF
   echo "pip.conf generated with anonymous PyPI access."
@@ -112,5 +119,4 @@ else
   echo "Build FAILED — see docker-build.log"
 fi
 
-rm -f "${PIP_CONF}" "./${GENERIC_CA_CERT}"
 exit ${BUILD_STATUS}

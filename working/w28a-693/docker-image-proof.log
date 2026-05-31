@@ -1,2 +1,3 @@
-cloud-dog/index-retriever-mcp-server:w28a-693 244b30fb59ad 8 minutes ago
-registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server:w28a-693 244b30fb59ad 8 minutes ago
+ID=sha256:e4e35c6e4090d87ebdf102fd37371b0fcd8638b537d4fa6ef7124abcebddaee8
+RepoTags=["cloud-dog/index-retriever-mcp-server:w28a-693-sendback","registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server:w28a-693-sendback"]
+Created=2026-06-01T00:23:06.505367254+01:00

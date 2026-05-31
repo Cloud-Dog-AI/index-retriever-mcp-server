@@ -12,6 +12,6 @@ Result: CLEAN.
 - Registry/preprod deployment actions: NONE.
 - Vault writes: NONE.
 - Vault reads: limited to Docker build credential sourcing for read-only private PyPI package access.
-- Secret handling: Docker build wrapper redacted credentials as `admin:****`; `.pip.conf.build` was removed after build and `working/w28a-693/pip-conf-leftover-proof.txt` records `NO_PIP_CONF_LEFTOVER`.
+- Secret handling: Docker build wrapper redacted credentials as `admin:****`; `.pip.conf.build` and `custom-ca.crt` were removed after build, and `working/w28a-693/pip-conf-leftover-proof.txt` records `NO_PIP_CONF_OR_CUSTOM_CA_LEFTOVER`.
 
-The local Docker conformance run used `docker -H tcp://127.0.0.1:2375` only. The final lane container was removed after the pass, and `working/w28a-693/docker-no-leftover-containers.log` records `NO_W28A_693_CONTAINERS`.
+The local Docker conformance run used `docker -H tcp://127.0.0.1:2375` only with image `cloud-dog/index-retriever-mcp-server:w28a-693-sendback`. The final lane container was removed after the pass, and `working/w28a-693/docker-no-leftover-containers.log` records `NO_W28A_693_CONTAINERS`.

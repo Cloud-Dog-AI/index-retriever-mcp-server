@@ -1,10 +1,10 @@
 
 Running 1 test using 1 worker
 
-(node:2295667) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:1676584) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:2295667) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:1676584) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-  ✓  1 [chromium] › tests/e2e/w28a-693-jobs-conformance.spec.ts:109:1 › W28A-693 PS-76 v2 Jobs page conformance (52.4s)
+  ✓  1 [chromium] › tests/e2e/w28a-693-jobs-conformance.spec.ts:381:1 › W28A-693 PS-76 v2 Jobs page conformance (2.3m)
 
-  1 passed (56.7s)
+  1 passed (2.4m)

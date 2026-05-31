@@ -1,9 +1,77 @@
 {
-  "exactSearchJobId": "530c37ce-d224-41bd-969d-e8067dd7eb38",
-  "pagination": "Total Records / Page X of Y",
-  "bulkActions": [
-    "Cancel Selected",
-    "Retry Selected",
-    "Delete Selected"
-  ]
+  "exact_search_job_id": "018f9d16-0ff8-4552-a9fb-e82610018ab8",
+  "status_filter": "succeeded",
+  "type_filter": "ingest_text",
+  "actor_filter": "api-key:2530b9bc",
+  "date_filter": "2026-05-31",
+  "every_column_sort": {
+    "Job ID": [
+      "ascending",
+      "descending"
+    ],
+    "Type": [
+      "ascending",
+      "descending"
+    ],
+    "Status": [
+      "ascending",
+      "descending"
+    ],
+    "Created": [
+      "ascending",
+      "descending"
+    ],
+    "Started": [
+      "ascending",
+      "descending"
+    ],
+    "Updated": [
+      "ascending",
+      "descending"
+    ],
+    "Completed": [
+      "ascending",
+      "descending"
+    ],
+    "Actor": [
+      "ascending",
+      "descending"
+    ],
+    "Duration": [
+      "ascending",
+      "descending"
+    ],
+    "Result link": [
+      "ascending",
+      "descending"
+    ],
+    "Log link": [
+      "ascending",
+      "descending"
+    ],
+    "Retry count": [
+      "ascending",
+      "descending"
+    ]
+  },
+  "page_sizes": {
+    "10": 6,
+    "25": 6,
+    "50": 6,
+    "100": 6
+  },
+  "bulk_actions": {
+    "cancel": {
+      "job_id": "9f8d1495-0116-4acb-9fee-5031d2f318c7",
+      "observed_status": "cancelled"
+    },
+    "retry": {
+      "job_id": "19cbdd58-1fc4-40b6-93e9-346fdcf815cb",
+      "observed_status": "retry_wait"
+    },
+    "delete": {
+      "job_id": "9f8d1495-0116-4acb-9fee-5031d2f318c7",
+      "deleted": true
+    }
+  }
 }

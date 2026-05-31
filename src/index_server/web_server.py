@@ -202,7 +202,7 @@ def build_web_app() -> object:
         headers = {
             key: value
             for key, value in request.headers.items()
-            if key.lower() not in {"host", "content-length", "authorization"}
+            if key.lower() not in {"host", "content-length"}
         }
         body = await request.body()
         json_body: Any = None
@@ -234,6 +234,23 @@ def build_web_app() -> object:
             media_type=result.headers.get("content-type", "application/json"),
             headers={key: value for key, value in result.headers.items() if key.lower() not in {"content-length", "transfer-encoding"}},
         )
+
+    def _mcp_proxy_headers(request: Request) -> dict[str, str]:
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+        }
+        authorization = request.headers.get("authorization")
+        x_api_key = request.headers.get("x-api-key")
+        if authorization:
+            headers["Authorization"] = authorization
+        if x_api_key:
+            headers["X-API-Key"] = x_api_key
+        elif not authorization:
+            configured_key = str(proxy_config.get("api_server.api_key", "") or "")
+            if configured_key:
+                headers["X-API-Key"] = configured_key
+        return headers
 
     @app.get("/health")
     async def health() -> JSONResponse:
@@ -289,8 +306,7 @@ def build_web_app() -> object:
             resp = await client.post(
                 "/mcp",
                 json=jsonrpc_payload,
-                headers={"Content-Type": "application/json", "Accept": "application/json, text/event-stream",
-                         "X-API-Key": str(proxy_config.get("api_server.api_key", "") or "")},
+                headers=_mcp_proxy_headers(request),
             )
         try:
             rpc_result = resp.json()
@@ -312,8 +328,7 @@ def build_web_app() -> object:
             resp = await client.post(
                 "/mcp",
                 json=jsonrpc_payload,
-                headers={"Content-Type": "application/json", "Accept": "application/json, text/event-stream",
-                         "X-API-Key": str(proxy_config.get("api_server.api_key", "") or "")},
+                headers=_mcp_proxy_headers(request),
             )
         try:
             rpc_result = resp.json()

@@ -1,17 +1,75 @@
-[
-  {
-    "status": "succeeded",
-    "job_id": "184accb0-bb6f-4e93-b470-08fbdd88b2df",
-    "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-secondary text-secondary-foreground border-secondary/20 bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-100 dark:border-green-800"
+{
+  "lifecycle_groups": {
+    "success_green": [
+      "succeeded"
+    ],
+    "destructive_red": [
+      "failed",
+      "dead_lettered",
+      "timeout",
+      "timed_out"
+    ],
+    "warning_yellow": [
+      "retry_wait",
+      "blocked",
+      "paused"
+    ],
+    "neutral_secondary": [
+      "created",
+      "validated",
+      "queued",
+      "dispatched",
+      "running",
+      "cancelled",
+      "archived"
+    ]
   },
-  {
-    "status": "failed-family",
-    "job_id": "81a927a1-1f8d-4620-ad2a-04e8b4e7508d",
-    "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-red-700 text-white border-red-700/20 bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-100 dark:border-red-800"
-  },
-  {
-    "status": "cancelled",
-    "job_id": "a972326a-e6c7-4f30-a43e-23948b386863",
-    "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-secondary text-secondary-foreground border-secondary/20 bg-secondary text-secondary-foreground line-through opacity-80"
-  }
-]
+  "observed_badges": [
+    {
+      "status": "retry_wait",
+      "job_id": "93ca8fb2-a6d7-4250-a743-2c3fbc72e8f1",
+      "expected_class_parts": [
+        "yellow"
+      ],
+      "observed_text": "retry_wait",
+      "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-secondary text-secondary-foreground border-secondary/20 bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-100 dark:border-yellow-800"
+    },
+    {
+      "status": "running",
+      "job_id": "8b649444-9dc0-4799-a391-481ccbfd746d",
+      "expected_class_parts": [
+        "secondary"
+      ],
+      "observed_text": "running",
+      "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-secondary text-secondary-foreground border-secondary/20 bg-secondary text-secondary-foreground"
+    },
+    {
+      "status": "succeeded",
+      "job_id": "3c1fedf7-d3d2-4f4f-b1db-d8da7206de55",
+      "expected_class_parts": [
+        "green"
+      ],
+      "observed_text": "succeeded",
+      "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-secondary text-secondary-foreground border-secondary/20 bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-100 dark:border-green-800"
+    },
+    {
+      "status": "dead_lettered",
+      "job_id": "93ca8fb2-a6d7-4250-a743-2c3fbc72e8f1",
+      "expected_class_parts": [
+        "red"
+      ],
+      "observed_text": "dead_lettered",
+      "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-red-700 text-white border-red-700/20 bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-100 dark:border-red-800"
+    },
+    {
+      "status": "cancelled",
+      "job_id": "e5d2e97a-8b10-4843-b789-165225bf7acf",
+      "expected_class_parts": [
+        "secondary",
+        "line-through"
+      ],
+      "observed_text": "cancelled",
+      "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-secondary text-secondary-foreground border-secondary/20 bg-secondary text-secondary-foreground line-through opacity-80"
+    }
+  ]
+}

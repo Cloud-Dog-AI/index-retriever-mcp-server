@@ -7,7 +7,7 @@ Instruction: `W28A-693-JOB-WEBUI-COMPLIANCE-INDEX_RETRIEVER-2026-05-29.md`
 - BOOTSTRAP_REREAD: YES (version: 5.0)
 - PS-76 v2 read: YES (version: 2.0)
 - Project AGENT-LESSONS read: YES
-- UI monorepo AGENT-LESSONS read: N/A - file not present in `cloud-dog-ai-ui-monorepo`
+- UI monorepo AGENT-LESSONS read: file not present; `cloud-dog-ai-ui-monorepo/AGENTS.md` read
 - PREPROD_TOUCH_AUDIT: declared local-only/read-only
 - NO_VAULT_WRITES: YES
 - NO_SECRET_LEAK: YES

@@ -1,1 +1,2 @@
-NO_PIP_CONF_LEFTOVER
+Repository root leftover check after docker-build.sh
+NO_PIP_CONF_OR_CUSTOM_CA_LEFTOVER

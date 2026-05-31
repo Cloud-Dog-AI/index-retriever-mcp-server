@@ -1,5 +1,5 @@
 {
-  "columns": [
+  "mandatory_columns_in_order": [
     "Job ID",
     "Type",
     "Status",
@@ -13,5 +13,8 @@
     "Log link",
     "Retry count"
   ],
-  "totalRecordsVisible": true
+  "selectable_checkbox": true,
+  "column_picker_toggle_actor": true,
+  "total_records_visible": true,
+  "page_x_of_y_visible": true
 }

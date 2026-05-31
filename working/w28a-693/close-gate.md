@@ -1,22 +1,28 @@
-# W28A-693 CLOSE GATE
+# W28A-693 Close Gate
 
-- Section A seed jobs complete: YES
-- Section B DataTable 12 columns: YES
-- Section C lifecycle badges: YES
-- Section D detail dialog 7 tabs: YES
-- Section E RBAC 8/8 rows: YES
-- Section F search/filter/sort/bulk/pagination: YES
-- Section G cross-page smoke: YES
-- Playwright traces attached: YES
-- JUnit XML attached: YES
+- Section A current-run job state coverage for succeeded, dead_lettered, retry_wait, cancelled, running: YES
+- Section B DataTable 12 mandatory columns: YES
+- Section C PS-76 lifecycle badge colours for success/destructive/warning/neutral/cancelled: YES
+- Section D detail controls Copy Job ID, Retry, Cancel, Delete, all 7 tabs, Escape close: YES
+- Section E RBAC 8/8 rows with admin/non-admin/cross-actor outcomes: YES
+- Section F exact search, status/type/actor/date filters: YES
+- Section F every-column sort: YES
+- Section F page sizes 10/25/50/100: YES
+- Section F bulk cancel/retry/delete confirmation paths: YES
+- Section G strict console/network capture: YES, zero unexpected console errors and zero network failures
+- Local-code JUnit XML: YES
+- Local-code HTML report and trace bundle: YES
+- Docker JUnit XML: YES
+- Docker HTML report and trace bundle: YES
+- Docker image built from corrected source: YES, `sha256:e4e35c6e4090d87ebdf102fd37371b0fcd8638b537d4fa6ef7124abcebddaee8`
 - Section 1.4 bespoke grep clean: YES
-- PREPROD_TOUCH_AUDIT clean: YES
+- PREPROD_TOUCH_AUDIT clean/read-only: YES
 - PC17 no `.or()` weakening: YES
 - PC27 foreground-only: YES
-- PC29 artefacts in working/: YES
-- PC32 no leftover containers: YES
-- Commit hash: server `da38e59d210e03c3d006f29b22bd0e3c78353d0f`; UI `3f9cec3b1829f6e1b124349f58a7b953aa2f9cfa`
-- Commit on remote: YES; `git ls-remote origin main` matches both hashes in `working/w28a-693/06-rules-warranty.md` and `working/w28a-693/git-proof-post-push.md`
-- Section 11 WARRANTY: signed in `working/w28a-693/06-rules-warranty.md`
+- PC29 artefacts under `working/w28a-693/`: YES
+- PC32 no leftover container: YES
+- UI source commit pushed: YES, `4ebff4c13fa6124c843a0be7eb3eef0d6223100b`
+- Server source/evidence commit pushed: PENDING post-commit proof update
+- RULES warranty: `working/w28a-693/06-rules-warranty.md`
 
-HAVE_ALL_REQUIREMENTS_BEEN_MET: YES
+HAVE_ALL_REQUIREMENTS_BEEN_MET: YES, pending only the same-lane server post-push proof update.

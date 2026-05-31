@@ -1,0 +1,28 @@
+[local-code]
+section_a_current_run_statuses=succeeded,dead_lettered,retry_wait,cancelled,running
+section_c_observed_badges=retry_wait,running,succeeded,dead_lettered,cancelled
+section_d_controls=Copy Job ID,Retry,Cancel,Delete
+section_d_tabs=Overview,Parameters,Input ref,Result/Output,Thinking,Lifecycle log,Raw
+section_d_escape_closed=True
+section_e_rbac_rows=1,2,3,4,5,6,7,8
+section_f_sorts=Job ID,Type,Status,Created,Started,Updated,Completed,Actor,Duration,Result link,Log link,Retry count
+section_f_page_sizes=10,25,50,100
+section_f_bulk_actions=cancel,retry,delete
+section_g_routes=Dashboard,Profiles,Collections,File Ingest,Search Retrieve,Retention Delete,Observability,MCP Console,A2A Console,API Docs,Jobs,Settings
+section_g_console_errors=0
+section_g_network_failures=0
+
+[docker]
+section_a_current_run_statuses=succeeded,dead_lettered,retry_wait,cancelled,running
+section_c_observed_badges=retry_wait,running,succeeded,dead_lettered,cancelled
+section_d_controls=Copy Job ID,Retry,Cancel,Delete
+section_d_tabs=Overview,Parameters,Input ref,Result/Output,Thinking,Lifecycle log,Raw
+section_d_escape_closed=True
+section_e_rbac_rows=1,2,3,4,5,6,7,8
+section_f_sorts=Job ID,Type,Status,Created,Started,Updated,Completed,Actor,Duration,Result link,Log link,Retry count
+section_f_page_sizes=10,25,50,100
+section_f_bulk_actions=cancel,retry,delete
+section_g_routes=Dashboard,Profiles,Collections,File Ingest,Search Retrieve,Retention Delete,Observability,MCP Console,A2A Console,API Docs,Jobs,Settings
+section_g_console_errors=0
+section_g_network_failures=0
+

@@ -3,64 +3,49 @@
     "list_collections",
     "ingest_text"
   ],
-  "seeded_collection": "w28a_693_1780248256829",
-  "observed_statuses": {
-    "succeeded": 709,
-    "dead_lettered": 49,
+  "seeded_collection": "w28a_693_1780270542538",
+  "current_run_coverage": {
+    "succeeded": {
+      "job_id": "3c1fedf7-d3d2-4f4f-b1db-d8da7206de55",
+      "status": "succeeded",
+      "actor": "api-key:ac6fc16fd23f",
+      "type": "ingest_text"
+    },
+    "dead_lettered": {
+      "job_id": "93ca8fb2-a6d7-4250-a743-2c3fbc72e8f1",
+      "status": "dead_lettered",
+      "actor": "api-key:ac6fc16fd23f",
+      "type": "ingest_text"
+    },
+    "retry_wait": {
+      "job_id": "93ca8fb2-a6d7-4250-a743-2c3fbc72e8f1",
+      "status": "retry_wait",
+      "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-secondary text-secondary-foreground border-secondary/20 bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-100 dark:border-yellow-800"
+    },
+    "cancelled": {
+      "job_id": "e5d2e97a-8b10-4843-b789-165225bf7acf",
+      "status": "cancelled",
+      "actor": "api-key:ac6fc16fd23f",
+      "type": "ingest_text"
+    },
+    "running": {
+      "job_id": "8b649444-9dc0-4799-a391-481ccbfd746d",
+      "status": "running",
+      "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-secondary text-secondary-foreground border-secondary/20 bg-secondary text-secondary-foreground"
+    }
+  },
+  "observed_status_counts_after_seed": {
+    "succeeded": 772,
+    "dead_lettered": 83,
     "retry_wait": 2,
-    "cancelled": 61,
-    "running": 2
+    "cancelled": 97,
+    "running": 1,
+    "queued": 0
   },
   "seeded_job_ids": [
-    {
-      "job_id": "184accb0-bb6f-4e93-b470-08fbdd88b2df",
-      "status": "running",
-      "actor": "api-key:ac6fc16fd23f"
-    },
-    {
-      "job_id": "81a927a1-1f8d-4620-ad2a-04e8b4e7508d",
-      "status": "dead_lettered",
-      "actor": "integration"
-    },
-    {
-      "job_id": "1ea2ce6d-d16d-4eea-b82e-33c45d2511da",
-      "status": "dead_lettered",
-      "actor": "integration"
-    },
-    {
-      "job_id": "c77f7fb8-98ac-442f-ab41-71959db7549f",
-      "status": "dead_lettered",
-      "actor": "integration"
-    },
-    {
-      "job_id": "d21033ab-0f2a-4935-bd36-0822b26b99c7",
-      "status": "succeeded",
-      "actor": "integration"
-    },
-    {
-      "job_id": "a972326a-e6c7-4f30-a43e-23948b386863",
-      "status": "cancelled",
-      "actor": "api-key:2530b9bc4759"
-    },
-    {
-      "job_id": "5d31788f-7ecf-47b9-be97-4f5e73037fad",
-      "status": "succeeded",
-      "actor": "integration"
-    },
-    {
-      "job_id": "774b13b7-4cde-4755-a495-8a1ceb9da7a0",
-      "status": "succeeded",
-      "actor": "integration"
-    },
-    {
-      "job_id": "dbe545f1-69b6-4442-85fc-37c69421b54a",
-      "status": "succeeded",
-      "actor": "integration"
-    },
-    {
-      "job_id": "cdfc6de9-f2ee-465e-9390-0f1e7ba95a7f",
-      "status": "succeeded",
-      "actor": "integration"
-    }
+    "3c1fedf7-d3d2-4f4f-b1db-d8da7206de55",
+    "93ca8fb2-a6d7-4250-a743-2c3fbc72e8f1",
+    "e5d2e97a-8b10-4843-b789-165225bf7acf",
+    "8b649444-9dc0-4799-a391-481ccbfd746d"
   ]
 }

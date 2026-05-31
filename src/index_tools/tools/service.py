@@ -669,7 +669,16 @@ class IndexService:
         self._llm_provider = resolved_provider.strip().lower() or "ollama"
         self._llm_model = resolved_model
         self._embedding_dimension_cache: int | None = None
-        self._async_job_execution = self._live_backend_mode
+        _async_override = str(
+            _cfg("CLOUD_DOG__INDEX__QUEUE__ASYNC_JOB_EXECUTION")
+            or _cfg("CLOUD_DOG__QUEUE__ASYNC_JOB_EXECUTION")
+            or ""
+        ).strip().lower()
+        self._async_job_execution = (
+            _async_override in {"1", "true", "yes", "on"}
+            if _async_override
+            else self._live_backend_mode
+        )
         self._job_threads: dict[str, threading.Thread] = {}
         self._job_threads_lock = threading.Lock()
         self._closed = False

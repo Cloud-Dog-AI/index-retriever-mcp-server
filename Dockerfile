@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # index-retriever-mcp-server — Dockerfile (PS-91)
 # Multi-stage build: proxy/CA support, private PyPI auth via BuildKit secret, non-root runtime.
 
@@ -33,6 +32,7 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
       --extra-index-url ${PYPI_URL} \
       --trusted-host pypi.cloud-dog.net \
+      --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
       cloud-dog-config \
       cloud-dog-logging \
@@ -46,16 +46,18 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
 
 COPY REQUIREMENTS.txt pyproject.toml README.md ./
 COPY src/ ./src/
-COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
       --trusted-host pypi.cloud-dog.net \
+      --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
       -r REQUIREMENTS.txt
+COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     pip install --no-cache-dir \
       --no-deps \
       --trusted-host pypi.cloud-dog.net \
+      --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
       .
 

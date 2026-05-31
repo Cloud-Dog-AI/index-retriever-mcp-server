@@ -1,6 +1,71 @@
 {
-  "writer_user": "api-key:2530b9bc4759",
-  "actor_filter_hidden_for_non_admin": true,
-  "delete_hidden_for_non_admin": true,
-  "direct_other_job_403_checked": true
+  "rows": [
+    {
+      "row": 1,
+      "actor": "admin",
+      "action": "view all jobs",
+      "expected": "sees all rows",
+      "observed_count_before": 955
+    },
+    {
+      "row": 2,
+      "actor": "non-admin",
+      "action": "view jobs",
+      "expected": "sees only own",
+      "writer_user": "api-key:2530b9bc4759",
+      "observed_count": 436
+    },
+    {
+      "row": 3,
+      "actor": "non-admin",
+      "action": "view another job by URL",
+      "expected": "403 inline",
+      "job_id": "8b649444-9dc0-4799-a391-481ccbfd746d"
+    },
+    {
+      "row": 4,
+      "actor": "non-admin",
+      "action": "bulk delete",
+      "expected": "control hidden",
+      "observed": true
+    },
+    {
+      "row": 5,
+      "actor": "non-admin",
+      "action": "bulk cancel own",
+      "expected": "success",
+      "job_id": "d79c0807-86e5-43ea-a659-14b84438e2c3",
+      "observed_status": "cancelled"
+    },
+    {
+      "row": 6,
+      "actor": "non-admin",
+      "action": "bulk cancel another",
+      "expected": "403 inline",
+      "job_id": "8b649444-9dc0-4799-a391-481ccbfd746d",
+      "http_status": 403
+    },
+    {
+      "row": 7,
+      "actor": "non-admin",
+      "action": "bulk retry own failed",
+      "expected": "success",
+      "job_id": "67f9d8e9-ded2-4f64-8ed9-9ff3781faf78",
+      "observed_status": "retry_wait"
+    },
+    {
+      "row": 8,
+      "actor": "admin",
+      "action": "bulk delete across actors",
+      "expected": "confirmation and success",
+      "deleted_job_ids": [
+        "05f03fae-8222-459d-a511-8b2eff818a31",
+        "d79c0807-86e5-43ea-a659-14b84438e2c3"
+      ]
+    }
+  ],
+  "expected_rbac_failures": [
+    "writer direct view other job 8b649444-9dc0-4799-a391-481ccbfd746d returned inline 403",
+    "writer bulk cancel another job 8b649444-9dc0-4799-a391-481ccbfd746d returned 403"
+  ]
 }

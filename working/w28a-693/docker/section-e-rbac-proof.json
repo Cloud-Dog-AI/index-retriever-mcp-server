@@ -1,6 +1,71 @@
 {
-  "writer_user": "api-key:2530b9bc4759",
-  "actor_filter_hidden_for_non_admin": true,
-  "delete_hidden_for_non_admin": true,
-  "direct_other_job_403_checked": true
+  "rows": [
+    {
+      "row": 1,
+      "actor": "admin",
+      "action": "view all jobs",
+      "expected": "sees all rows",
+      "observed_count_before": 4
+    },
+    {
+      "row": 2,
+      "actor": "non-admin",
+      "action": "view jobs",
+      "expected": "sees only own",
+      "writer_user": "api-key:2530b9bc4759",
+      "observed_count": 1
+    },
+    {
+      "row": 3,
+      "actor": "non-admin",
+      "action": "view another job by URL",
+      "expected": "403 inline",
+      "job_id": "da6bcfa1-cc15-4b11-acc7-cd12a99710f5"
+    },
+    {
+      "row": 4,
+      "actor": "non-admin",
+      "action": "bulk delete",
+      "expected": "control hidden",
+      "observed": true
+    },
+    {
+      "row": 5,
+      "actor": "non-admin",
+      "action": "bulk cancel own",
+      "expected": "success",
+      "job_id": "d5460fe4-39cd-4cf1-aa7e-7f27a5184f54",
+      "observed_status": "cancelled"
+    },
+    {
+      "row": 6,
+      "actor": "non-admin",
+      "action": "bulk cancel another",
+      "expected": "403 inline",
+      "job_id": "da6bcfa1-cc15-4b11-acc7-cd12a99710f5",
+      "http_status": 403
+    },
+    {
+      "row": 7,
+      "actor": "non-admin",
+      "action": "bulk retry own failed",
+      "expected": "success",
+      "job_id": "46bd0e13-3e37-4cfb-80b1-232a112287cc",
+      "observed_status": "retry_wait"
+    },
+    {
+      "row": 8,
+      "actor": "admin",
+      "action": "bulk delete across actors",
+      "expected": "confirmation and success",
+      "deleted_job_ids": [
+        "f965062a-ecd8-43d4-b82b-1d2980ff4263",
+        "d5460fe4-39cd-4cf1-aa7e-7f27a5184f54"
+      ]
+    }
+  ],
+  "expected_rbac_failures": [
+    "writer direct view other job da6bcfa1-cc15-4b11-acc7-cd12a99710f5 returned inline 403",
+    "writer bulk cancel another job da6bcfa1-cc15-4b11-acc7-cd12a99710f5 returned 403"
+  ]
 }

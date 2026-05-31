@@ -321,6 +321,45 @@ def _normalise_job_payload(job: Any) -> dict[str, Any]:
     return payload
 
 
+def _job_actor_id(job: Any) -> str:
+    """Return the actor that owns a normalised job record."""
+    payload = _normalise_job_payload(job)
+    nested_payload = payload.get("payload")
+    if not isinstance(nested_payload, dict):
+        nested_payload = {}
+    for key in ("request_auth_identity", "user_id", "actor"):
+        value = payload.get(key)
+        if value not in {None, ""}:
+            return str(value).strip()
+    for key in ("request_auth_identity", "user_id", "actor"):
+        value = nested_payload.get(key)
+        if value not in {None, ""}:
+            return str(value).strip()
+    return ""
+
+
+def _is_admin_role(roles: set[str]) -> bool:
+    """Return whether the identity has the admin role."""
+    return "admin" in roles
+
+
+def _enforce_job_owner(service: IndexService, job_id: str, roles: set[str], actor_id: str) -> Any:
+    """Load a job and enforce non-admin owner-only access."""
+    job = service.job_get(job_id)
+    if _is_admin_role(roles):
+        return job
+    if _job_actor_id(job) == actor_id:
+        return job
+    raise PermissionError("403 inline: non-admin users may only access their own jobs")
+
+
+def _filter_jobs_for_identity(jobs: list[Any], roles: set[str], actor_id: str) -> list[Any]:
+    """Filter jobs to owner-only visibility for non-admin identities."""
+    if _is_admin_role(roles):
+        return jobs
+    return [job for job in jobs if _job_actor_id(job) == actor_id]
+
+
 def _normalise_queue_status(payload: Any) -> dict[str, Any]:
     """Normalise queue health payload with stable keys expected by tests."""
     if not isinstance(payload, dict):
@@ -633,6 +672,8 @@ def execute_tool(
             text=str(arguments["text"]),
             source=str(arguments.get("source", "inline")),
             actor=str(arguments.get("actor", "mcp")),
+            idempotency_key=str(arguments["idempotency_key"]) if arguments.get("idempotency_key") else None,
+            metadata=arguments.get("metadata") if isinstance(arguments.get("metadata"), dict) else None,
         )
         job_id = getattr(ingest_result, "job_id", ingest_result)
         return {"job_id": str(job_id), "status": "queued"}
@@ -806,9 +847,10 @@ def execute_tool(
             return payload
         return {"documents": int(result), "status": "ok"}
     if tool_name == "job_get":
-        job = service.job_get(str(arguments["job_id"]))
+        job = _enforce_job_owner(service, str(arguments["job_id"]), roles, actor_id)
         return {"job": _normalise_job_payload(job)}
     if tool_name == "job_wait":
+        _ = _enforce_job_owner(service, str(arguments["job_id"]), roles, actor_id)
         job = service.job_wait(str(arguments["job_id"]))
         return {"job": _normalise_job_payload(job)}
     if tool_name == "job_list":
@@ -818,11 +860,13 @@ def execute_tool(
             jobs_raw = service.job_list(limit=limit)
         except TypeError:
             jobs_raw = service.job_list()
-        jobs = [_normalise_job_payload(job) for job in list(jobs_raw)]
+        visible_jobs = _filter_jobs_for_identity(list(jobs_raw), roles, actor_id)
+        jobs = [_normalise_job_payload(job) for job in visible_jobs]
         if status_filter:
             jobs = [job for job in jobs if str(job.get("status", "")).strip().lower() == status_filter]
         return {"jobs": jobs, "count": len(jobs)}
     if tool_name == "job_cancel":
+        _ = _enforce_job_owner(service, str(arguments["job_id"]), roles, actor_id)
         cancelled = service.job_cancel(str(arguments["job_id"]))
         if isinstance(cancelled, bool):
             if not cancelled:
@@ -835,6 +879,7 @@ def execute_tool(
         retry_fn = getattr(service, "job_retry", None)
         if not callable(retry_fn):
             raise ValueError("Job retry is not supported by this runtime")
+        _ = _enforce_job_owner(service, str(arguments["job_id"]), roles, actor_id)
         retried = retry_fn(str(arguments["job_id"]))
         if isinstance(retried, bool):
             if not retried:
