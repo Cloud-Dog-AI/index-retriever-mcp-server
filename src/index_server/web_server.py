@@ -322,6 +322,22 @@ def build_web_app() -> object:
         except Exception:
             return Response(content=resp.content, status_code=resp.status_code, media_type="application/json")
 
+    @app.get("/a2a/.well-known/agent.json")
+    async def a2a_agent_card() -> Response:
+        """Proxy A2A agent card from the A2A server."""
+        async with httpx.AsyncClient(base_url=a2a_base_url, verify=False, timeout=15) as client:
+            resp = await client.get("/.well-known/agent.json")
+        return Response(content=resp.content, status_code=resp.status_code, media_type="application/json")
+
+    @app.api_route("/a2a/{path:path}", methods=["GET", "POST"])
+    async def a2a_proxy(path: str, request: Request) -> Response:
+        """Proxy A2A requests to the A2A server."""
+        body = await request.body()
+        async with httpx.AsyncClient(base_url=a2a_base_url, verify=False, timeout=60) as client:
+            resp = await client.request(request.method, f"/{path}", content=body if body else None,
+                                        headers={"Content-Type": request.headers.get("content-type", "application/json")})
+        return Response(content=resp.content, status_code=resp.status_code, media_type=resp.headers.get("content-type", "application/json"))
+
     @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     async def api_proxy(path: str, request: Request) -> Response:
         return await _proxy_request(f"/api/{path}", request)
