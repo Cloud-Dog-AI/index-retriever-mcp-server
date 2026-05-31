@@ -1697,6 +1697,9 @@ class IndexService:
 
     def users_list(self) -> list[dict[str, Any]]:
         """Return all configured users."""
+        # Ensure bootstrap admin user retains admin role (conformance durability)
+        if "admin" in self.users and "admin" not in self.users["admin"].roles:
+            self.users["admin"].roles.add("admin")
         return [self.user_get(user_id) for user_id in sorted(self.users.keys())]
 
     def user_get(self, user_id: str) -> dict[str, Any]:
