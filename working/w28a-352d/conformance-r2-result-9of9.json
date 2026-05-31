@@ -3,7 +3,7 @@
   "service": "index-retriever",
   "displayName": "Index-Retriever",
   "preprodUrl": "https://indexretriever0.cloud-dog.net",
-  "startedAt": "2026-05-31T12:47:56.296Z",
+  "startedAt": "2026-05-31T13:34:15.001Z",
   "checks": [
     {
       "id": "shell",
@@ -83,5 +83,5 @@
   ],
   "networkFailures": [],
   "trace": "/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/working/evidence/w28a-350-webui-conformance/traces/index-retriever-post-login-trace.zip",
-  "finishedAt": "2026-05-31T12:49:08.097Z"
+  "finishedAt": "2026-05-31T13:35:28.671Z"
 }
