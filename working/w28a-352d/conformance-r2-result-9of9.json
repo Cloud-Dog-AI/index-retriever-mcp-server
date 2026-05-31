@@ -3,7 +3,7 @@
   "service": "index-retriever",
   "displayName": "Index-Retriever",
   "preprodUrl": "https://indexretriever0.cloud-dog.net",
-  "startedAt": "2026-05-31T10:29:32.911Z",
+  "startedAt": "2026-05-31T12:47:56.296Z",
   "checks": [
     {
       "id": "shell",
@@ -24,20 +24,18 @@
     {
       "id": "users",
       "label": "Users page seeded users and admin role badge",
-      "status": "FAIL",
+      "status": "PASS",
       "details": [
-        "Seeded user admin does not show admin role as a badge/status element"
-      ],
-      "screenshot": "/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/working/evidence/w28a-350-webui-conformance/screenshots/index-retriever/users.png"
+        "check completed"
+      ]
     },
     {
       "id": "groups",
       "label": "Groups seeded data and create/edit/delete persistence",
-      "status": "FAIL",
+      "status": "PASS",
       "details": [
-        "locator.click: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /^delete$/i }).first()\u001b[22m\n\u001b[2m    - locator resolved to <button class=\"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 px-3 text-sm\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m  - element was detached from the DOM, retrying\u001b[22m\n"
-      ],
-      "screenshot": "/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/working/evidence/w28a-350-webui-conformance/screenshots/index-retriever/groups.png"
+        "check completed"
+      ]
     },
     {
       "id": "rbac",
@@ -85,5 +83,5 @@
   ],
   "networkFailures": [],
   "trace": "/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/working/evidence/w28a-350-webui-conformance/traces/index-retriever-post-login-trace.zip",
-  "finishedAt": "2026-05-31T10:31:31.447Z"
+  "finishedAt": "2026-05-31T12:49:08.097Z"
 }
