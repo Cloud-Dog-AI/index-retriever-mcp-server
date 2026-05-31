@@ -1,0 +1,11 @@
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="56.725055999999995">
+<testsuite name="e2e/w28a-693-jobs-conformance.spec.ts" timestamp="2026-05-31T17:15:27.116Z" hostname="chromium" tests="1" failures="0" skipped="0" time="52.386" errors="0">
+<testcase name="W28A-693 PS-76 v2 Jobs page conformance" classname="e2e/w28a-693-jobs-conformance.spec.ts" time="52.386">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../cloud-dog-ai-ui-monorepo/apps/index-retriever/test-results/e2e-w28a-693-jobs-conforma-7a8b9-76-v2-Jobs-page-conformance-chromium/trace.zip]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+</testsuites>

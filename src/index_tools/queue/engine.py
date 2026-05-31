@@ -26,7 +26,7 @@ from index_tools.queue.models import JobRecord, JobStatus
 
 class JobCancelledError(RuntimeError):
     """Raised when cooperative job execution observes a cancellation request."""
-from sqlalchemy import MetaData, create_engine, select, update
+from sqlalchemy import MetaData, create_engine, delete, select, update
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.schema import CreateTable
 
@@ -733,6 +733,40 @@ class QueueEngine:
             clear_claim=True,
             audit_action="cancel",
         )
+
+    def delete(self, job_id: str) -> bool:
+        """Delete a terminal job record from the queue backend."""
+        job = self.get(job_id)
+        if job.status.value not in {
+            JobStatus.succeeded.value,
+            JobStatus.failed.value,
+            JobStatus.cancelled.value,
+            JobStatus.timeout.value,
+            JobStatus.dead_lettered.value,
+            JobStatus.ttl_expired.value,
+            JobStatus.archived.value,
+        }:
+            return False
+
+        repo = self._sql_repo()
+        if repo is None:
+            self._transition(
+                job_id,
+                status=JobStatus.archived,
+                phase="archived",
+                percentage=100,
+                message="job archived because backend does not expose row delete",
+                clear_claim=True,
+                audit_action="delete",
+            )
+            return True
+
+        with repo.engine.begin() as conn:
+            result = conn.execute(delete(repo.jobs).where(repo.jobs.c.job_id == job_id))
+        if result.rowcount == 1:
+            self._emit_audit_event(job, action="delete", outcome="success")
+            return True
+        return False
 
     def wait(self, job_id: str, timeout_seconds: int | None = None) -> JobRecord:
         """Block until the job reaches a terminal state or timeout expires."""

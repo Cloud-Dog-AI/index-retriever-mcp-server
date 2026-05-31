@@ -1,0 +1,9 @@
+{
+  "exactSearchJobId": "184accb0-bb6f-4e93-b470-08fbdd88b2df",
+  "pagination": "Total Records / Page X of Y",
+  "bulkActions": [
+    "Cancel Selected",
+    "Retry Selected",
+    "Delete Selected"
+  ]
+}

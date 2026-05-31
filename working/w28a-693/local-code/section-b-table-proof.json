@@ -1,0 +1,17 @@
+{
+  "columns": [
+    "Job ID",
+    "Type",
+    "Status",
+    "Created",
+    "Started",
+    "Updated",
+    "Completed",
+    "Actor",
+    "Duration",
+    "Result link",
+    "Log link",
+    "Retry count"
+  ],
+  "totalRecordsVisible": true
+}

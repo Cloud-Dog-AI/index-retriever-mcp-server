@@ -3172,6 +3172,10 @@ class IndexService:
             return self.queue.get(job_id)
         return job
 
+    def job_delete(self, job_id: str) -> bool:
+        """Execute job delete."""
+        return bool(self.queue.delete(job_id))
+
     def queue_status(self) -> dict[str, Any]:
         """Execute queue status."""
         return self.queue.queue_status()

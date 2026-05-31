@@ -1,0 +1,12 @@
+{
+  "tabs": [
+    "Overview",
+    "Parameters",
+    "Input ref",
+    "Result/Output",
+    "Thinking",
+    "Lifecycle log",
+    "Raw"
+  ],
+  "escapeClosed": true
+}

@@ -1,0 +1,23 @@
+
+> @cloud-dog/app-index-retriever@0.0.1 build
+> vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+(node:2360292) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✓ 4207 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                0.50 kB │ gzip:   0.32 kB
+dist/assets/logo-DJsvC-Va.svg                  9.36 kB │ gzip:   2.92 kB
+dist/assets/favicon-N3ucaVbi.ico              15.09 kB
+dist/assets/apple-touch-icon-3PS-Tdo8.png     31.02 kB
+dist/assets/index-0txyp-vA.css                32.70 kB │ gzip:   6.54 kB
+dist/assets/index-CWSGLkc_.js              1,949.58 kB │ gzip: 558.98 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 17.71s

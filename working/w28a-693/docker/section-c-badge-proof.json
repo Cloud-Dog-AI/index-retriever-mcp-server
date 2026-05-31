@@ -1,0 +1,17 @@
+[
+  {
+    "status": "succeeded",
+    "job_id": "530c37ce-d224-41bd-969d-e8067dd7eb38",
+    "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-secondary text-secondary-foreground border-secondary/20 bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-100 dark:border-green-800"
+  },
+  {
+    "status": "failed-family",
+    "job_id": "1ea2ce6d-d16d-4eea-b82e-33c45d2511da",
+    "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-red-700 text-white border-red-700/20 bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-100 dark:border-red-800"
+  },
+  {
+    "status": "cancelled",
+    "job_id": "a972326a-e6c7-4f30-a43e-23948b386863",
+    "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-secondary text-secondary-foreground border-secondary/20 bg-secondary text-secondary-foreground line-through opacity-80"
+  }
+]

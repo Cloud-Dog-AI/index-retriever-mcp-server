@@ -1,0 +1,6 @@
+{"agent_card": 0, "auth_me": 0, "health": 0, "tools_api": 0, "tools_web": 0, "web": 0}
+{"agent_card": 0, "auth_me": 200, "health": 200, "tools_api": 200, "tools_web": 0, "web": 0}
+{"agent_card": 500, "auth_me": 200, "health": 200, "tools_api": 200, "tools_web": 500, "web": 200}
+{"agent_card": 500, "auth_me": 200, "health": 200, "tools_api": 200, "tools_web": 200, "web": 200}
+{"agent_card": 200, "auth_me": 200, "health": 200, "tools_api": 200, "tools_web": 200, "web": 200}
+DOCKER_FINAL_READY

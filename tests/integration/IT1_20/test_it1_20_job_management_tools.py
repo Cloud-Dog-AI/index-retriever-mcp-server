@@ -72,6 +72,14 @@ def test_job_management_tools_contract(service: IndexService) -> None:
     assert cancelled_job.get("job_id") == job_id
     assert str(cancelled_job.get("status", "")).lower() == "cancelled"
 
+    deleted = _call_tool(client, "job_delete", {"job_id": job_id}, "valid-admin-token")
+    assert deleted.get("job_id") == job_id
+    assert deleted.get("deleted") is True
+    listed_after_delete = _call_tool(client, "job_list", {}, "valid-admin-token")
+    remaining_jobs = listed_after_delete.get("jobs")
+    assert isinstance(remaining_jobs, list)
+    assert all(str(item.get("job_id", "")) != job_id for item in remaining_jobs)
+
     original_upsert = service.vdb.upsert_records
 
     async def _fail_upsert(*args, **kwargs):

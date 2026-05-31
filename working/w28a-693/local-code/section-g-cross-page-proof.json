@@ -1,0 +1,62 @@
+[
+  {
+    "route": "Dashboard",
+    "console_errors_added": 0,
+    "network_failures_added": 0
+  },
+  {
+    "route": "Profiles",
+    "console_errors_added": 0,
+    "network_failures_added": 0
+  },
+  {
+    "route": "Collections",
+    "console_errors_added": 0,
+    "network_failures_added": 0
+  },
+  {
+    "route": "File Ingest",
+    "console_errors_added": 0,
+    "network_failures_added": 0
+  },
+  {
+    "route": "Search Retrieve",
+    "console_errors_added": 0,
+    "network_failures_added": 0
+  },
+  {
+    "route": "Retention Delete",
+    "console_errors_added": 0,
+    "network_failures_added": 0
+  },
+  {
+    "route": "Observability",
+    "console_errors_added": 0,
+    "network_failures_added": 0
+  },
+  {
+    "route": "MCP Console",
+    "console_errors_added": 0,
+    "network_failures_added": 0
+  },
+  {
+    "route": "A2A Console",
+    "console_errors_added": 0,
+    "network_failures_added": 0
+  },
+  {
+    "route": "API Docs",
+    "console_errors_added": 0,
+    "network_failures_added": 0
+  },
+  {
+    "route": "Jobs",
+    "console_errors_added": 0,
+    "network_failures_added": 0
+  },
+  {
+    "route": "Settings",
+    "console_errors_added": 0,
+    "network_failures_added": 0
+  }
+]

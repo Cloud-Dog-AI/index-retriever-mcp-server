@@ -1,0 +1,6 @@
+{
+  "writer_user": "api-key:2530b9bc4759",
+  "actor_filter_hidden_for_non_admin": true,
+  "delete_hidden_for_non_admin": true,
+  "direct_other_job_403_checked": true
+}

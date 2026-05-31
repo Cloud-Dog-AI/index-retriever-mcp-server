@@ -114,6 +114,7 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="a2a_config_events", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve the log of admin configuration change events for A2A consumers."),
         # -- Collections --
         ToolSpec(name="collections_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List all collections, optionally filtered by profile."),
+        ToolSpec(name="list_collections", input_model=GenericToolInput, output_model=GenericToolOutput, description="List all collections, optionally filtered by profile."),
         ToolSpec(name="collection_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve a single collection's metadata, dimensions, and access roles."),
         ToolSpec(name="admin_collection_create", input_model=GenericToolInput, output_model=GenericToolOutput, description="Create a new vector collection within a profile."),
         ToolSpec(name="admin_collection_update", input_model=GenericToolInput, output_model=GenericToolOutput, description="Update a collection's description, metadata, or access roles."),
@@ -153,6 +154,7 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="job_stream", input_model=GenericToolInput, output_model=GenericToolOutput, description="Stream real-time progress events from a running job."),
         ToolSpec(name="job_cancel", input_model=GenericToolInput, output_model=GenericToolOutput, description="Cancel a queued or running job."),
         ToolSpec(name="job_retry", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retry a failed or cancelled job with the same parameters."),
+        ToolSpec(name="job_delete", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a terminal job record."),
         ToolSpec(name="queue_status", input_model=GenericToolInput, output_model=GenericToolOutput, description="Return queue depth, running job count, and backend health status."),
         # -- Deletion & Lifecycle --
         ToolSpec(name="delete_by_id", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a specific document from a collection by its ID."),

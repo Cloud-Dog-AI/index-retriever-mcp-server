@@ -195,6 +195,8 @@ def _required_roles_for_tool(tool_name: str) -> set[str]:
     """Internal helper to required roles for tool."""
     if tool_name.startswith("admin_"):
         return {"admin"}
+    if tool_name == "job_delete":
+        return {"admin"}
     if tool_name.startswith("ingest_"):
         return {"writer", "maintainer", "admin"}
     if tool_name in {"parsers_list"}:
@@ -211,6 +213,7 @@ def _required_roles_for_tool(tool_name: str) -> set[str]:
         "profile_get",
         "a2a_config_events",
         "collections_list",
+        "list_collections",
         "collection_get",
         "source_configs_list",
         "source_config_get",
@@ -496,7 +499,7 @@ def execute_tool(
         }
     if tool_name == "a2a_config_events":
         return {"events": service.a2a_config_events()}
-    if tool_name == "collections_list":
+    if tool_name in {"collections_list", "list_collections"}:
         return {"collections": service.collections_list(str(arguments.get("profile", "default")))}
     if tool_name == "collection_get":
         return {
@@ -843,6 +846,14 @@ def execute_tool(
         else:
             job = _normalise_job_payload(retried)
         return {"job": job, "status": str(job.get("status", "queued"))}
+    if tool_name == "job_delete":
+        delete_fn = getattr(service, "job_delete", None)
+        if not callable(delete_fn):
+            raise ValueError("Job delete is not supported by this runtime")
+        deleted = bool(delete_fn(str(arguments["job_id"])))
+        if not deleted:
+            raise ValueError("Job deletion rejected by queue backend")
+        return {"job_id": str(arguments["job_id"]), "deleted": True, "status": "deleted"}
     if tool_name == "backend_health_check":
         return service.backend_health_check()
     if tool_name == "embedding_health_check":
