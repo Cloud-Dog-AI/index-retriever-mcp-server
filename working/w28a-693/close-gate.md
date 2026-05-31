@@ -22,7 +22,7 @@
 - PC29 artefacts under `working/w28a-693/`: YES
 - PC32 no leftover container: YES
 - UI source commit pushed: YES, `4ebff4c13fa6124c843a0be7eb3eef0d6223100b`
-- Server source/evidence commit pushed: PENDING post-commit proof update
+- Server source/evidence commit pushed: YES, `e08a6babab350f7b956ef59e171e4e47f7e4f598`
 - RULES warranty: `working/w28a-693/06-rules-warranty.md`
 
-HAVE_ALL_REQUIREMENTS_BEEN_MET: YES, pending only the same-lane server post-push proof update.
+HAVE_ALL_REQUIREMENTS_BEEN_MET: YES
