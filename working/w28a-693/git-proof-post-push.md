@@ -1,33 +1,36 @@
-# W28A-693 Git Proof After Push
+# W28A-693 Git Proof Anchor
 
-Captured after pushing W28A-693 source/evidence corrections.
+This committed file is the R4 proof-anchor record. It intentionally does not
+claim that the pre-commit hash is the final returned commit. The immutable final
+raw proof is recorded after this commit is pushed in annotated tag
+`W28A-693-R4-FINAL-PROOF`.
 
 ## Server Repo
 
 Path: `/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server`
 
-Command: `git log -1 --oneline`
+Final proof command: `git rev-parse HEAD`
 
 ```text
-a579c0f evidence: W28A-693 source-backed jobs conformance
+See annotated tag W28A-693-R4-FINAL-PROOF.
 ```
 
-Command: `git rev-parse HEAD`
+Final proof command: `git ls-remote origin refs/heads/main`
 
 ```text
-a579c0fe4b10d4937259e14873838970f90c97d8
+See annotated tag W28A-693-R4-FINAL-PROOF.
 ```
 
-Command: `git status --short`
+Final proof command: `git status --short`
 
 ```text
-
+See annotated tag W28A-693-R4-FINAL-PROOF.
 ```
 
-Command: `git ls-remote --heads origin main`
+Final proof command: `git ls-files working/w28a-693/ | wc -l`
 
 ```text
-a579c0fe4b10d4937259e14873838970f90c97d8	refs/heads/main
+See annotated tag W28A-693-R4-FINAL-PROOF.
 ```
 
 Command: `git ls-files <W28A-693 source/evidence paths>`
@@ -74,6 +77,9 @@ Command: `git ls-remote --heads origin main`
 ```text
 16da675d6aa9e05cb334d5d92ac674abf715f6b3	refs/heads/main
 ```
+
+Final UI remote/scoped status proof is also recorded in annotated tag
+`W28A-693-R4-FINAL-PROOF`.
 
 Command: `git ls-files apps/index-retriever/tests/e2e/w28a-693-jobs-conformance.spec.ts`
 

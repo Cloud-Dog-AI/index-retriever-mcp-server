@@ -14,6 +14,6 @@ W28A-693 CLOSE GATE
 - PC27 foreground-only: YES
 - PC29 artefacts in working/: YES
 - PC32 no leftover containers: YES
-- Commit hash: a579c0fe4b10d4937259e14873838970f90c97d8
-- Commit on remote: a579c0fe4b10d4937259e14873838970f90c97d8	refs/heads/main
+- Commit hash: final raw value is anchored after this proof-anchor commit in annotated tag `W28A-693-R4-FINAL-PROOF`
+- Commit on remote: final raw `git ls-remote origin refs/heads/main` output is anchored after this proof-anchor commit in annotated tag `W28A-693-R4-FINAL-PROOF`
 - §11 WARRANTY: signed

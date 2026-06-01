@@ -35,60 +35,26 @@ Basis: raw local-code and Docker Playwright artefacts under `working/w28a-693/` 
 - Readiness proof: `working/w28a-693/docker-final-ready.log` => `ready: true`
 - Cleanup proof: `working/w28a-693/docker-no-leftover-containers.log` => `NO_W28A_693_CONTAINERS`
 
-## Git proof snapshot after source/evidence push
+## Final Proof Anchor
 
-Server repo path: `/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server`
+The previous R4 blocker was a self-referential hash loop: a proof commit recorded
+the prior commit, then the proof commit became the final returned HEAD. This
+warranty now avoids that false claim.
 
-Command: `git log -1 --oneline`
+Final git proof is anchored after the final proof-anchor commit is pushed in
+annotated tag `W28A-693-R4-FINAL-PROOF`. The tag message records the immutable
+post-push raw outputs for:
 
-```text
-a579c0f evidence: W28A-693 source-backed jobs conformance
-```
-
-Command: `git rev-parse HEAD`
-
-```text
-a579c0fe4b10d4937259e14873838970f90c97d8
-```
-
-Command: `git status --short`
-
-```text
-
-```
-
-Command: `git ls-remote --heads origin main`
-
-```text
-a579c0fe4b10d4937259e14873838970f90c97d8	refs/heads/main
-```
-
-UI repo path: `/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-ui-monorepo`
-
-Command: `git log -1 --oneline`
-
-```text
-16da675 fix(index-retriever): source-backed W28A-693 conformance evidence
-```
-
-Command: `git rev-parse HEAD`
-
-```text
-16da675d6aa9e05cb334d5d92ac674abf715f6b3
-```
-
-Command: `git status --short -- apps/index-retriever/tests/e2e/w28a-693-jobs-conformance.spec.ts`
-
-```text
-
-```
-
-Command: `git ls-remote --heads origin main`
-
-```text
-16da675d6aa9e05cb334d5d92ac674abf715f6b3	refs/heads/main
-```
+- `git rev-parse HEAD`
+- `git ls-remote origin refs/heads/main`
+- `git status --short`
+- `git ls-files working/w28a-693/ | wc -l`
+- local-code and Docker JUnit summaries
+- local-code and Docker `.last-run.json` statuses
+- trace zip counts
+- UI `git ls-remote origin refs/heads/main`
+- UI scoped `git status --short -- apps/index-retriever`
 
 ## Warranty
 
-I verified every required W28A-693 Section A-G row against tracked raw artefacts. I did not use SQLite UPDATE/manual DB mutation to manufacture lifecycle states. The source/evidence commit is pushed and the post-push git proof is recorded in `working/w28a-693/git-proof-post-push.md`.
+I verified every required W28A-693 Section A-G row against tracked raw artefacts. I did not use SQLite UPDATE/manual DB mutation to manufacture lifecycle states. The committed proof files name the final proof anchor without asserting a stale hash; the immutable post-push raw git proof is the annotated tag `W28A-693-R4-FINAL-PROOF`.
