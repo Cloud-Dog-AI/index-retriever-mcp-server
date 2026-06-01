@@ -22,6 +22,6 @@
 - PC29 artefacts under `working/w28a-693/`: YES
 - PC32 no leftover container: YES
 - UI source commit pushed: YES, `4ebff4c13fa6124c843a0be7eb3eef0d6223100b`
-- Server source/evidence commit: PENDING (will be updated after commit)
-- Commit on remote: PENDING (will be updated after push)
+- Server source/evidence commit: 8bd9b4867a276c935c8b61bbfe2b851bae2b0978
+- Commit on remote: 8bd9b4867a276c935c8b61bbfe2b851bae2b0978 refs/heads/main (git ls-remote verified)
 - RULES warranty: `working/w28a-693/06-rules-warranty.md`
