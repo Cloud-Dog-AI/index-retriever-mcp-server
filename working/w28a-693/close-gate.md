@@ -14,6 +14,6 @@ W28A-693 CLOSE GATE
 - PC27 foreground-only: YES
 - PC29 artefacts in working/: YES
 - PC32 no leftover containers: YES
-- Commit hash: 9d3106c9f2c043f1f17a91ed81d329759c765b1a
-- Commit on remote: pending final server evidence push; verify with `git ls-remote --heads origin main` after commit
+- Commit hash: a579c0fe4b10d4937259e14873838970f90c97d8
+- Commit on remote: a579c0fe4b10d4937259e14873838970f90c97d8	refs/heads/main
 - §11 WARRANTY: signed

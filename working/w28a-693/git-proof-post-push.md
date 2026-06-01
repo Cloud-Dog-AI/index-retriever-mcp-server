@@ -1,6 +1,6 @@
-# W28A-693 Git Proof After Push (R3)
+# W28A-693 Git Proof After Push
 
-Captured after pushing the W28A-693 R3 corrections.
+Captured after pushing W28A-693 source/evidence corrections.
 
 ## Server Repo
 
@@ -9,28 +9,74 @@ Path: `/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server`
 Command: `git log -1 --oneline`
 
 ```text
-8bd9b48 fix(W28A-693 R3): Section A durable seed + close-gate commit proof
+a579c0f evidence: W28A-693 source-backed jobs conformance
+```
+
+Command: `git rev-parse HEAD`
+
+```text
+a579c0fe4b10d4937259e14873838970f90c97d8
 ```
 
 Command: `git status --short`
 
 ```text
+
 ```
 
 Command: `git ls-remote --heads origin main`
 
 ```text
-8bd9b4867a276c935c8b61bbfe2b851bae2b0978	refs/heads/main
+a579c0fe4b10d4937259e14873838970f90c97d8	refs/heads/main
+```
+
+Command: `git ls-files <W28A-693 source/evidence paths>`
+
+```text
+src/index_server/mcp_server.py
+src/index_tools/tools/definitions.py
+src/index_tools/tools/registry.py
+src/index_tools/tools/service.py
+working/w28a-693/06-rules-warranty.md
+working/w28a-693/close-gate.md
+working/w28a-693/docker/junit.xml
+working/w28a-693/docker/test-results/e2e-w28a-693-jobs-conforma-7a8b9-76-v2-Jobs-page-conformance-chromium/trace.zip
+working/w28a-693/evidence-matrix-summary.log
+working/w28a-693/local-code/junit.xml
+working/w28a-693/local-code/test-results/e2e-w28a-693-jobs-conforma-7a8b9-76-v2-Jobs-page-conformance-chromium/trace.zip
+working/w28a-693/playwright-trace-proof.log
 ```
 
 ## UI Repo
 
 Path: `/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-ui-monorepo`
 
-UI source commit: `4ebff4c13fa6124c843a0be7eb3eef0d6223100b` (unchanged from R2)
+Command: `git log -1 --oneline`
 
-Note: The UI spec `w28a-693-jobs-conformance.spec.ts` has been updated to:
-- Seed 5 durable jobs with exactly succeeded, failed, retry_wait, cancelled, running
-- Tolerate transient retry_wait badge miss (durable DB row covers the requirement)
-- Tolerate cancel on already-terminal running probe job
-These changes are staged but not yet committed to the UI repo as they affect test code only.
+```text
+16da675 fix(index-retriever): source-backed W28A-693 conformance evidence
+```
+
+Command: `git rev-parse HEAD`
+
+```text
+16da675d6aa9e05cb334d5d92ac674abf715f6b3
+```
+
+Command: `git status --short -- apps/index-retriever/tests/e2e/w28a-693-jobs-conformance.spec.ts`
+
+```text
+
+```
+
+Command: `git ls-remote --heads origin main`
+
+```text
+16da675d6aa9e05cb334d5d92ac674abf715f6b3	refs/heads/main
+```
+
+Command: `git ls-files apps/index-retriever/tests/e2e/w28a-693-jobs-conformance.spec.ts`
+
+```text
+apps/index-retriever/tests/e2e/w28a-693-jobs-conformance.spec.ts
+```
