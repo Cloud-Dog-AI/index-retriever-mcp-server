@@ -217,6 +217,16 @@ class GenericToolInput(BaseModel):
     collection: str = "default"
 
 
+class LifecycleEvidenceInput(BaseModel):
+    """LifecycleEvidenceInput definition."""
+
+    outcome: str
+    job_type: str = "ingest_text"
+    label: str = ""
+    profile: str = "default"
+    collection: str = "w28a_693"
+
+
 class GenericToolOutput(BaseModel):
     """GenericToolOutput definition."""
 

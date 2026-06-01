@@ -1,5 +1,14 @@
 # Agent Lessons — index-retriever-mcp-server
 
+## Platform Alignment (Binding - 2026-06-01)
+
+- Project lessons extend but never override `/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/RULES.md`, `/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/AGENT-LESSONS.md`, or `/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/AGENT-BOOTSTRAP-DIRECTIVE.md`.
+- Read those three platform files, this file, and instruction-specific docs before project work; report PRE-FLIGHT proof.
+- Every lane must fill the CONTRACT EVIDENCE SELF-REJECTION GATE and Evidence Matrix. Any NO row means `HAVE_ALL_REQUIREMENTS_BEEN_MET: NO` or a truthful blocked return.
+- In fix/remediation lanes, if a required test fails and the fix is inside the target repo, fix it. "Pre-existing" is only a baseline classifier, not an escape hatch.
+- No Vault writes without explicit per-action user authorization; no SSH/firewall/live-container code or config hotfixes; no coordinator-owned state mutation unless assigned.
+- Local-Docker-First and Clean Git Before Deploy apply to runtime/deploy work; source, Docker, Terraform, and package-publication mutations require quoted coordinator authorization.
+
 This file captures lessons learned from W28A-602 (platform adoption), W28A-878/882/884 (deploy, preprod, metadata uplift), W28A-908a/908b (lifecycle/deploy), and W28A-964 (comprehensive sweep). Read it before making code, test, doc, or deployment changes in this repository.
 
 ## Code

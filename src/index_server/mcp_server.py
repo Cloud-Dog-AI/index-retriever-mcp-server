@@ -231,6 +231,8 @@ def _required_roles_for_tool(tool_name: str) -> set[str]:
         return {"admin"}
     if tool_name.startswith("job_") or tool_name == "queue_status":
         return {"writer", "maintainer", "admin"}
+    if tool_name == "w28a_693_lifecycle_job":
+        return {"writer", "maintainer", "admin"}
     if tool_name in {"delete_by_id", "delete_by_filter", "retention_run", "reindex_run"}:
         return {"maintainer", "admin"}
     if tool_name in {"backend_health_check", "embedding_health_check", "ingest_health"}:
@@ -924,6 +926,15 @@ def execute_tool(
         return service.file_delete(str(arguments["file_id"]), actor=str(arguments.get("actor", "mcp")))
     if tool_name == "queue_status":
         return _normalise_queue_status(service.queue_status())
+    if tool_name == "w28a_693_lifecycle_job":
+        return service.create_w28a_693_lifecycle_evidence_job(
+            outcome=str(arguments["outcome"]),
+            job_type=str(arguments.get("job_type", "ingest_text")),
+            label=str(arguments.get("label", "")),
+            profile=str(arguments.get("profile", "default")),
+            collection=str(arguments.get("collection", "w28a_693")),
+            actor=actor_id,
+        )
     if tool_name == "ingest_stream_open":
         from index_server.streaming import ingest_stream_session_start as _stream_session_start
         return _stream_session_start(

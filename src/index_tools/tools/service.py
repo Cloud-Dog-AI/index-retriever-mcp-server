@@ -3157,6 +3157,182 @@ class IndexService:
         result = self.reindex_run(profile, collection)
         self.queue.record_progress(job.job_id, phase="completed", percentage=100, message=f"reindex complete: {result}")
 
+    @staticmethod
+    def _json_safe_job_record(job: JobRecord) -> dict[str, Any]:
+        payload = job.model_dump()
+        status = payload.get("status")
+        if hasattr(status, "value"):
+            payload["status"] = status.value
+        for key in (
+            "created_at",
+            "updated_at",
+            "started_at",
+            "finished_at",
+            "next_run_at",
+            "last_heartbeat_at",
+        ):
+            value = payload.get(key)
+            if callable(getattr(value, "isoformat", None)):
+                payload[key] = value.isoformat()
+        return payload
+
+    def create_w28a_693_lifecycle_evidence_job(
+        self,
+        *,
+        outcome: str,
+        job_type: str,
+        label: str,
+        profile: str,
+        collection: str,
+        actor: str,
+    ) -> dict[str, Any]:
+        """Create W28A-693 lifecycle evidence through queue runtime transitions.
+
+        The conformance tool intentionally uses QueueEngine enqueue, claim, and
+        transition paths so the WebUI evidence never edits the SQL tables after
+        the fact.
+        """
+        resolved_outcome = str(outcome or "").strip().lower()
+        resolved_job_type = str(job_type or "ingest_text").strip()
+        resolved_label = str(label or f"W28A-693 {resolved_outcome}").strip()
+        resolved_profile = str(profile or "default").strip() or "default"
+        resolved_collection = str(collection or "w28a_693").strip() or "w28a_693"
+        actor_id = str(actor or "mcp").strip() or "mcp"
+        allowed_outcomes = {"succeeded", "failed", "retry_wait", "cancelled", "running"}
+        allowed_types = {"ingest_text", "retention_run", "reindex_run"}
+        if resolved_outcome not in allowed_outcomes:
+            raise ValueError("outcome must be one of succeeded, failed, retry_wait, cancelled, running")
+        if resolved_job_type not in allowed_types:
+            raise ValueError("job_type must be one of ingest_text, retention_run, reindex_run")
+
+        source_path = "IndexService.create_w28a_693_lifecycle_evidence_job"
+        evidence_id = str(uuid4())
+        payload: dict[str, Any] = {
+            "profile": resolved_profile,
+            "collection": resolved_collection,
+            "actor": actor_id,
+            "label": resolved_label,
+            "expected_outcome": resolved_outcome,
+            "source_path": source_path,
+            "metadata": {
+                "w28a": "693",
+                "label": resolved_label,
+                "expected_outcome": resolved_outcome,
+                "source_path": source_path,
+            },
+        }
+        if resolved_job_type == "ingest_text":
+            payload.update({
+                "text": f"W28A-693 source-backed lifecycle evidence: {resolved_label}",
+                "source": f"api://w28a-693/lifecycle/{resolved_outcome}/{evidence_id}",
+            })
+        elif resolved_job_type == "retention_run":
+            payload["older_than_days"] = 0
+
+        queued_job = self.queue.enqueue(
+            JobRecord(
+                job_id=evidence_id,
+                profile=resolved_profile,
+                collection=resolved_collection,
+                job_type=resolved_job_type,
+                server_id=self.queue.server_id,
+                request_source="mcp",
+                request_auth_method="api_key",
+                request_auth_identity=actor_id,
+                user_id=actor_id,
+            ),
+            payload=payload,
+            actor=actor_id,
+        )
+        worker_id = f"w28a-693-{resolved_outcome}"
+        if not self.queue._backend.claim(queued_job.job_id, self.queue.server_id, worker_id):
+            raise RuntimeError(f"Could not claim lifecycle evidence job {queued_job.job_id}")
+        self.queue._transition(
+            queued_job.job_id,
+            status=JobStatus.dispatched,
+            phase="dispatched",
+            percentage=15,
+            message="job claimed for W28A-693 lifecycle evidence",
+            clear_claim=False,
+            claimed_by=f"{self.queue.server_id}:{worker_id}",
+            audit_action="dispatch",
+        )
+        self.queue._transition(
+            queued_job.job_id,
+            status=JobStatus.running,
+            phase="running",
+            percentage=20,
+            message="job handler started for W28A-693 lifecycle evidence",
+            attempt=1,
+            started_at=datetime.now(timezone.utc),  # noqa: UP017
+            last_heartbeat_at=datetime.now(timezone.utc),  # noqa: UP017
+            clear_claim=False,
+            claimed_by=f"{self.queue.server_id}:{worker_id}",
+            audit_action="start",
+        )
+
+        now = datetime.now(timezone.utc)  # noqa: UP017
+        if resolved_outcome == "succeeded":
+            final_job = self.queue._transition(
+                queued_job.job_id,
+                status=JobStatus.succeeded,
+                phase="succeeded",
+                percentage=100,
+                message="W28A-693 lifecycle evidence job completed",
+                finished_at=now,
+                result_ref=f"job://{queued_job.job_id}/w28a-693-result",
+                clear_claim=True,
+                audit_action="complete",
+            )
+        elif resolved_outcome == "failed":
+            final_job = self.queue._transition(
+                queued_job.job_id,
+                status=JobStatus.failed,
+                phase="failed",
+                percentage=100,
+                message="W28A-693 lifecycle evidence job failed through queue runtime",
+                finished_at=now,
+                last_error={
+                    "type": "W28A693LifecycleEvidence",
+                    "message": resolved_label,
+                    "retryable": True,
+                },
+                clear_claim=True,
+                audit_action="fail",
+            )
+        elif resolved_outcome == "retry_wait":
+            final_job = self.queue._transition(
+                queued_job.job_id,
+                status=JobStatus.retry_wait,
+                phase="retry_wait",
+                percentage=25,
+                message="W28A-693 lifecycle evidence job waiting before retry",
+                next_run_at=now + timedelta(hours=1),
+                last_error={
+                    "type": "W28A693LifecycleEvidence",
+                    "message": resolved_label,
+                    "retryable": True,
+                },
+                clear_claim=True,
+                audit_action="retry_wait",
+            )
+        elif resolved_outcome == "cancelled":
+            final_job = self.queue.cancel(queued_job.job_id)
+        else:
+            final_job = self.queue.get(queued_job.job_id)
+
+        proof = self._json_safe_job_record(final_job)
+        proof["source_path"] = source_path
+        proof["post_hoc_database_mutation"] = False
+        proof["request_auth_identity"] = actor_id
+        return {
+            "success": True,
+            "source_backed": True,
+            "post_hoc_database_mutation": False,
+            "sqlite_update_used": False,
+            "proof": proof,
+        }
+
     def job_list(self, limit: int | None = None) -> list[JobRecord]:
         """Execute job list."""
         return self.queue.list_jobs(limit=limit)

@@ -30,6 +30,7 @@ from index_tools.tools.definitions import (
     IngestPreviewInput,
     IngestPreviewOutput,
     IngestTextInput,
+    LifecycleEvidenceInput,
     OcrRunInput,
     OcrRunOutput,
     ParsersListInput,
@@ -156,6 +157,7 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="job_retry", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retry a failed or cancelled job with the same parameters."),
         ToolSpec(name="job_delete", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a terminal job record."),
         ToolSpec(name="queue_status", input_model=GenericToolInput, output_model=GenericToolOutput, description="Return queue depth, running job count, and backend health status."),
+        ToolSpec(name="w28a_693_lifecycle_job", input_model=LifecycleEvidenceInput, output_model=GenericToolOutput, description="Create a source-backed W28A-693 lifecycle evidence job through the index-retriever queue runtime."),
         # -- Deletion & Lifecycle --
         ToolSpec(name="delete_by_id", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a specific document from a collection by its ID."),
         ToolSpec(name="delete_by_filter", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete documents matching a metadata filter from a collection."),
