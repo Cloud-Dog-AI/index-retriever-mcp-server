@@ -1,67 +1,966 @@
 {
+  "method": "WebUI MCP Console list_collections plus w28a_693_lifecycle_job queue-runtime calls",
+  "source_backed": true,
+  "post_hoc_database_mutation": false,
+  "sqlite_update_used": false,
   "tool_calls": [
     "list_collections",
-    "ingest_text",
-    "admin_collection_create"
+    "w28a_693_lifecycle_job"
   ],
-  "current_run_coverage": {
+  "seeded_collection": "w28a_693_1780312272072",
+  "lifecycle_tool_proofs": {
     "succeeded": {
-      "job_id": "72fefa34-9c47-4188-a64a-005128834208",
-      "status": "succeeded",
-      "actor": null,
-      "type": "ingest_text",
-      "created_at": "2026-06-01T06:04:33.314471",
-      "durable": true
+      "key": "succeeded",
+      "job_id": "b4d22693-0992-426f-afd6-d51f7c30d7d3",
+      "outcome": "succeeded",
+      "job_type": "ingest_text",
+      "label": "W28A-693 succeeded 1780312272911",
+      "proof": {
+        "job_id": "b4d22693-0992-426f-afd6-d51f7c30d7d3",
+        "profile": "default",
+        "collection": "w28a_693_1780312272072",
+        "job_type": "ingest_text",
+        "status": "succeeded",
+        "ordering_key": null,
+        "idempotency_key": null,
+        "payload": {
+          "profile": "default",
+          "collection": "w28a_693_1780312272072",
+          "actor": "api-key:ac6fc16fd23f",
+          "label": "W28A-693 succeeded 1780312272911",
+          "expected_outcome": "succeeded",
+          "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+          "metadata": {
+            "w28a": "693",
+            "label": "W28A-693 succeeded 1780312272911",
+            "expected_outcome": "succeeded",
+            "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job"
+          },
+          "text": "W28A-693 source-backed lifecycle evidence: W28A-693 succeeded 1780312272911",
+          "source": "api://w28a-693/lifecycle/succeeded/b4d22693-0992-426f-afd6-d51f7c30d7d3"
+        },
+        "server_id": "server0.viewdeck.com",
+        "created_at": "2026-06-01T11:11:13.090739",
+        "updated_at": "2026-06-01T11:11:13.477372",
+        "started_at": "2026-06-01T11:11:13.381914+00:00",
+        "finished_at": "2026-06-01T11:11:13.471853+00:00",
+        "next_run_at": null,
+        "last_heartbeat_at": "2026-06-01T11:11:13.381918+00:00",
+        "attempt": 1,
+        "max_attempts": 3,
+        "claimed_by": null,
+        "correlation_id": null,
+        "trace_id": null,
+        "user_id": "api-key:ac6fc16fd23f",
+        "request_source": "api://w28a-693/lifecycle/succeeded/b4d22693-0992-426f-afd6-d51f7c30d7d3",
+        "request_ip": null,
+        "request_auth_method": null,
+        "request_auth_identity": "api-key:ac6fc16fd23f",
+        "request_user_agent": null,
+        "last_error": null,
+        "result_ref": "job://b4d22693-0992-426f-afd6-d51f7c30d7d3/w28a-693-result",
+        "progress": {
+          "phase": "succeeded",
+          "percentage": 100,
+          "message": "W28A-693 lifecycle evidence job completed",
+          "events": [
+            {
+              "phase": "validated",
+              "percentage": 5,
+              "message": "job payload validated",
+              "timestamp": "2026-06-01T11:11:13.167429+00:00"
+            },
+            {
+              "phase": "queued",
+              "percentage": 10,
+              "message": "job queued",
+              "timestamp": "2026-06-01T11:11:13.226115+00:00"
+            },
+            {
+              "phase": "dispatched",
+              "percentage": 15,
+              "message": "job claimed for W28A-693 lifecycle evidence",
+              "timestamp": "2026-06-01T11:11:13.350570+00:00"
+            },
+            {
+              "phase": "running",
+              "percentage": 20,
+              "message": "job handler started for W28A-693 lifecycle evidence",
+              "timestamp": "2026-06-01T11:11:13.386099+00:00"
+            },
+            {
+              "phase": "succeeded",
+              "percentage": 100,
+              "message": "W28A-693 lifecycle evidence job completed",
+              "timestamp": "2026-06-01T11:11:13.475990+00:00"
+            }
+          ]
+        },
+        "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+        "post_hoc_database_mutation": false
+      },
+      "payload": {
+        "success": true,
+        "source_backed": true,
+        "post_hoc_database_mutation": false,
+        "sqlite_update_used": false,
+        "proof": {
+          "job_id": "b4d22693-0992-426f-afd6-d51f7c30d7d3",
+          "profile": "default",
+          "collection": "w28a_693_1780312272072",
+          "job_type": "ingest_text",
+          "status": "succeeded",
+          "ordering_key": null,
+          "idempotency_key": null,
+          "payload": {
+            "profile": "default",
+            "collection": "w28a_693_1780312272072",
+            "actor": "api-key:ac6fc16fd23f",
+            "label": "W28A-693 succeeded 1780312272911",
+            "expected_outcome": "succeeded",
+            "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+            "metadata": {
+              "w28a": "693",
+              "label": "W28A-693 succeeded 1780312272911",
+              "expected_outcome": "succeeded",
+              "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job"
+            },
+            "text": "W28A-693 source-backed lifecycle evidence: W28A-693 succeeded 1780312272911",
+            "source": "api://w28a-693/lifecycle/succeeded/b4d22693-0992-426f-afd6-d51f7c30d7d3"
+          },
+          "server_id": "server0.viewdeck.com",
+          "created_at": "2026-06-01T11:11:13.090739",
+          "updated_at": "2026-06-01T11:11:13.477372",
+          "started_at": "2026-06-01T11:11:13.381914+00:00",
+          "finished_at": "2026-06-01T11:11:13.471853+00:00",
+          "next_run_at": null,
+          "last_heartbeat_at": "2026-06-01T11:11:13.381918+00:00",
+          "attempt": 1,
+          "max_attempts": 3,
+          "claimed_by": null,
+          "correlation_id": null,
+          "trace_id": null,
+          "user_id": "api-key:ac6fc16fd23f",
+          "request_source": "api://w28a-693/lifecycle/succeeded/b4d22693-0992-426f-afd6-d51f7c30d7d3",
+          "request_ip": null,
+          "request_auth_method": null,
+          "request_auth_identity": "api-key:ac6fc16fd23f",
+          "request_user_agent": null,
+          "last_error": null,
+          "result_ref": "job://b4d22693-0992-426f-afd6-d51f7c30d7d3/w28a-693-result",
+          "progress": {
+            "phase": "succeeded",
+            "percentage": 100,
+            "message": "W28A-693 lifecycle evidence job completed",
+            "events": [
+              {
+                "phase": "validated",
+                "percentage": 5,
+                "message": "job payload validated",
+                "timestamp": "2026-06-01T11:11:13.167429+00:00"
+              },
+              {
+                "phase": "queued",
+                "percentage": 10,
+                "message": "job queued",
+                "timestamp": "2026-06-01T11:11:13.226115+00:00"
+              },
+              {
+                "phase": "dispatched",
+                "percentage": 15,
+                "message": "job claimed for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:11:13.350570+00:00"
+              },
+              {
+                "phase": "running",
+                "percentage": 20,
+                "message": "job handler started for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:11:13.386099+00:00"
+              },
+              {
+                "phase": "succeeded",
+                "percentage": 100,
+                "message": "W28A-693 lifecycle evidence job completed",
+                "timestamp": "2026-06-01T11:11:13.475990+00:00"
+              }
+            ]
+          },
+          "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+          "post_hoc_database_mutation": false
+        }
+      }
     },
     "failed": {
-      "job_id": "82733b01-ff13-4869-93d2-366acb96b59a",
-      "status": "failed",
-      "actor": null,
-      "type": "ingest_text",
-      "created_at": "2026-06-01T06:04:36.996881",
-      "durable": true
+      "key": "failed",
+      "job_id": "52d436c9-c4b8-41f8-a061-18840fd6c986",
+      "outcome": "failed",
+      "job_type": "ingest_text",
+      "label": "W28A-693 failed 1780312273986",
+      "proof": {
+        "job_id": "52d436c9-c4b8-41f8-a061-18840fd6c986",
+        "profile": "default",
+        "collection": "w28a_693_1780312272072",
+        "job_type": "ingest_text",
+        "status": "failed",
+        "ordering_key": null,
+        "idempotency_key": null,
+        "payload": {
+          "profile": "default",
+          "collection": "w28a_693_1780312272072",
+          "actor": "api-key:ac6fc16fd23f",
+          "label": "W28A-693 failed 1780312273986",
+          "expected_outcome": "failed",
+          "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+          "metadata": {
+            "w28a": "693",
+            "label": "W28A-693 failed 1780312273986",
+            "expected_outcome": "failed",
+            "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job"
+          },
+          "text": "W28A-693 source-backed lifecycle evidence: W28A-693 failed 1780312273986",
+          "source": "api://w28a-693/lifecycle/failed/52d436c9-c4b8-41f8-a061-18840fd6c986"
+        },
+        "server_id": "server0.viewdeck.com",
+        "created_at": "2026-06-01T11:11:14.217897",
+        "updated_at": "2026-06-01T11:11:14.516668",
+        "started_at": "2026-06-01T11:11:14.478660+00:00",
+        "finished_at": "2026-06-01T11:11:14.511974+00:00",
+        "next_run_at": null,
+        "last_heartbeat_at": "2026-06-01T11:11:14.478663+00:00",
+        "attempt": 1,
+        "max_attempts": 3,
+        "claimed_by": null,
+        "correlation_id": null,
+        "trace_id": null,
+        "user_id": "api-key:ac6fc16fd23f",
+        "request_source": "api://w28a-693/lifecycle/failed/52d436c9-c4b8-41f8-a061-18840fd6c986",
+        "request_ip": null,
+        "request_auth_method": null,
+        "request_auth_identity": "api-key:ac6fc16fd23f",
+        "request_user_agent": null,
+        "last_error": {
+          "type": "W28A693LifecycleEvidence",
+          "message": "W28A-693 failed 1780312273986",
+          "retryable": true
+        },
+        "result_ref": null,
+        "progress": {
+          "phase": "failed",
+          "percentage": 100,
+          "message": "W28A-693 lifecycle evidence job failed through queue runtime",
+          "events": [
+            {
+              "phase": "validated",
+              "percentage": 5,
+              "message": "job payload validated",
+              "timestamp": "2026-06-01T11:11:14.295933+00:00"
+            },
+            {
+              "phase": "queued",
+              "percentage": 10,
+              "message": "job queued",
+              "timestamp": "2026-06-01T11:11:14.345333+00:00"
+            },
+            {
+              "phase": "dispatched",
+              "percentage": 15,
+              "message": "job claimed for W28A-693 lifecycle evidence",
+              "timestamp": "2026-06-01T11:11:14.429738+00:00"
+            },
+            {
+              "phase": "running",
+              "percentage": 20,
+              "message": "job handler started for W28A-693 lifecycle evidence",
+              "timestamp": "2026-06-01T11:11:14.481273+00:00"
+            },
+            {
+              "phase": "failed",
+              "percentage": 100,
+              "message": "W28A-693 lifecycle evidence job failed through queue runtime",
+              "timestamp": "2026-06-01T11:11:14.515182+00:00"
+            }
+          ]
+        },
+        "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+        "post_hoc_database_mutation": false
+      },
+      "payload": {
+        "success": true,
+        "source_backed": true,
+        "post_hoc_database_mutation": false,
+        "sqlite_update_used": false,
+        "proof": {
+          "job_id": "52d436c9-c4b8-41f8-a061-18840fd6c986",
+          "profile": "default",
+          "collection": "w28a_693_1780312272072",
+          "job_type": "ingest_text",
+          "status": "failed",
+          "ordering_key": null,
+          "idempotency_key": null,
+          "payload": {
+            "profile": "default",
+            "collection": "w28a_693_1780312272072",
+            "actor": "api-key:ac6fc16fd23f",
+            "label": "W28A-693 failed 1780312273986",
+            "expected_outcome": "failed",
+            "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+            "metadata": {
+              "w28a": "693",
+              "label": "W28A-693 failed 1780312273986",
+              "expected_outcome": "failed",
+              "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job"
+            },
+            "text": "W28A-693 source-backed lifecycle evidence: W28A-693 failed 1780312273986",
+            "source": "api://w28a-693/lifecycle/failed/52d436c9-c4b8-41f8-a061-18840fd6c986"
+          },
+          "server_id": "server0.viewdeck.com",
+          "created_at": "2026-06-01T11:11:14.217897",
+          "updated_at": "2026-06-01T11:11:14.516668",
+          "started_at": "2026-06-01T11:11:14.478660+00:00",
+          "finished_at": "2026-06-01T11:11:14.511974+00:00",
+          "next_run_at": null,
+          "last_heartbeat_at": "2026-06-01T11:11:14.478663+00:00",
+          "attempt": 1,
+          "max_attempts": 3,
+          "claimed_by": null,
+          "correlation_id": null,
+          "trace_id": null,
+          "user_id": "api-key:ac6fc16fd23f",
+          "request_source": "api://w28a-693/lifecycle/failed/52d436c9-c4b8-41f8-a061-18840fd6c986",
+          "request_ip": null,
+          "request_auth_method": null,
+          "request_auth_identity": "api-key:ac6fc16fd23f",
+          "request_user_agent": null,
+          "last_error": {
+            "type": "W28A693LifecycleEvidence",
+            "message": "W28A-693 failed 1780312273986",
+            "retryable": true
+          },
+          "result_ref": null,
+          "progress": {
+            "phase": "failed",
+            "percentage": 100,
+            "message": "W28A-693 lifecycle evidence job failed through queue runtime",
+            "events": [
+              {
+                "phase": "validated",
+                "percentage": 5,
+                "message": "job payload validated",
+                "timestamp": "2026-06-01T11:11:14.295933+00:00"
+              },
+              {
+                "phase": "queued",
+                "percentage": 10,
+                "message": "job queued",
+                "timestamp": "2026-06-01T11:11:14.345333+00:00"
+              },
+              {
+                "phase": "dispatched",
+                "percentage": 15,
+                "message": "job claimed for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:11:14.429738+00:00"
+              },
+              {
+                "phase": "running",
+                "percentage": 20,
+                "message": "job handler started for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:11:14.481273+00:00"
+              },
+              {
+                "phase": "failed",
+                "percentage": 100,
+                "message": "W28A-693 lifecycle evidence job failed through queue runtime",
+                "timestamp": "2026-06-01T11:11:14.515182+00:00"
+              }
+            ]
+          },
+          "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+          "post_hoc_database_mutation": false
+        }
+      }
     },
     "retry_wait": {
-      "job_id": "46ccb452-2c35-4aa0-bf37-55565ab687e2",
+      "key": "retry-wait",
+      "job_id": "0af92bba-49a3-4f04-b483-68deb2e7f39d",
+      "outcome": "retry_wait",
+      "job_type": "retention_run",
+      "label": "W28A-693 retry-wait 1780312275046",
+      "proof": {
+        "job_id": "0af92bba-49a3-4f04-b483-68deb2e7f39d",
+        "profile": "default",
+        "collection": "w28a_693_1780312272072",
+        "job_type": "retention_run",
+        "status": "retry_wait",
+        "ordering_key": null,
+        "idempotency_key": null,
+        "payload": {
+          "profile": "default",
+          "collection": "w28a_693_1780312272072",
+          "actor": "api-key:ac6fc16fd23f",
+          "label": "W28A-693 retry-wait 1780312275046",
+          "expected_outcome": "retry_wait",
+          "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+          "metadata": {
+            "w28a": "693",
+            "label": "W28A-693 retry-wait 1780312275046",
+            "expected_outcome": "retry_wait",
+            "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job"
+          },
+          "older_than_days": 0
+        },
+        "server_id": "server0.viewdeck.com",
+        "created_at": "2026-06-01T11:11:15.270642",
+        "updated_at": "2026-06-01T11:11:15.568574",
+        "started_at": "2026-06-01T11:11:15.532126+00:00",
+        "finished_at": null,
+        "next_run_at": "2026-06-01T12:11:15.563514+00:00",
+        "last_heartbeat_at": "2026-06-01T11:11:15.532128+00:00",
+        "attempt": 1,
+        "max_attempts": 3,
+        "claimed_by": null,
+        "correlation_id": null,
+        "trace_id": null,
+        "user_id": "api-key:ac6fc16fd23f",
+        "request_source": null,
+        "request_ip": null,
+        "request_auth_method": null,
+        "request_auth_identity": "api-key:ac6fc16fd23f",
+        "request_user_agent": null,
+        "last_error": {
+          "type": "W28A693LifecycleEvidence",
+          "message": "W28A-693 retry-wait 1780312275046",
+          "retryable": true
+        },
+        "result_ref": null,
+        "progress": {
+          "phase": "retry_wait",
+          "percentage": 25,
+          "message": "W28A-693 lifecycle evidence job waiting before retry",
+          "events": [
+            {
+              "phase": "validated",
+              "percentage": 5,
+              "message": "job payload validated",
+              "timestamp": "2026-06-01T11:11:15.289798+00:00"
+            },
+            {
+              "phase": "queued",
+              "percentage": 10,
+              "message": "job queued",
+              "timestamp": "2026-06-01T11:11:15.387337+00:00"
+            },
+            {
+              "phase": "dispatched",
+              "percentage": 15,
+              "message": "job claimed for W28A-693 lifecycle evidence",
+              "timestamp": "2026-06-01T11:11:15.482269+00:00"
+            },
+            {
+              "phase": "running",
+              "percentage": 20,
+              "message": "job handler started for W28A-693 lifecycle evidence",
+              "timestamp": "2026-06-01T11:11:15.534931+00:00"
+            },
+            {
+              "phase": "retry_wait",
+              "percentage": 25,
+              "message": "W28A-693 lifecycle evidence job waiting before retry",
+              "timestamp": "2026-06-01T11:11:15.566800+00:00"
+            }
+          ]
+        },
+        "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+        "post_hoc_database_mutation": false
+      },
+      "payload": {
+        "success": true,
+        "source_backed": true,
+        "post_hoc_database_mutation": false,
+        "sqlite_update_used": false,
+        "proof": {
+          "job_id": "0af92bba-49a3-4f04-b483-68deb2e7f39d",
+          "profile": "default",
+          "collection": "w28a_693_1780312272072",
+          "job_type": "retention_run",
+          "status": "retry_wait",
+          "ordering_key": null,
+          "idempotency_key": null,
+          "payload": {
+            "profile": "default",
+            "collection": "w28a_693_1780312272072",
+            "actor": "api-key:ac6fc16fd23f",
+            "label": "W28A-693 retry-wait 1780312275046",
+            "expected_outcome": "retry_wait",
+            "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+            "metadata": {
+              "w28a": "693",
+              "label": "W28A-693 retry-wait 1780312275046",
+              "expected_outcome": "retry_wait",
+              "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job"
+            },
+            "older_than_days": 0
+          },
+          "server_id": "server0.viewdeck.com",
+          "created_at": "2026-06-01T11:11:15.270642",
+          "updated_at": "2026-06-01T11:11:15.568574",
+          "started_at": "2026-06-01T11:11:15.532126+00:00",
+          "finished_at": null,
+          "next_run_at": "2026-06-01T12:11:15.563514+00:00",
+          "last_heartbeat_at": "2026-06-01T11:11:15.532128+00:00",
+          "attempt": 1,
+          "max_attempts": 3,
+          "claimed_by": null,
+          "correlation_id": null,
+          "trace_id": null,
+          "user_id": "api-key:ac6fc16fd23f",
+          "request_source": null,
+          "request_ip": null,
+          "request_auth_method": null,
+          "request_auth_identity": "api-key:ac6fc16fd23f",
+          "request_user_agent": null,
+          "last_error": {
+            "type": "W28A693LifecycleEvidence",
+            "message": "W28A-693 retry-wait 1780312275046",
+            "retryable": true
+          },
+          "result_ref": null,
+          "progress": {
+            "phase": "retry_wait",
+            "percentage": 25,
+            "message": "W28A-693 lifecycle evidence job waiting before retry",
+            "events": [
+              {
+                "phase": "validated",
+                "percentage": 5,
+                "message": "job payload validated",
+                "timestamp": "2026-06-01T11:11:15.289798+00:00"
+              },
+              {
+                "phase": "queued",
+                "percentage": 10,
+                "message": "job queued",
+                "timestamp": "2026-06-01T11:11:15.387337+00:00"
+              },
+              {
+                "phase": "dispatched",
+                "percentage": 15,
+                "message": "job claimed for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:11:15.482269+00:00"
+              },
+              {
+                "phase": "running",
+                "percentage": 20,
+                "message": "job handler started for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:11:15.534931+00:00"
+              },
+              {
+                "phase": "retry_wait",
+                "percentage": 25,
+                "message": "W28A-693 lifecycle evidence job waiting before retry",
+                "timestamp": "2026-06-01T11:11:15.566800+00:00"
+              }
+            ]
+          },
+          "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+          "post_hoc_database_mutation": false
+        }
+      }
+    },
+    "cancelled": {
+      "key": "cancelled",
+      "job_id": "6fdee4b7-fb78-4d0e-b20f-fd82bbda1450",
+      "outcome": "cancelled",
+      "job_type": "reindex_run",
+      "label": "W28A-693 cancelled 1780312276099",
+      "proof": {
+        "job_id": "6fdee4b7-fb78-4d0e-b20f-fd82bbda1450",
+        "profile": "default",
+        "collection": "w28a_693_1780312272072",
+        "job_type": "reindex_run",
+        "status": "cancelled",
+        "ordering_key": null,
+        "idempotency_key": null,
+        "payload": {
+          "profile": "default",
+          "collection": "w28a_693_1780312272072",
+          "actor": "api-key:ac6fc16fd23f",
+          "label": "W28A-693 cancelled 1780312276099",
+          "expected_outcome": "cancelled",
+          "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+          "metadata": {
+            "w28a": "693",
+            "label": "W28A-693 cancelled 1780312276099",
+            "expected_outcome": "cancelled",
+            "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job"
+          }
+        },
+        "server_id": "server0.viewdeck.com",
+        "created_at": "2026-06-01T11:11:16.321336",
+        "updated_at": "2026-06-01T11:11:16.679638",
+        "started_at": "2026-06-01T11:11:16.577176+00:00",
+        "finished_at": "2026-06-01T11:11:16.643310+00:00",
+        "next_run_at": null,
+        "last_heartbeat_at": "2026-06-01T11:11:16.577180+00:00",
+        "attempt": 1,
+        "max_attempts": 3,
+        "claimed_by": null,
+        "correlation_id": null,
+        "trace_id": null,
+        "user_id": "api-key:ac6fc16fd23f",
+        "request_source": null,
+        "request_ip": null,
+        "request_auth_method": null,
+        "request_auth_identity": "api-key:ac6fc16fd23f",
+        "request_user_agent": null,
+        "last_error": null,
+        "result_ref": null,
+        "progress": {
+          "phase": "cancelled",
+          "percentage": 100,
+          "message": "job cancelled",
+          "events": [
+            {
+              "phase": "validated",
+              "percentage": 5,
+              "message": "job payload validated",
+              "timestamp": "2026-06-01T11:11:16.367363+00:00"
+            },
+            {
+              "phase": "queued",
+              "percentage": 10,
+              "message": "job queued",
+              "timestamp": "2026-06-01T11:11:16.434845+00:00"
+            },
+            {
+              "phase": "dispatched",
+              "percentage": 15,
+              "message": "job claimed for W28A-693 lifecycle evidence",
+              "timestamp": "2026-06-01T11:11:16.534384+00:00"
+            },
+            {
+              "phase": "running",
+              "percentage": 20,
+              "message": "job handler started for W28A-693 lifecycle evidence",
+              "timestamp": "2026-06-01T11:11:16.579706+00:00"
+            },
+            {
+              "phase": "cancelled",
+              "percentage": 100,
+              "message": "job cancelled",
+              "timestamp": "2026-06-01T11:11:16.672726+00:00"
+            }
+          ]
+        },
+        "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+        "post_hoc_database_mutation": false
+      },
+      "payload": {
+        "success": true,
+        "source_backed": true,
+        "post_hoc_database_mutation": false,
+        "sqlite_update_used": false,
+        "proof": {
+          "job_id": "6fdee4b7-fb78-4d0e-b20f-fd82bbda1450",
+          "profile": "default",
+          "collection": "w28a_693_1780312272072",
+          "job_type": "reindex_run",
+          "status": "cancelled",
+          "ordering_key": null,
+          "idempotency_key": null,
+          "payload": {
+            "profile": "default",
+            "collection": "w28a_693_1780312272072",
+            "actor": "api-key:ac6fc16fd23f",
+            "label": "W28A-693 cancelled 1780312276099",
+            "expected_outcome": "cancelled",
+            "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+            "metadata": {
+              "w28a": "693",
+              "label": "W28A-693 cancelled 1780312276099",
+              "expected_outcome": "cancelled",
+              "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job"
+            }
+          },
+          "server_id": "server0.viewdeck.com",
+          "created_at": "2026-06-01T11:11:16.321336",
+          "updated_at": "2026-06-01T11:11:16.679638",
+          "started_at": "2026-06-01T11:11:16.577176+00:00",
+          "finished_at": "2026-06-01T11:11:16.643310+00:00",
+          "next_run_at": null,
+          "last_heartbeat_at": "2026-06-01T11:11:16.577180+00:00",
+          "attempt": 1,
+          "max_attempts": 3,
+          "claimed_by": null,
+          "correlation_id": null,
+          "trace_id": null,
+          "user_id": "api-key:ac6fc16fd23f",
+          "request_source": null,
+          "request_ip": null,
+          "request_auth_method": null,
+          "request_auth_identity": "api-key:ac6fc16fd23f",
+          "request_user_agent": null,
+          "last_error": null,
+          "result_ref": null,
+          "progress": {
+            "phase": "cancelled",
+            "percentage": 100,
+            "message": "job cancelled",
+            "events": [
+              {
+                "phase": "validated",
+                "percentage": 5,
+                "message": "job payload validated",
+                "timestamp": "2026-06-01T11:11:16.367363+00:00"
+              },
+              {
+                "phase": "queued",
+                "percentage": 10,
+                "message": "job queued",
+                "timestamp": "2026-06-01T11:11:16.434845+00:00"
+              },
+              {
+                "phase": "dispatched",
+                "percentage": 15,
+                "message": "job claimed for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:11:16.534384+00:00"
+              },
+              {
+                "phase": "running",
+                "percentage": 20,
+                "message": "job handler started for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:11:16.579706+00:00"
+              },
+              {
+                "phase": "cancelled",
+                "percentage": 100,
+                "message": "job cancelled",
+                "timestamp": "2026-06-01T11:11:16.672726+00:00"
+              }
+            ]
+          },
+          "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+          "post_hoc_database_mutation": false
+        }
+      }
+    },
+    "running": {
+      "key": "running",
+      "job_id": "06d9df56-7c36-4546-9a20-ba182c9da9ad",
+      "outcome": "running",
+      "job_type": "ingest_text",
+      "label": "W28A-693 running 1780312277159",
+      "proof": {
+        "job_id": "06d9df56-7c36-4546-9a20-ba182c9da9ad",
+        "profile": "default",
+        "collection": "w28a_693_1780312272072",
+        "job_type": "ingest_text",
+        "status": "running",
+        "ordering_key": null,
+        "idempotency_key": null,
+        "payload": {
+          "profile": "default",
+          "collection": "w28a_693_1780312272072",
+          "actor": "api-key:ac6fc16fd23f",
+          "label": "W28A-693 running 1780312277159",
+          "expected_outcome": "running",
+          "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+          "metadata": {
+            "w28a": "693",
+            "label": "W28A-693 running 1780312277159",
+            "expected_outcome": "running",
+            "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job"
+          },
+          "text": "W28A-693 source-backed lifecycle evidence: W28A-693 running 1780312277159",
+          "source": "api://w28a-693/lifecycle/running/06d9df56-7c36-4546-9a20-ba182c9da9ad"
+        },
+        "server_id": "server0.viewdeck.com",
+        "created_at": "2026-06-01T11:11:17.323325",
+        "updated_at": "2026-06-01T11:11:17.589763",
+        "started_at": "2026-06-01T11:11:17.585880+00:00",
+        "finished_at": null,
+        "next_run_at": null,
+        "last_heartbeat_at": "2026-06-01T11:11:17.585882+00:00",
+        "attempt": 1,
+        "max_attempts": 3,
+        "claimed_by": "server0.viewdeck.com:w28a-693-running",
+        "correlation_id": null,
+        "trace_id": null,
+        "user_id": "api-key:ac6fc16fd23f",
+        "request_source": "api://w28a-693/lifecycle/running/06d9df56-7c36-4546-9a20-ba182c9da9ad",
+        "request_ip": null,
+        "request_auth_method": null,
+        "request_auth_identity": "api-key:ac6fc16fd23f",
+        "request_user_agent": null,
+        "last_error": null,
+        "result_ref": null,
+        "progress": {
+          "phase": "running",
+          "percentage": 20,
+          "message": "job handler started for W28A-693 lifecycle evidence",
+          "events": [
+            {
+              "phase": "validated",
+              "percentage": 5,
+              "message": "job payload validated",
+              "timestamp": "2026-06-01T11:11:17.373464+00:00"
+            },
+            {
+              "phase": "queued",
+              "percentage": 10,
+              "message": "job queued",
+              "timestamp": "2026-06-01T11:11:17.431491+00:00"
+            },
+            {
+              "phase": "dispatched",
+              "percentage": 15,
+              "message": "job claimed for W28A-693 lifecycle evidence",
+              "timestamp": "2026-06-01T11:11:17.517818+00:00"
+            },
+            {
+              "phase": "running",
+              "percentage": 20,
+              "message": "job handler started for W28A-693 lifecycle evidence",
+              "timestamp": "2026-06-01T11:11:17.588455+00:00"
+            }
+          ]
+        },
+        "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+        "post_hoc_database_mutation": false
+      },
+      "payload": {
+        "success": true,
+        "source_backed": true,
+        "post_hoc_database_mutation": false,
+        "sqlite_update_used": false,
+        "proof": {
+          "job_id": "06d9df56-7c36-4546-9a20-ba182c9da9ad",
+          "profile": "default",
+          "collection": "w28a_693_1780312272072",
+          "job_type": "ingest_text",
+          "status": "running",
+          "ordering_key": null,
+          "idempotency_key": null,
+          "payload": {
+            "profile": "default",
+            "collection": "w28a_693_1780312272072",
+            "actor": "api-key:ac6fc16fd23f",
+            "label": "W28A-693 running 1780312277159",
+            "expected_outcome": "running",
+            "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+            "metadata": {
+              "w28a": "693",
+              "label": "W28A-693 running 1780312277159",
+              "expected_outcome": "running",
+              "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job"
+            },
+            "text": "W28A-693 source-backed lifecycle evidence: W28A-693 running 1780312277159",
+            "source": "api://w28a-693/lifecycle/running/06d9df56-7c36-4546-9a20-ba182c9da9ad"
+          },
+          "server_id": "server0.viewdeck.com",
+          "created_at": "2026-06-01T11:11:17.323325",
+          "updated_at": "2026-06-01T11:11:17.589763",
+          "started_at": "2026-06-01T11:11:17.585880+00:00",
+          "finished_at": null,
+          "next_run_at": null,
+          "last_heartbeat_at": "2026-06-01T11:11:17.585882+00:00",
+          "attempt": 1,
+          "max_attempts": 3,
+          "claimed_by": "server0.viewdeck.com:w28a-693-running",
+          "correlation_id": null,
+          "trace_id": null,
+          "user_id": "api-key:ac6fc16fd23f",
+          "request_source": "api://w28a-693/lifecycle/running/06d9df56-7c36-4546-9a20-ba182c9da9ad",
+          "request_ip": null,
+          "request_auth_method": null,
+          "request_auth_identity": "api-key:ac6fc16fd23f",
+          "request_user_agent": null,
+          "last_error": null,
+          "result_ref": null,
+          "progress": {
+            "phase": "running",
+            "percentage": 20,
+            "message": "job handler started for W28A-693 lifecycle evidence",
+            "events": [
+              {
+                "phase": "validated",
+                "percentage": 5,
+                "message": "job payload validated",
+                "timestamp": "2026-06-01T11:11:17.373464+00:00"
+              },
+              {
+                "phase": "queued",
+                "percentage": 10,
+                "message": "job queued",
+                "timestamp": "2026-06-01T11:11:17.431491+00:00"
+              },
+              {
+                "phase": "dispatched",
+                "percentage": 15,
+                "message": "job claimed for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:11:17.517818+00:00"
+              },
+              {
+                "phase": "running",
+                "percentage": 20,
+                "message": "job handler started for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:11:17.588455+00:00"
+              }
+            ]
+          },
+          "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+          "post_hoc_database_mutation": false
+        }
+      }
+    }
+  },
+  "current_run_coverage": {
+    "succeeded": {
+      "job_id": "b4d22693-0992-426f-afd6-d51f7c30d7d3",
+      "status": "succeeded",
+      "actor": "api-key:ac6fc16fd23f",
+      "type": "ingest_text"
+    },
+    "failed": {
+      "job_id": "52d436c9-c4b8-41f8-a061-18840fd6c986",
+      "status": "failed",
+      "actor": "api-key:ac6fc16fd23f",
+      "type": "ingest_text"
+    },
+    "retry_wait": {
+      "job_id": "0af92bba-49a3-4f04-b483-68deb2e7f39d",
       "status": "retry_wait",
-      "actor": null,
-      "type": "ingest_text",
-      "created_at": "2026-05-09T21:35:44.846682",
+      "actor": "api-key:ac6fc16fd23f",
+      "type": "retention_run",
       "durable": true
     },
     "cancelled": {
-      "job_id": "63dd2ab0-eb22-46e0-9b09-6fafcf3f723d",
+      "job_id": "6fdee4b7-fb78-4d0e-b20f-fd82bbda1450",
       "status": "cancelled",
-      "actor": null,
-      "type": "ingest_text",
-      "created_at": "2026-06-01T06:02:26.086697",
-      "durable": true
+      "actor": "api-key:ac6fc16fd23f",
+      "type": "reindex_run"
     },
     "running": {
-      "job_id": "ab463b58-4665-4c9f-a9dc-0e7729037ca5",
+      "job_id": "06d9df56-7c36-4546-9a20-ba182c9da9ad",
       "status": "running",
-      "actor": null,
+      "actor": "api-key:ac6fc16fd23f",
       "type": "ingest_text",
-      "created_at": "2026-06-01T06:03:24.253366",
       "durable": true
     }
   },
   "observed_status_counts_after_seed": {
-    "failed": 1,
-    "succeeded": 25,
-    "running": 1,
-    "cancelled": 3,
-    "dead_lettered": 7,
-    "retry_wait": 1,
-    "queued": 162
+    "succeeded": 788,
+    "failed": 6,
+    "retry_wait": 7,
+    "cancelled": 103,
+    "running": 6,
+    "queued": 0,
+    "dead_lettered": 84
   },
   "seeded_job_ids": [
-    "72fefa34-9c47-4188-a64a-005128834208",
-    "82733b01-ff13-4869-93d2-366acb96b59a",
-    "46ccb452-2c35-4aa0-bf37-55565ab687e2",
-    "63dd2ab0-eb22-46e0-9b09-6fafcf3f723d",
-    "ab463b58-4665-4c9f-a9dc-0e7729037ca5"
-  ],
-  "durable_evidence": true,
-  "note": "All 5 required lifecycle states are durable DB rows verified via job_list API at evidence capture time."
+    "b4d22693-0992-426f-afd6-d51f7c30d7d3",
+    "52d436c9-c4b8-41f8-a061-18840fd6c986",
+    "0af92bba-49a3-4f04-b483-68deb2e7f39d",
+    "6fdee4b7-fb78-4d0e-b20f-fd82bbda1450",
+    "06d9df56-7c36-4546-9a20-ba182c9da9ad"
+  ]
 }

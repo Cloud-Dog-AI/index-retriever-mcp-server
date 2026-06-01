@@ -1,1 +1,4 @@
-505a5b67ae62571f8462f304856a7be59aa2b86eaac3bc263c0266d42301cda7
+Docker host-network run for final W28A-693 local Docker evidence
+image=cloud-dog/index-retriever-mcp-server:w28a-693-sendback
+network=host
+30249a1784fe28453ef9dbeddadca35f2d519dace2ede9ed2d8a35c1c95c9bd3

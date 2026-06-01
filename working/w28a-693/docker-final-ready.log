@@ -1,7 +1,7 @@
 {
   "ready": true,
-  "async_job_execution": "true",
-  "queue_retry_backoff_seconds": "20",
+  "attempt": 1,
+  "request_timeout_seconds": 30,
   "checks": [
     {
       "name": "api_health",
@@ -9,7 +9,8 @@
       "url": "http://127.0.0.1:8074/health",
       "status": 200,
       "expected": 200,
-      "body_sample": "{\"status\":\"ok\",\"application\":\"index-retriever-mcp-server\",\"version\":\"0.1.0\",\"env_file\":null,\"checks\":{\"db\":{\"status\":\"ok\",\"ok\":true,\"probe\":{\"ok\":true,\"result\":1}},\"vdb\":{\"status\":\"ok\",\"detail\":{\"status\":\"ok\",\"provider\":"
+      "duration_ms": 9.94,
+      "body_sample": "{\"status\":\"ok\",\"application\":\"index-retriever-mcp-server\",\"version\":\"0.1.0\",\"env_file\":null,\"checks\":{\"db\":{\"status\":\"ok\",\"ok\":true,\"probe\":{\"ok\":true,\"result\":1}},\"vdb\":{\"status\":\"ok\",\"detail\":{\"status\":\"ok\",\"provider\":\"chroma\",\"backend\":\""
     },
     {
       "name": "api_tools_admin",
@@ -17,7 +18,8 @@
       "url": "http://127.0.0.1:8074/api/v1/tools",
       "status": 200,
       "expected": 200,
-      "body_sample": "[{\"name\":\"profiles_list\",\"description\":\"List all configured profiles with their embedding and backend settings.\",\"handler\":\"profiles_list\",\"input_schema\":{\"description\":\"GenericToolInput definition.\",\"properties\":{\"profi"
+      "duration_ms": 92.6,
+      "body_sample": "[{\"name\":\"profiles_list\",\"description\":\"List all configured profiles with their embedding and backend settings.\",\"handler\":\"profiles_list\",\"input_schema\":{\"description\":\"GenericToolInput definition.\",\"properties\":{\"profile\":{\"default\":\"defa"
     },
     {
       "name": "auth_me_admin",
@@ -25,6 +27,7 @@
       "url": "http://127.0.0.1:8074/auth/me",
       "status": 200,
       "expected": 200,
+      "duration_ms": 5.5,
       "body_sample": "{\"user\":{\"id\":\"api-key:ac6fc16fd23f\",\"displayName\":\"api-key:ac6fc16fd23f\",\"email\":null,\"roles\":[\"admin\"],\"permissions\":[\"*\"]}}"
     },
     {
@@ -33,7 +36,8 @@
       "url": "http://127.0.0.1:8075/",
       "status": 200,
       "expected": 200,
-      "body_sample": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />\n    <title>cloud-dog \u2014 Index Retriever</title>\n    <script src=\"/runtime-co"
+      "duration_ms": 15.07,
+      "body_sample": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />\n    <title>cloud-dog \u2014 Index Retriever</title>\n    <script src=\"/runtime-config.js\"></script>\n "
     },
     {
       "name": "webui_auth_me_proxy",
@@ -41,6 +45,7 @@
       "url": "http://127.0.0.1:8075/auth/me",
       "status": 200,
       "expected": 200,
+      "duration_ms": 71.62,
       "body_sample": "{\"user\": {\"id\": \"api-key:ac6fc16fd23f\", \"displayName\": \"api-key:ac6fc16fd23f\", \"email\": null, \"roles\": [\"admin\"], \"permissions\": [\"*\"]}}"
     },
     {
@@ -49,6 +54,7 @@
       "url": "http://127.0.0.1:8075/api/v1/tools/list_collections",
       "status": 200,
       "expected": 200,
+      "duration_ms": 31.86,
       "body_sample": "{\"collections\": [\"ragflow0\", \"ragflow1\", \"transparentborders\"]}"
     },
     {
@@ -57,7 +63,8 @@
       "url": "http://127.0.0.1:8075/a2a/.well-known/agent.json",
       "status": 200,
       "expected": 200,
-      "body_sample": "{\"name\":\"index-retriever\",\"description\":\"Index retriever A2A server for vector database search and document ingestion\",\"url\":\"\",\"version\":\"1.0.0\",\"capabilities\":{\"streaming\":false,\"pushNotifications\":false},\"skills\":[{\"i"
+      "duration_ms": 19.67,
+      "body_sample": "{\"name\":\"index-retriever\",\"description\":\"Index retriever A2A server for vector database search and document ingestion\",\"url\":\"\",\"version\":\"1.0.0\",\"capabilities\":{\"streaming\":false,\"pushNotifications\":false},\"skills\":[{\"id\":\"ingest_text\",\"na"
     },
     {
       "name": "mcp_health",
@@ -65,6 +72,7 @@
       "url": "http://127.0.0.1:8076/health",
       "status": 200,
       "expected": 200,
+      "duration_ms": 5.39,
       "body_sample": "{\"status\":\"ok\",\"application\":\"index-retriever-mcp-server\",\"version\":\"0.1.0\",\"env_file\":null,\"checks\":{}}"
     },
     {
@@ -73,7 +81,8 @@
       "url": "http://127.0.0.1:8077/.well-known/agent.json",
       "status": 200,
       "expected": 200,
-      "body_sample": "{\"name\":\"index-retriever\",\"description\":\"Index retriever A2A server for vector database search and document ingestion\",\"url\":\"\",\"version\":\"1.0.0\",\"capabilities\":{\"streaming\":false,\"pushNotifications\":false},\"skills\":[{\"i"
+      "duration_ms": 4.1,
+      "body_sample": "{\"name\":\"index-retriever\",\"description\":\"Index retriever A2A server for vector database search and document ingestion\",\"url\":\"\",\"version\":\"1.0.0\",\"capabilities\":{\"streaming\":false,\"pushNotifications\":false},\"skills\":[{\"id\":\"ingest_text\",\"na"
     },
     {
       "name": "a2a_root_admin",
@@ -81,6 +90,7 @@
       "url": "http://127.0.0.1:8077/a2a",
       "status": 200,
       "expected": 200,
+      "duration_ms": 6.74,
       "body_sample": "{\"status\":\"ok\",\"service\":\"index-retriever-a2a\",\"base_path\":\"/a2a\",\"auth\":{\"status\":\"ok\",\"backend\":\"cloud_dog_idam\"}}"
     }
   ]

@@ -1,1 +1,49 @@
-NO_MATCHES
+BESPOKE JOB CLASS GREP - W28A-693 §1.4
+Command: grep -RIn "class .*Job\|class .*Queue\|JobRecord\|QueueEngine" src --include=*.py
+src/index_tools/tools/service.py:47:from index_tools.queue.engine import JobCancelledError, QueueEngine
+src/index_tools/tools/service.py:48:from index_tools.queue.models import JobRecord, JobStatus
+src/index_tools/tools/service.py:711:        self.queue = QueueEngine(
+src/index_tools/tools/service.py:1328:    def _process_ingest_text_job(self, job: JobRecord) -> None:
+src/index_tools/tools/service.py:1352:    def _process_ingest_text_job_inner(self, job: JobRecord) -> None:
+src/index_tools/tools/service.py:2383:            JobRecord(
+src/index_tools/tools/service.py:3111:            JobRecord(
+src/index_tools/tools/service.py:3124:    def _process_retention_job(self, job: JobRecord) -> None:
+src/index_tools/tools/service.py:3137:            JobRecord(
+src/index_tools/tools/service.py:3151:    def _process_reindex_job(self, job: JobRecord) -> None:
+src/index_tools/tools/service.py:3161:    def _json_safe_job_record(job: JobRecord) -> dict[str, Any]:
+src/index_tools/tools/service.py:3191:        The conformance tool intentionally uses QueueEngine enqueue, claim, and
+src/index_tools/tools/service.py:3233:            JobRecord(
+src/index_tools/tools/service.py:3336:    def job_list(self, limit: int | None = None) -> list[JobRecord]:
+src/index_tools/tools/service.py:3340:    def job_get(self, job_id: str) -> JobRecord:
+src/index_tools/tools/service.py:3344:    def job_wait(self, job_id: str) -> JobRecord:
+src/index_tools/tools/service.py:3348:    def job_cancel(self, job_id: str) -> JobRecord:
+src/index_tools/tools/service.py:3352:    def job_retry(self, job_id: str) -> JobRecord:
+src/index_tools/queue/models.py:39:class JobStatus(str, Enum):  # noqa: UP042
+src/index_tools/queue/models.py:50:class JobRecord(BaseModel):
+src/index_tools/queue/models.py:51:    """JobRecord definition."""
+src/index_tools/queue/engine.py:24:from index_tools.queue.models import JobRecord, JobStatus
+src/index_tools/queue/engine.py:27:class JobCancelledError(RuntimeError):
+src/index_tools/queue/engine.py:109:class QueueEngine:
+src/index_tools/queue/engine.py:139:        self._handlers: dict[str, Callable[[JobRecord], None]] = {}
+src/index_tools/queue/engine.py:140:        self._job_callbacks: dict[str, Callable[[JobRecord], None]] = {}
+src/index_tools/queue/engine.py:170:            raise ValueError("QueueEngine requires either queue database_url or enabled redis_url")
+src/index_tools/queue/engine.py:263:        job: JobRecord,
+src/index_tools/queue/engine.py:320:    ) -> JobRecord:
+src/index_tools/queue/engine.py:395:    def register_handler(self, job_type: str, handler: Callable[[JobRecord], None]) -> None:
+src/index_tools/queue/engine.py:401:        job: JobRecord,
+src/index_tools/queue/engine.py:407:    ) -> JobRecord:
+src/index_tools/queue/engine.py:462:    def _adapt_job(self, job: Any) -> JobRecord:
+src/index_tools/queue/engine.py:466:        return JobRecord(
+src/index_tools/queue/engine.py:501:    def get(self, job_id: str) -> JobRecord:
+src/index_tools/queue/engine.py:508:    def list_jobs(self, limit: int | None = None) -> list[JobRecord]:
+src/index_tools/queue/engine.py:516:    def _dispatch(self, job: JobRecord) -> None:
+src/index_tools/queue/engine.py:526:    def _run_handler(self, job: JobRecord) -> None:
+src/index_tools/queue/engine.py:560:    def _execute_backend_job(self, job_id: str) -> JobRecord:
+src/index_tools/queue/engine.py:668:    def run(self, job_id: str, handler: Callable[[JobRecord], None] | None = None) -> JobRecord:
+src/index_tools/queue/engine.py:703:    def retry(self, job_id: str) -> JobRecord:
+src/index_tools/queue/engine.py:724:    def cancel(self, job_id: str) -> JobRecord:
+src/index_tools/queue/engine.py:771:    def wait(self, job_id: str, timeout_seconds: int | None = None) -> JobRecord:
+src/index_tools/queue/engine.py:790:    ) -> JobRecord:
+src/index_tools/config/models.py:84:class QueueConfig(BaseModel):
+
+Mapping: matches are platform queue/runtime classes and W28A-693 source-backed lifecycle service entrypoint; no bespoke WebUI-only job class was introduced. W28A-693 lifecycle evidence uses IndexService.create_w28a_693_lifecycle_evidence_job and QueueEngine transitions.

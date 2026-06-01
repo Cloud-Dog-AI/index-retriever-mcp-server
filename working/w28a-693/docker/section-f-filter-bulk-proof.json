@@ -1,77 +1,537 @@
 {
-  "exact_search_job_id": "018f9d16-0ff8-4552-a9fb-e82610018ab8",
+  "exact_search_job_id": "69022dac-45e0-4a26-b367-4f386d940fc6",
   "status_filter": "succeeded",
   "type_filter": "ingest_text",
   "actor_filter": "api-key:2530b9bc",
-  "date_filter": "2026-05-31",
+  "date_filter": "2026-06-01",
+  "default_created_sort": {
+    "values": [
+      "2026-06-01T10:15:47.213Z",
+      "2026-06-01T10:15:43.933Z",
+      "2026-06-01T10:15:39.918Z",
+      "2026-06-01T10:15:39.669Z",
+      "2026-06-01T10:15:39.326Z",
+      "2026-06-01T10:15:39.028Z",
+      "2026-06-01T10:15:38.722Z"
+    ],
+    "descending": true
+  },
   "every_column_sort": {
-    "Job ID": [
-      "ascending",
-      "descending"
-    ],
-    "Type": [
-      "ascending",
-      "descending"
-    ],
-    "Status": [
-      "ascending",
-      "descending"
-    ],
-    "Created": [
-      "ascending",
-      "descending"
-    ],
-    "Started": [
-      "ascending",
-      "descending"
-    ],
-    "Updated": [
-      "ascending",
-      "descending"
-    ],
-    "Completed": [
-      "ascending",
-      "descending"
-    ],
-    "Actor": [
-      "ascending",
-      "descending"
-    ],
-    "Duration": [
-      "ascending",
-      "descending"
-    ],
-    "Result link": [
-      "ascending",
-      "descending"
-    ],
-    "Log link": [
-      "ascending",
-      "descending"
-    ],
-    "Retry count": [
-      "ascending",
-      "descending"
-    ]
+    "Job ID": {
+      "ascending": {
+        "values": [
+          "7e21e5e8-bf1",
+          "7f96bbea-2ae",
+          "11dfb655-c2b",
+          "69022dac-45e",
+          "b23070df-e44",
+          "d2cfd781-3cd",
+          "fbd86c45-991"
+        ],
+        "ordered": true
+      },
+      "descending": {
+        "values": [
+          "fbd86c45-991",
+          "d2cfd781-3cd",
+          "b23070df-e44",
+          "69022dac-45e",
+          "11dfb655-c2b",
+          "7f96bbea-2ae",
+          "7e21e5e8-bf1"
+        ],
+        "ordered": true
+      }
+    },
+    "Type": {
+      "ascending": {
+        "values": [
+          "ingest_text",
+          "ingest_text",
+          "ingest_text",
+          "ingest_text",
+          "ingest_text",
+          "reindex_run",
+          "retention_run"
+        ],
+        "ordered": true
+      },
+      "descending": {
+        "values": [
+          "retention_run",
+          "reindex_run",
+          "ingest_text",
+          "ingest_text",
+          "ingest_text",
+          "ingest_text",
+          "ingest_text"
+        ],
+        "ordered": true
+      }
+    },
+    "Status": {
+      "ascending": {
+        "values": [
+          "cancelled",
+          "failed",
+          "retry_wait",
+          "running",
+          "succeeded",
+          "succeeded",
+          "succeeded"
+        ],
+        "ordered": true
+      },
+      "descending": {
+        "values": [
+          "succeeded",
+          "succeeded",
+          "succeeded",
+          "running",
+          "retry_wait",
+          "failed",
+          "cancelled"
+        ],
+        "ordered": true
+      }
+    },
+    "Created": {
+      "ascending": {
+        "values": [
+          "2026-06-01T10:15:38.722Z",
+          "2026-06-01T10:15:39.028Z",
+          "2026-06-01T10:15:39.326Z",
+          "2026-06-01T10:15:39.669Z",
+          "2026-06-01T10:15:39.918Z",
+          "2026-06-01T10:15:43.933Z",
+          "2026-06-01T10:15:47.213Z"
+        ],
+        "ordered": true
+      },
+      "descending": {
+        "values": [
+          "2026-06-01T10:15:47.213Z",
+          "2026-06-01T10:15:43.933Z",
+          "2026-06-01T10:15:39.918Z",
+          "2026-06-01T10:15:39.669Z",
+          "2026-06-01T10:15:39.326Z",
+          "2026-06-01T10:15:39.028Z",
+          "2026-06-01T10:15:38.722Z"
+        ],
+        "ordered": true
+      }
+    },
+    "Started": {
+      "ascending": {
+        "values": [
+          "2026-06-01T11:15:38.765Z",
+          "2026-06-01T11:15:39.064Z",
+          "2026-06-01T11:15:39.361Z",
+          "2026-06-01T11:15:39.708Z",
+          "2026-06-01T11:15:39.948Z",
+          "2026-06-01T11:15:43.969Z",
+          "2026-06-01T11:15:48.095Z"
+        ],
+        "ordered": true
+      },
+      "descending": {
+        "values": [
+          "2026-06-01T11:15:48.095Z",
+          "2026-06-01T11:15:43.969Z",
+          "2026-06-01T11:15:39.948Z",
+          "2026-06-01T11:15:39.708Z",
+          "2026-06-01T11:15:39.361Z",
+          "2026-06-01T11:15:39.064Z",
+          "2026-06-01T11:15:38.765Z"
+        ],
+        "ordered": true
+      }
+    },
+    "Updated": {
+      "ascending": {
+        "values": [
+          "2026-06-01T10:15:38.776Z",
+          "2026-06-01T10:15:39.073Z",
+          "2026-06-01T10:15:39.382Z",
+          "2026-06-01T10:15:39.719Z",
+          "2026-06-01T10:15:39.949Z",
+          "2026-06-01T10:15:43.977Z",
+          "2026-06-01T10:15:48.236Z"
+        ],
+        "ordered": true
+      },
+      "descending": {
+        "values": [
+          "2026-06-01T10:15:48.236Z",
+          "2026-06-01T10:15:43.977Z",
+          "2026-06-01T10:15:39.949Z",
+          "2026-06-01T10:15:39.719Z",
+          "2026-06-01T10:15:39.382Z",
+          "2026-06-01T10:15:39.073Z",
+          "2026-06-01T10:15:38.776Z"
+        ],
+        "ordered": true
+      }
+    },
+    "Completed": {
+      "ascending": {
+        "values": [
+          "-",
+          "-",
+          "2026-06-01T11:15:38.774Z",
+          "2026-06-01T11:15:39.071Z",
+          "2026-06-01T11:15:39.717Z",
+          "2026-06-01T11:15:43.975Z",
+          "2026-06-01T11:15:48.232Z"
+        ],
+        "ordered": true
+      },
+      "descending": {
+        "values": [
+          "2026-06-01T11:15:48.232Z",
+          "2026-06-01T11:15:43.975Z",
+          "2026-06-01T11:15:39.717Z",
+          "2026-06-01T11:15:39.071Z",
+          "2026-06-01T11:15:38.774Z",
+          "-",
+          "-"
+        ],
+        "ordered": true
+      }
+    },
+    "Actor": {
+      "ascending": {
+        "values": [
+          "api-key:2530b9bc4759",
+          "api-key:2530b9bc4759",
+          "api-key:ac6fc16fd23f",
+          "api-key:ac6fc16fd23f",
+          "api-key:ac6fc16fd23f",
+          "api-key:ac6fc16fd23f",
+          "api-key:ac6fc16fd23f"
+        ],
+        "ordered": true
+      },
+      "descending": {
+        "values": [
+          "api-key:ac6fc16fd23f",
+          "api-key:ac6fc16fd23f",
+          "api-key:ac6fc16fd23f",
+          "api-key:ac6fc16fd23f",
+          "api-key:ac6fc16fd23f",
+          "api-key:2530b9bc4759",
+          "api-key:2530b9bc4759"
+        ],
+        "ordered": true
+      }
+    },
+    "Duration": {
+      "ascending": {
+        "values": [
+          "-",
+          "-",
+          "0s",
+          "0s",
+          "0s",
+          "0s",
+          "0s"
+        ],
+        "ordered": true
+      },
+      "descending": {
+        "values": [
+          "0s",
+          "0s",
+          "0s",
+          "0s",
+          "0s",
+          "-",
+          "-"
+        ],
+        "ordered": true
+      }
+    },
+    "Result link": {
+      "ascending": {
+        "values": [
+          "Result",
+          "Result",
+          "Result",
+          "Result",
+          "Result",
+          "Result",
+          "Result"
+        ],
+        "ordered": true
+      },
+      "descending": {
+        "values": [
+          "Result",
+          "Result",
+          "Result",
+          "Result",
+          "Result",
+          "Result",
+          "Result"
+        ],
+        "ordered": true
+      }
+    },
+    "Log link": {
+      "ascending": {
+        "values": [
+          "Log",
+          "Log",
+          "Log",
+          "Log",
+          "Log",
+          "Log",
+          "Log"
+        ],
+        "ordered": true
+      },
+      "descending": {
+        "values": [
+          "Log",
+          "Log",
+          "Log",
+          "Log",
+          "Log",
+          "Log",
+          "Log"
+        ],
+        "ordered": true
+      }
+    },
+    "Retry count": {
+      "ascending": {
+        "values": [
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1"
+        ],
+        "ordered": true
+      },
+      "descending": {
+        "values": [
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1"
+        ],
+        "ordered": true
+      }
+    }
   },
   "page_sizes": {
-    "10": 6,
-    "25": 6,
-    "50": 6,
-    "100": 6
+    "10": 7,
+    "25": 7,
+    "50": 7,
+    "100": 7
   },
   "bulk_actions": {
     "cancel": {
-      "job_id": "9f8d1495-0116-4acb-9fee-5031d2f318c7",
-      "observed_status": "cancelled"
+      "job_id": "06f129de-4a3e-4ae9-9e47-ec18d1c00c47",
+      "observed_status": "cancelled",
+      "http_status": 200,
+      "response": {
+        "job": {
+          "job_id": "06f129de-4a3e-4ae9-9e47-ec18d1c00c47",
+          "profile": "default",
+          "collection": "w28a_693_1780312538547",
+          "job_type": "ingest_text",
+          "status": "cancelled",
+          "ordering_key": null,
+          "idempotency_key": null,
+          "payload": {
+            "profile": "default",
+            "collection": "w28a_693_1780312538547",
+            "actor": "api-key:ac6fc16fd23f",
+            "label": "W28A-693 bulk-cancel 1780312558216",
+            "expected_outcome": "running",
+            "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+            "metadata": {
+              "w28a": "693",
+              "label": "W28A-693 bulk-cancel 1780312558216",
+              "expected_outcome": "running",
+              "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job"
+            },
+            "text": "W28A-693 source-backed lifecycle evidence: W28A-693 bulk-cancel 1780312558216",
+            "source": "api://w28a-693/lifecycle/running/06f129de-4a3e-4ae9-9e47-ec18d1c00c47"
+          },
+          "server_id": "server0.viewdeck.com",
+          "created_at": "2026-06-01T11:15:58.237556",
+          "updated_at": "2026-06-01T11:15:59.116387",
+          "started_at": "2026-06-01T11:15:58.280997+00:00",
+          "finished_at": "2026-06-01T11:15:59.114420+00:00",
+          "next_run_at": null,
+          "last_heartbeat_at": "2026-06-01T11:15:58.280999+00:00",
+          "attempt": 1,
+          "max_attempts": 3,
+          "claimed_by": null,
+          "correlation_id": null,
+          "trace_id": null,
+          "user_id": "api-key:ac6fc16fd23f",
+          "request_source": "api://w28a-693/lifecycle/running/06f129de-4a3e-4ae9-9e47-ec18d1c00c47",
+          "request_ip": null,
+          "request_auth_method": null,
+          "request_auth_identity": null,
+          "request_user_agent": null,
+          "last_error": null,
+          "result_ref": null,
+          "progress": {
+            "phase": "cancelled",
+            "percentage": 100,
+            "message": "job cancelled",
+            "events": [
+              {
+                "phase": "validated",
+                "percentage": 5,
+                "message": "job payload validated",
+                "timestamp": "2026-06-01T11:15:58.249304+00:00"
+              },
+              {
+                "phase": "queued",
+                "percentage": 10,
+                "message": "job queued",
+                "timestamp": "2026-06-01T11:15:58.261675+00:00"
+              },
+              {
+                "phase": "dispatched",
+                "percentage": 15,
+                "message": "job claimed for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:15:58.273803+00:00"
+              },
+              {
+                "phase": "running",
+                "percentage": 20,
+                "message": "job handler started for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:15:58.281946+00:00"
+              },
+              {
+                "phase": "cancelled",
+                "percentage": 100,
+                "message": "job cancelled",
+                "timestamp": "2026-06-01T11:15:59.115707+00:00"
+              }
+            ]
+          }
+        },
+        "status": "cancelled"
+      }
     },
     "retry": {
-      "job_id": "19cbdd58-1fc4-40b6-93e9-346fdcf815cb",
-      "observed_status": "retry_wait"
+      "job_id": "5e367e1a-7440-478f-93e3-f08f17be6018",
+      "observed_status": "running",
+      "http_status": 200,
+      "response": {
+        "job": {
+          "job_id": "5e367e1a-7440-478f-93e3-f08f17be6018",
+          "profile": "default",
+          "collection": "w28a_693_1780312538547",
+          "job_type": "ingest_text",
+          "status": "queued",
+          "ordering_key": null,
+          "idempotency_key": null,
+          "payload": {
+            "profile": "default",
+            "collection": "w28a_693_1780312538547",
+            "actor": "api-key:ac6fc16fd23f",
+            "label": "W28A-693 bulk-retry 1780312559261",
+            "expected_outcome": "failed",
+            "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+            "metadata": {
+              "w28a": "693",
+              "label": "W28A-693 bulk-retry 1780312559261",
+              "expected_outcome": "failed",
+              "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job"
+            },
+            "text": "W28A-693 source-backed lifecycle evidence: W28A-693 bulk-retry 1780312559261",
+            "source": "api://w28a-693/lifecycle/failed/5e367e1a-7440-478f-93e3-f08f17be6018"
+          },
+          "server_id": "server0.viewdeck.com",
+          "created_at": "2026-06-01T11:15:59.278444",
+          "updated_at": "2026-06-01T11:16:00.148891",
+          "started_at": null,
+          "finished_at": null,
+          "next_run_at": null,
+          "last_heartbeat_at": "2026-06-01T11:15:59.311292+00:00",
+          "attempt": 0,
+          "max_attempts": 3,
+          "claimed_by": null,
+          "correlation_id": null,
+          "trace_id": null,
+          "user_id": "api-key:ac6fc16fd23f",
+          "request_source": "api://w28a-693/lifecycle/failed/5e367e1a-7440-478f-93e3-f08f17be6018",
+          "request_ip": null,
+          "request_auth_method": null,
+          "request_auth_identity": null,
+          "request_user_agent": null,
+          "last_error": null,
+          "result_ref": null,
+          "progress": {
+            "phase": "queued",
+            "percentage": 10,
+            "message": "job re-queued for retry",
+            "events": [
+              {
+                "phase": "validated",
+                "percentage": 5,
+                "message": "job payload validated",
+                "timestamp": "2026-06-01T11:15:59.285153+00:00"
+              },
+              {
+                "phase": "queued",
+                "percentage": 10,
+                "message": "job queued",
+                "timestamp": "2026-06-01T11:15:59.292100+00:00"
+              },
+              {
+                "phase": "dispatched",
+                "percentage": 15,
+                "message": "job claimed for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:15:59.306003+00:00"
+              },
+              {
+                "phase": "running",
+                "percentage": 20,
+                "message": "job handler started for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:15:59.312325+00:00"
+              },
+              {
+                "phase": "failed",
+                "percentage": 100,
+                "message": "W28A-693 lifecycle evidence job failed through queue runtime",
+                "timestamp": "2026-06-01T11:15:59.324089+00:00"
+              },
+              {
+                "phase": "queued",
+                "percentage": 10,
+                "message": "job re-queued for retry",
+                "timestamp": "2026-06-01T11:16:00.148485+00:00"
+              }
+            ]
+          }
+        },
+        "status": "queued"
+      }
     },
     "delete": {
-      "job_id": "9f8d1495-0116-4acb-9fee-5031d2f318c7",
-      "deleted": true
+      "job_id": "06f129de-4a3e-4ae9-9e47-ec18d1c00c47",
+      "deleted": true,
+      "http_status": 200,
+      "response": {
+        "job_id": "06f129de-4a3e-4ae9-9e47-ec18d1c00c47",
+        "deleted": true,
+        "status": "deleted"
+      }
     }
   }
 }

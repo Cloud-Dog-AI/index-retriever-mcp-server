@@ -1,10 +1,6 @@
-[docker html trace bundle]
-  4492336  2026-06-01 00:26   test.trace
-  4572708  2026-06-01 00:26   1-trace.trace
-  3372027  2026-06-01 00:26   1-trace.network
-   330378  2026-06-01 00:26   0-trace.network
-[local-code html trace bundle]
-  4809791  2026-06-01 00:40   test.trace
-  9321934  2026-06-01 00:40   1-trace.trace
-  1227517  2026-06-01 00:40   1-trace.network
-   383910  2026-06-01 00:40   0-trace.network
+W28A-693 PLAYWRIGHT TRACE PROOF
+
+working/w28a-693/docker/html-report/data/ac26343708641b8c8d63fe17a139a6efb9d1c713.zip: size=14738985 sha256=b897fc2a5ffe7a4b8498a0af6717c3a73a148394ba0732e01746f9fe1f27ec03 entries=607 has_trace=True has_network=True screenshots=446
+working/w28a-693/docker/test-results/e2e-w28a-693-jobs-conforma-7a8b9-76-v2-Jobs-page-conformance-chromium/trace.zip: size=14738985 sha256=b897fc2a5ffe7a4b8498a0af6717c3a73a148394ba0732e01746f9fe1f27ec03 entries=607 has_trace=True has_network=True screenshots=446
+working/w28a-693/local-code/html-report/data/3ad8f088bd5dc041b83c62ce588e5ed2ca1366bc.zip: size=30123079 sha256=c848c3231e1f57f34ba6514a29de4e0f93682404d92387ed560c8d75a4833af5 entries=670 has_trace=True has_network=True screenshots=499
+working/w28a-693/local-code/test-results/e2e-w28a-693-jobs-conforma-7a8b9-76-v2-Jobs-page-conformance-chromium/trace.zip: size=30123079 sha256=c848c3231e1f57f34ba6514a29de4e0f93682404d92387ed560c8d75a4833af5 entries=670 has_trace=True has_network=True screenshots=499

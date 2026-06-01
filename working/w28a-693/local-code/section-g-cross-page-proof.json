@@ -64,7 +64,7 @@
   "console_errors": [],
   "network_failures": [],
   "expected_rbac_failures_excluded_before_section_g": [
-    "writer direct view other job 8b649444-9dc0-4799-a391-481ccbfd746d returned inline 403",
-    "writer bulk cancel another job 8b649444-9dc0-4799-a391-481ccbfd746d returned 403"
+    "writer direct view other job 06d9df56-7c36-4546-9a20-ba182c9da9ad returned inline 403",
+    "writer bulk cancel another job 06d9df56-7c36-4546-9a20-ba182c9da9ad returned 403"
   ]
 }

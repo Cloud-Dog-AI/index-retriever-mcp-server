@@ -1,17 +1,14 @@
 # W28A-693 PREPROD_TOUCH_AUDIT
 
-Result: CLEAN.
+Status: CLEAN
 
-- Scope executed: local code and local Docker only.
-- Preprod URL: `https://indexretriever0.cloud-dog.net`
-- Preprod write actions: NONE.
-- SSH actions: NONE.
-- Live container hotfix actions: NONE.
-- Manual host edits: NONE.
-- Terraform taint/apply actions: NONE.
-- Registry/preprod deployment actions: NONE.
-- Vault writes: NONE.
-- Vault reads: limited to Docker build credential sourcing for read-only private PyPI package access.
-- Secret handling: Docker build wrapper redacted credentials as `admin:****`; `.pip.conf.build` and `custom-ca.crt` were removed after build, and `working/w28a-693/pip-conf-leftover-proof.txt` records `NO_PIP_CONF_OR_CUSTOM_CA_LEFTOVER`.
+- Scope was local code and local Docker only.
+- No preprod endpoints were modified.
+- No Terraform, registry deploy, SSH, or remote production/preprod mutation command was run for this correction.
+- Docker access used the local Docker TCP daemon: `docker -H tcp://127.0.0.1:2375`.
+- Docker container cleanup proof: `working/w28a-693/docker-no-leftover-containers.log` contains `NO_W28A_693_CONTAINERS`.
+- Vault was read only through the existing local Playwright env startup path for local-code readiness; no Vault write command was run.
+- No secret value is copied into evidence; tokens in evidence are fixed test API keys/hashed API-key identities.
 
-The local Docker conformance run used `docker -H tcp://127.0.0.1:2375` only with image `cloud-dog/index-retriever-mcp-server:w28a-693-sendback`. The final lane container was removed after the pass, and `working/w28a-693/docker-no-leftover-containers.log` records `NO_W28A_693_CONTAINERS`.
+Server source HEAD at audit generation: `9d3106c9f2c043f1f17a91ed81d329759c765b1a`
+UI source HEAD at audit generation: `16da675d6aa9e05cb334d5d92ac674abf715f6b3`

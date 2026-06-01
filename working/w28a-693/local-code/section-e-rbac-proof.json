@@ -5,7 +5,7 @@
       "actor": "admin",
       "action": "view all jobs",
       "expected": "sees all rows",
-      "observed_count_before": 955
+      "observed_count_before": 994
     },
     {
       "row": 2,
@@ -13,14 +13,14 @@
       "action": "view jobs",
       "expected": "sees only own",
       "writer_user": "api-key:2530b9bc4759",
-      "observed_count": 436
+      "observed_count": 446
     },
     {
       "row": 3,
       "actor": "non-admin",
       "action": "view another job by URL",
       "expected": "403 inline",
-      "job_id": "8b649444-9dc0-4799-a391-481ccbfd746d"
+      "job_id": "06d9df56-7c36-4546-9a20-ba182c9da9ad"
     },
     {
       "row": 4,
@@ -34,24 +34,117 @@
       "actor": "non-admin",
       "action": "bulk cancel own",
       "expected": "success",
-      "job_id": "d79c0807-86e5-43ea-a659-14b84438e2c3",
-      "observed_status": "cancelled"
+      "job_id": "cd4457ac-07b2-41d2-93fb-a8742f155a97",
+      "observed_status": "cancelled",
+      "http_status": 200
     },
     {
       "row": 6,
       "actor": "non-admin",
       "action": "bulk cancel another",
       "expected": "403 inline",
-      "job_id": "8b649444-9dc0-4799-a391-481ccbfd746d",
+      "job_id": "06d9df56-7c36-4546-9a20-ba182c9da9ad",
       "http_status": 403
     },
     {
       "row": 7,
       "actor": "non-admin",
       "action": "bulk retry own failed",
-      "expected": "success",
-      "job_id": "67f9d8e9-ded2-4f64-8ed9-9ff3781faf78",
-      "observed_status": "retry_wait"
+      "expected": "job_retry HTTP success",
+      "job_id": "6f63be92-b9ef-42af-ada0-1393f70f6f77",
+      "observed_status": "running",
+      "http_status": 200,
+      "response": {
+        "job": {
+          "job_id": "6f63be92-b9ef-42af-ada0-1393f70f6f77",
+          "profile": "default",
+          "collection": "w28a_693_1780312272072",
+          "job_type": "ingest_text",
+          "status": "queued",
+          "ordering_key": null,
+          "idempotency_key": null,
+          "payload": {
+            "profile": "default",
+            "collection": "w28a_693_1780312272072",
+            "actor": "api-key:2530b9bc4759",
+            "label": "W28A-693 writer-failed 1780312315303",
+            "expected_outcome": "failed",
+            "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job",
+            "metadata": {
+              "w28a": "693",
+              "label": "W28A-693 writer-failed 1780312315303",
+              "expected_outcome": "failed",
+              "source_path": "IndexService.create_w28a_693_lifecycle_evidence_job"
+            },
+            "text": "W28A-693 source-backed lifecycle evidence: W28A-693 writer-failed 1780312315303",
+            "source": "api://w28a-693/lifecycle/failed/6f63be92-b9ef-42af-ada0-1393f70f6f77"
+          },
+          "server_id": "server0.viewdeck.com",
+          "created_at": "2026-06-01T11:11:55.358893",
+          "updated_at": "2026-06-01T11:12:06.415392",
+          "started_at": null,
+          "finished_at": null,
+          "next_run_at": null,
+          "last_heartbeat_at": "2026-06-01T11:11:55.618898+00:00",
+          "attempt": 0,
+          "max_attempts": 3,
+          "claimed_by": null,
+          "correlation_id": null,
+          "trace_id": null,
+          "user_id": "api-key:2530b9bc4759",
+          "request_source": "api://w28a-693/lifecycle/failed/6f63be92-b9ef-42af-ada0-1393f70f6f77",
+          "request_ip": null,
+          "request_auth_method": null,
+          "request_auth_identity": null,
+          "request_user_agent": null,
+          "last_error": null,
+          "result_ref": null,
+          "progress": {
+            "phase": "queued",
+            "percentage": 10,
+            "message": "job re-queued for retry",
+            "events": [
+              {
+                "phase": "validated",
+                "percentage": 5,
+                "message": "job payload validated",
+                "timestamp": "2026-06-01T11:11:55.467974+00:00"
+              },
+              {
+                "phase": "queued",
+                "percentage": 10,
+                "message": "job queued",
+                "timestamp": "2026-06-01T11:11:55.518356+00:00"
+              },
+              {
+                "phase": "dispatched",
+                "percentage": 15,
+                "message": "job claimed for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:11:55.583484+00:00"
+              },
+              {
+                "phase": "running",
+                "percentage": 20,
+                "message": "job handler started for W28A-693 lifecycle evidence",
+                "timestamp": "2026-06-01T11:11:55.625617+00:00"
+              },
+              {
+                "phase": "failed",
+                "percentage": 100,
+                "message": "W28A-693 lifecycle evidence job failed through queue runtime",
+                "timestamp": "2026-06-01T11:11:55.676929+00:00"
+              },
+              {
+                "phase": "queued",
+                "percentage": 10,
+                "message": "job re-queued for retry",
+                "timestamp": "2026-06-01T11:12:06.414590+00:00"
+              }
+            ]
+          }
+        },
+        "status": "queued"
+      }
     },
     {
       "row": 8,
@@ -59,13 +152,14 @@
       "action": "bulk delete across actors",
       "expected": "confirmation and success",
       "deleted_job_ids": [
-        "05f03fae-8222-459d-a511-8b2eff818a31",
-        "d79c0807-86e5-43ea-a659-14b84438e2c3"
-      ]
+        "49bbd97f-cb0e-4b29-92dc-928213b30b8a",
+        "cd4457ac-07b2-41d2-93fb-a8742f155a97"
+      ],
+      "http_status": 200
     }
   ],
   "expected_rbac_failures": [
-    "writer direct view other job 8b649444-9dc0-4799-a391-481ccbfd746d returned inline 403",
-    "writer bulk cancel another job 8b649444-9dc0-4799-a391-481ccbfd746d returned 403"
+    "writer direct view other job 06d9df56-7c36-4546-9a20-ba182c9da9ad returned inline 403",
+    "writer bulk cancel another job 06d9df56-7c36-4546-9a20-ba182c9da9ad returned 403"
   ]
 }

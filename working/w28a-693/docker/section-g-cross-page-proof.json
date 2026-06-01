@@ -64,7 +64,7 @@
   "console_errors": [],
   "network_failures": [],
   "expected_rbac_failures_excluded_before_section_g": [
-    "writer direct view other job da6bcfa1-cc15-4b11-acc7-cd12a99710f5 returned inline 403",
-    "writer bulk cancel another job da6bcfa1-cc15-4b11-acc7-cd12a99710f5 returned 403"
+    "writer direct view other job 7f96bbea-2aeb-4291-8e90-0cf25924301a returned inline 403",
+    "writer bulk cancel another job 7f96bbea-2aeb-4291-8e90-0cf25924301a returned 403"
   ]
 }

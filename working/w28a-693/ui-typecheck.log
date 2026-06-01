@@ -1,4 +1,2 @@
-
-> @cloud-dog/app-index-retriever@0.0.1 typecheck
-> tsc -p tsconfig.json --noEmit
-
+Command: npx tsc --noEmit --pretty false -p apps/index-retriever/tsconfig.json
+RESULT: PASS

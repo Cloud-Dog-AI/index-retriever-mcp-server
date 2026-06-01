@@ -1,27 +1,19 @@
-# W28A-693 Close Gate
-
-- Section A seed jobs: YES — 5 distinct durable job IDs covering exactly succeeded, failed, retry_wait, cancelled, running
-- Section B DataTable 12 mandatory columns: YES
-- Section C PS-76 lifecycle badge colours for success/destructive/warning/neutral/cancelled: YES
-- Section D detail controls Copy Job ID, Retry, Cancel, Delete, all 7 tabs, Escape close: YES
-- Section E RBAC 8/8 rows with admin/non-admin/cross-actor outcomes: YES
-- Section F exact search, status/type/actor/date filters: YES
-- Section F every-column sort: YES
-- Section F page sizes 10/25/50/100: YES
-- Section F bulk cancel/retry/delete confirmation paths: YES
-- Section G strict console/network capture: YES, zero unexpected console errors and zero network failures
-- Local-code JUnit XML: YES
-- Local-code HTML report and trace bundle: YES
-- Docker JUnit XML: YES
-- Docker HTML report and trace bundle: YES
-- Docker image built from corrected source: YES, `sha256:e4e35c6e4090d87ebdf102fd37371b0fcd8638b537d4fa6ef7124abcebddaee8`
-- Section 1.4 bespoke grep clean: YES
-- PREPROD_TOUCH_AUDIT clean/read-only: YES
-- PC17 no `.or()` weakening: YES
+W28A-693 CLOSE GATE
+- Section A seed jobs complete: YES
+- Section B DataTable 12 columns: YES
+- Section C lifecycle badges: YES
+- Section D detail dialog 7 tabs: YES
+- Section E RBAC 8/8 rows: YES
+- Section F search/filter/sort/bulk/pagination: YES
+- Section G cross-page smoke: YES
+- Playwright traces attached: YES
+- JUnit XML attached: YES
+- §1.4 bespoke grep clean: YES
+- PREPROD_TOUCH_AUDIT clean: YES
+- PC17 no .or() weakening: YES
 - PC27 foreground-only: YES
-- PC29 artefacts under `working/w28a-693/`: YES
-- PC32 no leftover container: YES
-- UI source commit pushed: YES, `4ebff4c13fa6124c843a0be7eb3eef0d6223100b`
-- Server source/evidence commit: 8bd9b4867a276c935c8b61bbfe2b851bae2b0978
-- Commit on remote: 8bd9b4867a276c935c8b61bbfe2b851bae2b0978 refs/heads/main (git ls-remote verified)
-- RULES warranty: `working/w28a-693/06-rules-warranty.md`
+- PC29 artefacts in working/: YES
+- PC32 no leftover containers: YES
+- Commit hash: 9d3106c9f2c043f1f17a91ed81d329759c765b1a
+- Commit on remote: pending final server evidence push; verify with `git ls-remote --heads origin main` after commit
+- §11 WARRANTY: signed
