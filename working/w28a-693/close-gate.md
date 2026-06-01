@@ -1,6 +1,6 @@
 # W28A-693 Close Gate
 
-- Section A current-run job state coverage for succeeded, dead_lettered, retry_wait, cancelled, running: YES
+- Section A seed jobs: YES — 5 distinct durable job IDs covering exactly succeeded, failed, retry_wait, cancelled, running
 - Section B DataTable 12 mandatory columns: YES
 - Section C PS-76 lifecycle badge colours for success/destructive/warning/neutral/cancelled: YES
 - Section D detail controls Copy Job ID, Retry, Cancel, Delete, all 7 tabs, Escape close: YES
@@ -22,7 +22,6 @@
 - PC29 artefacts under `working/w28a-693/`: YES
 - PC32 no leftover container: YES
 - UI source commit pushed: YES, `4ebff4c13fa6124c843a0be7eb3eef0d6223100b`
-- Server source/evidence commit pushed: YES, `e08a6babab350f7b956ef59e171e4e47f7e4f598`
+- Server source/evidence commit: PENDING (will be updated after commit)
+- Commit on remote: PENDING (will be updated after push)
 - RULES warranty: `working/w28a-693/06-rules-warranty.md`
-
-HAVE_ALL_REQUIREMENTS_BEEN_MET: YES

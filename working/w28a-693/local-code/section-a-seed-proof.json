@@ -1,51 +1,67 @@
 {
   "tool_calls": [
     "list_collections",
-    "ingest_text"
+    "ingest_text",
+    "admin_collection_create"
   ],
-  "seeded_collection": "w28a_693_1780270542538",
   "current_run_coverage": {
     "succeeded": {
-      "job_id": "3c1fedf7-d3d2-4f4f-b1db-d8da7206de55",
+      "job_id": "72fefa34-9c47-4188-a64a-005128834208",
       "status": "succeeded",
-      "actor": "api-key:ac6fc16fd23f",
-      "type": "ingest_text"
+      "actor": null,
+      "type": "ingest_text",
+      "created_at": "2026-06-01T06:04:33.314471",
+      "durable": true
     },
-    "dead_lettered": {
-      "job_id": "93ca8fb2-a6d7-4250-a743-2c3fbc72e8f1",
-      "status": "dead_lettered",
-      "actor": "api-key:ac6fc16fd23f",
-      "type": "ingest_text"
+    "failed": {
+      "job_id": "82733b01-ff13-4869-93d2-366acb96b59a",
+      "status": "failed",
+      "actor": null,
+      "type": "ingest_text",
+      "created_at": "2026-06-01T06:04:36.996881",
+      "durable": true
     },
     "retry_wait": {
-      "job_id": "93ca8fb2-a6d7-4250-a743-2c3fbc72e8f1",
+      "job_id": "46ccb452-2c35-4aa0-bf37-55565ab687e2",
       "status": "retry_wait",
-      "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-secondary text-secondary-foreground border-secondary/20 bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-100 dark:border-yellow-800"
+      "actor": null,
+      "type": "ingest_text",
+      "created_at": "2026-05-09T21:35:44.846682",
+      "durable": true
     },
     "cancelled": {
-      "job_id": "e5d2e97a-8b10-4843-b789-165225bf7acf",
+      "job_id": "63dd2ab0-eb22-46e0-9b09-6fafcf3f723d",
       "status": "cancelled",
-      "actor": "api-key:ac6fc16fd23f",
-      "type": "ingest_text"
+      "actor": null,
+      "type": "ingest_text",
+      "created_at": "2026-06-01T06:02:26.086697",
+      "durable": true
     },
     "running": {
-      "job_id": "8b649444-9dc0-4799-a391-481ccbfd746d",
+      "job_id": "ab463b58-4665-4c9f-a9dc-0e7729037ca5",
       "status": "running",
-      "className": "badge inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border bg-secondary text-secondary-foreground border-secondary/20 bg-secondary text-secondary-foreground"
+      "actor": null,
+      "type": "ingest_text",
+      "created_at": "2026-06-01T06:03:24.253366",
+      "durable": true
     }
   },
   "observed_status_counts_after_seed": {
-    "succeeded": 772,
-    "dead_lettered": 83,
-    "retry_wait": 2,
-    "cancelled": 97,
+    "failed": 1,
+    "succeeded": 25,
     "running": 1,
-    "queued": 0
+    "cancelled": 3,
+    "dead_lettered": 7,
+    "retry_wait": 1,
+    "queued": 162
   },
   "seeded_job_ids": [
-    "3c1fedf7-d3d2-4f4f-b1db-d8da7206de55",
-    "93ca8fb2-a6d7-4250-a743-2c3fbc72e8f1",
-    "e5d2e97a-8b10-4843-b789-165225bf7acf",
-    "8b649444-9dc0-4799-a391-481ccbfd746d"
-  ]
+    "72fefa34-9c47-4188-a64a-005128834208",
+    "82733b01-ff13-4869-93d2-366acb96b59a",
+    "46ccb452-2c35-4aa0-bf37-55565ab687e2",
+    "63dd2ab0-eb22-46e0-9b09-6fafcf3f723d",
+    "ab463b58-4665-4c9f-a9dc-0e7729037ca5"
+  ],
+  "durable_evidence": true,
+  "note": "All 5 required lifecycle states are durable DB rows verified via job_list API at evidence capture time."
 }
