@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from cloud_dog_storage import path_utils
@@ -76,13 +77,13 @@ class AuditLogger:
         """Initialise the audit sink adapter."""
         resolved_path = path_utils.resolve_path(path)
         path_utils.mkdir(path_utils.parent(resolved_path))
-        self.path = resolved_path
+        self.path = Path(resolved_path)
         self.server_id = (server_id or "").strip() or "index-retriever-local"
         self.service_name = service_name
         self.environment = environment.strip() or "dev"
         self._platform = PlatformAuditLogger(
             service_name=self.service_name,
-            sink=FileSink(self.path),
+            sink=FileSink(str(self.path)),
         )
         # Bind context immediately so cloud_dog_api_kit AuditMiddleware
         # picks up service/environment on its first request.

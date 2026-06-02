@@ -120,9 +120,9 @@ class _ToolService:
 
 
 def test_required_roles_for_new_wrapper_tools() -> None:
-    assert mcp_server._required_roles_for_tool("parsers_list") == {"reader", "writer", "maintainer", "admin"}
-    assert mcp_server._required_roles_for_tool("parser_test") == {"maintainer", "admin"}
-    assert mcp_server._required_roles_for_tool("extract_only") == {"writer", "maintainer", "admin"}
+    assert mcp_server._required_permission_for_tool("parsers_list") == "collection.read"
+    assert mcp_server._required_permission_for_tool("parser_test") == "source.configure"
+    assert mcp_server._required_permission_for_tool("extract_only") == "collection.write"
 
 
 def test_execute_tool_dispatches_vdb_wrapper_calls() -> None:

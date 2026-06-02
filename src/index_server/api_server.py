@@ -675,8 +675,8 @@ def handle_search(
     payload: dict[str, Any],
 ) -> dict[str, Any]:
     """Execute handle search."""
-    identity = auth.authenticate(headers)
-    auth.require_roles(identity, {"reader", "writer", "maintainer", "admin"})
+    identity = auth.identity_from_headers(headers)
+    auth.require_permission(identity, "collection.read")
     try:
         results = service.search(
             profile=str(payload["profile"]),
@@ -701,8 +701,8 @@ def handle_ingest_text(
     payload: dict[str, Any],
 ) -> dict[str, str]:
     """Execute handle ingest text."""
-    identity = auth.authenticate(headers)
-    auth.require_roles(identity, {"writer", "maintainer", "admin"})
+    identity = auth.identity_from_headers(headers)
+    auth.require_permission(identity, "collection.write")
     job_id = service.ingest_text(
         profile=str(payload["profile"]),
         collection=str(payload["collection"]),
@@ -802,9 +802,11 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     auth = AuthMiddleware()
     if auth.backend_name() != "cloud_dog_idam":
         raise RuntimeError("cloud_dog_idam auth backend is required")
-    bind_auth_api_keys = getattr(active_service, "attach_auth_api_keys", None)
-    if callable(bind_auth_api_keys):
-        bind_auth_api_keys(auth.api_keys)
+    if hasattr(auth, "_api_key_manager") and auth._api_key_manager is not None:
+        active_service._idam_api_keys = auth._api_key_manager
+    bind_idam_auth = getattr(active_service, "attach_idam_auth", None)
+    if callable(bind_idam_auth):
+        bind_idam_auth(auth)
     registry = build_registry()
     cors_origins = _local_test_cors_origins()
     def _shutdown_runtime() -> None:
@@ -896,7 +898,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                     "displayName": identity.user_id,
                     "email": None,
                     "roles": sorted(str(role) for role in identity.roles),
-                    "permissions": ["*"] if "admin" in identity.roles else [],
+                    "permissions": sorted(str(permission) for permission in identity.permissions),
                 }
             }
         )
@@ -975,8 +977,10 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                 identity = AuthResult(
                     user_id=str(session.get("user", session.get("user_id", "admin"))),
                     roles={str(session.get("role", "admin"))},
+                    permissions={"*"},
                     token_type="cookie",
                 )
+                auth.sync_identity_roles(identity.user_id, identity.roles)
                 _log_auth_event(
                     request,
                     actor=identity.user_id,
@@ -987,7 +991,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                 )
                 return identity
         try:
-            identity = auth.authenticate(headers)
+            identity = auth.identity_from_headers(headers)
         except PermissionError as exc:
             _log_auth_event(
                 request,
@@ -1008,10 +1012,10 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         )
         return identity
 
-    def _require_or_raise(request: Request, identity: Any, roles: set[str]) -> None:
+    def _require_or_raise(request: Request, identity: Any, permission: str) -> None:
         """Internal helper to require or raise."""
         try:
-            auth.require_roles(identity, roles)
+            auth.require_permission(identity, permission)
         except PermissionError as exc:
             _log_auth_event(
                 request,
@@ -1021,7 +1025,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                 roles=identity.roles,
                 auth_mechanism=identity.token_type,
                 reason=str(exc),
-                required_roles=",".join(sorted(roles)),
+                required_roles=permission,
             )
             raise HTTPException(status_code=403, detail=str(exc)) from exc
 
@@ -1030,7 +1034,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         # Covers: FR-01B
         _sync_logging_correlation(request)
         try:
-            identity = auth.authenticate_api_key(headers)
+            identity = auth.api_key_identity(headers)
         except PermissionError as exc:
             _log_auth_event(
                 request,
@@ -1073,7 +1077,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     ) -> dict[str, Any]:
         """Expose structured logs for UI review validation and observability pages."""
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         safe_limit = max(1, min(limit, 500))
         levels = [item for item in request.query_params.getlist("level") if item]
         return build_log_payload(levels=levels, phase=phase, limit=safe_limit)
@@ -1081,7 +1085,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     def config_events(request: Request) -> dict[str, Any]:
         """Expose configuration events through the standard API auth path for SPA views."""
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         return {"events": active_service.a2a_config_events()}
 
     def a2a_root(request: Request) -> dict[str, Any]:
@@ -1254,14 +1258,14 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     def list_tools(request: Request) -> list[dict[str, Any]]:
         """Execute list tools."""
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         return registry.list_tools()
 
     def call_tool(tool_name: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         """Execute call tool."""
         # Covers: FR-17
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         arguments = dict(payload)
         arguments.setdefault("actor", identity.user_id)
         try:
@@ -1270,7 +1274,8 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                 tool_name=tool_name,
                 arguments=arguments,
                 registry=registry,
-                identity_roles=identity.roles,
+                auth=auth,
+                identity=identity,
             )
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=f"Unknown tool: {tool_name}") from exc
@@ -1281,7 +1286,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_profiles_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         profiles = [
             active_service.profile_get(profile) | {"profile": profile}
             for profile in active_service.profiles_list()
@@ -1290,7 +1295,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_profiles_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         profile_name = str(payload["profile"])
         config = payload.get("config") if isinstance(payload.get("config"), dict) else payload.get("profile_config", {})
         profile = active_service.admin_profile_create(
@@ -1303,12 +1308,12 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_profiles_get(profile_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         return {"profile": profile_id, "config": active_service.profile_get(profile_id)}
 
     def admin_profiles_update(profile_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         updates = payload.get("config") if isinstance(payload.get("config"), dict) else payload
         if not isinstance(updates, dict):
             raise HTTPException(status_code=400, detail="Invalid profile payload")
@@ -1322,13 +1327,13 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_profiles_delete(profile_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         active_service.admin_profile_delete(profile=profile_id, roles=identity.roles, actor=identity.user_id)
         return {"status": "ok", "profile": profile_id}
 
     def admin_users_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         users = active_service.users_list()
         result: dict[str, Any] = {"users": users}
         if not users:
@@ -1341,7 +1346,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_users_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         user_id = str(payload["user_id"])
         return {
             "user": active_service.admin_user_create(
@@ -1354,12 +1359,12 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_users_get(user_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         return {"user": active_service.user_get(user_id)}
 
     def admin_users_update(user_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         return {
             "user": active_service.admin_user_update(
                 user_id=user_id,
@@ -1371,18 +1376,18 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_users_delete(user_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         active_service.admin_user_delete(user_id=user_id, roles=identity.roles, actor=identity.user_id)
         return {"status": "ok", "user_id": user_id}
 
     def admin_groups_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         return {"groups": active_service.groups_list()}
 
     def admin_groups_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         group_id = str(payload["group_id"])
         return {
             "group": active_service.admin_group_create(
@@ -1395,12 +1400,12 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_groups_get(group_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         return {"group": active_service.group_get(group_id)}
 
     def admin_groups_update(group_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         return {
             "group": active_service.admin_group_update(
                 group_id=group_id,
@@ -1412,18 +1417,18 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_groups_delete(group_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         active_service.admin_group_delete(group_id=group_id, roles=identity.roles, actor=identity.user_id)
         return {"status": "ok", "group_id": group_id}
 
     def admin_api_keys_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         return {"api_keys": active_service.api_keys_list()}
 
     def admin_api_keys_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         return {
             "api_key": active_service.admin_api_key_create(
                 roles=identity.roles,
@@ -1434,7 +1439,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_api_keys_delete(key_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         try:
             return {
                 "api_key": active_service.admin_api_key_revoke(
@@ -1448,7 +1453,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_api_keys_revoke_token(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         try:
             result = active_service.admin_api_key_revoke_token_hash(
                 sha256_prefix=str(payload["sha256_prefix"]),
@@ -1463,7 +1468,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_collections_list(profile: str = "default", request: Request = None) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         collections = [
             active_service.collection_get(profile, collection)
             for collection in active_service.collections_list(profile)
@@ -1472,7 +1477,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_collections_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         profile = str(payload.get("profile", "default"))
         collection = str(payload["collection"])
         active_service.admin_collection_create(
@@ -1487,12 +1492,12 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_collections_get(collection_id: str, profile: str = "default", request: Request = None) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         return {"collection": active_service.collection_get(profile, collection_id)}
 
     def admin_collections_update(collection_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         profile = str(payload.get("profile", "default"))
         updated = active_service.admin_collection_update(
             profile=profile,
@@ -1505,7 +1510,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_collections_delete(collection_id: str, profile: str = "default", request: Request = None) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         active_service.admin_collection_delete(
             profile=profile,
             collection=collection_id,
@@ -1516,12 +1521,12 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_source_configs_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         return {"source_configs": active_service.source_configs_list()}
 
     def admin_source_configs_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         source_id = str(payload.get("source_id", ""))
         if not source_id:
             raise HTTPException(status_code=400, detail="source_id is required")
@@ -1539,7 +1544,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_source_configs_get(source_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         try:
             return {"source_config": active_service.source_config_get(source_id)}
         except KeyError as exc:
@@ -1547,7 +1552,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_source_configs_update(source_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         try:
             return {
                 "source_config": active_service.admin_source_config_update(
@@ -1564,7 +1569,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_source_configs_delete(source_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         try:
             active_service.admin_source_config_delete(
                 source_id=source_id,
@@ -1577,12 +1582,12 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_rbac_bindings_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         return {"bindings": active_service.rbac_bindings_list()}
 
     def admin_rbac_bindings_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         return {
             "binding": active_service.admin_rbac_bind(
                 entity_type=str(payload["entity_type"]),
@@ -1595,7 +1600,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def admin_rbac_bindings_delete(entity_type: str, entity_id: str, role: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"admin"})
+        _require_or_raise(request, identity, "admin")
         return {
             "binding": active_service.admin_rbac_unbind(
                 entity_type=entity_type,
@@ -1614,7 +1619,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         upload: UploadFile = File(...),
     ) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.write")
         try:
             parsed_metadata = json.loads(metadata_json or "{}")
         except json.JSONDecodeError as exc:
@@ -1634,7 +1639,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def files_list(profile: str | None = None, request: Request = None) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         return {"files": active_service.file_list(profile=profile)}
 
     async def files_upload(
@@ -1644,7 +1649,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         upload: UploadFile = File(...),
     ) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.write")
         try:
             metadata = json.loads(metadata_json or "{}")
         except json.JSONDecodeError as exc:
@@ -1664,7 +1669,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def files_upload_base64(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.write")
         metadata = payload.get("metadata")
         if metadata is not None and not isinstance(metadata, dict):
             raise HTTPException(status_code=400, detail="metadata must be an object")
@@ -1683,7 +1688,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def files_get(file_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         try:
             return {"file": active_service.file_get(file_id)}
         except KeyError as exc:
@@ -1691,7 +1696,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def files_download(file_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"reader", "writer", "maintainer", "admin"})
+        _require_or_raise(request, identity, "collection.read")
         try:
             return {"file": active_service.file_download(file_id)}
         except KeyError as exc:
@@ -1699,7 +1704,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def files_delete(file_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, {"maintainer", "admin"})
+        _require_or_raise(request, identity, "source.configure")
         try:
             return {"file": active_service.file_delete(file_id, actor=identity.user_id)}
         except KeyError as exc:
@@ -1758,86 +1763,6 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                 pass
         return {"query": text} if text else {}
 
-    def _handle_ingest_text(text: str) -> Any:
-        """Ingest text into the vector database via execute_tool."""
-        payload = _parse_a2a_input(text)
-        payload.setdefault("profile", "default")
-        payload.setdefault("collection", "default")
-        payload.setdefault("source", "a2a")
-        payload.setdefault("actor", "a2a-client")
-        if "text" not in payload and not text.strip().startswith("{"):
-            payload["text"] = text
-        return execute_tool(
-            service=active_service,
-            tool_name="ingest_text",
-            arguments=payload,
-            registry=registry,
-        )
-
-    def _handle_search(text: str) -> Any:
-        """Semantic search across indexed documents via execute_tool.
-
-        Resolves the profile and collection from the live service when
-        the caller does not supply them, so A2A searches work without
-        callers needing to know the internal collection topology.
-        """
-        payload = _parse_a2a_input(text)
-        if "query" not in payload and not text.strip().startswith("{"):
-            payload["query"] = text
-
-        # Resolve profile — use the first available profile if not specified.
-        if not payload.get("profile"):
-            profiles = active_service.profiles_list()
-            payload["profile"] = profiles[0] if profiles else "default"
-
-        # Resolve collection — pick the first real collection for the profile.
-        if not payload.get("collection"):
-            try:
-                collections = active_service.collections_list(payload["profile"])
-            except Exception:  # noqa: BLE001
-                collections = []
-            payload["collection"] = collections[0] if collections else "default"
-
-        try:
-            return execute_tool(
-                service=active_service,
-                tool_name="search",
-                arguments=payload,
-                registry=registry,
-            )
-        except Exception as exc:
-            # If VDB search fails (e.g. embedding model unreachable), fall back
-            # to listing available collections so the caller gets useful output.
-            try:
-                profiles = active_service.profiles_list()
-                collections_info = []
-                for p in profiles[:5]:
-                    try:
-                        cols = active_service.collections_list(p)
-                        collections_info.append(f"  {p}: {cols}")
-                    except Exception:
-                        collections_info.append(f"  {p}: (error listing)")
-                return {
-                    "error": f"Search failed: {exc}",
-                    "available_profiles": profiles,
-                    "collections": collections_info,
-                    "hint": "The VDB search pipeline may need embedding model configuration.",
-                }
-            except Exception:
-                return {"error": f"Search failed: {exc}"}
-
-    def _handle_retrieve(text: str) -> Any:
-        """Retrieve a document by ID via the IndexService."""
-        payload = _parse_a2a_input(text)
-        doc_id = payload.get("doc_id") or payload.get("id") or text.strip()
-        profile = payload.get("profile")
-        collection = payload.get("collection")
-        return active_service.retrieve(
-            doc_id,
-            profile=str(profile) if profile else None,
-            collection=str(collection) if collection else None,
-        )
-
     def _a2a_task_payload(body: dict[str, Any]) -> tuple[str, str, dict[str, Any]]:
         skill_id = str(body.get("skill_id") or body.get("skill") or "").strip()
         input_data = body.get("input", {})
@@ -1873,9 +1798,8 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             "ingest_health": "ingest_health",
             "ingest_text": "ingest_text",
             "search": "search",
+            "retrieve": "retrieve",
         }
-        if skill_id == "retrieve":
-            return _handle_retrieve(json.dumps(payload))
         tool_name = tool_map.get(skill_id)
         if tool_name is None:
             raise HTTPException(status_code=404, detail=f"Unknown A2A skill: {skill_id}")
@@ -1885,7 +1809,8 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                 tool_name=tool_name,
                 arguments={**payload, "actor": identity.user_id},
                 registry=registry,
-                identity_roles=identity.roles,
+                auth=auth,
+                identity=identity,
             )
         except PermissionError as exc:
             _log_auth_event(
@@ -1935,11 +1860,11 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     # A2A agent card and task submission router
     # W28C-427 IDX-SNAG-003: expanded A2A skills to cover admin, file, health, and source-config.
     _a2a_skills = [
-        A2ASkill(id="ingest_text", name="Ingest Text", description="Ingest text into a profiled collection with embedding and indexing", handler=_handle_ingest_text),
+        A2ASkill(id="ingest_text", name="Ingest Text", description="Ingest text into a profiled collection with embedding and indexing"),
         A2ASkill(id="ingest_upload", name="Ingest Upload", description="Upload a file for chunking, embedding, and indexing"),
         A2ASkill(id="ingest_reference", name="Ingest Reference", description="Ingest content from a URI (HTTP, S3, FTP, filesystem, etc.)"),
-        A2ASkill(id="search", name="Search", description="Vector similarity search across indexed collections", handler=_handle_search),
-        A2ASkill(id="retrieve", name="Retrieve", description="Retrieve a specific document by ID", handler=_handle_retrieve),
+        A2ASkill(id="search", name="Search", description="Vector similarity search across indexed collections"),
+        A2ASkill(id="retrieve", name="Retrieve", description="Retrieve a specific document by ID"),
         A2ASkill(id="collection_create", name="Create Collection", description="Create a new indexed collection within a profile"),
         A2ASkill(id="collection_list", name="List Collections", description="List collections for a profile"),
         A2ASkill(id="profiles_list", name="List Profiles", description="List configured storage profiles"),

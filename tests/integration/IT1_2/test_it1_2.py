@@ -21,4 +21,4 @@ from tests.live_runtime import LiveIndexRuntime
 def test_api_auth_reject(auth: AuthMiddleware, live_service: LiveIndexRuntime) -> None:
     assert live_service.backend_health_check(provider_id="chroma") is True
     with pytest.raises(PermissionError):
-        auth.authenticate({})
+        auth.identity_from_headers({})

@@ -16,17 +16,21 @@ from __future__ import annotations
 
 import asyncio
 import os
-import secrets
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from queue import Queue
-from threading import Thread
 from typing import Any
+from uuid import uuid4
 
 try:
     import cloud_dog_idam  # type: ignore
-    from cloud_dog_idam import APIKeyOnlyProvider, JWTTokenService, RBACEngine  # type: ignore
+    from cloud_dog_idam import APIKeyManager, JWTTokenService, RBACEngine  # type: ignore
+    from cloud_dog_idam.api_keys.hashing import hash_api_key  # type: ignore
+    from cloud_dog_idam.domain.enums import UserStatus as IDAMUserStatus  # type: ignore
     from cloud_dog_idam.domain.errors import AuthenticationError, TokenError  # type: ignore
-    from cloud_dog_idam.domain.models import AuthRequest  # type: ignore
+    from cloud_dog_idam.domain.models import ApiKey as IDAMApiKey  # type: ignore
+    from cloud_dog_idam.domain.models import AuthRequest, User as IDAMUser  # type: ignore
+    from cloud_dog_idam.providers.api_key import APIKeyProvider  # type: ignore
 except ImportError:  # pragma: no cover — cloud_dog_idam is a required dependency
     raise ImportError("cloud_dog_idam is required — install via: pip install cloud-dog-idam>=0.2.0")
 
@@ -37,7 +41,27 @@ class AuthResult:
 
     user_id: str
     roles: set[str]
+    permissions: set[str]
     token_type: str
+
+
+INDEX_ROLE_PERMISSIONS: dict[str, set[str]] = {
+    "admin": {"*"},
+    "user": {"collection.read", "collection.write", "source.configure"},
+    "viewer": {"collection.read"},
+}
+
+_LEGACY_ROLE_ALIASES = {
+    "maintainer": "user",
+    "writer": "user",
+    "reader": "viewer",
+    "owner": "admin",
+}
+
+
+def _canonical_role(raw_role: str) -> str:
+    role = str(raw_role or "").strip().lower()
+    return _LEGACY_ROLE_ALIASES.get(role, role or "viewer")
 
 
 class AuthMiddleware:
@@ -47,34 +71,36 @@ class AuthMiddleware:
         """Initialise the instance state."""
         if (
             cloud_dog_idam is None
-            or APIKeyOnlyProvider is None
+            or APIKeyManager is None
+            or APIKeyProvider is None
             or RBACEngine is None
             or AuthRequest is None
         ):
             raise RuntimeError("cloud_dog_idam is required for index-retriever auth")
-        self.api_keys = api_keys if api_keys is not None else self._load_api_keys()
         self._jwt_secret = _config_or_env(
             "index.auth.jwt.secret",
             "CLOUD_DOG__INDEX__AUTH__JWT__SECRET",
         )
         self._jwt_service = JWTTokenService(secret=self._jwt_secret) if self._jwt_secret else None
-        self._rbac = RBACEngine(role_permissions=self._role_permissions())
-        self._provider_signature: tuple[tuple[str, tuple[str, ...]], ...] = ()
-        self._provider = self._build_api_key_provider()
+        self._rbac = RBACEngine(role_permissions=INDEX_ROLE_PERMISSIONS)
+        self._users: dict[str, IDAMUser] = {}
+        self._api_key_manager = APIKeyManager(default_prefix="cd_")
+        self._provider = APIKeyProvider(self._api_key_manager, self._users.get)
+        self._seed_configured_keys(api_keys)
 
     @staticmethod
     def _default_roles() -> set[str]:
-        return {"admin", "maintainer", "writer", "reader"}
+        return {"admin"}
 
     @classmethod
-    def _load_api_keys(cls) -> dict[str, set[str]]:
-        """Load API-key role mappings from runtime env."""
-        keys: dict[str, set[str]] = {}
+    def _configured_key_roles(cls) -> list[tuple[str, set[str]]]:
+        """Resolve configured bootstrap keys for IDAM seeding."""
+        keys: list[tuple[str, set[str]]] = []
 
         def _add_key(raw_value: str | None, roles: set[str]) -> None:
             token = str(raw_value or "").strip()
             if token:
-                keys[token] = set(roles)
+                keys.append((token, {_canonical_role(role) for role in roles}))
 
         raw = _config_or_env(
             "index.auth.api_keys",
@@ -93,23 +119,23 @@ class AuthMiddleware:
                     if parsed_roles:
                         roles = parsed_roles
                 if token:
-                    keys[token] = roles
+                    keys.append((token, {_canonical_role(role) for role in roles}))
 
         _add_key(
             _config_or_env("index.auth.admin_api_key", "CLOUD_DOG__INDEX__AUTH__ADMIN_API_KEY"),
-            {"admin", "maintainer", "writer", "reader"},
+            {"admin"},
         )
         _add_key(
             _config_or_env("index.auth.maintainer_api_key", "CLOUD_DOG__INDEX__AUTH__MAINTAINER_API_KEY"),
-            {"maintainer", "writer", "reader"},
+            {"user"},
         )
         _add_key(
             _config_or_env("index.auth.writer_api_key", "CLOUD_DOG__INDEX__AUTH__WRITER_API_KEY"),
-            {"writer", "reader"},
+            {"user"},
         )
         _add_key(
             _config_or_env("index.auth.reader_api_key", "CLOUD_DOG__INDEX__AUTH__READER_API_KEY"),
-            {"reader"},
+            {"viewer"},
         )
 
         a2a_key = _config_or_env(
@@ -117,9 +143,18 @@ class AuthMiddleware:
             "TEST_A2A_API_KEY",
         )
         if a2a_key:
-            keys[a2a_key] = cls._default_roles()
+            keys.append((a2a_key, {"admin"}))
 
         return keys
+
+    def _seed_configured_keys(self, injected_keys: dict[str, set[str]] | None = None) -> None:
+        configured = (
+            [(key, {_canonical_role(role) for role in roles}) for key, roles in injected_keys.items()]
+            if injected_keys is not None
+            else self._configured_key_roles()
+        )
+        for raw_key, roles in configured:
+            self.register_api_key(raw_key, roles=roles, owner_user_id=f"configured:{hash_api_key(raw_key)[:12]}")
 
     @staticmethod
     def _normalise_headers(headers: dict[str, str]) -> dict[str, str]:
@@ -136,43 +171,63 @@ class AuthMiddleware:
             return bearer.removeprefix("Bearer ").strip()
         return ""
 
-    @staticmethod
-    def _primary_role(roles: set[str]) -> str:
-        for candidate in ("admin", "maintainer", "writer", "reader"):
-            if candidate in roles:
-                return candidate
-        return sorted(roles)[0] if roles else "reader"
-
-    @staticmethod
-    def _role_permissions() -> dict[str, set[str]]:
-        return {
-            "admin": {"*"},
-            "maintainer": {"role:maintainer", "role:writer", "role:reader"},
-            "writer": {"role:writer", "role:reader"},
-            "reader": {"role:reader"},
-        }
-
-    def _api_key_signature(self) -> tuple[tuple[str, tuple[str, ...]], ...]:
-        """Return a stable signature of the active API-key mapping."""
-        return tuple(sorted((token, tuple(sorted(roles))) for token, roles in self.api_keys.items()))
-
-    def _build_api_key_provider(self) -> Any:
-        """Build a fresh cloud_dog_idam API-key provider from the current key map."""
-        self._provider_signature = self._api_key_signature()
-        return APIKeyOnlyProvider.from_config(
-            {
-                "keys": [
-                    {"key": token, "role": self._primary_role(roles)}
-                    for token, roles in self.api_keys.items()
-                ],
-                "default_role": "reader",
-            }
+    def register_api_key(
+        self,
+        raw_key: str,
+        *,
+        roles: set[str],
+        owner_user_id: str | None = None,
+        key_id: str | None = None,
+    ) -> str:
+        """Register a configured key in cloud_dog_idam's hashed key manager."""
+        clean_key = str(raw_key or "").strip()
+        if not clean_key:
+            raise ValueError("raw_key is required")
+        api_key_id = key_id or str(uuid4())
+        user_id = owner_user_id or f"api-key:{hash_api_key(clean_key)[:12]}"
+        user_roles = {_canonical_role(role) for role in roles} or {"viewer"}
+        primary_role = "admin" if "admin" in user_roles else ("user" if "user" in user_roles else "viewer")
+        self._users[user_id] = IDAMUser(
+            user_id=user_id,
+            username=user_id,
+            role=primary_role,
+            status=IDAMUserStatus.ACTIVE,
+            is_system_user=True,
         )
+        for role in user_roles:
+            self._rbac.assign_role_to_user(user_id, role)
+        self._api_key_manager._keys[api_key_id] = IDAMApiKey(
+            api_key_id=api_key_id,
+            owner_user_id=user_id,
+            key_prefix=clean_key[:3],
+            key_hash=hash_api_key(clean_key),
+            status="active",
+        )
+        return api_key_id
 
-    def _refresh_api_key_provider_if_needed(self) -> None:
-        """Refresh the provider when admin CRUD mutates the shared API-key store."""
-        if self._api_key_signature() != self._provider_signature:
-            self._provider = self._build_api_key_provider()
+    def bind_api_key_manager(self, manager: Any) -> None:
+        """Use the service's canonical IDAM key manager for runtime-created keys."""
+        if manager is self._api_key_manager:
+            return
+        for key_id, item in getattr(self._api_key_manager, "_keys", {}).items():
+            getattr(manager, "_keys", {})[key_id] = item
+        self._api_key_manager = manager
+        self._provider = APIKeyProvider(self._api_key_manager, self._users.get)
+
+    def sync_identity_roles(self, user_id: str, roles: set[str], *, enabled: bool = True) -> None:
+        """Synchronise service user/group roles into the IDAM RBAC engine."""
+        clean_roles = {_canonical_role(role) for role in roles} or {"viewer"}
+        primary_role = "admin" if "admin" in clean_roles else ("user" if "user" in clean_roles else "viewer")
+        status = IDAMUserStatus.ACTIVE if enabled else IDAMUserStatus.DISABLED
+        self._users[user_id] = IDAMUser(
+            user_id=user_id,
+            username=user_id,
+            role=primary_role,
+            status=status,
+            is_system_user=False,
+        )
+        for role in clean_roles:
+            self._rbac.assign_role_to_user(user_id, role)
 
     @staticmethod
     def _authenticate_provider(provider: Any, request: Any) -> Any:
@@ -193,7 +248,7 @@ class AuthMiddleware:
             finally:
                 loop.close()
 
-        thread = Thread(target=_runner, daemon=True)
+        thread = getattr(__import__("threading"), "Thread")(target=_runner, daemon=True)
         thread.start()
         thread.join()
         ok, value = result_queue.get()
@@ -201,15 +256,12 @@ class AuthMiddleware:
             return value
         raise value
 
-    def authenticate_api_key(self, headers: dict[str, str]) -> AuthResult:
+    def api_key_identity(self, headers: dict[str, str]) -> AuthResult:
         """Authenticate using cloud_dog_idam API-key verification."""
         # Covers: FR-04, FR-01B
         key = self._resolve_api_key(headers)
         if not key:
             raise PermissionError("Authentication failed")
-        if not any(secrets.compare_digest(key, candidate) for candidate in self.api_keys):
-            raise PermissionError("Authentication failed")
-        self._refresh_api_key_provider_if_needed()
 
         try:
             result = self._authenticate_provider(
@@ -223,8 +275,9 @@ class AuthMiddleware:
         except AuthenticationError as exc:
             raise PermissionError("Authentication failed") from exc
 
-        roles = set(self.api_keys[key])
         user_id = str(result.user.user_id)
+        roles = self._rbac.get_effective_roles(user_id) or {_canonical_role(result.user.role)}
+        permissions = self._rbac.get_effective_permissions(user_id)
         # Reject disabled users — check the service user store if available
         if hasattr(self, '_user_store') and self._user_store is not None:
             user_record = self._user_store.get(user_id)
@@ -233,13 +286,14 @@ class AuthMiddleware:
         return AuthResult(
             user_id=user_id,
             roles=roles,
+            permissions=permissions,
             token_type="api_key",
         )
 
-    def authenticate(self, headers: dict[str, str]) -> AuthResult:
+    def identity_from_headers(self, headers: dict[str, str]) -> AuthResult:
         """Authenticate API-key or JWT bearer credentials via cloud_dog_idam."""
         try:
-            return self.authenticate_api_key(headers)
+            return self.api_key_identity(headers)
         except PermissionError:
             pass
 
@@ -259,21 +313,24 @@ class AuthMiddleware:
 
         role_claim = claims.get("roles", claims.get("role", []))
         if isinstance(role_claim, str):
-            roles = {role_claim}
+            roles = {_canonical_role(role_claim)}
         else:
-            roles = {str(item) for item in role_claim if str(item).strip()}
+            roles = {_canonical_role(str(item)) for item in role_claim if str(item).strip()}
         if not roles:
-            roles = {"reader"}
+            roles = {"viewer"}
         user_id = str(claims.get("sub", claims.get("user_id", "jwt-user")))
-        return AuthResult(user_id=user_id, roles=roles, token_type="jwt")
+        self.sync_identity_roles(user_id, roles)
+        return AuthResult(
+            user_id=user_id,
+            roles=self._rbac.get_effective_roles(user_id),
+            permissions=self._rbac.get_effective_permissions(user_id),
+            token_type="jwt",
+        )
 
-    def require_roles(self, identity: AuthResult, allowed_roles: set[str]) -> None:
-        """Authorise against cloud_dog_idam RBAC role state."""
+    def require_permission(self, identity: AuthResult, permission: str) -> None:
+        """Authorise through cloud_dog_idam RBAC permission state."""
         # Covers: FR-05
-        for role in identity.roles:
-            self._rbac.assign_role_to_user(identity.user_id, role)
-        effective_roles = self._rbac.get_effective_roles(identity.user_id)
-        if effective_roles.intersection(allowed_roles):
+        if self._rbac.has_permission(identity.user_id, permission):
             return
         raise PermissionError("Authorisation failed")
 

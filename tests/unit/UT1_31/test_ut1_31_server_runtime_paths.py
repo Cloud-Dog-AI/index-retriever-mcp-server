@@ -134,16 +134,22 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     assert tools.status_code == 200
     assert isinstance(tools.json(), list)
 
-    service._auth_api_keys["unit_orphan_for_hash_revoke"] = {"reader"}
+    created_key = client.post(
+        "/admin/api-keys",
+        headers={"authorization": "Bearer valid-admin-token"},
+        json={"key_id": "unit-hash-revoke", "label": "Unit Hash Revoke", "roles": ["viewer"]},
+    )
+    assert created_key.status_code == 200, created_key.text
+    raw_key = created_key.json()["api_key"]["token"]
     revoke_hash = client.post(
         "/admin/api-keys/revoke-token",
         headers={"authorization": "Bearer valid-admin-token"},
-        json={"sha256_prefix": sha256("unit_orphan_for_hash_revoke".encode("utf-8")).hexdigest()[:12]},
+        json={"sha256_prefix": sha256(raw_key.encode("utf-8")).hexdigest()[:12]},
     )
     assert revoke_hash.status_code == 200, revoke_hash.text
-    assert revoke_hash.json()["api_key"]["orphaned_tokens_revoked"] == 1
-    orphan_denied = client.get("/api/v1/tools", headers={"x-api-key": "unit_orphan_for_hash_revoke"})
-    assert orphan_denied.status_code == 401
+    assert revoke_hash.json()["api_key"]["revoked_count"] == 1
+    revoked_denied = client.get("/api/v1/tools", headers={"x-api-key": raw_key})
+    assert revoked_denied.status_code == 401
 
     bad_source_type = client.post(
         "/admin/source-configs",

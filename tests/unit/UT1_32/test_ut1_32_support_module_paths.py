@@ -438,13 +438,13 @@ def test_build_platform_log_config_uses_surface_specific_log_files() -> None:
 
 
 def test_rbac_backend_name_and_matching(monkeypatch: pytest.MonkeyPatch) -> None:
-    auth = RbacAuthoriser(role_actions={"writer": ["ingest_*"]}, default_deny=True)
-    subject = Subject(user_id="u1", roles={"writer"})
-    assert auth.is_allowed(subject, "ingest_text") is True
-    assert auth.is_allowed(subject, "delete_by_id") is False
+    auth = RbacAuthoriser(role_permissions={"user": ["collection.write"]}, default_deny=True)
+    subject = Subject(user_id="u1", roles={"user"})
+    assert auth.is_allowed(subject, "collection.write") is True
+    assert auth.is_allowed(subject, "admin") is False
 
-    permissive = RbacAuthoriser(role_actions={}, default_deny=False)
-    assert permissive.is_allowed(Subject(user_id="u2", roles={"x"}), "anything") is True
+    permissive = RbacAuthoriser(role_permissions={}, default_deny=False)
+    assert permissive.is_allowed(Subject(user_id="u2", roles={"x"}), "collection.read") is True
 
     # W28A-703: fallback removed — cloud_dog_idam is now a hard requirement.
     # Backend name always returns "cloud_dog_idam".

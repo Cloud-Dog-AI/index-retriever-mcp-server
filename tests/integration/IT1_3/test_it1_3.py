@@ -18,5 +18,5 @@ from tests.live_runtime import LiveIndexRuntime
 
 def test_api_auth_accept(auth: AuthMiddleware, live_service: LiveIndexRuntime) -> None:
     assert live_service.backend_health_check(provider_id="chroma") is True
-    who = auth.authenticate({"authorization": "Bearer valid-admin-token"})
+    who = auth.identity_from_headers({"authorization": "Bearer valid-admin-token"})
     assert "admin" in who.roles

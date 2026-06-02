@@ -616,28 +616,25 @@ def _apply_collection(service: Any, collection: CollectionSeed) -> None:
 def _apply_api_key(service: Any, api_key: ApiKeySeed, *, token: str) -> None:
     """Apply an api-key seed entry, idempotent on the (username, token) pair.
 
-    Idempotency strategy: look for an existing api-key whose ``user_id`` matches
-    and whose ``token`` equals the resolved Vault value. If found, no-op. If
-    a key exists for the user but with a different token (Vault rotation), revoke
-    the old record and create a fresh one with the new token. Otherwise create.
+    Idempotency strategy: compare the resolved Vault value by hash only. If a key
+    exists for the user but with a different hash (Vault rotation), revoke the old
+    record and create a fresh one. Otherwise create.
     """
     desired_token = token
+    desired_hash = __import__("hashlib").sha256(desired_token.encode("utf-8")).hexdigest()
     # Find any existing record for this user.
     existing = [
         record for record in service.api_keys.values()
         if (record.user_id or "") == api_key.username
     ]
-    matching = [r for r in existing if r.token == desired_token and not r.revoked]
+    matching = [r for r in existing if getattr(r, "token_hash", "") == desired_hash and not r.revoked]
     if matching:
         # Already present with the right token — no-op.
         return
     # Stale/different-token records for this user → revoke them so the new key is canonical.
     for record in existing:
-        if not record.revoked and record.token != desired_token:
+        if not record.revoked and getattr(record, "token_hash", "") != desired_hash:
             record.revoked = True
-            # Remove revoked key from the bound API-key store if attached.
-            if getattr(service, "_auth_api_keys_bound", False):
-                service._auth_api_keys.pop(record.token, None)
     payload: dict[str, Any] = {
         "label": api_key.name,
         "user_id": api_key.username,

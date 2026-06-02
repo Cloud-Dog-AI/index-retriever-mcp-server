@@ -77,10 +77,15 @@ def test_api_middleware_helpers_and_handler_paths(monkeypatch: pytest.MonkeyPatc
     service = _DummyService()
 
     class _Auth:
-        def authenticate(self, _headers):
-            return AuthResult(user_id="u1", roles={"writer", "reader"}, token_type="api_key")
+        def identity_from_headers(self, _headers):
+            return AuthResult(
+                user_id="u1",
+                roles={"user"},
+                permissions={"collection.read", "collection.write"},
+                token_type="api_key",
+            )
 
-        def require_roles(self, _identity, _allowed):
+        def require_permission(self, _identity, _allowed):
             return None
 
     result = api_server.handle_search(
@@ -100,10 +105,10 @@ def test_api_middleware_helpers_and_handler_paths(monkeypatch: pytest.MonkeyPatc
     assert queued == {"job_id": "job-123"}
 
 
-def test_api_require_roles_http403_branch(monkeypatch: pytest.MonkeyPatch, service) -> None:
+def test_api_require_permission_http403_branch(monkeypatch: pytest.MonkeyPatch, service) -> None:
     monkeypatch.setattr(
         AuthMiddleware,
-        "require_roles",
+        "require_permission",
         staticmethod(lambda _identity, _allowed: (_ for _ in ()).throw(PermissionError("denied"))),
     )
     app = api_server.build_api_app(service=service)
@@ -131,9 +136,9 @@ def test_api_main_module_branch(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_mcp_role_mapping_and_execute_paths(service, monkeypatch: pytest.MonkeyPatch) -> None:
-    assert mcp_server._required_roles_for_tool("admin_any") == {"admin"}
-    assert mcp_server._required_roles_for_tool("delete_by_id") == {"maintainer", "admin"}
-    assert mcp_server._required_roles_for_tool("unknown_anything") == {"admin"}
+    assert mcp_server._required_permission_for_tool("admin_any") == "admin"
+    assert mcp_server._required_permission_for_tool("delete_by_id") == "collection.write"
+    assert mcp_server._required_permission_for_tool("unknown_anything") == "admin"
 
     marker = SimpleNamespace(cls=SimpleNamespace(__name__="OtherMiddleware"))
     app = SimpleNamespace(user_middleware=[marker], build_middleware_stack=lambda: "stack", middleware_stack=None)
@@ -294,8 +299,8 @@ def test_chunking_dedupe_rbac_and_vdb_registry_edges(monkeypatch: pytest.MonkeyP
     with pytest.raises(ValueError):
         index.apply_policy(existing, "bad-policy")
 
-    rbac = RbacAuthoriser(role_actions={"reader": ["search"]}, default_deny=True)
-    assert rbac.is_allowed(Subject(user_id="u", roles={"reader"}), "search") is True
+    rbac = RbacAuthoriser(role_permissions={"viewer": ["collection.read"]}, default_deny=True)
+    assert rbac.is_allowed(Subject(user_id="u", roles={"viewer"}), "collection.read") is True
 
     registry = VdbRegistry()
     with pytest.raises(KeyError):

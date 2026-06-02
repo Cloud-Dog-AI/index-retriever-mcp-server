@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import os
 import textwrap
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -117,7 +118,7 @@ def test_repo_default_bootstrap_seed_is_parseable() -> None:
     """The container-baked default seed must not crash service startup."""
     repo_root = Path(__file__).resolve().parents[3]
     seed = load_seed(repo_root / "config" / "bootstrap-seed.yaml")
-    assert {item.username for item in seed.users} == {"gary", "colin"}
+    assert {item.username for item in seed.users} == {"admin", "gary", "colin"}
     assert seed.api_keys == []
 
 
@@ -398,8 +399,11 @@ def test_apply_seed_populates_all_admin_stores(fresh_service: Any) -> None:
         fresh_service.collections.keys()
     )
     api_records = list(fresh_service.api_keys.values())
-    tokens = {r.token for r in api_records if not r.revoked}
-    assert {"cd_TEST_GARY_TOKEN_0001", "cd_TEST_COLIN_TOKEN_0001"}.issubset(tokens)
+    token_hashes = {r.token_hash for r in api_records if not r.revoked}
+    assert {
+        sha256("cd_TEST_GARY_TOKEN_0001".encode("utf-8")).hexdigest(),
+        sha256("cd_TEST_COLIN_TOKEN_0001".encode("utf-8")).hexdigest(),
+    }.issubset(token_hashes)
 
 
 def test_apply_seed_role_acl_invariants(fresh_service: Any) -> None:
@@ -424,14 +428,14 @@ def test_apply_seed_is_idempotent(fresh_service: Any) -> None:
     snapshot_groups = sorted(fresh_service.groups.keys())
     snapshot_collections = sorted(fresh_service.collections.keys())
     snapshot_api_keys = sorted(
-        (r.user_id, r.token, r.revoked) for r in fresh_service.api_keys.values()
+        (r.user_id, r.token_hash, r.revoked) for r in fresh_service.api_keys.values()
     )
     apply_seed(fresh_service, _canonical_seed(), vault_resolver=resolver)
     assert sorted(fresh_service.users.keys()) == snapshot_users
     assert sorted(fresh_service.groups.keys()) == snapshot_groups
     assert sorted(fresh_service.collections.keys()) == snapshot_collections
     assert (
-        sorted((r.user_id, r.token, r.revoked) for r in fresh_service.api_keys.values())
+        sorted((r.user_id, r.token_hash, r.revoked) for r in fresh_service.api_keys.values())
         == snapshot_api_keys
     )
     # No duplicate user records.
@@ -462,8 +466,8 @@ def test_apply_seed_handles_vault_token_rotation(fresh_service: Any) -> None:
     active = [r for r in gary_records if not r.revoked]
     revoked = [r for r in gary_records if r.revoked]
     assert len(active) == 1
-    assert active[0].token == "cd_NEW_GARY_TOKEN_0002"
-    assert any(r.token == "cd_TEST_GARY_TOKEN_0001" for r in revoked)
+    assert active[0].token_hash == sha256("cd_NEW_GARY_TOKEN_0002".encode("utf-8")).hexdigest()
+    assert any(r.token_hash == sha256("cd_TEST_GARY_TOKEN_0001".encode("utf-8")).hexdigest() for r in revoked)
 
 
 def test_apply_seed_fails_fast_when_vault_unreachable(fresh_service: Any) -> None:

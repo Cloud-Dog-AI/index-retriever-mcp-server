@@ -53,7 +53,7 @@ def _log_tool_audit(tool_name: str, actor_id: str, outcome: str, details: dict[s
 from fastapi import Request
 from starlette.responses import JSONResponse
 
-from index_server.auth.middleware import AuthMiddleware
+from index_server.auth.middleware import AuthMiddleware, AuthResult
 from index_server.logging_runtime import init_platform_logging, shutdown_platform_logging
 from index_server.runtime_config import resolve_server_binding
 from index_tools.config.loader import runtime_env_files
@@ -191,20 +191,20 @@ def _create_runtime_app(on_shutdown: Callable[[], None] | None = None) -> Any:
     return _maybe_disable_timeout_middleware(app)
 
 
-def _required_roles_for_tool(tool_name: str) -> set[str]:
-    """Internal helper to required roles for tool."""
+def _required_permission_for_tool(tool_name: str) -> str:
+    """Return the project permission required for an MCP tool."""
     if tool_name.startswith("admin_"):
-        return {"admin"}
+        return "admin"
     if tool_name == "job_delete":
-        return {"admin"}
+        return "admin"
     if tool_name.startswith("ingest_"):
-        return {"writer", "maintainer", "admin"}
+        return "collection.write"
     if tool_name in {"parsers_list"}:
-        return {"reader", "writer", "maintainer", "admin"}
+        return "collection.read"
     if tool_name in {"parser_test", "ocr_run", "table_extract"}:
-        return {"maintainer", "admin"}
+        return "source.configure"
     if tool_name in {"extract_only"}:
-        return {"writer", "maintainer", "admin"}
+        return "collection.write"
     if tool_name in {
         "search",
         "search_explain",
@@ -218,7 +218,7 @@ def _required_roles_for_tool(tool_name: str) -> set[str]:
         "source_configs_list",
         "source_config_get",
     }:
-        return {"reader", "writer", "maintainer", "admin"}
+        return "collection.read"
     if tool_name in {
         "users_list",
         "user_get",
@@ -226,32 +226,45 @@ def _required_roles_for_tool(tool_name: str) -> set[str]:
         "group_get",
         "api_keys_list",
     }:
-        return {"admin"}
+        return "admin"
     if tool_name == "rbac_bindings_list":
-        return {"admin"}
+        return "admin"
     if tool_name.startswith("job_") or tool_name == "queue_status":
-        return {"writer", "maintainer", "admin"}
+        return "collection.write"
     if tool_name == "w28a_693_lifecycle_job":
-        return {"writer", "maintainer", "admin"}
+        return "collection.write"
     if tool_name in {"delete_by_id", "delete_by_filter", "retention_run", "reindex_run"}:
-        return {"maintainer", "admin"}
+        return "collection.write"
     if tool_name in {"backend_health_check", "embedding_health_check", "ingest_health"}:
-        return {"reader", "writer", "maintainer", "admin"}
+        return "collection.read"
     if tool_name in {"file_list", "file_get", "file_download"}:
-        return {"reader", "writer", "maintainer", "admin"}
+        return "collection.read"
     if tool_name == "file_upload":
-        return {"writer", "maintainer", "admin"}
+        return "collection.write"
     if tool_name == "file_delete":
-        return {"maintainer", "admin"}
-    return {"admin"}
+        return "collection.write"
+    return "admin"
 
 
-def _enforce_tool_rbac(tool_name: str, roles: set[str], *, actor_id: str) -> None:
-    """PS-50: per-tool RBAC at MCP tool dispatch — deny when caller roles miss required intersection."""
-    required_roles = _required_roles_for_tool(tool_name)
-    if not roles.intersection(required_roles):
-        _log_tool_audit(tool_name, actor_id, "denied", {"roles": sorted(roles), "required": sorted(required_roles)})
-        raise PermissionError(f"Authorisation failed for tool '{tool_name}'")
+def _enforce_tool_permission(
+    tool_name: str,
+    auth: AuthMiddleware,
+    identity: AuthResult,
+    *,
+    actor_id: str,
+) -> None:
+    """Enforce MCP dispatch via cloud_dog_idam permission checks."""
+    permission = _required_permission_for_tool(tool_name)
+    try:
+        auth.require_permission(identity, permission)
+    except PermissionError:
+        _log_tool_audit(
+            tool_name,
+            actor_id,
+            "denied",
+            {"permission": permission, "roles": sorted(identity.roles)},
+        )
+        raise PermissionError(f"Authorisation failed for tool '{tool_name}'") from None
 
 
 def list_tool_names(registry: ToolRegistry) -> list[str]:
@@ -340,24 +353,38 @@ def _job_actor_id(job: Any) -> str:
     return ""
 
 
-def _is_admin_role(roles: set[str]) -> bool:
-    """Return whether the identity has the admin role."""
-    return "admin" in roles
+def _has_permission(auth: AuthMiddleware, identity: AuthResult, permission: str) -> bool:
+    try:
+        auth.require_permission(identity, permission)
+        return True
+    except PermissionError:
+        return False
 
 
-def _enforce_job_owner(service: IndexService, job_id: str, roles: set[str], actor_id: str) -> Any:
-    """Load a job and enforce non-admin owner-only access."""
+def _enforce_job_owner(
+    service: IndexService,
+    job_id: str,
+    auth: AuthMiddleware,
+    identity: AuthResult,
+    actor_id: str,
+) -> Any:
+    """Load a job and enforce owner access through IDAM permissions."""
     job = service.job_get(job_id)
-    if _is_admin_role(roles):
+    if _has_permission(auth, identity, "admin"):
         return job
     if _job_actor_id(job) == actor_id:
         return job
     raise PermissionError("403 inline: non-admin users may only access their own jobs")
 
 
-def _filter_jobs_for_identity(jobs: list[Any], roles: set[str], actor_id: str) -> list[Any]:
+def _filter_jobs_for_identity(
+    jobs: list[Any],
+    auth: AuthMiddleware,
+    identity: AuthResult,
+    actor_id: str,
+) -> list[Any]:
     """Filter jobs to owner-only visibility for non-admin identities."""
-    if _is_admin_role(roles):
+    if _has_permission(auth, identity, "admin"):
         return jobs
     return [job for job in jobs if _job_actor_id(job) == actor_id]
 
@@ -383,19 +410,10 @@ def _normalise_queue_status(payload: Any) -> dict[str, Any]:
     return out
 
 
-def _enforce_collection_acl(service: IndexService, roles: set[str], arguments: dict[str, Any]) -> None:
-    """Enforce per-collection RBAC when service exposes collection ACL checks."""
+def _enforce_collection_permission(auth: AuthMiddleware, identity: AuthResult, permission: str) -> None:
+    """Enforce collection access through IDAM permissions."""
     # Covers: FR-05
-    checker = getattr(service, "is_collection_role_allowed", None)
-    if not callable(checker):
-        return
-    collection = str(arguments.get("collection", "")).strip()
-    if not collection:
-        return
-    profile = str(arguments.get("profile", "default"))
-    if checker(profile, collection, roles):
-        return
-    raise PermissionError(f"Authorisation failed for collection '{collection}'")
+    auth.require_permission(identity, permission)
 
 
 def execute_tool(
@@ -404,6 +422,8 @@ def execute_tool(
     arguments: dict[str, Any],
     registry: ToolRegistry | None = None,
     identity_roles: set[str] | None = None,
+    auth: AuthMiddleware | None = None,
+    identity: AuthResult | None = None,
 ) -> dict[str, Any]:
     """Execute execute tool with PS-40 audit logging."""
     # Covers: FR-16, FR-13B
@@ -420,8 +440,18 @@ def execute_tool(
             "collection": arguments.get("collection"),
         },
     )
-    roles = identity_roles or {"admin"}
-    _enforce_tool_rbac(tool_name, roles, actor_id=actor_id)
+    active_auth = auth or AuthMiddleware()
+    active_identity = identity
+    if active_identity is None:
+        active_auth.sync_identity_roles(actor_id, identity_roles or {"admin"})
+        active_identity = AuthResult(
+            user_id=actor_id,
+            roles=set(identity_roles or {"admin"}),
+            permissions=set(),
+            token_type="direct",
+        )
+    roles = active_identity.roles
+    _enforce_tool_permission(tool_name, active_auth, active_identity, actor_id=actor_id)
 
     if tool_name == "profiles_list":
         return {"profiles": service.profiles_list()}
@@ -650,7 +680,7 @@ def execute_tool(
             "status": "ok",
         }
     if tool_name == "ingest_upload":
-        _enforce_collection_acl(service, roles, arguments)
+        _enforce_collection_permission(active_auth, active_identity, "collection.write")
         payload = arguments.get("content", "")
         if isinstance(payload, str):
             content = payload.encode("utf-8")
@@ -667,7 +697,7 @@ def execute_tool(
             metadata=arguments.get("metadata") if isinstance(arguments.get("metadata"), dict) else None,
         )
     if tool_name == "ingest_text":
-        _enforce_collection_acl(service, roles, arguments)
+        _enforce_collection_permission(active_auth, active_identity, "collection.read")
         ingest_result = service.ingest_text(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -680,7 +710,7 @@ def execute_tool(
         job_id = getattr(ingest_result, "job_id", ingest_result)
         return {"job_id": str(job_id), "status": "queued"}
     if tool_name == "ingest_reference":
-        _enforce_collection_acl(service, roles, arguments)
+        _enforce_collection_permission(active_auth, active_identity, "collection.read")
         reference_path = str(arguments.get("path") or arguments.get("uri") or "").strip()
         if not reference_path:
             raise ValueError("ingest_reference requires path or uri")
@@ -747,7 +777,7 @@ def execute_tool(
             table_json_shape=str(arguments.get("table_json_shape", "records")),
         )
     if tool_name == "search":
-        _enforce_collection_acl(service, roles, arguments)
+        _enforce_collection_permission(active_auth, active_identity, "collection.read")
         try:
             return {
                 "results": service.search(
@@ -773,7 +803,7 @@ def execute_tool(
                 "status": "error",
             }
     if tool_name == "search_explain":
-        _enforce_collection_acl(service, roles, arguments)
+        _enforce_collection_permission(active_auth, active_identity, "collection.read")
         filters = arguments.get("filters") if isinstance(arguments.get("filters"), dict) else {}
         top_k = int(arguments.get("top_k", 10))
         query = str(arguments["query"])
@@ -805,7 +835,7 @@ def execute_tool(
             ],
         }
     if tool_name == "retrieve":
-        _enforce_collection_acl(service, roles, arguments)
+        _enforce_collection_permission(active_auth, active_identity, "collection.read")
         # A123 fix: pass profile + collection so retrieve filters records
         # to the requested scope (RetrieveInput already requires both).
         return service.retrieve(
@@ -814,7 +844,7 @@ def execute_tool(
             collection=str(arguments.get("collection")) if arguments.get("collection") else None,
         )
     if tool_name == "delete_by_id":
-        _enforce_collection_acl(service, roles, arguments)
+        _enforce_collection_permission(active_auth, active_identity, "collection.write")
         deleted = service.delete_by_id(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -822,7 +852,7 @@ def execute_tool(
         )
         return {"deleted": bool(deleted), "status": "ok" if deleted else "not_found"}
     if tool_name == "delete_by_filter":
-        _enforce_collection_acl(service, roles, arguments)
+        _enforce_collection_permission(active_auth, active_identity, "collection.write")
         deleted = service.delete_by_filter(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -830,7 +860,7 @@ def execute_tool(
         )
         return {"deleted": int(deleted), "status": "ok"}
     if tool_name == "retention_run":
-        _enforce_collection_acl(service, roles, arguments)
+        _enforce_collection_permission(active_auth, active_identity, "collection.write")
         deleted = service.retention_run(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -838,7 +868,7 @@ def execute_tool(
         )
         return {"deleted": int(deleted), "status": "ok"}
     if tool_name == "reindex_run":
-        _enforce_collection_acl(service, roles, arguments)
+        _enforce_collection_permission(active_auth, active_identity, "collection.write")
         result = service.reindex_run(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -849,10 +879,10 @@ def execute_tool(
             return payload
         return {"documents": int(result), "status": "ok"}
     if tool_name == "job_get":
-        job = _enforce_job_owner(service, str(arguments["job_id"]), roles, actor_id)
+        job = _enforce_job_owner(service, str(arguments["job_id"]), active_auth, active_identity, actor_id)
         return {"job": _normalise_job_payload(job)}
     if tool_name == "job_wait":
-        _ = _enforce_job_owner(service, str(arguments["job_id"]), roles, actor_id)
+        _ = _enforce_job_owner(service, str(arguments["job_id"]), active_auth, active_identity, actor_id)
         job = service.job_wait(str(arguments["job_id"]))
         return {"job": _normalise_job_payload(job)}
     if tool_name == "job_list":
@@ -862,13 +892,13 @@ def execute_tool(
             jobs_raw = service.job_list(limit=limit)
         except TypeError:
             jobs_raw = service.job_list()
-        visible_jobs = _filter_jobs_for_identity(list(jobs_raw), roles, actor_id)
+        visible_jobs = _filter_jobs_for_identity(list(jobs_raw), active_auth, active_identity, actor_id)
         jobs = [_normalise_job_payload(job) for job in visible_jobs]
         if status_filter:
             jobs = [job for job in jobs if str(job.get("status", "")).strip().lower() == status_filter]
         return {"jobs": jobs, "count": len(jobs)}
     if tool_name == "job_cancel":
-        _ = _enforce_job_owner(service, str(arguments["job_id"]), roles, actor_id)
+        _ = _enforce_job_owner(service, str(arguments["job_id"]), active_auth, active_identity, actor_id)
         cancelled = service.job_cancel(str(arguments["job_id"]))
         if isinstance(cancelled, bool):
             if not cancelled:
@@ -881,7 +911,7 @@ def execute_tool(
         retry_fn = getattr(service, "job_retry", None)
         if not callable(retry_fn):
             raise ValueError("Job retry is not supported by this runtime")
-        _ = _enforce_job_owner(service, str(arguments["job_id"]), roles, actor_id)
+        _ = _enforce_job_owner(service, str(arguments["job_id"]), active_auth, active_identity, actor_id)
         retried = retry_fn(str(arguments["job_id"]))
         if isinstance(retried, bool):
             if not retried:
@@ -969,16 +999,11 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
     auth = AuthMiddleware()
     if auth.backend_name() != "cloud_dog_idam":
         raise RuntimeError("cloud_dog_idam auth backend is required")
-    bind_auth_api_keys = getattr(active_service, "attach_auth_api_keys", None)
-    if callable(bind_auth_api_keys):
-        bind_auth_api_keys(auth.api_keys)
-    # Share the auth middleware's IDAM key manager with the service so that
-    # dynamically created API keys are registered in the SAME manager
-    # that authenticates requests (not a separate instance).
     if hasattr(auth, "_api_key_manager") and auth._api_key_manager is not None:
         active_service._idam_api_keys = auth._api_key_manager
-    elif hasattr(auth, "_provider") and hasattr(auth._provider, "_api_key_manager"):
-        active_service._idam_api_keys = auth._provider._api_key_manager
+    bind_idam_auth = getattr(active_service, "attach_idam_auth", None)
+    if callable(bind_idam_auth):
+        bind_idam_auth(auth)
     # Share user store with auth middleware for disabled-user checks when available.
     if hasattr(active_service, "users"):
         auth._user_store = active_service.users
@@ -1057,7 +1082,7 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
             _sync_logging_correlation(request)
             headers = {k.lower(): v for k, v in request.headers.items()}
             try:
-                identity = auth.authenticate(headers)
+                identity = auth.identity_from_headers(headers)
             except PermissionError as exc:
                 _log_auth_event(
                     request,
@@ -1068,17 +1093,7 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
                     reason=str(exc),
                 )
                 raise UnauthenticatedError(message=str(exc)) from exc
-            # Reject disabled users after auth succeeds.
-            # Check by identity.user_id first, then scan API keys for the
-            # token to find the owning user (IDAM user_id may differ from
-            # service user_id).
             _disabled_user = active_service.users.get(identity.user_id)
-            if _disabled_user is None:
-                _api_key_header = headers.get("x-api-key", "").strip()
-                for _kr in active_service.api_keys.values():
-                    if _kr.token == _api_key_header and _kr.user_id:
-                        _disabled_user = active_service.users.get(_kr.user_id)
-                        break
             if _disabled_user is not None and not getattr(_disabled_user, 'enabled', True):
                 raise UnauthenticatedError(message="User account is disabled")
             _log_auth_event(
@@ -1097,7 +1112,8 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
                     tool_name=tool_name,
                     arguments=arguments,
                     registry=active_registry,
-                    identity_roles=identity.roles,
+                    auth=auth,
+                    identity=identity,
                 )
             except PermissionError as exc:
                 _log_auth_event(
@@ -1108,7 +1124,7 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
                     roles=identity.roles,
                     auth_mechanism=identity.token_type,
                     reason=str(exc),
-                    required_roles=",".join(sorted(_required_roles_for_tool(tool_name))),
+                    required_roles=_required_permission_for_tool(tool_name),
                 )
                 raise UnauthorisedError(message=str(exc)) from exc
             except (KeyError, ValueError) as exc:

@@ -25,7 +25,6 @@ from index_tools.tools.service import IndexService
 
 def test_service_admin_config_crud_and_mcp_parity(service: IndexService) -> None:
     # Covers: CFG-01, CFG-02, CFG-03, CFG-04, CFG-05, CFG-06, CFG-08, CFG-09, CFG-10, CFG-11, CFG-12, CFG-13
-    service.attach_auth_api_keys({})
     registry = build_default_tool_registry()
 
     with pytest.raises(PermissionError):
@@ -81,13 +80,7 @@ def test_service_admin_config_crud_and_mcp_parity(service: IndexService) -> None
     assert "token" not in service.api_keys_list()[0]
     assert service.api_keys_list()[0]["token_length"] == len(api_key["token"])
     assert service.api_keys_list()[0]["sha256_prefix"] == sha256(api_key["token"].encode("utf-8")).hexdigest()[:12]
-    assert api_key["token"] in service._auth_api_keys
-
-    service._auth_api_keys["cd_orphaned_security_token"] = {"reader"}
-    orphan_prefix = sha256("cd_orphaned_security_token".encode("utf-8")).hexdigest()[:12]
-    orphan_revoke = service.admin_api_key_revoke_token_hash(orphan_prefix, roles={"admin"}, actor="cfg-admin")
-    assert orphan_revoke["orphaned_tokens_revoked"] == 1
-    assert "cd_orphaned_security_token" not in service._auth_api_keys
+    assert service.api_keys["cfg-key"].token_hash == sha256(api_key["token"].encode("utf-8")).hexdigest()
 
     events = execute_tool(
         service=service,
@@ -109,7 +102,6 @@ def test_service_admin_config_crud_and_mcp_parity(service: IndexService) -> None
         identity_roles={"admin"},
     )["api_key"]
     assert revoked["revoked"] is True
-    assert api_key["token"] not in service._auth_api_keys
 
     execute_tool(
         service=service,

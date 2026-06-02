@@ -16,7 +16,7 @@ from index_tools.security.rbac import RbacAuthoriser, Subject
 
 
 def test_rbac_policy_eval() -> None:
-    authz = RbacAuthoriser({"writer": ["ingest_*"], "reader": ["search"]})
-    subject = Subject(user_id="u1", roles={"writer"})
-    assert authz.is_allowed(subject, "ingest_text") is True
-    assert authz.is_allowed(subject, "admin_profile_create") is False
+    authz = RbacAuthoriser({"user": ["collection.write"], "viewer": ["collection.read"]})
+    subject = Subject(user_id="u1", roles={"user"})
+    assert authz.is_allowed(subject, "collection.write") is True
+    assert authz.is_allowed(subject, "admin") is False

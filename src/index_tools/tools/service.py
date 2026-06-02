@@ -96,13 +96,17 @@ def _run_async_blocking(coro: Any) -> Any:
 
 try:
     from cloud_dog_idam import APIKeyManager, GroupService, UserService
+    from cloud_dog_idam.api_keys.hashing import hash_api_key as idam_hash_api_key
     from cloud_dog_idam.domain.enums import UserStatus as IDAMUserStatus
+    from cloud_dog_idam.domain.models import ApiKey as IDAMApiKey
     from cloud_dog_idam.domain.models import Group as IDAMGroup
     from cloud_dog_idam.domain.models import User as IDAMUser
 except ImportError:  # pragma: no cover
     APIKeyManager = None  # type: ignore[assignment]
     GroupService = None  # type: ignore[assignment]
     UserService = None  # type: ignore[assignment]
+    idam_hash_api_key = None  # type: ignore[assignment]
+    IDAMApiKey = None  # type: ignore[assignment]
     IDAMUserStatus = None  # type: ignore[assignment]
     IDAMGroup = None  # type: ignore[assignment]
     IDAMUser = None  # type: ignore[assignment]
@@ -555,7 +559,9 @@ class ApiKeyRecord:
     """ApiKeyRecord definition."""
 
     key_id: str
-    token: str
+    token_hash: str
+    token_prefix: str
+    token_length: int
     label: str
     roles: set[str]
     capabilities: set[str]
@@ -769,9 +775,8 @@ class IndexService:
         self._idam_groups = GroupService() if GroupService is not None else None
         self._idam_api_keys = APIKeyManager(default_prefix="cd_") if APIKeyManager is not None else None
         self._idam_api_key_refs: dict[str, str] = {}
+        self._idam_auth: Any | None = None
         self.a2a_events: list[ConfigEventRecord] = []
-        self._auth_api_keys: dict[str, set[str]] = {}
-        self._auth_api_keys_bound = False
         self.queue.register_handler("ingest_text", self._process_ingest_text_job)
         self.queue.register_handler("retention_run", self._process_retention_job)
         self.queue.register_handler("reindex_run", self._process_reindex_job)
@@ -1203,12 +1208,11 @@ class IndexService:
         self.collection_roles[collection_key] = set(record.allowed_roles)
         return record
 
-    def attach_auth_api_keys(self, auth_api_keys: dict[str, set[str]]) -> None:
-        """Bind the runtime auth API-key store so admin key CRUD updates auth immediately."""
-        self._auth_api_keys = auth_api_keys
-        self._auth_api_keys_bound = True
-        for key_id in sorted(self.api_keys.keys()):
-            self._sync_auth_api_key_record(self.api_keys[key_id])
+    def attach_idam_auth(self, auth: Any) -> None:
+        """Bind the runtime IDAM authoriser so user/group RBAC updates propagate."""
+        self._idam_auth = auth
+        for user_id in sorted(self.users.keys()):
+            self._sync_auth_user(user_id)
 
     def _effective_user_roles(self, user_id: str) -> set[str]:
         record = self.users.get(user_id)
@@ -1221,33 +1225,24 @@ class IndexService:
                 roles.update(group.roles)
         return roles
 
-    def _sync_auth_api_key_record(self, record: ApiKeyRecord) -> None:
-        if not self._auth_api_keys_bound:
+    def _sync_auth_user(self, user_id: str) -> None:
+        if self._idam_auth is None or user_id not in self.users:
             return
-        if record.revoked:
-            self._auth_api_keys.pop(record.token, None)
-            return
-        effective_roles = set(record.roles)
-        if record.user_id:
-            effective_roles.update(self._effective_user_roles(record.user_id))
-        self._auth_api_keys[record.token] = effective_roles
-
-    def _refresh_auth_api_keys_for_user(self, user_id: str) -> None:
-        for record in self.api_keys.values():
-            if record.user_id == user_id:
-                self._sync_auth_api_key_record(record)
-
-    def _refresh_auth_api_keys_for_group(self, group_id: str) -> None:
-        impacted_users = sorted(
-            user_id
-            for user_id, record in self.users.items()
-            if group_id in record.groups
+        record = self.users[user_id]
+        self._idam_auth.sync_identity_roles(
+            user_id,
+            self._effective_user_roles(user_id) or record.roles,
+            enabled=record.enabled,
         )
-        for user_id in impacted_users:
-            self._refresh_auth_api_keys_for_user(user_id)
+
+    def _sync_auth_group(self, group_id: str) -> None:
+        for user_id, record in self.users.items():
+            if group_id in record.groups:
+                self._sync_auth_user(user_id)
 
     def _sync_idam_user(self, user_id: str) -> None:
         if self._idam_users is None or IDAMUser is None or IDAMUserStatus is None:
+            self._sync_auth_user(user_id)
             return
         record = self.users[user_id]
         existing = self._idam_users.get(user_id)
@@ -1264,6 +1259,7 @@ class IndexService:
                     email="",
                 )
             )
+            self._sync_auth_user(user_id)
             return
         self._idam_users.update(
             user_id,
@@ -1272,6 +1268,7 @@ class IndexService:
             role=primary_role,
             status=status,
         )
+        self._sync_auth_user(user_id)
 
     def _sync_idam_group(self, group_id: str) -> None:
         if self._idam_groups is None or IDAMGroup is None:
@@ -1743,7 +1740,6 @@ class IndexService:
         )
         self.users[user_id] = record
         self._sync_idam_user(user_id)
-        self._refresh_auth_api_keys_for_user(user_id)
         self.audit_logger.log_admin_action(
             actor=actor,
             roles=roles,
@@ -1784,7 +1780,6 @@ class IndexService:
         if "enabled" in payload:
             record.enabled = bool(payload["enabled"])
         self._sync_idam_user(user_id)
-        self._refresh_auth_api_keys_for_user(user_id)
         self.audit_logger.log_admin_action(
             actor=actor,
             roles=roles,
@@ -1812,7 +1807,6 @@ class IndexService:
             raise KeyError(user_id)
         if self._idam_users is not None:
             self._idam_users.disable(user_id)
-        self._refresh_auth_api_keys_for_user(user_id)
         self.audit_logger.log_admin_action(
             actor=actor,
             roles=roles,
@@ -1864,7 +1858,7 @@ class IndexService:
         )
         self.groups[group_id] = record
         self._sync_idam_group(group_id)
-        self._refresh_auth_api_keys_for_group(group_id)
+        self._sync_auth_group(group_id)
         self.audit_logger.log_admin_action(
             actor=actor,
             roles=roles,
@@ -1905,7 +1899,7 @@ class IndexService:
             record.description = str(payload["description"])
         self._sync_idam_group(group_id)
         for member in sorted(prior_members.union(record.members)):
-            self._refresh_auth_api_keys_for_user(member)
+            self._sync_auth_user(member)
         self.audit_logger.log_admin_action(
             actor=actor,
             roles=roles,
@@ -1933,7 +1927,7 @@ class IndexService:
         if self.groups.pop(group_id, None) is None:
             raise KeyError(group_id)
         for member in sorted(prior_members):
-            self._refresh_auth_api_keys_for_user(member)
+            self._sync_auth_user(member)
         self.audit_logger.log_admin_action(
             actor=actor,
             roles=roles,
@@ -1956,7 +1950,6 @@ class IndexService:
         records: list[dict[str, Any]] = []
         for key_id in sorted(self.api_keys.keys()):
             record = self.api_keys[key_id]
-            token_hash = sha256(record.token.encode("utf-8")).hexdigest()
             records.append(
                 {
                     "key_id": record.key_id,
@@ -1965,8 +1958,9 @@ class IndexService:
                     "capabilities": sorted(record.capabilities),
                     "user_id": record.user_id,
                     "revoked": record.revoked,
-                    "token_length": len(record.token),
-                    "sha256_prefix": token_hash[:12],
+                    "token_length": record.token_length,
+                    "sha256_prefix": record.token_hash[:12],
+                    "masked": f"{record.token_prefix}...{record.token_hash[:6]}",
                 }
             )
         return records
@@ -1988,7 +1982,17 @@ class IndexService:
         if self._idam_api_keys is not None:
             owner_id = str(payload.get("user_id") or actor or "api-key-owner")
             generated_token, metadata = self._idam_api_keys.generate(owner_id)
-            token = token or generated_token
+            if token and IDAMApiKey is not None and idam_hash_api_key is not None:
+                self._idam_api_keys._keys[metadata.api_key_id] = IDAMApiKey(
+                    api_key_id=metadata.api_key_id,
+                    owner_user_id=owner_id,
+                    key_prefix=token[:3],
+                    key_hash=idam_hash_api_key(token),
+                    status="active",
+                    expires_at=metadata.expires_at,
+                )
+            else:
+                token = generated_token
             idam_key_id = metadata.api_key_id
         if not token:
             token = f"cd_{uuid4().hex}"
@@ -2007,9 +2011,12 @@ class IndexService:
                     if idam_role:
                         explicit_roles = [str(idam_role)]
         key_roles = set(str(item) for item in (explicit_roles or ["reader"]))
+        token_hash = sha256(token.encode("utf-8")).hexdigest()
         record = ApiKeyRecord(
             key_id=key_id,
-            token=token,
+            token_hash=token_hash,
+            token_prefix=token[:3],
+            token_length=len(token),
             label=str(payload.get("label", key_id)),
             roles=key_roles,
             capabilities=set(str(item) for item in payload.get("capabilities", [])),
@@ -2018,15 +2025,17 @@ class IndexService:
         self.api_keys[key_id] = record
         if idam_key_id:
             self._idam_api_key_refs[key_id] = idam_key_id
-        self._sync_auth_api_key_record(record)
+        if record.user_id:
+            self._sync_auth_user(record.user_id)
         created = {
             "key_id": record.key_id,
-            "token": record.token,
+            "token": token,
             "label": record.label,
             "roles": sorted(record.roles),
             "capabilities": sorted(record.capabilities),
             "user_id": record.user_id,
             "revoked": record.revoked,
+            "masked": f"{record.token_prefix}...{record.token_hash[:6]}",
         }
         self.audit_logger.log_admin_action(
             actor=actor,
@@ -2057,7 +2066,6 @@ class IndexService:
         idam_key_id = self._idam_api_key_refs.get(key_id, "")
         if self._idam_api_keys is not None and idam_key_id:
             self._idam_api_keys.revoke(idam_key_id)
-        self._sync_auth_api_key_record(record)
         result = {
             "key_id": record.key_id,
             "label": record.label,
@@ -2104,29 +2112,18 @@ class IndexService:
 
         revoked_key_ids: list[str] = []
         for key_id, record in sorted(self.api_keys.items()):
-            token_hash = sha256(record.token.encode("utf-8")).hexdigest()
-            if token_hash.startswith(prefix):
+            if record.token_hash.startswith(prefix):
                 if not record.revoked:
                     record.revoked = True
                     revoked_key_ids.append(key_id)
                 idam_key_id = self._idam_api_key_refs.get(key_id, "")
                 if self._idam_api_keys is not None and idam_key_id:
                     self._idam_api_keys.revoke(idam_key_id)
-                self._sync_auth_api_key_record(record)
-
-        orphaned_tokens_revoked = 0
-        if self._auth_api_keys_bound:
-            for token in list(self._auth_api_keys.keys()):
-                token_hash = sha256(token.encode("utf-8")).hexdigest()
-                if token_hash.startswith(prefix):
-                    self._auth_api_keys.pop(token, None)
-                    orphaned_tokens_revoked += 1
 
         result = {
             "sha256_prefix": prefix,
             "revoked_key_ids": revoked_key_ids,
-            "orphaned_tokens_revoked": orphaned_tokens_revoked,
-            "revoked_count": len(revoked_key_ids) + orphaned_tokens_revoked,
+            "revoked_count": len(revoked_key_ids),
         }
         self.audit_logger.log_admin_action(
             actor=actor,
@@ -2467,8 +2464,14 @@ class IndexService:
     def _validate_source_config_policy(source_type: str, uri: str) -> None:
         """Validate connector policy before a source config can be stored."""
         normalised_type = str(source_type or "").strip().lower()
-        if normalised_type not in {"filesystem", "http", "s3", "webdav", "ftp", "gdrive"}:
+        if normalised_type not in {"filesystem", "http", "s3", "webdav", "ftp", "gdrive", "text"}:
             raise ValueError(f"Unsupported source type: {source_type!r}")
+        if normalised_type == "text":
+            from urllib.parse import urlparse
+            parsed = urlparse(uri)
+            if parsed.scheme != "text":
+                raise ValueError(f"Invalid text source URI scheme: {parsed.scheme}")
+            return
         if normalised_type == "gdrive":
             from index_tools.connectors.gdrive import resolve as gdrive_resolve
             _ = gdrive_resolve(uri)
@@ -2642,13 +2645,12 @@ class IndexService:
                 raise KeyError(entity_id)
             self.users[entity_id].roles.add(target_role)
             self._sync_idam_user(entity_id)
-            self._refresh_auth_api_keys_for_user(entity_id)
         elif entity_type == "group":
             if entity_id not in self.groups:
                 raise KeyError(entity_id)
             self.groups[entity_id].roles.add(target_role)
             self._sync_idam_group(entity_id)
-            self._refresh_auth_api_keys_for_group(entity_id)
+            self._sync_auth_group(entity_id)
         else:
             raise ValueError(f"Unsupported RBAC entity type: {entity_type}")
         binding = {"entity_type": entity_type, "entity_id": entity_id, "role": target_role}
@@ -2686,13 +2688,12 @@ class IndexService:
                 raise KeyError(entity_id)
             self.users[entity_id].roles.discard(target_role)
             self._sync_idam_user(entity_id)
-            self._refresh_auth_api_keys_for_user(entity_id)
         elif entity_type == "group":
             if entity_id not in self.groups:
                 raise KeyError(entity_id)
             self.groups[entity_id].roles.discard(target_role)
             self._sync_idam_group(entity_id)
-            self._refresh_auth_api_keys_for_group(entity_id)
+            self._sync_auth_group(entity_id)
         else:
             raise ValueError(f"Unsupported RBAC entity type: {entity_type}")
         binding = {"entity_type": entity_type, "entity_id": entity_id, "role": target_role}

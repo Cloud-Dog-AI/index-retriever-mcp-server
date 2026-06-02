@@ -12,11 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""RBAC enforcement via cloud_dog_idam (PS-70 compliant).
-
-W28A-703: Replaced bespoke RbacAuthoriser fallback with direct
-cloud_dog_idam.rbac.RBACEngine usage. Added AuditEmitter for IDAM events.
-"""
+"""RBAC enforcement via cloud_dog_idam (PS-70 compliant)."""
 
 from __future__ import annotations
 
@@ -42,33 +38,23 @@ audit_emitter = AuditEmitter(also_log_to_memory=True)
 class RbacAuthoriser:
     """RBAC wrapper fully backed by cloud_dog_idam.rbac.RBACEngine."""
 
-    def __init__(self, role_actions: dict[str, list[str]], default_deny: bool = True) -> None:
-        self.role_actions = {role: set(actions) for role, actions in role_actions.items()}
+    def __init__(self, role_permissions: dict[str, list[str]], default_deny: bool = True) -> None:
+        self.role_permissions = {role: set(permissions) for role, permissions in role_permissions.items()}
         self.default_deny = default_deny
-        self._engine = RBACEngine(role_permissions=self.role_actions)
+        self._engine = RBACEngine(role_permissions=self.role_permissions)
 
-    def is_allowed(self, subject: Subject, action: str) -> bool:
-        """Check if subject is allowed to perform action via RBACEngine."""
+    def is_allowed(self, subject: Subject, permission: str) -> bool:
+        """Check if subject has a permission via RBACEngine."""
         for role in subject.roles:
             self._engine.assign_role_to_user(subject.user_id, role)
 
-        effective_roles = self._engine.get_effective_roles(subject.user_id)
-
-        for role in effective_roles:
-            actions = self.role_actions.get(role, set())
-            if "*" in actions or action in actions:
-                return True
-            # Wildcard prefix matching (e.g., "mail_*" matches "mail_search")
-            if action.count("_"):
-                prefix = action.split("_", 1)[0] + "_*"
-                if prefix in actions:
-                    return True
-
-        allowed = not self.default_deny and bool(effective_roles)
+        allowed = self._engine.has_permission(subject.user_id, permission)
+        if not allowed and not self.default_deny:
+            allowed = bool(self._engine.get_effective_roles(subject.user_id))
         if not allowed:
             audit_emitter.emit(AuditEvent(
                 actor_id=subject.user_id,
-                action=action,
+                action=permission,
                 target="index:rbac",
                 outcome="denied",
                 details={"roles": sorted(subject.roles)},

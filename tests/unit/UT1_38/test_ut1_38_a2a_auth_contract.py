@@ -24,20 +24,21 @@ def test_a2a_api_key_validation_parity(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TEST_A2A_API_KEY", "12345678")
     auth = AuthMiddleware()
 
-    via_header = auth.authenticate_api_key({"x-api-key": "12345678"})
-    via_bearer = auth.authenticate_api_key({"authorization": "Bearer 12345678"})
-    via_auth = auth.authenticate({"authorization": "Bearer 12345678"})
+    via_header = auth.api_key_identity({"x-api-key": "12345678"})
+    via_bearer = auth.api_key_identity({"authorization": "Bearer 12345678"})
+    via_auth = auth.identity_from_headers({"authorization": "Bearer 12345678"})
 
     assert via_header.token_type == "api_key"
     assert via_bearer.token_type == "api_key"
     assert via_auth.token_type == "api_key"
-    assert via_header.roles == via_bearer.roles == via_auth.roles
+    assert via_header.roles == via_bearer.roles == via_auth.roles == {"admin"}
+    assert "*" in via_header.permissions
 
 
 def test_a2a_api_key_invalid_rejected() -> None:
     auth = AuthMiddleware(api_keys={"12345678": {"admin"}})
     with pytest.raises(PermissionError):
-        auth.authenticate_api_key({"authorization": "Bearer wrong"})
+        auth.api_key_identity({"authorization": "Bearer wrong"})
 
 
 def test_api_key_env_mapping_parses_roles_and_skips_empty(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -45,11 +46,13 @@ def test_api_key_env_mapping_parses_roles_and_skips_empty(monkeypatch: pytest.Mo
     monkeypatch.delenv("TEST_A2A_API_KEY", raising=False)
 
     auth = AuthMiddleware()
-    scoped = auth.authenticate_api_key({"x-api-key": "scoped-key"})
-    bare = auth.authenticate_api_key({"x-api-key": "bare-key"})
+    scoped = auth.api_key_identity({"x-api-key": "scoped-key"})
+    bare = auth.api_key_identity({"x-api-key": "bare-key"})
 
-    assert scoped.roles == {"reader", "writer"}
-    assert bare.roles == {"admin", "maintainer", "writer", "reader"}
+    assert scoped.roles == {"viewer", "user"}
+    assert {"collection.read", "collection.write"}.issubset(scoped.permissions)
+    assert bare.roles == {"admin"}
+    assert "*" in bare.permissions
 
 
 def test_role_specific_api_key_env_mapping_separates_rbac_roles(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -61,21 +64,19 @@ def test_role_specific_api_key_env_mapping_separates_rbac_roles(monkeypatch: pyt
 
     auth = AuthMiddleware()
 
-    assert auth.authenticate_api_key({"x-api-key": "admin-role-key"}).roles == {
-        "admin",
-        "maintainer",
-        "writer",
-        "reader",
-    }
-    assert auth.authenticate_api_key({"x-api-key": "writer-role-key"}).roles == {"writer", "reader"}
-    assert auth.authenticate_api_key({"x-api-key": "reader-role-key"}).roles == {"reader"}
+    assert auth.api_key_identity({"x-api-key": "admin-role-key"}).roles == {"admin"}
+    assert "*" in auth.api_key_identity({"x-api-key": "admin-role-key"}).permissions
+    assert auth.api_key_identity({"x-api-key": "writer-role-key"}).roles == {"user"}
+    assert "collection.write" in auth.api_key_identity({"x-api-key": "writer-role-key"}).permissions
+    assert auth.api_key_identity({"x-api-key": "reader-role-key"}).roles == {"viewer"}
+    assert auth.api_key_identity({"x-api-key": "reader-role-key"}).permissions == {"collection.read"}
 
 
 def test_auth_middleware_refreshes_provider_after_runtime_key_update() -> None:
     auth = AuthMiddleware(api_keys={"bootstrap-key": {"admin"}})
-    auth.api_keys["fresh-key"] = {"admin"}
+    auth.register_api_key("fresh-key", roles={"admin"})
 
-    refreshed = auth.authenticate_api_key({"x-api-key": "fresh-key"})
+    refreshed = auth.api_key_identity({"x-api-key": "fresh-key"})
 
     assert refreshed.token_type == "api_key"
     assert refreshed.roles == {"admin"}
