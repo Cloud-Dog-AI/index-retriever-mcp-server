@@ -26,6 +26,27 @@ GENERIC_CA_CERT="custom-ca.crt"
 CERT_ARG=""
 PIP_CONF=".pip.conf.build"
 
+# ── Publication tag isolation (W28A-831) ──────────────────────────
+# PUBLICATION_TAG_SUFFIX appends an isolation suffix (e.g. gitea-test,
+# github-test) so publication test images never collide with dev/preprod/
+# release tags. Empty (the default) leaves behaviour unchanged.
+PUBLICATION_TAG_SUFFIX="${PUBLICATION_TAG_SUFFIX:-}"
+if [[ -n "${PUBLICATION_TAG_SUFFIX}" ]]; then
+  if [[ ! "${PUBLICATION_TAG_SUFFIX}" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]]; then
+    echo "ERROR: PUBLICATION_TAG_SUFFIX must match ^[a-z0-9]([a-z0-9-]*[a-z0-9])?\$ (got: '${PUBLICATION_TAG_SUFFIX}')" >&2
+    exit 2
+  fi
+  case "${PUBLICATION_TAG_SUFFIX}" in
+    latest|dev|preprod|prod|release|stable)
+      echo "ERROR: PUBLICATION_TAG_SUFFIX '${PUBLICATION_TAG_SUFFIX}' is reserved" >&2
+      exit 2 ;;
+  esac
+  EFFECTIVE_TAG="${VERSION}-${PUBLICATION_TAG_SUFFIX}"
+  echo "Publication test build: tag suffix '-${PUBLICATION_TAG_SUFFIX}' (internal registry tag will be skipped)."
+else
+  EFFECTIVE_TAG="${VERSION}"
+fi
+
 cleanup() {
   rm -f "${PIP_CONF}" "./${GENERIC_CA_CERT}"
 }
@@ -92,6 +113,16 @@ if [[ -f "${CUSTOM_CA_CERT}" ]]; then
 fi
 
 # ── Build ────────────────────────────────────────────────────────
+if [[ -n "${PUBLICATION_DRY_RUN:-}" ]]; then
+  echo "DRY-RUN: build tag = ${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
+  if [[ -z "${PUBLICATION_TAG_SUFFIX}" ]]; then
+    echo "DRY-RUN: registry tag = ${REGISTRY}/${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
+  else
+    echo "DRY-RUN: registry tag = (skipped — publication suffix '${PUBLICATION_TAG_SUFFIX}' set)"
+  fi
+  exit 0
+fi
+
 DOCKER_BUILDKIT=1 docker buildx build \
   --progress=plain \
   --network=host \
@@ -105,16 +136,20 @@ DOCKER_BUILDKIT=1 docker buildx build \
   --build-arg http_proxy="${http_proxy:-}" \
   --build-arg https_proxy="${https_proxy:-}" \
   --build-arg no_proxy="${no_proxy:-}" \
-  -t "${FOLDER}/${CONTAINER}:${VERSION}" \
+  -t "${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}" \
   . 2>&1 | tee docker-build.log
 
 BUILD_STATUS=${PIPESTATUS[0]}
 
 if [[ ${BUILD_STATUS} -eq 0 ]]; then
-  echo "Build OK: ${FOLDER}/${CONTAINER}:${VERSION}"
-  docker tag "${FOLDER}/${CONTAINER}:${VERSION}" \
-    "${REGISTRY}/${FOLDER}/${CONTAINER}:${VERSION}"
-  echo "Tagged: ${REGISTRY}/${FOLDER}/${CONTAINER}:${VERSION}"
+  echo "Build OK: ${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
+  if [[ -z "${PUBLICATION_TAG_SUFFIX}" ]]; then
+    docker tag "${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}" \
+      "${REGISTRY}/${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
+    echo "Tagged: ${REGISTRY}/${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
+  else
+    echo "Publication test image (suffix=${PUBLICATION_TAG_SUFFIX}); internal registry tag skipped (W28A-831 isolation)."
+  fi
 else
   echo "Build FAILED — see docker-build.log"
 fi

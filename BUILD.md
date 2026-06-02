@@ -91,3 +91,18 @@ export VAULT_TOKEN=your-token
 export VAULT_MOUNT_POINT=your-mount
 export VAULT_CONFIG_PATH=your-path
 ```
+
+## Publication test tag isolation (W28A-831)
+
+`docker-build.sh` honours `PUBLICATION_TAG_SUFFIX` for building isolated
+publication **test** images that never collide with dev/preprod/release tags
+(default unset ⇒ behaviour unchanged):
+
+```bash
+PUBLICATION_TAG_SUFFIX=gitea-test ./docker-build.sh <version>
+# builds <image>:<version>-gitea-test; internal registry tag is skipped
+```
+
+- Preview only: `PUBLICATION_DRY_RUN=1 PUBLICATION_TAG_SUFFIX=gitea-test ./docker-build.sh <version>`
+- Cleanup: `cdci/scripts/publication-test-cleanup.sh gitea-test`
+- Full reference: `cdci/docs/PUBLICATION-TAG-ISOLATION.md`
