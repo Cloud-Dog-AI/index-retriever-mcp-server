@@ -7,11 +7,11 @@
 ### Prerequisites
 - Python `3.11+`
 - Access to `https://<internal-pypi>/simple/`
-- Vault bootstrap env file: `<workspace>/env-vault`
+- Vault bootstrap env file: `<your-vault-env-file>`
 
 ### Install
 ```bash
-set -a; source <workspace>/env-vault; set +a
+set -a; source <your-vault-env-file>; set +a
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]" --index-url https://<internal-pypi>/simple/
