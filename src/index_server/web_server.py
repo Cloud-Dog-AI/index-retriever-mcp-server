@@ -206,17 +206,43 @@ def build_web_app() -> object:
         }
         body = await request.body()
         json_body: Any = None
+        content_type = headers.get("content-type", "")
         if body:
-            content_type = headers.get("content-type", "")
             if "application/json" in content_type:
                 try:
                     json_body = json.loads(body)
                 except json.JSONDecodeError:
                     json_body = None
 
+        proxy_path = path if path.startswith("/") else f"/{path}"
+        if body and json_body is None and request.method.upper() in {"POST", "PUT", "PATCH"}:
+            async with httpx.AsyncClient(
+                base_url=api_base_url,
+                verify=False,
+                timeout=60,
+                cookies=dict(request.cookies),
+            ) as client:
+                raw_response = await client.request(
+                    request.method,
+                    proxy_path,
+                    content=body,
+                    params=dict(request.query_params),
+                    headers=headers,
+                )
+            return Response(
+                content=raw_response.content,
+                status_code=raw_response.status_code,
+                media_type=raw_response.headers.get("content-type", "application/json"),
+                headers={
+                    key: value
+                    for key, value in raw_response.headers.items()
+                    if key.lower() not in {"content-length", "transfer-encoding"}
+                },
+            )
+
         result = await proxy.request(
             request.method,
-            path if path.startswith("/") else f"/{path}",
+            proxy_path,
             json=json_body,
             params=dict(request.query_params),
             headers=headers,

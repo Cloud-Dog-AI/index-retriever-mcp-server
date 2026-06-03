@@ -39,6 +39,7 @@ from cloud_dog_vdb.metadata.identity import compute_content_hash, normalise_sour
 from cloud_dog_vdb.metadata.provenance import merge_provenance
 from cloud_dog_vdb.metadata.schema import validate_metadata
 from cloud_dog_storage import path_utils
+from sqlalchemy.exc import IntegrityError, OperationalError
 
 from index_tools.audit.logger import AuditLogger
 from index_tools.embeddings.adapter import EmbeddingAdapter
@@ -3230,26 +3231,47 @@ class IndexService:
         elif resolved_job_type == "retention_run":
             payload["older_than_days"] = 0
 
-        queued_job = self.queue.enqueue(
-            JobRecord(
-                job_id=evidence_id,
-                profile=resolved_profile,
-                collection=resolved_collection,
-                job_type=resolved_job_type,
-                server_id=self.queue.server_id,
-                request_source="mcp",
-                request_auth_method="api_key",
-                request_auth_identity=actor_id,
-                user_id=actor_id,
-            ),
-            payload=payload,
-            actor=actor_id,
-        )
+        def retry_sqlite_lock(fn: Any) -> Any:
+            last_exc: OperationalError | None = None
+            for attempt in range(10):
+                try:
+                    return fn()
+                except OperationalError as exc:
+                    if "database is locked" not in str(exc).lower():
+                        raise
+                    last_exc = exc
+                    time.sleep(0.15 * (attempt + 1))
+            assert last_exc is not None
+            raise last_exc
+
+        try:
+            queued_job = retry_sqlite_lock(lambda: self.queue.enqueue(
+                JobRecord(
+                    job_id=evidence_id,
+                    profile=resolved_profile,
+                    collection=resolved_collection,
+                    job_type=resolved_job_type,
+                    server_id=self.queue.server_id,
+                    request_source="mcp",
+                    request_auth_method="api_key",
+                    request_auth_identity=actor_id,
+                    user_id=actor_id,
+                ),
+                payload=payload,
+                actor=actor_id,
+            ))
+        except IntegrityError as exc:
+            if "unique constraint failed: jobs.job_id" not in str(exc).lower():
+                raise
+            queued_job = self.queue.get(evidence_id)
         worker_id = f"w28a-693-{resolved_outcome}"
-        if not self.queue._backend.claim(queued_job.job_id, self.queue.server_id, worker_id):
+        if not retry_sqlite_lock(lambda: self.queue._backend.claim(queued_job.job_id, self.queue.server_id, worker_id)):
             raise RuntimeError(f"Could not claim lifecycle evidence job {queued_job.job_id}")
-        self.queue._transition(
-            queued_job.job_id,
+
+        def transition_with_retry(**kwargs: Any) -> JobRecord:
+            return retry_sqlite_lock(lambda: self.queue._transition(queued_job.job_id, **kwargs))
+
+        transition_with_retry(
             status=JobStatus.dispatched,
             phase="dispatched",
             percentage=15,
@@ -3258,8 +3280,7 @@ class IndexService:
             claimed_by=f"{self.queue.server_id}:{worker_id}",
             audit_action="dispatch",
         )
-        self.queue._transition(
-            queued_job.job_id,
+        transition_with_retry(
             status=JobStatus.running,
             phase="running",
             percentage=20,
@@ -3274,8 +3295,7 @@ class IndexService:
 
         now = datetime.now(timezone.utc)  # noqa: UP017
         if resolved_outcome == "succeeded":
-            final_job = self.queue._transition(
-                queued_job.job_id,
+            final_job = transition_with_retry(
                 status=JobStatus.succeeded,
                 phase="succeeded",
                 percentage=100,
@@ -3286,8 +3306,7 @@ class IndexService:
                 audit_action="complete",
             )
         elif resolved_outcome == "failed":
-            final_job = self.queue._transition(
-                queued_job.job_id,
+            final_job = transition_with_retry(
                 status=JobStatus.failed,
                 phase="failed",
                 percentage=100,
@@ -3302,8 +3321,7 @@ class IndexService:
                 audit_action="fail",
             )
         elif resolved_outcome == "retry_wait":
-            final_job = self.queue._transition(
-                queued_job.job_id,
+            final_job = transition_with_retry(
                 status=JobStatus.retry_wait,
                 phase="retry_wait",
                 percentage=25,

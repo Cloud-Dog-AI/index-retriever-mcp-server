@@ -100,6 +100,186 @@ require_docker() {
   fi
 }
 
+prepare_compose_env_file() {
+  local runtime_env="$1"
+  local env_hash
+  local compose_env
+
+  env_hash="$(sha256sum "$runtime_env" | awk '{print $1}')"
+  compose_env="${STATE_DIR}/compose-env-${env_hash}.env"
+  if [[ -f "$compose_env" ]]; then
+    printf '%s\n' "$compose_env"
+    return 0
+  fi
+
+  umask 077
+  python3 - "$runtime_env" "$compose_env" <<'PY'
+from __future__ import annotations
+
+import os
+import re
+import sys
+from pathlib import Path
+
+VAULT_REF_PATTERN = re.compile(r"^\$\{(vault\.[^}]+)\}$")
+
+try:
+    from cloud_dog_config.compiler.vault_resolver import resolve_vault_identifier
+    from cloud_dog_config.vault.client import VaultClient, VaultConnectionConfig
+except Exception:
+    resolve_vault_identifier = None
+    VaultClient = None
+    VaultConnectionConfig = None
+
+
+def resolve_value(raw: str) -> str:
+    value = raw.strip()
+    match = VAULT_REF_PATTERN.match(value)
+    if match is None:
+        return value
+    if resolve_vault_identifier is None or VaultClient is None or VaultConnectionConfig is None:
+        return value
+
+    addr = os.environ.get("VAULT_ADDR", "").strip()
+    token = os.environ.get("VAULT_TOKEN", "").strip()
+    if not addr or not token:
+        return value
+
+    mount = os.environ.get("VAULT_MOUNT_POINT", "").strip().strip("/")
+    config_path = os.environ.get("VAULT_CONFIG_PATH", "").strip().strip("/")
+    if config_path:
+        mount = "/".join(part for part in (mount, config_path) if part)
+
+    try:
+        client = VaultClient(
+            VaultConnectionConfig(
+                server=addr,
+                token=token,
+                timeout_seconds=10.0,
+                mount_point=mount,
+            )
+        )
+        resolved = resolve_vault_identifier(match.group(1), vault=client)
+    except Exception:
+        return value
+
+    if isinstance(resolved, (str, int, float, bool)):
+        text = str(resolved).strip()
+        if text:
+            return text
+    return value
+
+
+def parse_env_file(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        if line.startswith("export "):
+            line = line[7:].strip()
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", key):
+            continue
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        values[key] = resolve_value(value)
+    return values
+
+
+runtime_env = Path(sys.argv[1]).resolve()
+target = Path(sys.argv[2]).resolve()
+values = parse_env_file(runtime_env)
+
+for key in (
+    "VAULT_ADDR",
+    "VAULT_TOKEN",
+    "VAULT_MOUNT_POINT",
+    "VAULT_CONFIG_PATH",
+    "CLOUD_DOG_TLS_CA_BUNDLE",
+    "REQUESTS_CA_BUNDLE",
+    "SSL_CERT_FILE",
+    "CURL_CA_BUNDLE",
+):
+    if os.environ.get(key) and not values.get(key):
+        values[key] = os.environ[key]
+
+target.parent.mkdir(parents=True, exist_ok=True)
+with target.open("w", encoding="utf-8") as handle:
+    for key in sorted(values):
+        value = values[key]
+        value = value.replace("\n", "\\n")
+        handle.write(f"{key}={value}\n")
+PY
+
+  chmod 600 "$compose_env"
+  printf '%s\n' "$compose_env"
+}
+
+prepare_pip_conf_file() {
+  local pip_conf="${STATE_DIR}/pip.conf.compose"
+  local pypi_url="${PYPI_URL:-https://pypi.cloud-dog.net/simple/}"
+  local pypi_username="${PYPI_USERNAME:-}"
+  local pypi_password="${PYPI_PASSWORD:-}"
+
+  if [[ -f "$pip_conf" ]]; then
+    printf '%s\n' "$pip_conf"
+    return 0
+  fi
+
+  if [[ -z "$pypi_username" || -z "$pypi_password" ]]; then
+    if [[ -f /opt/iac/Development/cloud-dog-ai/env-vault ]]; then
+      set -a
+      # shellcheck disable=SC1091
+      source /opt/iac/Development/cloud-dog-ai/env-vault
+      set +a
+    fi
+    if [[ -n "${VAULT_ADDR:-}" && -n "${VAULT_TOKEN:-}" && -n "${VAULT_MOUNT_POINT:-}" && -n "${VAULT_CONFIG_PATH:-}" ]]; then
+      local vault_json
+      vault_json="$(curl -fsS -H "X-Vault-Token: ${VAULT_TOKEN}" "${VAULT_ADDR}/v1/${VAULT_MOUNT_POINT}/data/${VAULT_CONFIG_PATH}" 2>/dev/null || echo "{}")"
+      pypi_username="$(printf '%s' "$vault_json" | python3 -c "
+import json,sys
+root=json.load(sys.stdin).get('data',{}).get('data',{})
+blob=root.get('json','{}')
+parsed=json.loads(blob) if isinstance(blob,str) else blob
+d=parsed.get('dev',{}) or root.get('dev',{})
+print(d.get('repository',{}).get('pypi',{}).get('username',''))
+" 2>/dev/null || echo "")"
+      pypi_password="$(printf '%s' "$vault_json" | python3 -c "
+import json,sys
+root=json.load(sys.stdin).get('data',{}).get('data',{})
+blob=root.get('json','{}')
+parsed=json.loads(blob) if isinstance(blob,str) else blob
+d=parsed.get('dev',{}) or root.get('dev',{})
+print(d.get('repository',{}).get('pypi',{}).get('password',''))
+" 2>/dev/null || echo "")"
+    fi
+  fi
+
+  umask 077
+  if [[ -n "$pypi_username" && -n "$pypi_password" ]]; then
+    cat > "$pip_conf" <<EOF
+[global]
+extra-index-url = https://${pypi_username}:${pypi_password}@${pypi_url#https://}
+trusted-host = $(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${pypi_url}').hostname or 'pypi.cloud-dog.net')")
+               pypi.org
+               files.pythonhosted.org
+EOF
+  else
+    cat > "$pip_conf" <<EOF
+[global]
+extra-index-url = ${pypi_url}
+trusted-host = $(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${pypi_url}').hostname or 'pypi.cloud-dog.net')")
+               pypi.org
+               files.pythonhosted.org
+EOF
+  fi
+  chmod 600 "$pip_conf"
+  printf '%s\n' "$pip_conf"
+}
+
 load_state() {
   if [[ -f "$STATE_FILE" ]]; then
     # shellcheck disable=SC1090
@@ -131,8 +311,12 @@ compose_cmd() {
   local runtime_env="$1"
   local compose_file="$2"
   local project_name="$3"
+  local compose_env
+  local pip_conf
   shift 3
-  ENV_FILE="$runtime_env" docker compose -f "$compose_file" --project-name "$project_name" "${COMPOSE_PROFILE_ARGS[@]}" --env-file "$runtime_env" "$@"
+  compose_env="$(prepare_compose_env_file "$runtime_env")"
+  pip_conf="$(prepare_pip_conf_file)"
+  ENV_FILE="$compose_env" PIP_CONF_FILE="$pip_conf" docker compose -f "$compose_file" --project-name "$project_name" "${COMPOSE_PROFILE_ARGS[@]}" --env-file "$compose_env" "$@"
 }
 
 split_services() {
