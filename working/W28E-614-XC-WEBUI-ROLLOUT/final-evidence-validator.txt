@@ -1,37 +1,78 @@
 W28E-614 — Final Evidence Validator
 ====================================
 
-Run: 2026-06-04T08:55:45+01:00
+Run: 2026-06-04T (post-SENDBACK remediation)
 Lane: W28E-614 — index-retriever XC WebUI rollout
-Worktree: /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-svc/
-Branch: w28e-614-index-retriever-xc
-HEAD: 2992839014a38d11088db93a5c9fbd4d461adad2
+Service worktree: /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-svc/
+Service branch: w28e-614-index-retriever-xc
+Service HEAD (substantive-fix): eb22365adae9fc36f98c17bd4455fe21abcaf784
+UI worktree: /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/
+UI branch: w28e-614-index-retriever-ui
+UI HEAD: cda9f6cc6e22c3716c1550f02b108922b5aca012
+
+Mandatory reading proof:
+  00-reading-proof.md present                  : YES
+  RULES.md re-read for this lane               : YES
+  AGENT-LESSONS.md re-read for this lane       : YES
+  >=5 lane-specific reading-proof answers      : YES (5 quoted from RULES + AGENT-LESSONS with applied notes)
 
 Requirements map:
-  rows total: 24
-  rows PASS:  24
+  rows total: 25
+  rows PASS:  25
   rows non-PASS: 0
+  (00-READING-PROOF, XC-001, XC-003, XC-004, XC-005, XC-009, XC-010,
+   CX-101, CX-102, CX-103, CX-104, CX-110, CX-120, CX-130, CX-131, CX-140,
+   CX-150, CX-160, CX-170, CX-180, LIVE-AUTH, DOCKER-BUILD, DEPLOY,
+   ESTATE-SMOKE, ESTATE-WEBUI-BROWSER)
+
+Closeout artefacts (COMMON-FINAL-EVIDENCE-CLOSEOUT-CONTROLS.md §1, §4, §5, §7):
+  00-reading-proof.md                          : PRESENT
+  requirements-map.tsv                         : PRESENT (25 rows, all PASS, all with raw_artefact + observed)
+  touched-paths-manifest.tsv                   : PRESENT
+  external-dirty-ledger.tsv                    : PRESENT (no external dirty rows)
+  scoped-clean-proof.txt                       : PRESENT (service + UI scoped paths empty)
+  remote-proof.txt                             : PRESENT (both branches pushed; tag intent documented)
+  CHECKSUMS.sha256                             : PRESENT
+  CHECKSUMS-replay.txt                         : PRESENT (sha256sum -c replay against current files; PASS)
+  final-report.md                              : PRESENT
+  final-evidence-validator.txt                 : PRESENT (this file)
 
 Live verification:
-  /health:              HTTP 200 (db ok, vdb=qdrant ok, embedding=ollama ok)
-  /version:             HTTP 200 returning {"version":"dev",...} (XC-001 met)
-  /admin/roles:         HTTP 200 (CX-110 SPA route)
-  /diagnostics-audit:   HTTP 200 (XC-005 SPA route)
-  /settings:            HTTP 200 (XC-009 SPA route)
-  Playwright:           28/28 PASS against https://indexretriever0.cloud-dog.net
-  Estate health smoke:  9/9 services HTTP 200
-  Estate WebUI smoke:   9/9 services Chromium 200 + #root mount + no fatal console errors
+  /health:                  HTTP 200 (db ok, vdb=qdrant ok, embedding=ollama ok)
+  /version:                 HTTP 200 returning {"version":"dev","application":"index-retriever-mcp-server","surface":"web"} (XC-001 met)
+  /api/v1/admin/policies:   HTTP 200 returning {ok:true, roles:{admin,user,viewer}, permissions:[*,collection.read,collection.write,source.configure]} (CX-110 backend met)
+  /admin/policies:          HTTP 200 (CX-110 backward-compat path)
+  /admin/roles:             HTTP 200 (CX-110 SPA route)
+  /diagnostics-audit:       HTTP 200 (XC-005 SPA route)
+  /settings:                HTTP 200 (XC-009 SPA route)
+  Playwright (live):        37/37 PASS against https://indexretriever0.cloud-dog.net in 54.4s
+                             - w28e-614-xc-cx.spec.ts: 5 primary XC tests PASS
+                             - w28e-614-cx-coverage.spec.ts: 13 CX bundle-attestation tests PASS
+                             - w28e-614-cx-rows.spec.ts: 9 row-specific live CX tests PASS (NEW for SENDBACK)
+                             - w28e-614-estate-smoke.spec.ts: 9 §0B browser smoke tests + 1 misc = 10 PASS
+  Estate health smoke:      9/9 services HTTP 200
+  Estate WebUI smoke:       9/9 services Chromium 200 + #root mount + no fatal console errors (noise filter documented)
+
+§0B Preprod Deployment Estate Smoke Gate:
+  preprod-health-before-after.tsv              : PRESENT (all 9 services PASS before+after)
+  preprod-webui-smoke.tsv                      : PRESENT (all 9 services PASS)
+  preprod-deployment-target-proof.txt          : PRESENT (image id + digest + Terraform apply + live endpoints)
+  preprod-console-network-errors.json          : PRESENT (0 fatal console errors after documented filter; 0 5xx)
+  preprod-smoke-summary.md                     : PRESENT
+  Playwright JUnit/HTML/screenshots            : PRESENT (working/W28E-614-XC-WEBUI-ROLLOUT/playwright/w28e-614-r2.junit.xml + test-results screenshots)
+  No regression vs before                      : PASS
 
 Deployment proof:
-  Built image:           sha256:d922899338ac98a3e1c8c3fcff25077687bef4ebe96466f42cdf5a0432bfbc79
-  Registry push digest:  sha256:c5cb8a52100b71994bb9402fb69c5da9d996c0703092f72132e949b7495589cb (and later rounds for /admin/roles + /version)
-  Terraform apply:       4 rounds (r1-r4); final container running healthy
+  Built image (r5):         sha256:7972883b83b98b8b8a656ed70142c887b35e15df8a08ece8e604b17b3fc329d8
+  Registry push digest:     sha256:b346057bed7f57c9d765fa864947a44b6f7e4c7f6c735803b3a4dc69940ba86e
+  Terraform apply (r5):     2 added, 0 changed, 2 destroyed (docker_image.indexretriever + docker_container.indexretriever0); container id b30b4a9fa8de
 
 Hard-guard adherence:
-  PASS  no bespoke docker build (used docker-build.sh)
-  PASS  no SSH-based docker
-  PASS  no ${vault.*} or hard-coded secrets/hosts in config.yaml
+  PASS  no bespoke docker build (used docker-build.sh r1-r5)
+  PASS  no SSH-based docker (DOCKER_HOST=tcp://server2.viewdeck.com:2375 for builds, tcp://server0:2375 for tf apply)
+  PASS  no ${vault.*} or hard-coded secrets/hosts in service config.yaml
   PASS  no Shorewall/firewall edits
-  PASS  no curl-only WebUI proof (28 live Playwright tests + 9 Chromium browser smokes)
+  PASS  no curl-only WebUI proof (37 live Playwright + 9 Chromium browser smokes)
+  PASS  no coordinator-state edits outside this lane
 
 FINAL_EVIDENCE_VALIDATOR: PASS failures=0
