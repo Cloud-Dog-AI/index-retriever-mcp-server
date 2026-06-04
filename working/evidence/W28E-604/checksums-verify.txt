@@ -7,6 +7,8 @@ remote-proof.txt: OK
 touched-vdb.txt: OK
 touched-ir.txt: OK
 CLOSE-GATE.md: OK
+EVIDENCE-MATRIX.md: OK
+FINAL-TAG-VERIFICATION.txt: OK
 validate.sh: OK
 raw-checksums.sha256: OK
 final-evidence-validator.txt: OK

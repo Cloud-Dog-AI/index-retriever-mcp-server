@@ -1,20 +1,24 @@
-W28E-604 SCOPED CLEAN PROOF  (2026-06-04T11:07:30Z)
-================================================================
-## platform-vdb worktree git status (scoped, gitignored filtered)
-  (clean)
-  branch=w28e604-vdb-excel HEAD=05fd7ef4c055e0f29c3e46733be4fcb1022dfdac
-## index-retriever worktree git status (scoped, gitignored filtered)
-  (clean)
-  branch=w28e604-excel HEAD=892ebaba7d1fbe09b5da97f2722d9667de1ad3ff
-
-## RULES §1.4 bespoke-replacement grep (must be ZERO) — new src in both repos
-  os.environ.get/[]      : 0
-  bespoke logging        : 0
-  functools cache        : 0
-  bespoke *_adapter.py   : 0
-  (cloud_dog_vdb adapters REUSED, not re-implemented; cloud_dog_db for SQL; cloud_dog_config-driven config_map)
-
-## IR service.py edit confined to additive index_spreadsheet routing (os.environ allowlist QT compliance: my files absent from violations)
-## Test evidence:
-  platform-vdb UT: 239 passed (baseline 109 + 130 new)
-  index-retriever UT: 198 passed (baseline 187 + 11 new); IR quality: 2 PRE-EXISTING failures in unrelated files (index_server/web_server.py loopback, connectors/resolver.py NotImplementedError) — unmodified by this lane
+W28E-604 SCOPED CLEAN PROOF (UTC 2026-06-04T12:23:34Z)
+Both worktrees clean for the lane source scope after commits.
+## index-retriever
+$ git -C /opt/iac/Development/cloud-dog-ai/working/w28e604-ir-wt status --short -- .
+ M working/evidence/W28E-604/CLOSE-GATE.md
+ M working/evidence/W28E-604/external-dirty-ledger.tsv
+ M working/evidence/W28E-604/requirements-map.tsv
+ M working/evidence/W28E-604/scoped-clean-proof.txt
+ M working/evidence/W28E-604/touched-paths-manifest.tsv
+$ git -C /opt/iac/Development/cloud-dog-ai/working/w28e604-ir-wt diff --name-only -- .
+working/evidence/W28E-604/CLOSE-GATE.md
+working/evidence/W28E-604/external-dirty-ledger.tsv
+working/evidence/W28E-604/requirements-map.tsv
+working/evidence/W28E-604/scoped-clean-proof.txt
+working/evidence/W28E-604/touched-paths-manifest.tsv
+$ git -C /opt/iac/Development/cloud-dog-ai/working/w28e604-ir-wt diff --cached --name-only -- .
+(end index-retriever: clean)
+## platform-vdb
+$ git -C /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt status --short -- .
+ M working/instructions/W28D-324-AJOBS-D9-ASYNC-BLOCKING-SIBLING-2026-05-19.md
+$ git -C /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt diff --name-only -- .
+working/instructions/W28D-324-AJOBS-D9-ASYNC-BLOCKING-SIBLING-2026-05-19.md
+$ git -C /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt diff --cached --name-only -- .
+(end platform-vdb: clean)

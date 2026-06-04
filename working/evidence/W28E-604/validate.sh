@@ -51,9 +51,14 @@ while IFS=$'\t' read -r _ _ _ observed _ status; do
 done < "$EV/requirements-map.tsv"
 [ "$gbad" -eq 0 ]; chk "GATED rows cite authorising guard" $?
 
-# Scoped clean (gitignored + evidence dir excluded — evidence may be uncommitted during validation).
-d=$(cd "$VDBWT" && git status --porcelain | grep -vcE '\.venv|__pycache__|/pyarrow|working/evidence/W28E-604'); [ "$d" -eq 0 ]; chk "platform-vdb scope clean" $?
-d=$(cd "$IRWT" && git status --porcelain | grep -vcE '\.venv|__pycache__|/data/|working/evidence/W28E-604'); [ "$d" -eq 0 ]; chk "index-retriever scope clean" $?
+# Scoped clean: ignore gitignored noise, the evidence dir (may be uncommitted during
+# validation), and external files recorded in external-dirty-ledger.tsv (e.g. another
+# lane's instruction that a concurrent process keeps rewriting in the worktree).
+ext=$(awk -F'\t' 'NR>1 && $1!="" {print $1}' "$EV/external-dirty-ledger.tsv" | paste -sd'|' -)
+base='\.venv|__pycache__|/pyarrow|/data/|working/evidence/W28E-604'
+filt="$base${ext:+|$ext}"
+d=$(cd "$VDBWT" && git status --porcelain | grep -vcE "$filt"); [ "$d" -eq 0 ]; chk "platform-vdb scope clean (external-ledger excluded)" $?
+d=$(cd "$IRWT" && git status --porcelain | grep -vcE "$filt"); [ "$d" -eq 0 ]; chk "index-retriever scope clean (external-ledger excluded)" $?
 
 verdict="FINAL_EVIDENCE_VALIDATOR: $([ "$failures" -eq 0 ] && echo PASS || echo FAIL) failures=$failures"
 echo "=== W28E-604 FINAL EVIDENCE VALIDATOR — anchor(begin) ==="

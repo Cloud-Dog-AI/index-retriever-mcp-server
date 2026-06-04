@@ -1,4 +1,2 @@
-repo	dirty_path	note
-platform-vdb	working/instructions/W28D-324-AJOBS-D9-ASYNC-BLOCKING-SIBLING-2026-05-19.md	EXTERNAL (not W28E-604): line-ending/whitespace rewrite of another lane's instruction that appeared in the isolated worktree; reverted to origin/main via git checkout. Not in this lane's changeset.
-platform-vdb	(otherwise none)	worktree clean after revert + commits (excl gitignored .venv/__pycache__/pyarrow)
-index-retriever	(none)	worktree clean after commits (excl gitignored .venv/__pycache__/data)
+path	repo	status	suspected_owner_lane	why_external_to_this_lane
+working/instructions/W28D-324-AJOBS-D9-ASYNC-BLOCKING-SIBLING-2026-05-19.md	cloud-dog-ai-platform-standards	reverted	W28D-324	line-ending rewrite of another lane's instruction that appeared in the isolated worktree; git checkout to origin/main; not in this lane changeset

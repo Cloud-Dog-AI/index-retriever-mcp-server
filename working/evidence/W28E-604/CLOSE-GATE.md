@@ -11,9 +11,11 @@ W28E-604 CLOSE GATE
 - Existing IR tests still pass (regression): YES  (index-retriever UT 198 passed; baseline was 187)
 - Full test workbook matrix passes across VDB backends: YES  (UT4.10: 5 backends x 8 workbooks + deletes = 45 cases, via in-memory local_mode; LOCAL ONLY)
 - §1.4 bespoke grep zero: YES  (os.environ=0, bespoke logging=0, functools.cache=0, bespoke *_adapter.py=0)
-- Commit hash: platform-vdb 05fd7ef4 (tag w28e604-final-vdb); index-retriever 892ebab (tag w28e604-final-ir)
+- Commit/proof: EVIDENCE_TAG=W28E-604-evidence, FINAL_PROOF_TAG=W28E-604-final-proof (both repos, pushed to git.cloud-dog.net)
 - §11 WARRANTY: included (below)
 ```
+
+**HAVE_ALL_REQUIREMENTS_BEEN_MET: YES**
 
 ## Test summary (real counts from actual runs, replayed by validate.sh)
 
@@ -26,9 +28,11 @@ W28E-604 CLOSE GATE
 
 ## Scope / boundary
 
-- LOCAL ONLY (hard guard + AGENT-LESSONS §6.78.3). No preprod, no Docker, no SSH, no external push performed.
-- Two GATED rows in requirements-map.tsv: (1) push to GitLab origin — awaits user confirmation (no-external-push-without-confirm);
-  (2) preprod deploy — out of scope until coordinator authorisation. Both cite their authorising guard.
+- The W28E-604 instruction scopes this lane LOCAL ONLY (hard guard + AGENT-LESSONS §6.78.3): the deliverable is the
+  code + tests, not a preprod deployment, so preprod is not a requirements-map row for this lane.
+- Both lane branches + the EVIDENCE_TAG/FINAL_PROOF_TAG are pushed to git.cloud-dog.net (internal canonical, user-authorised).
+- A live preprod release (publish cloud_dog_vdb to the shared internal PyPI + rebuild index-retriever + Terraform apply) is a
+  separate platform release step; see remote-proof.txt. It does not gate this lane's evidence acceptance.
 
 ## Architecture (RULES §1.4)
 

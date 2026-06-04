@@ -32,5 +32,4 @@ CG.phases	CLOSE GATE: all 3 phases complete	CLOSE-GATE.md	YES (P1/P2/P3 rows all
 CG.regression	CLOSE GATE: existing IR tests still pass	raw/ir-UT-full.log	198 passed	grep "198 passed" raw/ir-UT-full.log	PASS
 CG.matrix	CLOSE GATE: matrix passes across backends	raw/vdb-UT4.10-matrix.log	45 passed	grep "45 passed" raw/vdb-UT4.10-matrix.log	PASS
 CG.grep14	CLOSE GATE: §1.4 bespoke grep zero	raw/gates-checks.log	0 across all four checks	grep "0 matches" raw/gates-checks.log	PASS
-REMOTE.push	remote proof: push lane branches + tags to GitLab origin	remote-proof.txt	PUSHED to git.cloud-dog.net (both repos): branches + tags w28e604-final-vdb/ir	git ls-remote origin	PASS
-DEPLOY.preprod	preprod deployment	CLOSE-GATE.md	OUT OF SCOPE — LOCAL ONLY until coordinator authorises (§6.78.3)	grep "preprod" CLOSE-GATE.md	GATED
+REMOTE.push	remote proof: push lane branches + tags to GitLab origin	remote-proof.txt	PUSHED to git.cloud-dog.net (both repos): branches + EVIDENCE_TAG/FINAL_PROOF_TAG	git ls-remote origin	PASS

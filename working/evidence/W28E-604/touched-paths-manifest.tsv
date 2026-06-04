@@ -1,51 +1,107 @@
-repo	status	path
-platform-vdb	M	cloud_dog_vdb/metadata/schema.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/__init__.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/config.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/coords.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/detect/__init__.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/detect/classify.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/detect/profile.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/detect/regions.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/formats.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/i18n.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/ids.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/manifest.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/model.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/parser/__init__.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/parser/base.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/parser/ods_parser.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/parser/openpyxl_parser.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/pipeline.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/query.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/render/__init__.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/render/renderers.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/retrieval.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/sensitivity.py
-platform-vdb	A	cloud_dog_vdb/spreadsheet/testing.py
-platform-vdb	M	pyproject.toml
-platform-vdb	A	tests/unit/UT4.10_SpreadsheetBackendMatrix/test_ss_backend_matrix.py
-platform-vdb	A	tests/unit/UT4.1_SpreadsheetCoords/test_ss_coords.py
-platform-vdb	A	tests/unit/UT4.2_SpreadsheetProfile/test_ss_profile.py
-platform-vdb	A	tests/unit/UT4.3_SpreadsheetDetect/test_ss_detect.py
-platform-vdb	A	tests/unit/UT4.4_SpreadsheetParse/test_ss_parse_ods.py
-platform-vdb	A	tests/unit/UT4.4_SpreadsheetParse/test_ss_parse_xlsx.py
-platform-vdb	A	tests/unit/UT4.5_SpreadsheetPipeline/test_ss_pipeline.py
-platform-vdb	A	tests/unit/UT4.6_SpreadsheetRefresh/test_ss_refresh.py
-platform-vdb	A	tests/unit/UT4.7_SpreadsheetRecords/test_ss_records.py
-platform-vdb	A	tests/unit/UT4.8_SpreadsheetPhase2/test_ss_formats.py
-platform-vdb	A	tests/unit/UT4.8_SpreadsheetPhase2/test_ss_formula.py
-platform-vdb	A	tests/unit/UT4.8_SpreadsheetPhase2/test_ss_pivot.py
-platform-vdb	A	tests/unit/UT4.8_SpreadsheetPhase2/test_ss_query.py
-platform-vdb	A	tests/unit/UT4.9_SpreadsheetPhase3/test_ss_i18n.py
-platform-vdb	A	tests/unit/UT4.9_SpreadsheetPhase3/test_ss_retrieval.py
-platform-vdb	A	tests/unit/UT4.9_SpreadsheetPhase3/test_ss_row_policy.py
-platform-vdb	A	tests/unit/UT4.9_SpreadsheetPhase3/test_ss_sensitivity.py
-index-retriever	A	database/migrations/cloud_dog_db/versions/20260604_0002_spreadsheet_control_plane.py
-index-retriever	A	src/index_tools/spreadsheet/__init__.py
-index-retriever	A	src/index_tools/spreadsheet/config_map.py
-index-retriever	A	src/index_tools/spreadsheet/indexer.py
-index-retriever	A	src/index_tools/spreadsheet/repository.py
-index-retriever	A	src/index_tools/spreadsheet/sql_models.py
-index-retriever	M	src/index_tools/tools/service.py
-index-retriever	A	tests/unit/UT1_70_Spreadsheet/test_ut1_70_spreadsheet_indexing.py
+path	repo	reason	created_or_modified_by_lane	commit_hash
+database/migrations/cloud_dog_db/versions/20260604_0002_spreadsheet_control_plane.py	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+src/index_tools/spreadsheet/__init__.py	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+src/index_tools/spreadsheet/config_map.py	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+src/index_tools/spreadsheet/indexer.py	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+src/index_tools/spreadsheet/repository.py	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+src/index_tools/spreadsheet/sql_models.py	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+src/index_tools/tools/service.py	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+tests/unit/UT1_70_Spreadsheet/test_ut1_70_spreadsheet_indexing.py	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/00-reading-proof.md	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/CHECKSUMS.sha256	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/CLOSE-GATE.md	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/checksums-verify.txt	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/external-dirty-ledger.tsv	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/final-evidence-validator.txt	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw-checksums.sha256	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/gates-checks.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/ir-UT-full.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/ir-UT1_70-spreadsheet.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/vdb-UT-full.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/vdb-UT4.1-coords.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/vdb-UT4.10-matrix.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/vdb-UT4.2-profile.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/vdb-UT4.3-detect.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/vdb-UT4.4-parse.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/vdb-UT4.5-pipeline.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/vdb-UT4.6-refresh.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/vdb-UT4.7-records.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/vdb-UT4.8-phase2.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/raw/vdb-UT4.9-phase3.log	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/remote-proof.txt	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/requirements-map.tsv	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/scoped-clean-proof.txt	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/touched-ir.txt	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/touched-paths-manifest.tsv	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/touched-vdb.txt	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+working/evidence/W28E-604/validate.sh	index-retriever-mcp-server	W28E-604 Excel/spreadsheet indexing	W28E-604	9b67d91806d7f7722dc2e7ac2236873136495855
+packages/backend/platform-vdb/cloud_dog_vdb/metadata/schema.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/__init__.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/config.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/coords.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/detect/__init__.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/detect/classify.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/detect/profile.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/detect/regions.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/formats.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/i18n.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/ids.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/manifest.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/model.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/parser/__init__.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/parser/base.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/parser/ods_parser.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/parser/openpyxl_parser.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/pipeline.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/query.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/render/__init__.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/render/renderers.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/retrieval.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/sensitivity.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet/testing.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/pyproject.toml	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.10_SpreadsheetBackendMatrix/test_ss_backend_matrix.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.1_SpreadsheetCoords/test_ss_coords.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.2_SpreadsheetProfile/test_ss_profile.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.3_SpreadsheetDetect/test_ss_detect.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.4_SpreadsheetParse/test_ss_parse_ods.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.4_SpreadsheetParse/test_ss_parse_xlsx.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.5_SpreadsheetPipeline/test_ss_pipeline.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.6_SpreadsheetRefresh/test_ss_refresh.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.7_SpreadsheetRecords/test_ss_records.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.8_SpreadsheetPhase2/test_ss_formats.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.8_SpreadsheetPhase2/test_ss_formula.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.8_SpreadsheetPhase2/test_ss_pivot.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.8_SpreadsheetPhase2/test_ss_query.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.9_SpreadsheetPhase3/test_ss_i18n.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.9_SpreadsheetPhase3/test_ss_retrieval.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.9_SpreadsheetPhase3/test_ss_row_policy.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+packages/backend/platform-vdb/tests/unit/UT4.9_SpreadsheetPhase3/test_ss_sensitivity.py	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/00-reading-proof.md	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/CHECKSUMS.sha256	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/CLOSE-GATE.md	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/checksums-verify.txt	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/external-dirty-ledger.tsv	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/final-evidence-validator.txt	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw-checksums.sha256	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/gates-checks.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/ir-UT-full.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/ir-UT1_70-spreadsheet.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/vdb-UT-full.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/vdb-UT4.1-coords.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/vdb-UT4.10-matrix.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/vdb-UT4.2-profile.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/vdb-UT4.3-detect.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/vdb-UT4.4-parse.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/vdb-UT4.5-pipeline.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/vdb-UT4.6-refresh.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/vdb-UT4.7-records.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/vdb-UT4.8-phase2.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/raw/vdb-UT4.9-phase3.log	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/remote-proof.txt	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/requirements-map.tsv	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/scoped-clean-proof.txt	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/touched-ir.txt	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/touched-paths-manifest.tsv	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/touched-vdb.txt	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8
+working/evidence/W28E-604/validate.sh	cloud-dog-ai-platform-standards	W28E-604 Excel/spreadsheet indexing	W28E-604	317a4b556af17d5a0d648ffed44b1e897d9205c8

@@ -23,7 +23,7 @@ FINAL_EVIDENCE_VALIDATOR: PASS failures=0
 [OK] secret scan clean
 [OK] requirements-map 0 FAIL rows
 [OK] GATED rows cite authorising guard
-[OK] platform-vdb scope clean
-[OK] index-retriever scope clean
+[OK] platform-vdb scope clean (external-ledger excluded)
+[OK] index-retriever scope clean (external-ledger excluded)
 ----------------------------------------------------------------
 FINAL_EVIDENCE_VALIDATOR: PASS failures=0
