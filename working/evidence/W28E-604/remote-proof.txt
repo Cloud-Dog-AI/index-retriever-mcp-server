@@ -1,7 +1,0 @@
-W28E-604 REMOTE PROOF
-EVIDENCE_TAG: W28E-604-evidence
-FINAL_PROOF_TAG: W28E-604-final-proof
-index-retriever-mcp-server: branch w28e604-excel HEAD=9b67d91806d7f7722dc2e7ac2236873136495855
-cloud-dog-ai-platform-standards: branch w28e604-vdb-excel HEAD=317a4b556af17d5a0d648ffed44b1e897d9205c8
-Tags W28E-604-evidence and W28E-604-final-proof are created at the final commit on both repos and pushed to origin (git.cloud-dog.net).
-Verify: git ls-remote origin refs/tags/W28E-604-final-proof ; git ls-remote origin refs/heads/w28e604-excel
