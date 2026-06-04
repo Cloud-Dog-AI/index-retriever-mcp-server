@@ -1,0 +1,30 @@
+W28E-604 REMOTE PROOF / COMMIT-OF-RECORD
+========================================
+Status: LOCAL commits + annotated tags created. Push to GitLab origin is GATED on
+user confirmation (binding: no external push without per-action confirm) and the
+lane is LOCAL ONLY until the coordinator authorises preprod (AGENT-LESSONS §6.78.3).
+
+## platform-vdb (branch w28e604-vdb-excel, base origin/main 212bb277)
+  05fd7ef4 W28E-604: backend matrix (section 19.2)
+  a2dfc2ca W28E-604 Phase 3 (vdb): advanced ops + search
+  e60010de W28E-604 Phase 2 (vdb): formula/pivot enrichment, query API, formats, profiling
+  263d82bb W28E-604 Phase 1b (vdb): source-stable object identity + excel source_type
+  a4910f08 W28E-604 Phase 1a: cloud_dog_vdb spreadsheet extraction
+  tag: w28e604-final-vdb -> 5e7c158d
+## index-retriever (branch w28e604-excel, base origin/main 7157c13)
+  892ebab W28E-604 Phase 3 (IR): refresh-mode policies
+  13e5d7c W28E-604 Phase 2 (IR): incremental re-index optimisation
+  8e708d9 W28E-604 Phase 1b: IR spreadsheet wiring + cloud_dog_db control plane
+  tag: w28e604-final-ir -> 879eb07
+
+## To complete remote proof (on user confirmation):
+  (platform-vdb) git push origin w28e604-vdb-excel w28e604-final-vdb
+  (index-retriever) git push origin w28e604-excel w28e604-final-ir
+
+## REMOTE PROOF — PUSH COMPLETED (2026-06-04T11:16:16Z)
+platform-vdb origin refs:
+  05fd7ef4c055e0f29c3e46733be4fcb1022dfdac	refs/heads/w28e604-vdb-excel
+  5e7c158da16c77236aa1b3f0a2f4fa301f5b615d	refs/tags/w28e604-final-vdb
+index-retriever origin refs:
+  892ebaba7d1fbe09b5da97f2722d9667de1ad3ff	refs/heads/w28e604-excel
+  879eb071ad10935ba5d4596f3c654497822591e6	refs/tags/w28e604-final-ir

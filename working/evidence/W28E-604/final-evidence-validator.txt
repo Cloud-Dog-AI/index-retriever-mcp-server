@@ -1,0 +1,12 @@
+[OK] §1.4 grep zero (env=0 log=0 cache=0 adapters=0)
+[OK] platform-vdb scope clean
+[OK] index-retriever scope clean
+[OK] requirements-map has 0 FAIL rows
+[OK] secret scan clean
+[OK] CHECKSUMS verified
+[INFO] platform-vdb UT: 239 passed in 46.37s
+[OK] platform-vdb UT 239 passed
+[INFO] index-retriever UT: 198 passed in 68.19s (0:01:08)
+[OK] index-retriever UT 198 passed
+----------------------------------------------------------------
+FINAL_EVIDENCE_VALIDATOR: PASS failures=0

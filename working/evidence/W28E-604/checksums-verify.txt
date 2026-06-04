@@ -1,0 +1,10 @@
+00-reading-proof.md: OK
+requirements-map.tsv: OK
+touched-paths-manifest.tsv: OK
+external-dirty-ledger.tsv: OK
+scoped-clean-proof.txt: OK
+remote-proof.txt: OK
+touched-vdb.txt: OK
+touched-ir.txt: OK
+validate.sh: OK
+CLOSE-GATE.md: OK

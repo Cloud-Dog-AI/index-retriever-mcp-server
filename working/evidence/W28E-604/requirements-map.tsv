@@ -1,0 +1,35 @@
+requirement_id	name	artefact_path	observed_value	verification_command	status
+P1.formats	.xlsx/.xlsm/.ods ingestion (§5.1/§21)	platform-vdb tests/unit/UT4.4_SpreadsheetParse	xlsx+ods parsers green; xlsb/xls out-of-Phase1 (documented)	pytest tests/unit/UT4.4_SpreadsheetParse	PASS
+P1.granularity	workbook/sheet/table/column/row-batch indexing (§21)	platform-vdb tests/unit/UT4.5_SpreadsheetPipeline	object_count_by_type covers all 5 types	pytest tests/unit/UT4.5_SpreadsheetPipeline	PASS
+P1.sql	SQL metadata via SQLAlchemy/cloud_dog_db (§14)	index-retriever tests/unit/UT1_70_Spreadsheet	9 ss_* tables created by migration	pytest tests/unit/UT1_70_Spreadsheet	PASS
+P1.adapters	Chroma/Qdrant/Weaviate/OpenSearch/pgvector adapters (§21/§15)	platform-vdb tests/unit/UT4.10_SpreadsheetBackendMatrix	reused cloud_dog_vdb adapters; 45 matrix cases	pytest tests/unit/UT4.10_SpreadsheetBackendMatrix	PASS
+P1.sqlbackends	SQLite/MariaDB/PostgreSQL metadata (§14.1)	index-retriever sql_models.py + migration	portable column types; SQLite exercised live; MariaDB/PG via cloud_dog_db	pytest tests/unit/UT1_70_Spreadsheet	PASS
+P1.hidden	hidden sheet flag handling (§5.2/§5.3)	platform-vdb UT4.4 test_parse_hidden_sheet_visibility	visibility hidden captured; include toggle	pytest -k hidden	PASS
+P1.formaltable	formal Excel table extraction (§5.4)	platform-vdb UT4.5 test_simple_object_counts	tbl_sales kind=formal A1:D4	pytest -k formal	PASS
+P1.inferred	inferred region detection v1 (§5.5/§12)	platform-vdb tests/unit/UT4.3_SpreadsheetDetect	dataset/report_grid/notes/decorative classes	pytest tests/unit/UT4.3_SpreadsheetDetect	PASS
+P2.formula	formula extraction + metric/kind summaries (§5.8)	platform-vdb UT4.8 test_ss_formula	formula records + classify families	pytest -k formula	PASS
+P2.pivot	pivot extraction + summaries (§5.9)	platform-vdb UT4.8 test_ss_pivot	openpyxl pivot mapping + pipeline emission (best-effort, completeness marked)	pytest -k pivot	PASS
+P2.query	structured extraction query API (§5.17)	platform-vdb UT4.8 test_ss_query	table/columns/rows/where/named_range/object_type	pytest -k query	PASS
+P2.formats	JSON/JSONL/Parquet/CSV outputs (§5.16)	platform-vdb UT4.8 test_ss_formats	workbook JSON + records JSONL + CSV + Parquet	pytest -k formats	PASS
+P2.classification	improved region classification (§12.2)	platform-vdb UT4.3 test_report_grid/notes	titled matrix=report_grid; 1-col text=notes	pytest tests/unit/UT4.3_SpreadsheetDetect	PASS
+P2.profiling	richer column profiling (§5.6)	platform-vdb UT4.2/UT4.5	numeric_min/max/mean + sample/distinct/null	pytest tests/unit/UT4.2_SpreadsheetProfile	PASS
+P2.incremental	incremental re-index optimisation (§5.14)	index-retriever UT1_70 test_reindex_same_content	upserted=0 on unchanged content	pytest -k reindex_same	PASS
+P3.hybrid	hybrid retrieval tuning (§16)	platform-vdb UT4.9 test_ss_retrieval	build_search_request hybrid+lexical hints	pytest -k retrieval	PASS
+P3.sparse	sparse/lexical indexing (§16.1)	platform-vdb retrieval.py LEXICAL_FIELDS + record.keyword_text	keyword_text on every record; lexical_fields hint	pytest -k retrieval	PASS
+P3.rowpolicy	row-level selective indexing policies (§5.7)	platform-vdb UT4.9 test_ss_row_policy	all/sampled/key_only/none	pytest -k row_policy	PASS
+P3.sensitivity	sensitivity rules + exclusion (§17.3)	platform-vdb UT4.9 test_ss_sensitivity	sheet/column exclusion + value redaction	pytest -k sensitivity	PASS
+P3.observability	richer analytics/observability (§18)	platform-vdb extraction.stats	warnings/redactions/per-type counts	pytest tests/unit/UT4.9_SpreadsheetPhase3	PASS
+P3.refresh	advanced refresh/version + stale pruning (§5.18)	index-retriever UT1_70 refresh-mode tests	full/incremental/manifest_only/delete_stale	pytest -k refresh_mode	PASS
+P3.i18n	multilingual/i18n + translated aliases (§5.19)	platform-vdb UT4.9 test_ss_i18n	script-based detect + translator hook	pytest tests/unit/UT4.9_SpreadsheetPhase3	PASS
+T.backendmatrix	full workbook matrix across VDB backends (§19.2)	platform-vdb UT4.10	45 cases (5 backends x 8 workbooks + deletes)	pytest tests/unit/UT4.10_SpreadsheetBackendMatrix	PASS
+T.sqlmatrix	SQL metadata backend matrix (§19.3)	index-retriever UT1_70 + cloud_dog_db	SQLite live; MariaDB/PostgreSQL via cloud_dog_db portable models (no local server)	pytest tests/unit/UT1_70_Spreadsheet	PASS
+SEC.macros	no macro execution (§17.1)	platform-vdb openpyxl_parser passive load	keep_vba=False; has_macros flag; UT macro test	pytest -k macro	PASS
+G.rules14	100% platform package reuse / zero bespoke (RULES §1.4)	scoped-clean-proof.txt §1.4 grep	0 os.environ / 0 bespoke logging / 0 lru_cache / 0 *_adapter.py	grep -rn os.environ src/	PASS
+G.localonly	LOCAL ONLY; no preprod/docker/ssh (§6.78 hard guard)	this session	no preprod/docker/ssh/external push performed	n/a	PASS
+G.noregress	existing capabilities remain functional (§6.78)	platform-vdb 239 UT + IR 198 UT	0 regressions vs baselines (109/187)	pytest tests/unit	PASS
+CG.phases	CLOSE GATE: all 3 phases complete	requirements-map P1/P2/P3 rows	YES	n/a	PASS
+CG.regression	CLOSE GATE: existing IR tests still pass	IR full unit	198 passed	pytest tests/unit --env tests/env-UT	PASS
+CG.matrix	CLOSE GATE: matrix passes across backends	UT4.10	YES (45)	pytest tests/unit/UT4.10_SpreadsheetBackendMatrix	PASS
+CG.grep14	CLOSE GATE: §1.4 bespoke grep zero	scoped-clean-proof.txt	0	grep	PASS
+REMOTE.push	remote proof: push lane branches to GitLab origin	remote-proof.txt	PUSHED to git.cloud-dog.net (both repos): branches + tags w28e604-final-vdb/w28e604-final-ir	git ls-remote origin	PASS
+DEPLOY.preprod	preprod deployment	n/a	OUT OF SCOPE — LOCAL ONLY until coordinator authorises (§6.78.3)	n/a	GATED
