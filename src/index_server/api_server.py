@@ -1421,6 +1421,29 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         active_service.admin_group_delete(group_id=group_id, roles=identity.roles, actor=identity.user_id)
         return {"status": "ok", "group_id": group_id}
 
+    def admin_policies_list(request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        from index_server.auth.middleware import INDEX_ROLE_PERMISSIONS
+        roles = {role: sorted(perms) for role, perms in sorted(INDEX_ROLE_PERMISSIONS.items())}
+        permissions = sorted({p for perms in INDEX_ROLE_PERMISSIONS.values() for p in perms})
+        return {"ok": True, "roles": roles, "permissions": permissions}
+
+    def admin_policies_update(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        from index_server.auth.middleware import INDEX_ROLE_PERMISSIONS
+        new_roles = payload.get("roles") if isinstance(payload, dict) else None
+        if not isinstance(new_roles, dict):
+            raise HTTPException(status_code=400, detail="payload must contain roles object")
+        for role, perms in new_roles.items():
+            if not isinstance(perms, list):
+                raise HTTPException(status_code=400, detail="each role's permissions must be a list")
+            INDEX_ROLE_PERMISSIONS[str(role)] = {str(p) for p in perms}
+        roles = {role: sorted(perms) for role, perms in sorted(INDEX_ROLE_PERMISSIONS.items())}
+        permissions = sorted({p for perms in INDEX_ROLE_PERMISSIONS.values() for p in perms})
+        return {"ok": True, "roles": roles, "permissions": permissions}
+
     def admin_api_keys_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "admin")
@@ -1921,6 +1944,10 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get("/admin/groups/{group_id}")(admin_groups_get)
     app.put("/admin/groups/{group_id}")(admin_groups_update)
     app.delete("/admin/groups/{group_id}")(admin_groups_delete)
+    app.get("/admin/policies")(admin_policies_list)
+    app.put("/admin/policies")(admin_policies_update)
+    app.get(f"{api_base_path}/admin/policies")(admin_policies_list)
+    app.put(f"{api_base_path}/admin/policies")(admin_policies_update)
     app.get("/admin/api-keys")(admin_api_keys_list)
     app.post("/admin/api-keys")(admin_api_keys_create)
     app.post("/admin/api-keys/revoke-token")(admin_api_keys_revoke_token)
