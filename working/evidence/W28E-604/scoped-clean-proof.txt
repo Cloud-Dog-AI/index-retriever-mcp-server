@@ -1,24 +1,19 @@
-W28E-604 SCOPED CLEAN PROOF (UTC 2026-06-04T12:23:34Z)
-Both worktrees clean for the lane source scope after commits.
-## index-retriever
-$ git -C /opt/iac/Development/cloud-dog-ai/working/w28e604-ir-wt status --short -- .
- M working/evidence/W28E-604/CLOSE-GATE.md
- M working/evidence/W28E-604/external-dirty-ledger.tsv
- M working/evidence/W28E-604/requirements-map.tsv
- M working/evidence/W28E-604/scoped-clean-proof.txt
- M working/evidence/W28E-604/touched-paths-manifest.tsv
-$ git -C /opt/iac/Development/cloud-dog-ai/working/w28e604-ir-wt diff --name-only -- .
-working/evidence/W28E-604/CLOSE-GATE.md
-working/evidence/W28E-604/external-dirty-ledger.tsv
-working/evidence/W28E-604/requirements-map.tsv
-working/evidence/W28E-604/scoped-clean-proof.txt
-working/evidence/W28E-604/touched-paths-manifest.tsv
-$ git -C /opt/iac/Development/cloud-dog-ai/working/w28e604-ir-wt diff --cached --name-only -- .
-(end index-retriever: clean)
-## platform-vdb
-$ git -C /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt status --short -- .
- M working/instructions/W28D-324-AJOBS-D9-ASYNC-BLOCKING-SIBLING-2026-05-19.md
-$ git -C /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt diff --name-only -- .
-working/instructions/W28D-324-AJOBS-D9-ASYNC-BLOCKING-SIBLING-2026-05-19.md
-$ git -C /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt diff --cached --name-only -- .
-(end platform-vdb: clean)
+W28E-604 SCOPED CLEAN PROOF (post-commit, UTC 2026-06-04T12:28:10Z)
+Lane SOURCE scope is clean (committed) in both worktrees. The evidence dir is verified
+separately by the validator; the external W28D-324 file is in external-dirty-ledger.tsv.
+
+## index-retriever-mcp-server (/opt/iac/Development/cloud-dog-ai/working/w28e604-ir-wt)
+$ git status --short -- src/index_tools/spreadsheet src/index_tools/tools/service.py database/migrations/cloud_dog_db tests/unit/UT1_70_Spreadsheet
+(empty above = clean)
+$ git diff --name-only -- src/index_tools/spreadsheet src/index_tools/tools/service.py database/migrations/cloud_dog_db tests/unit/UT1_70_Spreadsheet
+(empty above = clean)
+$ git diff --cached --name-only -- src/index_tools/spreadsheet src/index_tools/tools/service.py database/migrations/cloud_dog_db tests/unit/UT1_70_Spreadsheet
+(empty above = clean)
+
+## cloud-dog-ai-platform-standards (/opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt)
+$ git status --short -- packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet packages/backend/platform-vdb/tests/unit
+(empty above = clean)
+$ git diff --name-only -- packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet packages/backend/platform-vdb/tests/unit
+(empty above = clean)
+$ git diff --cached --name-only -- packages/backend/platform-vdb/cloud_dog_vdb/spreadsheet packages/backend/platform-vdb/tests/unit
+(empty above = clean)
