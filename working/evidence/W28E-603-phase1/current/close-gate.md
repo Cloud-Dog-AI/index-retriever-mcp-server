@@ -25,4 +25,13 @@ superseded 20-row iteration. No requirement was dropped — the rows were consol
 earlier separate `SCOPE.1`/`QG.1`/`SUITE.1`/per-fix rows were merged into the six `REG.*` tier rows plus the
 four `RC.*`/`RBAC.*` fix rows); every delivered requirement still maps to a PASS row.
 
-HAVE_ALL_REQUIREMENTS_BEEN_MET: YES
+## Lane status (corrected)
+W28E-603 is a 6-phase lane requiring all 15 design-brief §25 acceptance criteria (instruction lines 81/83/91).
+Phase 1 of 6 is delivered; Phases 2–6 and full §25 coverage are owed. See `acceptance-criteria-coverage.md`
+for the per-criterion status (4 PASS / 3 PARTIAL / 8 PENDING). This pack is a **Phase-1 checkpoint**, not a
+lane-completion return, and must not be merged/deployed by W28E-618 as a completed lane.
+
+The Phase-1 substance is sound and proven (suite green, the four pre-existing failures fixed, evidence
+integrity validated), but that is a checkpoint — not acceptance of the lane.
+
+HAVE_ALL_REQUIREMENTS_BEEN_MET: NO  (lane incomplete: Phase 1 of 6; full §25 coverage pending)

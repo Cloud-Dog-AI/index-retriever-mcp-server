@@ -1,13 +1,16 @@
-FINAL_EVIDENCE_VALIDATOR lane=W28E-603 started=2026-06-04T13:35:49+01:00
+FINAL_EVIDENCE_VALIDATOR lane=W28E-603 started=2026-06-04T13:59:21+01:00
 Evidence path: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current
 PASS: evidence path exists
-PASS: evidence files tracked under working/evidence/W28E-603-phase1/current: 20
-PASS: evidence path has no dirty/untracked scoped files
-PASS: live remote branch HEAD found: refs/heads/w28e-603-phase1-structure 7338d06cdd2feb6b4246dd4324686c7a3244f514
+PASS: evidence files tracked under working/evidence/W28E-603-phase1/current: 21
+FAIL: evidence path has dirty/untracked scoped files
+ M working/evidence/W28E-603-phase1/current/close-gate.md
+ M working/evidence/W28E-603-phase1/current/final-evidence-validator.txt
+PASS: live remote branch HEAD found: refs/heads/w28e-603-phase1-structure e131442c0ce23d77265080f75e0a2beb232fe33e
 PASS: Evidence Matrix header found
 PASS: no future proof language found
 PASS: no forbidden alternate acceptance labels found
-PASS: saved validator outputs are clean
+INFO: saved validator output contains FAIL; current live validator result is authoritative
+/opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/final-evidence-validator.txt:5:FAIL: evidence path has dirty/untracked scoped files
 PASS: mandatory reading proof file found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/00-reading-proof.md
 PASS: RULES.md reread/version proof found
 PASS: AGENT-LESSONS.md reread/version proof found
@@ -27,7 +30,7 @@ PASS: scoped-clean-proof.txt contains required scoped git commands
 PASS: scoped-clean-proof.txt shows no modified/staged/untracked files
 PASS: remote-proof.txt found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/remote-proof.txt
 PASS: remote-proof.txt contains remote/HEAD proof markers
-INFO: saved proof does not embed live git rev-parse HEAD: 7338d06cdd2feb6b4246dd4324686c7a3244f514
+INFO: saved proof does not embed live git rev-parse HEAD: e131442c0ce23d77265080f75e0a2beb232fe33e
 INFO: saved proof does not embed live remote branch HEAD; live auditor verification is authoritative
 INFO: remote-proof.txt records FINAL_PROOF_TAG candidate: W28E-603-phase1-final
 PASS: FINAL-TAG-VERIFICATION.txt found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/FINAL-TAG-VERIFICATION.txt
@@ -39,22 +42,55 @@ PASS: FINAL-TAG-VERIFICATION.txt contains marker: sha256sum -c CHECKSUMS.sha256
 PASS: FINAL-TAG-VERIFICATION.txt contains marker: git status
 PASS: FINAL-TAG-VERIFICATION.txt contains marker: git diff
 PASS: EVIDENCE_TAG belongs to lane W28E-603
-PASS: EVIDENCE_TAG exists remotely: W28E-603-phase1-evidence 7338d06cdd2feb6b4246dd4324686c7a3244f514
+PASS: EVIDENCE_TAG exists remotely: W28E-603-phase1-evidence e131442c0ce23d77265080f75e0a2beb232fe33e
 PASS: FINAL_PROOF_TAG belongs to lane W28E-603
-PASS: FINAL_PROOF_TAG exists remotely: W28E-603-phase1-final 7338d06cdd2feb6b4246dd4324686c7a3244f514
+PASS: FINAL_PROOF_TAG exists remotely: W28E-603-phase1-final e131442c0ce23d77265080f75e0a2beb232fe33e
 PASS: FINAL_PROOF_TAG is an ancestor of current remote HEAD
-PASS: sha256sum -c CHECKSUMS.sha256 passed
+FAIL: sha256sum -c CHECKSUMS.sha256 failed
+../../../../src/index_tools/structure/__init__.py: OK
+../../../../src/index_tools/structure/ids.py: OK
+../../../../src/index_tools/structure/models.py: OK
+../../../../src/index_tools/structure/repository.py: OK
+../../../../src/index_tools/structure/service.py: OK
+../../../../src/index_tools/db/structure_models.py: OK
+../../../../src/index_tools/db/__init__.py: OK
+../../../../database/migrations/cloud_dog_db/versions/20260604_0002_structure_foundation.py: OK
+../../../../src/index_tools/tools/registry.py: OK
+../../../../src/index_tools/tools/service.py: OK
+../../../../src/index_server/api_server.py: OK
+../../../../src/index_server/mcp_server.py: OK
+../../../../src/index_tools/connectors/s3.py: OK
+../../../../src/index_tools/connectors/webdav.py: OK
+../../../../src/index_tools/connectors/gdrive.py: OK
+../../../../src/index_tools/connectors/resolver.py: OK
+../../../../tests/unit/UT_W28E603_Structure/test_ut_w28e603_structure.py: OK
+../../../../tests/integration/IT_W28E603_StructureTransports/test_it_w28e603_structure_transports.py: OK
+../../../../tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py: OK
+../../../../tests/unit/UT1_40/test_ut1_40_tool_registry.py: OK
+../../../../tests/unit/UT1_46/test_ut1_46_w28c427r5_connector_matrix.py: OK
+../../../../tests/system/ST1_14/test_st1_14_database_migration.py: OK
+../../../../tests/quality/QT_COMPLIANCE/conftest.py: OK
+../../../../docs/MCP_DOCUMENTATION.md: OK
+../../../../docs/REQUIREMENTS.md: OK
+../../../../docs/TESTS.md: OK
+final-evidence-validator.txt: FAILED
+requirements-map.tsv: OK
+close-gate.md: FAILED
+EVIDENCE-MATRIX.md: OK
+sha256sum: WARNING: 2 computed checksums did NOT match
 PASS: close gate found
-PASS: completion claim present
-PASS: no common contradiction markers found with completion claim
+FAIL: HAVE_ALL_REQUIREMENTS_BEEN_MET: YES completion claim missing
 PASS: no substantive raw FAIL found
 PASS: no stale failed artefact names found
 PASS: no unavailable/waived/out-of-scope claims found
 
 Repo: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt
-HEAD: 7338d06cdd2feb6b4246dd4324686c7a3244f514
+HEAD: e131442c0ce23d77265080f75e0a2beb232fe33e
 BRANCH: w28e-603-phase1-structure
-PASS: repo worktree clean: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt
+FAIL: repo-wide worktree dirty/untracked: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt
+ M working/evidence/W28E-603-phase1/current/close-gate.md
+ M working/evidence/W28E-603-phase1/current/final-evidence-validator.txt
+INFO: If every listed path is outside this lane's scope, list it in external-dirty-ledger.tsv and rerun. The final validator must still end with FINAL_EVIDENCE_VALIDATOR: PASS failures=0.
 PASS: HEAD equals origin/w28e-603-phase1-structure
 
-FINAL_EVIDENCE_VALIDATOR: PASS failures=0
+FINAL_EVIDENCE_VALIDATOR: FAIL failures=4

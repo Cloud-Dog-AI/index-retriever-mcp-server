@@ -28,3 +28,4 @@ final-evidence-validator.txt: OK
 requirements-map.tsv: OK
 close-gate.md: OK
 EVIDENCE-MATRIX.md: OK
+acceptance-criteria-coverage.md: OK
