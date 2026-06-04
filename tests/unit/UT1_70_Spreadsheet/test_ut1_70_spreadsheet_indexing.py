@@ -136,6 +136,8 @@ def test_reindex_same_content_deletes_nothing(db_runtime):
     )
     assert result.deleted == 0
     assert deleted == []
+    # incremental re-index optimisation: unchanged objects are not re-upserted (5.14)
+    assert result.upserted == 0
 
 
 def test_reindex_changed_content_deletes_stale(db_runtime):

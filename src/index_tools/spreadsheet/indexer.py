@@ -181,6 +181,9 @@ class SpreadsheetIndexer:
                 )
 
             deleted_keys: list[str] = []
+            # On the first version every record is upserted; on later versions only
+            # new/changed records are (section 5.14 incremental re-index optimisation).
+            upsert_keys: set[str] | None = None
             if previous_version is not None:
                 previous_entries = [
                     ObjectManifestEntry(
@@ -192,13 +195,17 @@ class SpreadsheetIndexer:
                 for decision in decisions:
                     repo.record_refresh(source, previous_version.id, version.id, decision)
                 deleted_keys = [d.object_key for d in decisions if d.refresh_action == "delete"]
+                upsert_keys = {d.object_key for d in decisions if d.refresh_action == "upsert"}
 
+            records_to_upsert = (
+                records if upsert_keys is None else [r for r in records if r.record_id in upsert_keys]
+            )
             if delete is not None and deleted_keys:
                 delete(deleted_keys)
-            self._upsert_batches(upsert, records)
+            self._upsert_batches(upsert, records_to_upsert)
 
             repo.record_sync_state(
-                version, backend_name=backend_name, upserted=len(records), deleted=len(deleted_keys)
+                version, backend_name=backend_name, upserted=len(records_to_upsert), deleted=len(deleted_keys)
             )
             repo.update_source_hash(source, workbook.file_hash)
             repo.finish_job(
@@ -208,7 +215,7 @@ class SpreadsheetIndexer:
             return SpreadsheetIndexResult(
                 status="complete",
                 object_counts=extraction.object_count_by_type(),
-                upserted=len(records),
+                upserted=len(records_to_upsert),
                 deleted=len(deleted_keys),
                 deleted_keys=deleted_keys,
                 warnings=list(workbook.warnings),
