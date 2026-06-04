@@ -1,7 +1,7 @@
 W28E-603 Phase 1 — FINAL EVIDENCE VALIDATOR
-scope: design brief §24 Phase 1 + IR quality-compliance fixes (RC-01/RC-09)
+scope: design brief §24 Phase 1 + IR pre-existing-failure fixes (RC-01/RC-09/IT1_21/IT1_22)
 
-requirements-map rows: 17; PASS: 17; non-PASS: 0
+requirements-map rows: 20; PASS: 20; non-PASS: 0
   [PASS] P1.1 — Canonical structure model + schema version (brief §6, §24-Phase1)
   [PASS] P1.2 — cloud_dog_db persistence integration (brief §7.1)
   [PASS] P1.3 — Migrations through existing mechanism (brief §7.1)
@@ -18,10 +18,12 @@ requirements-map rows: 17; PASS: 17; non-PASS: 0
   [PASS] AUDIT.1 — Audit logs capture structure create + delete (brief §25.14)
   [PASS] QG.1 — Quality compliance tier fully green (RC-01..RC-10)
   [PASS] RC09.1 — s3/webdav/gdrive ingest fetch implemented via cloud_dog_storage (RULES §1.4)
+  [PASS] RBAC.1 — Collection-level RBAC enforced on search/retrieve/ingest/delete (FR-05)
+  [PASS] RBAC.2 — API-key resolves to the KEY's roles, not the owner user's (CFG-10)
+  [PASS] SUITE.1 — Full pytest suite green across all 8 tiers (Vault-resolved live backends)
   [PASS (scoped)] SCOPE.1 — Phase 1 of 6 only — full-lane §25 (15 criteria) NOT all met
 
-regression: tests/unit 200 passed / 0 failed
-quality: tests/quality 47 passed / 0 failed (RC-01/RC-04/RC-09 fixed)
+FULL pytest suite (env-vault sourced): unit200 quality47 integration51 system26(+2 infra-skip) application24 contract4 parser3 security6 — 0 FAILED
 §1.4 bespoke grep (structure + connectors): zero
 
 FINAL_EVIDENCE_VALIDATOR (W28E-603 Phase 1 scope): PASS failures=0

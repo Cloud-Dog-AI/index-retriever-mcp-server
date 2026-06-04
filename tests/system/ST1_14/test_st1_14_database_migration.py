@@ -25,6 +25,15 @@ from index_tools.db.runtime import initialise_database, shutdown_database
 _BASELINE_REVISION = "20260305_0001"
 
 
+def _expected_head() -> str:
+    """Current Alembic head, derived from the migration scripts (robust to new migrations)."""
+    from alembic.script import ScriptDirectory
+
+    from index_tools.db.runtime import _migration_script_location
+
+    return ScriptDirectory(_migration_script_location()).get_current_head()
+
+
 def _configure_sqlite_env(monkeypatch, db_path: Path) -> None:
     monkeypatch.setenv("CLOUD_DOG_DB__DIALECT", "sqlite")
     monkeypatch.setenv("CLOUD_DOG_DB__DATABASE", str(db_path))
@@ -52,7 +61,9 @@ def test_st_db_01_migration_upgrade_on_fresh_sqlite(monkeypatch, tmp_path: Path)
         assert db_path.exists() is True
         with runtime.engine.connect() as conn:
             revision = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-        assert revision == _BASELINE_REVISION
+        # Migrations must upgrade a fresh database to the current head (now includes the
+        # W28E-603 structure-foundation migration chained off the baseline).
+        assert revision == _expected_head()
     finally:
         shutdown_database()
 

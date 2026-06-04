@@ -19,6 +19,7 @@ tests/integration/IT_W28E603_StructureTransports/test_it_w28e603_structure_trans
 tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py: OK
 tests/unit/UT1_40/test_ut1_40_tool_registry.py: OK
 tests/unit/UT1_46/test_ut1_46_w28c427r5_connector_matrix.py: OK
+tests/system/ST1_14/test_st1_14_database_migration.py: OK
 tests/quality/QT_COMPLIANCE/conftest.py: OK
 docs/MCP_DOCUMENTATION.md: OK
 docs/REQUIREMENTS.md: OK

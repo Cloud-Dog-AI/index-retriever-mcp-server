@@ -53,7 +53,7 @@ def _log_tool_audit(tool_name: str, actor_id: str, outcome: str, details: dict[s
 from fastapi import Request
 from starlette.responses import JSONResponse
 
-from index_server.auth.middleware import AuthMiddleware, AuthResult
+from index_server.auth.middleware import AuthMiddleware, AuthResult, _canonical_role
 from index_server.logging_runtime import init_platform_logging, shutdown_platform_logging
 from index_server.runtime_config import resolve_server_binding
 from index_tools.config.loader import runtime_env_files
@@ -422,10 +422,36 @@ def _normalise_queue_status(payload: Any) -> dict[str, Any]:
     return out
 
 
-def _enforce_collection_permission(auth: AuthMiddleware, identity: AuthResult, permission: str) -> None:
-    """Enforce collection access through IDAM permissions."""
+def _enforce_collection_permission(
+    auth: AuthMiddleware,
+    identity: AuthResult,
+    permission: str,
+    *,
+    service: IndexService | None = None,
+    profile: str | None = None,
+    collection: str | None = None,
+) -> None:
+    """Enforce collection access: IDAM role-permission AND the collection's allowed_roles.
+
+    The role-permission check gates the operation class (collection.read/write). When a
+    concrete collection is supplied and it carries restricted ``allowed_roles``, the
+    requester's roles must intersect them (admin always passes); otherwise access to that
+    specific collection is denied (FR-05 collection-level RBAC).
+    """
     # Covers: FR-05
     auth.require_permission(identity, permission)
+    if service is None or not profile or not collection:
+        return
+    collection_roles = getattr(service, "collection_roles", {}) or {}
+    allowed = collection_roles.get(f"{profile}:{collection}")
+    if not allowed:
+        return
+    identity_roles = {_canonical_role(role) for role in identity.roles}
+    if "admin" in identity_roles:
+        return
+    allowed_canonical = {_canonical_role(role) for role in allowed}
+    if not (identity_roles & allowed_canonical):
+        raise PermissionError(f"Authorisation failed for collection '{collection}'")
 
 
 def execute_tool(
@@ -692,7 +718,7 @@ def execute_tool(
             "status": "ok",
         }
     if tool_name == "ingest_upload":
-        _enforce_collection_permission(active_auth, active_identity, "collection.write")
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         payload = arguments.get("content", "")
         if isinstance(payload, str):
             content = payload.encode("utf-8")
@@ -709,7 +735,7 @@ def execute_tool(
             metadata=arguments.get("metadata") if isinstance(arguments.get("metadata"), dict) else None,
         )
     if tool_name == "ingest_text":
-        _enforce_collection_permission(active_auth, active_identity, "collection.read")
+        _enforce_collection_permission(active_auth, active_identity, "collection.read", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         ingest_result = service.ingest_text(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -722,7 +748,7 @@ def execute_tool(
         job_id = getattr(ingest_result, "job_id", ingest_result)
         return {"job_id": str(job_id), "status": "queued"}
     if tool_name == "ingest_reference":
-        _enforce_collection_permission(active_auth, active_identity, "collection.read")
+        _enforce_collection_permission(active_auth, active_identity, "collection.read", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         reference_path = str(arguments.get("path") or arguments.get("uri") or "").strip()
         if not reference_path:
             raise ValueError("ingest_reference requires path or uri")
@@ -789,7 +815,7 @@ def execute_tool(
             table_json_shape=str(arguments.get("table_json_shape", "records")),
         )
     if tool_name == "search":
-        _enforce_collection_permission(active_auth, active_identity, "collection.read")
+        _enforce_collection_permission(active_auth, active_identity, "collection.read", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         try:
             return {
                 "results": service.search(
@@ -815,7 +841,7 @@ def execute_tool(
                 "status": "error",
             }
     if tool_name == "search_explain":
-        _enforce_collection_permission(active_auth, active_identity, "collection.read")
+        _enforce_collection_permission(active_auth, active_identity, "collection.read", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         filters = arguments.get("filters") if isinstance(arguments.get("filters"), dict) else {}
         top_k = int(arguments.get("top_k", 10))
         query = str(arguments["query"])
@@ -847,7 +873,7 @@ def execute_tool(
             ],
         }
     if tool_name == "retrieve":
-        _enforce_collection_permission(active_auth, active_identity, "collection.read")
+        _enforce_collection_permission(active_auth, active_identity, "collection.read", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         # A123 fix: pass profile + collection so retrieve filters records
         # to the requested scope (RetrieveInput already requires both).
         return service.retrieve(
@@ -856,7 +882,7 @@ def execute_tool(
             collection=str(arguments.get("collection")) if arguments.get("collection") else None,
         )
     if tool_name == "delete_by_id":
-        _enforce_collection_permission(active_auth, active_identity, "collection.write")
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         deleted = service.delete_by_id(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -864,7 +890,7 @@ def execute_tool(
         )
         return {"deleted": bool(deleted), "status": "ok" if deleted else "not_found"}
     if tool_name == "delete_by_filter":
-        _enforce_collection_permission(active_auth, active_identity, "collection.write")
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         deleted = service.delete_by_filter(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -872,7 +898,7 @@ def execute_tool(
         )
         return {"deleted": int(deleted), "status": "ok"}
     if tool_name == "retention_run":
-        _enforce_collection_permission(active_auth, active_identity, "collection.write")
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         deleted = service.retention_run(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -880,7 +906,7 @@ def execute_tool(
         )
         return {"deleted": int(deleted), "status": "ok"}
     if tool_name == "reindex_run":
-        _enforce_collection_permission(active_auth, active_identity, "collection.write")
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         result = service.reindex_run(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
