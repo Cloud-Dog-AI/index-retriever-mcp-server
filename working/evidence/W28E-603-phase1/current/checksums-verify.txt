@@ -24,3 +24,7 @@
 ../../../../docs/MCP_DOCUMENTATION.md: OK
 ../../../../docs/REQUIREMENTS.md: OK
 ../../../../docs/TESTS.md: OK
+final-evidence-validator.txt: OK
+requirements-map.tsv: OK
+close-gate.md: OK
+EVIDENCE-MATRIX.md: OK

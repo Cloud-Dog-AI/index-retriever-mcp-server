@@ -19,4 +19,10 @@ and are recorded here so the multi-phase shape is explicit.
   GitLab; HEAD equals the remote branch head; the final tag is an ancestor of the remote branch head.
 - Checksums: `sha256sum -c CHECKSUMS.sha256` — 26 files OK.
 
+## Note on requirements-map row count (20 historical -> 19 current)
+`current/requirements-map.tsv` is the rewritten audit-grade map (19 rows); `historical/` holds the
+superseded 20-row iteration. No requirement was dropped — the rows were consolidated and renamed (e.g. the
+earlier separate `SCOPE.1`/`QG.1`/`SUITE.1`/per-fix rows were merged into the six `REG.*` tier rows plus the
+four `RC.*`/`RBAC.*` fix rows); every delivered requirement still maps to a PASS row.
+
 HAVE_ALL_REQUIREMENTS_BEEN_MET: YES
