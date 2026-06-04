@@ -1,0 +1,15 @@
+W28E-603 Phase 1 — FINAL TAG VERIFICATION
+
+EVIDENCE_TAG: W28E-603-phase1-evidence
+FINAL_PROOF_TAG: W28E-603-phase1-final
+
+Verification commands run at the final committed state (live output is auditor-authoritative):
+
+  git rev-parse HEAD
+  git ls-remote origin refs/heads/w28e-603-phase1-structure
+  git ls-remote origin refs/tags/W28E-603-phase1-final
+  git ls-remote origin refs/tags/W28E-603-phase1-evidence
+  git rev-parse refs/tags/W28E-603-phase1-final^{}
+  sha256sum -c CHECKSUMS.sha256
+  git status --short
+  git diff --name-only
