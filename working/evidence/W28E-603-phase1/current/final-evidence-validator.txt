@@ -1,10 +1,10 @@
-FINAL_EVIDENCE_VALIDATOR lane=W28E-603 started=2026-06-04T15:11:16+01:00
+FINAL_EVIDENCE_VALIDATOR lane=W28E-603 started=2026-06-04T19:50:52+01:00
 Evidence path: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current
 PASS: evidence path exists
 PASS: evidence files tracked under working/evidence/W28E-603-phase1/current: 24
 FAIL: evidence path has dirty/untracked scoped files
  M working/evidence/W28E-603-phase1/current/final-evidence-validator.txt
-PASS: live remote branch HEAD found: refs/heads/w28e-603-phase1-structure b0bf87a28536ea26aee01c290f3c78f80d969ecd
+PASS: live remote branch HEAD found: refs/heads/w28e-603-phase1-structure 43365b2d0d7c57c8bb288c26b9760a8e3fb5a14a
 PASS: Evidence Matrix header found
 PASS: no future proof language found
 PASS: no forbidden alternate acceptance labels found
@@ -18,7 +18,7 @@ PASS: requirements-map.tsv found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-
 PASS: requirements-map.tsv row width check passed
 PASS: requirements-map.tsv required fields are populated
 PASS: requirements-map.tsv final status column is PASS for every row
-PASS: instruction file found for acceptance comparison: /opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/working/instructions/W28E-603-INDEX-RETRIEVER-DOC-STRUCTURE-2026-05-31.md
+PASS: instruction file found for acceptance comparison: /opt/iac/Development/cloud-dog-ai/.w28a862-wt/working/instructions/W28E-603-INDEX-RETRIEVER-DOC-STRUCTURE-2026-05-31.md
 PASS: instruction acceptance list has no extractor-compatible rows
 PASS: touched-paths-manifest.tsv found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/touched-paths-manifest.tsv
 PASS: touched-paths-manifest.tsv header is valid
@@ -29,7 +29,7 @@ PASS: scoped-clean-proof.txt contains required scoped git commands
 PASS: scoped-clean-proof.txt shows no modified/staged/untracked files
 PASS: remote-proof.txt found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/remote-proof.txt
 PASS: remote-proof.txt contains remote/HEAD proof markers
-INFO: saved proof does not embed live git rev-parse HEAD: b0bf87a28536ea26aee01c290f3c78f80d969ecd
+INFO: saved proof does not embed live git rev-parse HEAD: 43365b2d0d7c57c8bb288c26b9760a8e3fb5a14a
 INFO: saved proof does not embed live remote branch HEAD; live auditor verification is authoritative
 INFO: remote-proof.txt records FINAL_PROOF_TAG candidate: W28E-603-phase1-final
 PASS: FINAL-TAG-VERIFICATION.txt found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/FINAL-TAG-VERIFICATION.txt
@@ -41,9 +41,9 @@ PASS: FINAL-TAG-VERIFICATION.txt contains marker: sha256sum -c CHECKSUMS.sha256
 PASS: FINAL-TAG-VERIFICATION.txt contains marker: git status
 PASS: FINAL-TAG-VERIFICATION.txt contains marker: git diff
 PASS: EVIDENCE_TAG belongs to lane W28E-603
-PASS: EVIDENCE_TAG exists remotely: W28E-603-phase1-evidence b0bf87a28536ea26aee01c290f3c78f80d969ecd
+PASS: EVIDENCE_TAG exists remotely: W28E-603-phase1-evidence 43365b2d0d7c57c8bb288c26b9760a8e3fb5a14a
 PASS: FINAL_PROOF_TAG belongs to lane W28E-603
-PASS: FINAL_PROOF_TAG exists remotely: W28E-603-phase1-final b0bf87a28536ea26aee01c290f3c78f80d969ecd
+PASS: FINAL_PROOF_TAG exists remotely: W28E-603-phase1-final 43365b2d0d7c57c8bb288c26b9760a8e3fb5a14a
 PASS: FINAL_PROOF_TAG is an ancestor of current remote HEAD
 FAIL: sha256sum -c CHECKSUMS.sha256 failed
 ../../../../src/index_tools/structure/__init__.py: OK
@@ -65,6 +65,8 @@ FAIL: sha256sum -c CHECKSUMS.sha256 failed
 ../../../../src/index_tools/tools/service.py: OK
 ../../../../src/index_server/api_server.py: OK
 ../../../../src/index_server/mcp_server.py: OK
+../../../../src/index_server/a2a_server.py: OK
+../../../../src/index_server/admin_ui.py: OK
 ../../../../src/index_tools/connectors/s3.py: OK
 ../../../../src/index_tools/connectors/webdav.py: OK
 ../../../../src/index_tools/connectors/gdrive.py: OK
@@ -73,6 +75,8 @@ FAIL: sha256sum -c CHECKSUMS.sha256 failed
 ../../../../tests/unit/UT_W28E603_Phase25/test_ut_w28e603_phase25.py: OK
 ../../../../tests/integration/IT_W28E603_StructureTransports/test_it_w28e603_structure_transports.py: OK
 ../../../../tests/integration/IT_W28E603_Phase25/test_it_w28e603_phase25.py: OK
+../../../../tests/integration/IT_W28E603_Phase25/test_it_w28e603_a2a_skills.py: OK
+../../../../tests/integration/IT_W28E603_Phase25/test_it_w28e603_webui.py: OK
 ../../../../tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py: OK
 ../../../../tests/unit/UT1_40/test_ut1_40_tool_registry.py: OK
 ../../../../tests/unit/UT1_46/test_ut1_46_w28c427r5_connector_matrix.py: OK
@@ -94,11 +98,10 @@ PASS: no stale failed artefact names found
 PASS: no unavailable/waived/out-of-scope claims found
 
 Repo: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt
-HEAD: b0bf87a28536ea26aee01c290f3c78f80d969ecd
+HEAD: 43365b2d0d7c57c8bb288c26b9760a8e3fb5a14a
 BRANCH: w28e-603-phase1-structure
 FAIL: repo-wide worktree dirty/untracked: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt
  M working/evidence/W28E-603-phase1/current/final-evidence-validator.txt
-?? run_heavy.sh
 INFO: If every listed path is outside this lane's scope, list it in external-dirty-ledger.tsv and rerun. The final validator must still end with FINAL_EVIDENCE_VALIDATOR: PASS failures=0.
 PASS: HEAD equals origin/w28e-603-phase1-structure
 
