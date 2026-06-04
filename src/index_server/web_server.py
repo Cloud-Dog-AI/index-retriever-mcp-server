@@ -303,6 +303,19 @@ def build_web_app() -> object:
             }
         )
 
+    @app.get("/version")
+    async def version() -> JSONResponse:
+        # W28E-614 XC-001: live version banner reads {"version": "..."} from this endpoint.
+        # The runtime-config APP_VERSION reflects the deployed image's baked version.
+        app_version = _runtime_override(config, "CLOUD_DOG__INDEX__UI__APP_VERSION", "index.ui.app_version", "dev")
+        return JSONResponse(
+            {
+                "version": str(app_version),
+                "application": "index-retriever-mcp-server",
+                "surface": "web",
+            }
+        )
+
     @app.get("/runtime-config.js")
     async def runtime_config() -> Response:
         return _runtime_config_response()
