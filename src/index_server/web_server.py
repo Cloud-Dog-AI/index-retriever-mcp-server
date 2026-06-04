@@ -405,6 +405,8 @@ def build_web_app() -> object:
     @app.get("/admin/groups")
     @app.get("/admin/api-keys")
     @app.get("/admin/rbac")
+    @app.get("/admin/roles")  # W28E-614 CX-110: new role policies page route.
+    @app.get("/diagnostics-audit")  # W28E-614 XC-005: Audit & Log SPA route.
     async def admin_spa_routes() -> Response:
         return _spa_index()
 
