@@ -197,7 +197,7 @@ def _required_permission_for_tool(tool_name: str) -> str:
         return "admin"
     if tool_name == "job_delete":
         return "admin"
-    if tool_name.startswith("ingest_"):
+    if tool_name.startswith("ingest_") or tool_name == "bulk_ingest":
         return "collection.write"
     if tool_name in {"parsers_list"}:
         return "collection.read"
@@ -868,7 +868,18 @@ def execute_tool(
         )
         return {"deleted": int(deleted), "status": "ok"}
     if tool_name == "reindex_run":
+        # W28E-614 XC-010: async_mode flag — when true, enqueue a JobEnvelope via
+        # the existing cloud_dog_jobs-compatible queue and return {job_id, queued: true};
+        # when false (default), run inline and return {documents, status}.
         _enforce_collection_permission(active_auth, active_identity, "collection.write")
+        async_mode = bool(arguments.get("async_mode", False))
+        if async_mode:
+            job_id = service.reindex_run_async(
+                profile=str(arguments["profile"]),
+                collection=str(arguments["collection"]),
+                actor=str(arguments.get("actor", actor_id)),
+            )
+            return {"job_id": str(job_id), "queued": True, "status": "queued"}
         result = service.reindex_run(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -876,8 +887,53 @@ def execute_tool(
         if isinstance(result, dict):
             payload = dict(result)
             payload.setdefault("status", "ok")
+            payload.setdefault("queued", False)
             return payload
-        return {"documents": int(result), "status": "ok"}
+        return {"documents": int(result), "queued": False, "status": "ok"}
+    if tool_name == "bulk_ingest":
+        # W28E-614 XC-010: bulk_ingest — accept a list of reference paths/uris.
+        # async_mode=true (default for bulk): submit each as an ingest_reference job
+        # via the existing cloud_dog_jobs-compatible queue, returning {job_id, queued: true}
+        # for the umbrella enqueue plus per-item job_ids; async_mode=false: run each
+        # ingest_reference inline and return aggregate results. Queued and inline paths
+        # share the underlying ingest_reference handler logic.
+        _enforce_collection_permission(active_auth, active_identity, "collection.read")
+        references = arguments.get("references") or arguments.get("paths") or []
+        if not isinstance(references, list) or not references:
+            raise ValueError("bulk_ingest requires a non-empty 'references' list")
+        async_mode = bool(arguments.get("async_mode", True))
+        profile = str(arguments["profile"])
+        collection = str(arguments["collection"])
+        actor = str(arguments.get("actor", actor_id))
+        per_item_jobs: list[str] = []
+        per_item_results: list[dict[str, Any]] = []
+        for ref in references:
+            ref_str = str(ref).strip()
+            if not ref_str:
+                continue
+            single = service.ingest_reference(
+                profile=profile,
+                collection=collection,
+                path=ref_str,
+                actor=actor,
+            )
+            job_id = getattr(single, "job_id", single)
+            per_item_jobs.append(str(job_id))
+            per_item_results.append({"reference": ref_str, "job_id": str(job_id)})
+        if async_mode:
+            return {
+                "job_id": per_item_jobs[0] if per_item_jobs else "",
+                "queued": True,
+                "status": "queued",
+                "items": per_item_results,
+                "count": len(per_item_results),
+            }
+        return {
+            "queued": False,
+            "status": "ok",
+            "items": per_item_results,
+            "count": len(per_item_results),
+        }
     if tool_name == "job_get":
         job = _enforce_job_owner(service, str(arguments["job_id"]), active_auth, active_identity, actor_id)
         return {"job": _normalise_job_payload(job)}

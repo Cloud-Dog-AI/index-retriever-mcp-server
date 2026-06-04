@@ -162,7 +162,8 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="delete_by_id", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a specific document from a collection by its ID."),
         ToolSpec(name="delete_by_filter", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete documents matching a metadata filter from a collection."),
         ToolSpec(name="retention_run", input_model=GenericToolInput, output_model=GenericToolOutput, description="Execute retention policy to remove expired or stale documents."),
-        ToolSpec(name="reindex_run", input_model=GenericToolInput, output_model=GenericToolOutput, description="Re-embed and re-index existing documents in a collection."),
+        ToolSpec(name="reindex_run", input_model=GenericToolInput, output_model=GenericToolOutput, description="Re-embed and re-index existing documents in a collection. Accepts async_mode (default false); when true returns {job_id, queued: true}."),
+        ToolSpec(name="bulk_ingest", input_model=GenericToolInput, output_model=GenericToolOutput, description="Bulk-ingest a list of references (paths/uris) into a collection. Accepts async_mode (default true); when true returns {job_id, queued: true, items: [...]}; when false runs inline and returns aggregate results."),
         # -- Health --
         ToolSpec(name="backend_health_check", input_model=GenericToolInput, output_model=BackendHealthOutput, description="Check connectivity and health of the vector database backend."),
         ToolSpec(name="embedding_health_check", input_model=GenericToolInput, output_model=EmbeddingHealthOutput, description="Check connectivity and health of the embedding model provider."),
