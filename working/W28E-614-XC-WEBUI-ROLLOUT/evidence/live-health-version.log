@@ -1,0 +1,13 @@
+# W28E-614 Live health/version smoke — R2 (after /version endpoint deploy)
+Generated: 2026-06-04T08:08:14+01:00
+
+## GET /health
+{"status":"ok","application":"index-retriever-mcp-server","version":"0.1.0","env_file":null,"checks":{"db":{"status":"ok","ok":true,"probe":{"ok":true,"result":1}},"vdb":{"status":"ok","detail":{"status":"ok","provider":"qdrant","backend":"qdrant"}},"embedding":{"status":"ok","detail":{"status":"ok","provider":"ollama","model":"nomic-embed-text","dimensions":8}}}}
+HTTP 200 time=0.046602s
+
+## GET /version
+{"version":"dev","application":"index-retriever-mcp-server","surface":"web"}
+HTTP 200 time=0.173969s
+
+## GET /diagnostics-audit (SPA catch-all)
+HTTP 200

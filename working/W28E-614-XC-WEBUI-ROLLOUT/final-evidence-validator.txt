@@ -1,0 +1,44 @@
+W28E-614 — Final Evidence Validator
+====================================
+
+Run: 2026-06-04T08:14:25+01:00
+Lane: W28E-614 — index-retriever XC WebUI rollout
+Worktree: /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-svc/
+Branch: w28e-614-index-retriever-xc
+HEAD: 878a4a70bf44eafe6ea8e7c167193d3bfcd248d2
+
+Requirements map breakdown:
+  PASS:                    10
+  PASS_PARTIAL:            1
+  PARTIAL_THIS_LANE:       5
+  NOT_VERIFIED_THIS_LANE:  4
+  NOT_DONE_THIS_LANE:      5
+  Total rows:              24
+
+Live verification:
+  /health:    HTTP 200 (all backend checks green)
+  /version:   HTTP 200 returning {"version":"dev",...} (XC-001 met)
+  Playwright: 5/5 PASS against https://indexretriever0.cloud-dog.net
+  Estate:     9/9 services HTTP 200 (chat-client, db-mcp, expert-agent, file-mcp, git-mcp, imap-mcp, index-retriever, notification-agent, sql-agent)
+
+Deployment proof:
+  Built image:           f879eafd567d2059ee6a75e987397ccf4b6356188d1a51ae851c4b25fc85971d
+  Registry pushed:       sha256:23f6b50edc49ea6fbab719385d5a511ed756a157ae94d09c5be49255418dfc57
+  Terraform apply:       2 added, 2 destroyed (data.docker_registry_image.indexretriever + docker_image.indexretriever + docker_container.indexretriever0)
+  Container running:     indexretriever0.app.vpc0.cloud-dog.net Up (healthy)
+
+Honest assessment:
+  ALL primary XC requirements (XC-001/003/004/005/010) PASS with live evidence.
+  ESTATE health smoke + DEPLOY proof PASS.
+  Several CX requirements (CX-101, CX-103, CX-104 (partial), CX-110, CX-150, CX-160 (partial))
+  are NOT_DONE_THIS_LANE or PARTIAL_THIS_LANE — shared @cloud-dog/ui delivers
+  the components but per-page wiring/Playwright assertions for the consumer
+  app remain. XC-009 + CX-120/130/131/140/170/180 are NOT_VERIFIED_THIS_LANE
+  but each has prior-lane delivery in place; no regression observed.
+  ESTATE-WEBUI-BROWSER (per-service browser smoke for the other 8 WebUI
+  services) was NOT executed.
+
+Because the instruction acceptance requires EVERY XC/CX row PASS, this
+lane returns NO with detailed gaps. No false YES is asserted.
+
+FINAL_EVIDENCE_VALIDATOR: FAIL failures=14
