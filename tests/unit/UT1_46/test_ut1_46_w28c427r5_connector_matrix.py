@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import pytest
+from cloud_dog_storage.errors import ConfigurationError
 
 from index_tools.connectors.resolver import fetch_source, resolve_source
 from index_tools.tools.service import IndexService
@@ -32,12 +33,39 @@ def test_w28c427r5_connector_resolver_matrix(tmp_path) -> None:
         assert plan.source_type == expected
 
     assert fetch_source(resolve_source(str(sample), allowed_roots=[str(tmp_path)])) == b"connector matrix"
+    # s3/webdav/gdrive fetch is now implemented via the cloud_dog_storage platform backends
+    # (RULES §1.4). With no backend configured it raises the platform ConfigurationError
+    # (a real "needs configuration" error), not a NotImplementedError stub.
     for uri in ("s3://bucket/key.txt", "webdav://dav.example.com/files/source.txt", "gdrive://1AbCdEfGhIjKlMnOpQrStUvWxYz"):
-        with pytest.raises(NotImplementedError, match="requires backend credentials"):
+        with pytest.raises(ConfigurationError):
             _ = fetch_source(resolve_source(uri, allowed_roots=[str(tmp_path)]))
 
     with pytest.raises(ValueError, match="Unsupported source scheme"):
         _ = resolve_source("ssh://example.com/source.txt", allowed_roots=[str(tmp_path)])
+
+
+def test_w28c427r5_s3_fetch_delegates_to_cloud_dog_storage(monkeypatch) -> None:
+    """fetch_source for s3 delegates to the cloud_dog_storage backend and returns its bytes."""
+    import index_tools.connectors.s3 as s3mod
+
+    captured: dict[str, str] = {}
+
+    class _FakeBackend:
+        def read_bytes(self, path: str) -> bytes:
+            captured["read_path"] = path
+            return b"s3-object-bytes"
+
+    def _fake_build(config):
+        captured["backend"] = config.backend
+        captured["bucket"] = config.s3.bucket
+        return _FakeBackend()
+
+    monkeypatch.setattr(s3mod, "build_storage_backend", _fake_build)
+    out = fetch_source(resolve_source("s3://my-bucket/docs/report.pdf"))
+    assert out == b"s3-object-bytes"
+    assert captured["backend"] == "s3"
+    assert captured["bucket"] == "my-bucket"
+    assert captured["read_path"] == "docs/report.pdf"
 
 
 def test_w28c427r5_source_config_policy_gate_rejects_unsupported_before_fetch(service: IndexService) -> None:

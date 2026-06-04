@@ -40,15 +40,23 @@ _MATRIX_URL_ENV = {
 _DIALECTS = ["sqlite", "postgresql", "mysql"]
 
 
+_DB_ENV_KEYS = (
+    "CLOUD_DOG_DB__URL", "CLOUD_DOG_DB__DIALECT", "CLOUD_DOG_DB__HOST", "CLOUD_DOG_DB__PORT",
+    "CLOUD_DOG_DB__USERNAME", "CLOUD_DOG_DB__PASSWORD", "CLOUD_DOG_DB__DATABASE",
+)
+
+
 def _configure(monkeypatch, dialect: str, tmp_path) -> str | None:
-    """Configure cloud_dog_db env for the dialect. Returns a skip reason, or None to run."""
-    for name in (
-        "CLOUD_DOG__DB__URL", "CLOUD_DOG_DB__URL", "DB_URL",
-        "CLOUD_DOG_DB__DIALECT", "CLOUD_DOG__DB__DIALECT",
-        "CLOUD_DOG_DB__DATABASE", "CLOUD_DOG__DB__DATABASE",
-        "CLOUD_DOG_DB__HOST", "CLOUD_DOG_DB__PORT",
-        "CLOUD_DOG_DB__USERNAME", "CLOUD_DOG_DB__PASSWORD",
-    ):
+    """Configure cloud_dog_db env for the dialect. Returns a skip reason, or None to run.
+
+    The postgresql/mysql legs run against a real backend when one is provided, in order:
+    (1) an explicit opt-in ``W28E603_MATRIX_{POSTGRESQL,MYSQL}_URL``, or (2) a harness env
+    file (e.g. ``--env tests/env-DB-postgresql``) that already configures that dialect (its
+    Vault refs resolved to concrete host/credentials). Otherwise the leg SKIPs with a reason.
+    """
+    # Snapshot any harness-provided DB settings BEFORE clearing them.
+    snapshot = {key: os.environ.get(key, "") for key in _DB_ENV_KEYS}
+    for name in (*_DB_ENV_KEYS, "CLOUD_DOG__DB__URL", "DB_URL", "CLOUD_DOG__DB__DIALECT", "CLOUD_DOG__DB__DATABASE"):
         monkeypatch.delenv(name, raising=False)
 
     if dialect == "sqlite":
@@ -56,11 +64,38 @@ def _configure(monkeypatch, dialect: str, tmp_path) -> str | None:
         monkeypatch.setenv("CLOUD_DOG_DB__DATABASE", str(tmp_path / "w28e603-matrix.db"))
         return None
 
-    url = os.environ.get(_MATRIX_URL_ENV[dialect], "").strip()
-    if not url:
-        return f"{dialect} backend not configured (set {_MATRIX_URL_ENV[dialect]} to a disposable test DB URL)"
-    monkeypatch.setenv("CLOUD_DOG_DB__URL", url)
-    return None
+    def _concrete(value: str) -> str:
+        """Return a usable value, or '' if absent or an unresolved ${...} placeholder."""
+        value = value.strip()
+        return "" if (not value or "${" in value) else value
+
+    # (1) explicit opt-in URL
+    opt_url = _concrete(os.environ.get(_MATRIX_URL_ENV[dialect], ""))
+    if opt_url:
+        monkeypatch.setenv("CLOUD_DOG_DB__URL", opt_url)
+        return None
+
+    # (2) harness env file already configured this dialect with CONCRETE (Vault-resolved) values
+    if snapshot["CLOUD_DOG_DB__DIALECT"].strip().lower() == dialect:
+        url = _concrete(snapshot["CLOUD_DOG_DB__URL"])
+        if url:
+            monkeypatch.setenv("CLOUD_DOG_DB__URL", url)
+            return None
+        if _concrete(snapshot["CLOUD_DOG_DB__HOST"]):
+            for key in _DB_ENV_KEYS:
+                concrete = _concrete(snapshot[key])
+                if concrete:
+                    monkeypatch.setenv(key, concrete)
+            return None
+        return (
+            f"{dialect} backend configured via env file but credentials are unresolved "
+            f"(${{vault...}} placeholders need a Vault token not present in this run)"
+        )
+
+    return (
+        f"{dialect} backend not configured (set {_MATRIX_URL_ENV[dialect]} to a disposable test DB URL, "
+        f"or run with --env tests/env-DB-{'postgresql' if dialect == 'postgresql' else 'mysql'} and a Vault token)"
+    )
 
 
 def _round_trip(dialect: str) -> None:

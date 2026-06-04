@@ -7,7 +7,9 @@
 ## Instruction CLOSE GATE (full lane)
 - All 6 phases complete: **NO** — Phase 1 of 6 complete; Phases 2 (providers), 3 (search views/WebUI inspect),
   4 (corpus), 5 (templates), 6 (db-mcp + full backend matrix) NOT delivered.
-- Existing IR tests still pass (regression): **YES** — `pytest tests/unit --env tests/env-UT` → 199 passed, 0 failed.
+- Existing IR tests still pass (regression): **YES** — `pytest tests/unit --env tests/env-UT` → 200 passed, 0 failed.
+- Quality compliance tier fully green: **YES** — `pytest tests/quality --env tests/env-QT` → 47 passed, 0 failed
+  (RC-01 + RC-09 + RC-04 fixed; see `quality-preexisting-failures.md`).
 - All 15 acceptance criteria from design brief §25 met: **NO** — Phase 1 satisfies #1,#4,#7(retrieval),#14,#15 and the
   foundation for #2/#6; #3,#5,#8–#13 are delivered by Phases 2–6.
 - §1.4 bespoke grep zero: **YES** — `bespoke-grep.txt` → NONE in all categories (NoSQL drivers / logging / cache /

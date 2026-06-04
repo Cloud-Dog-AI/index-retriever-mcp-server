@@ -99,10 +99,16 @@ def fetch_source(plan: FetchPlan, *, timeout_seconds: float = 30.0) -> bytes:
         from index_tools.connectors.ftp import fetch as ftp_fetch
         return ftp_fetch(plan, timeout_seconds=timeout_seconds)
 
-    if source_type in {"s3", "webdav", "gdrive"}:
-        raise NotImplementedError(
-            f"Fetch for {source_type} requires backend credentials; "
-            f"use cloud_dog_storage or profile-specific fetch."
-        )
+    if source_type == "s3":
+        from index_tools.connectors.s3 import fetch as s3_fetch
+        return s3_fetch(plan, timeout_seconds=timeout_seconds)
+
+    if source_type == "webdav":
+        from index_tools.connectors.webdav import fetch as webdav_fetch
+        return webdav_fetch(plan, timeout_seconds=timeout_seconds)
+
+    if source_type == "gdrive":
+        from index_tools.connectors.gdrive import fetch as gdrive_fetch
+        return gdrive_fetch(plan, timeout_seconds=timeout_seconds)
 
     raise ValueError(f"No fetcher for source type: {source_type!r}")

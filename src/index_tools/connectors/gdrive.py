@@ -16,6 +16,11 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs, urlparse
 
+from cloud_dog_config import get_config
+from cloud_dog_storage.config.models import GoogleDriveConfig, StorageConfig
+from cloud_dog_storage.errors import ConfigurationError
+from cloud_dog_storage.factory import build_storage_backend
+
 from index_tools.connectors.models import FetchPlan
 
 
@@ -53,6 +58,44 @@ def resolve(reference: str) -> FetchPlan:
             "download_url": "https" + f"://www.googleapis.com/drive/v3/files/{file_id}?alt=media",
         },
     )
+
+
+def _cfg(field: str) -> str:
+    """Resolve a Google Drive connector config value via cloud_dog_config (env/Vault-backed)."""
+    for key in (f"connectors.gdrive.{field}", f"storage.google_drive.{field}", f"storage.gdrive.{field}"):
+        try:
+            value = get_config(key)
+        except Exception:
+            value = None
+        if value not in (None, ""):
+            return str(value).strip()
+    return ""
+
+
+def fetch(plan: FetchPlan, *, timeout_seconds: float = 30.0) -> bytes:
+    """Fetch a Google Drive file through the cloud_dog_storage Drive backend (RULES §1.4).
+
+    OAuth credentials resolve from platform config (``storage.google_drive.*`` /
+    ``connectors.gdrive.*``); the file id comes from the resolved plan. Raises
+    ``ConfigurationError`` when the backend is not configured.
+    """
+    refresh_token = _cfg("refresh_token")
+    access_token = _cfg("access_token")
+    if not refresh_token and not access_token:
+        raise ConfigurationError(
+            "Google Drive fetch requires storage.google_drive credentials (refresh_token or access_token)",
+            backend_name="google_drive",
+        )
+    config = GoogleDriveConfig(
+        client_id=_cfg("client_id"),
+        client_secret=_cfg("client_secret"),
+        refresh_token=refresh_token,
+        access_token=access_token,
+    )
+    backend = build_storage_backend(
+        StorageConfig(backend="google_drive", google_drive=config, timeout_s=int(timeout_seconds))
+    )
+    return backend.read_bytes(plan.metadata.get("file_id") or plan.location)
 
 
 def map_http_error(status_code: int, file_id: str) -> Exception:
