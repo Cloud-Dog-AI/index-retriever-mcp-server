@@ -293,6 +293,26 @@ class StructureService:
             source_filename=source_filename, provider=provider, actor=actor, roles=roles,
         )
 
+    def link_to_vdb_records(self, structure_document_id: str, *, vdb_record_ids: list[str] | None = None,
+                            chunk_ids: list[str] | None = None, source_document_id: str | None = None,
+                            actor: str = "service", roles: set[str] | None = None) -> dict[str, Any]:
+        """Link a structure document to existing VDB/chunk records and source document (design brief §8.1; §25 #6)."""
+        bundle = self.repository.get_bundle(structure_document_id)
+        if bundle is None:
+            raise KeyError(structure_document_id)
+        doc = bundle.document
+        if vdb_record_ids is not None:
+            doc.vdb_record_ids = sorted({str(r) for r in vdb_record_ids if str(r).strip()})
+        if chunk_ids is not None:
+            doc.chunk_ids = sorted({str(c) for c in chunk_ids if str(c).strip()})
+        if source_document_id is not None:
+            doc.source_document_id = str(source_document_id)
+        bundle.document = doc
+        self.repository.create_bundle(bundle)
+        self._audit(actor=actor, roles=roles, action="link_vdb", sdid=structure_document_id,
+                    new_value={"vdb_records": len(doc.vdb_record_ids), "chunks": len(doc.chunk_ids), "source_document_id": doc.source_document_id})
+        return doc.model_dump(mode="json")
+
 
 def _build_outline(sections: list[StructureSection]) -> list[dict[str, Any]]:
     """Assemble a parent/child tree from a flat section list (design brief §6.8 section hierarchy)."""

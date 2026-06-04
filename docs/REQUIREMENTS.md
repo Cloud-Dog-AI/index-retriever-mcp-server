@@ -467,7 +467,7 @@ Admin/maintainer tools SHALL include:
 
 ### FR-16A Complete MCP tool inventory contract
 - The documented MCP catalogue SHALL match the actual registered runtime inventory exactly.
-- The current registered tool count SHALL be **89** tools (includes the W28E-603 document-structure family).
+- The current registered tool count SHALL be **90** tools (includes the W28E-603 document-structure family).
 - Tool documentation SHALL include, for every registered tool:
   - tool name,
   - operator intent/description,

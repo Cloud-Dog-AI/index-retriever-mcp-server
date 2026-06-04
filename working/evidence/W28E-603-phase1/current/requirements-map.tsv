@@ -28,3 +28,5 @@ REG.7	Full unit suite after Phase 2-5 (regression)	current/test-unit-regression-
 A2A.1	A2A exposes structure skills (§25 #12)	src/index_server/a2a_server.py	agent card + /a2a/tasks structure skills	pytest tests/integration/IT_W28E603_Phase25/test_it_w28e603_a2a_skills.py	PASS
 WEBUI.1	Server-rendered structure WebUI workflows (§25 #11)	src/index_server/admin_ui.py	/admin/ui/structure page + wired app.js	pytest tests/integration/IT_W28E603_Phase25/test_it_w28e603_webui.py	PASS
 REG.8	Full integration tier after A2A+WebUI (regression)	current/full-test-suite-results.md	58 passed 0 failed	pytest tests/integration --env tests/env-IT	PASS
+LINK.1	Structure-to-VDB/chunk record linkage (§25 #6)	src/index_tools/structure/service.py	vdb_record_ids/chunk_ids fields + link_to_vdb_records tool/route	pytest tests/unit/UT_W28E603_Phase25::test_link_to_vdb_records	PASS
+REG.9	Full unit suite after VDB linkage (regression)	current/test-unit-regression-full.log	211 passed 0 failed	pytest tests/unit --env tests/env-UT	PASS

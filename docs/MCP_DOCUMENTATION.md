@@ -8,7 +8,7 @@ Use `Authorization: Bearer <your-api-key>` or `X-API-Key: <your-api-key>`; admin
 
 ## Verification Basis
 - Source files reviewed: `src/index_server/a2a_server.py`, `src/index_server/api_server.py`, `src/index_server/mcp_server.py`, `src/index_server/web_server.py`
-- Tool inventory size: 89
+- Tool inventory size: 90
 
 ## Tools
 | Tool | Notes |
@@ -102,6 +102,7 @@ Use `Authorization: Bearer <your-api-key>` or `X-API-Key: <your-api-key>`; admin
 | `structure_template_get` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
 | `structure_template_list` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
 | `structure_template_export` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
+| `structure_link_to_vdb_records` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
 
 ## Example Call
 ```json

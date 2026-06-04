@@ -1818,6 +1818,21 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    def structure_link_vdb(structure_document_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        """Link a structure document to existing VDB record/chunk ids (§25 #6)."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        try:
+            return active_service.structure.link_to_vdb_records(
+                structure_document_id,
+                vdb_record_ids=payload.get("vdb_record_ids"),
+                chunk_ids=payload.get("chunk_ids"),
+                source_document_id=payload.get("source_document_id"),
+                actor=identity.user_id, roles=identity.roles,
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Structure document not found: {structure_document_id}") from exc
+
     # -- W28E-603 Phase 4: corpus --
     def structure_corpus_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         """Create a corpus (named set of structure documents)."""
@@ -2186,6 +2201,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get(f"{api_base_path}/structure/documents/{{structure_document_id}}/sections")(structure_documents_sections)
     # W28E-603 Phase 2: extraction
     app.post(f"{api_base_path}/structure/extract")(structure_extract)
+    app.post(f"{api_base_path}/structure/documents/{{structure_document_id}}/vdb-links")(structure_link_vdb)
     # W28E-603 Phase 4: corpus
     app.post(f"{api_base_path}/structure/corpora")(structure_corpus_create)
     app.get(f"{api_base_path}/structure/corpora")(structure_corpus_list)

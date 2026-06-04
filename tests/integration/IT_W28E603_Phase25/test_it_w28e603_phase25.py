@@ -107,3 +107,19 @@ def test_phase25_rbac_reader_cannot_write(service: IndexService) -> None:
     assert client.post("/api/v1/structure/extract", json={"text": _DOC1, "profile": "default", "collection": "x"}, headers=_READER).status_code == 403
     assert client.post("/api/v1/structure/corpora", json={"name": "n", "profile_id": "default"}, headers=_READER).status_code == 403
     assert client.get("/api/v1/structure/corpora", headers=_READER).status_code == 200
+
+
+def test_phase25_vdb_linkage(service: IndexService) -> None:
+    client = TestClient(build_api_app(service=service))
+    sdid = _extract(client, _DOC1, "lk.md")
+    # MCP link
+    r = client.post(api_tools_path("structure_link_to_vdb_records"),
+                    json={"structure_document_id": sdid, "vdb_record_ids": ["r2", "r1"], "chunk_ids": ["c1"], "source_document_id": "src-1"}, headers=_ADMIN)
+    assert r.status_code == 200, r.text
+    assert r.json()["vdb_record_ids"] == ["r1", "r2"]
+    assert r.json()["source_document_id"] == "src-1"
+    # REST link + verify persisted
+    r2 = client.post(f"/api/v1/structure/documents/{sdid}/vdb-links", json={"vdb_record_ids": ["r3"], "chunk_ids": ["c2", "c3"]}, headers=_ADMIN)
+    assert r2.status_code == 200 and r2.json()["chunk_ids"] == ["c2", "c3"]
+    got = client.get(f"/api/v1/structure/documents/{sdid}", headers=_ADMIN)
+    assert got.json()["document"]["vdb_record_ids"] == ["r3"]

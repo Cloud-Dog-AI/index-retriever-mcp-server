@@ -178,3 +178,25 @@ def test_template_export_bad_format(service) -> None:
     tid = svc.templates.generate(cid, actor="t", roles={"admin"})["template_id"]
     with pytest.raises(ValueError):
         svc.templates.export(tid, format="pdf")
+
+
+# -- VDB linkage (§25 #6) ------------------------------------------------------
+
+def test_link_to_vdb_records(service) -> None:
+    svc, audit = service
+    sdid = svc.extract_text(_DOC1, profile="default", collection="docs", source_filename="d1.md", actor="t", roles={"admin"})["document"]["structure_document_id"]
+    assert svc.get(sdid)["document"]["vdb_record_ids"] == []
+    linked = svc.link_to_vdb_records(sdid, vdb_record_ids=["rec-2", "rec-1"], chunk_ids=["chunk-a"], source_document_id="srcdoc-9", actor="t", roles={"admin"})
+    assert linked["vdb_record_ids"] == ["rec-1", "rec-2"]
+    assert linked["chunk_ids"] == ["chunk-a"]
+    assert linked["source_document_id"] == "srcdoc-9"
+    got = svc.get(sdid)
+    assert got["document"]["vdb_record_ids"] == ["rec-1", "rec-2"]
+    assert len(got["sections"]) == 2  # children preserved through re-persist
+    assert audit.events[-1]["action"] == "link_vdb"
+
+
+def test_link_missing_doc_raises(service) -> None:
+    svc, _ = service
+    with pytest.raises(KeyError):
+        svc.link_to_vdb_records("sd_missing", vdb_record_ids=["x"])

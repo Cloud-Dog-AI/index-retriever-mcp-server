@@ -95,6 +95,8 @@ class StructureDocument(BaseModel):
     file_id: str | None = None
     profile_id: str
     collection_id: str
+    vdb_record_ids: list[str] = Field(default_factory=list)
+    chunk_ids: list[str] = Field(default_factory=list)
     tenant_id: str | None = None
     source_uri: str | None = None
     source_filename: str | None = None
