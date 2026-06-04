@@ -21,6 +21,17 @@ from index_tools.db.runtime import (
     initialise_database,
     shutdown_database,
 )
+from index_tools.db.structure_models import (  # noqa: F401 — register structure ORM mappers
+    StructureBlockRow,
+    StructureDocumentRow,
+    StructureExtractorRunRow,
+    StructureFigureRow,
+    StructurePageRow,
+    StructureRelationRow,
+    StructureSectionRow,
+    StructureStyleRow,
+    StructureTableRow,
+)
 
 __all__ = [
     "IndexPlatformDbState",
@@ -28,4 +39,13 @@ __all__ = [
     "database_health",
     "initialise_database",
     "shutdown_database",
+    "StructureDocumentRow",
+    "StructurePageRow",
+    "StructureBlockRow",
+    "StructureSectionRow",
+    "StructureStyleRow",
+    "StructureTableRow",
+    "StructureFigureRow",
+    "StructureRelationRow",
+    "StructureExtractorRunRow",
 ]

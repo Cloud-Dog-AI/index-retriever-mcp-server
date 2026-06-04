@@ -1710,6 +1710,91 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=f"File not found: {file_id}") from exc
 
+    # -- W28E-603 Document Structure (Phase 1: model & persistence foundation) --
+    def structure_health(request: Request) -> dict[str, Any]:
+        """Report document-structure subsystem health, including the canonical store probe."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        return active_service.structure.health()
+
+    def structure_documents_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        """Create or idempotently replace a canonical structure document (RBAC: collection.write)."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        try:
+            return active_service.structure.create(payload, actor=identity.user_id, roles=identity.roles)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    def structure_documents_list(
+        profile: str | None = None,
+        collection: str | None = None,
+        status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+        request: Request = None,
+    ) -> dict[str, Any]:
+        """List canonical structure documents with optional filters and pagination."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        return active_service.structure.list(
+            profile_id=profile,
+            collection_id=collection,
+            status=status,
+            limit=limit,
+            offset=offset,
+        )
+
+    def structure_documents_get(
+        structure_document_id: str,
+        include: str | None = None,
+        request: Request = None,
+    ) -> dict[str, Any]:
+        """Retrieve a structure document by id, optionally including child objects (comma-separated)."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        include_list = [item.strip() for item in include.split(",") if item.strip()] if include else None
+        try:
+            return active_service.structure.get(structure_document_id, include=include_list)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Structure document not found: {structure_document_id}") from exc
+
+    def structure_documents_delete(structure_document_id: str, request: Request) -> dict[str, Any]:
+        """Delete a structure document and all of its child objects (RBAC: collection.write)."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        try:
+            return active_service.structure.delete(structure_document_id, actor=identity.user_id, roles=identity.roles)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Structure document not found: {structure_document_id}") from exc
+
+    def structure_documents_outline(structure_document_id: str, request: Request) -> dict[str, Any]:
+        """Return the section hierarchy (outline) for a structure document as a nested tree."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        try:
+            return active_service.structure.outline(structure_document_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Structure document not found: {structure_document_id}") from exc
+
+    def structure_documents_pages(structure_document_id: str, request: Request) -> dict[str, Any]:
+        """List page-level layout records for a structure document."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        try:
+            return active_service.structure.list_pages(structure_document_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Structure document not found: {structure_document_id}") from exc
+
+    def structure_documents_sections(structure_document_id: str, request: Request) -> dict[str, Any]:
+        """List section records for a structure document."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        try:
+            return active_service.structure.list_sections(structure_document_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Structure document not found: {structure_document_id}") from exc
+
     assets_dir = _ui_assets_dir()
     if path_utils.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="ui-assets")
@@ -1950,6 +2035,15 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get(f"{_LEGACY_API_BASE_PATH}/files/{{file_id}}", include_in_schema=False)(files_get)
     app.get(f"{_LEGACY_API_BASE_PATH}/files/{{file_id}}/download", include_in_schema=False)(files_download)
     app.delete(f"{_LEGACY_API_BASE_PATH}/files/{{file_id}}", include_in_schema=False)(files_delete)
+    # W28E-603 document structure (Phase 1) — separate namespace from search/retrieve/ingest (design brief §12).
+    app.get(f"{api_base_path}/structure/health")(structure_health)
+    app.post(f"{api_base_path}/structure/documents")(structure_documents_create)
+    app.get(f"{api_base_path}/structure/documents")(structure_documents_list)
+    app.get(f"{api_base_path}/structure/documents/{{structure_document_id}}")(structure_documents_get)
+    app.delete(f"{api_base_path}/structure/documents/{{structure_document_id}}")(structure_documents_delete)
+    app.get(f"{api_base_path}/structure/documents/{{structure_document_id}}/outline")(structure_documents_outline)
+    app.get(f"{api_base_path}/structure/documents/{{structure_document_id}}/pages")(structure_documents_pages)
+    app.get(f"{api_base_path}/structure/documents/{{structure_document_id}}/sections")(structure_documents_sections)
     app.post(f"{api_base_path}/upload")(upload_ingest)
     app.post(f"{_LEGACY_API_BASE_PATH}/upload", include_in_schema=False)(upload_ingest)
     # W28A-648: Audit log JSONL reader for WebUI DataTable display

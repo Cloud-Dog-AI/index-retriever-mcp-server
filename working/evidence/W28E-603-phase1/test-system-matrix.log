@@ -1,0 +1,5 @@
+.ss                                                                      [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py:92: postgresql backend not configured (set W28E603_MATRIX_POSTGRESQL_URL to a disposable test DB URL)
+SKIPPED [1] tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py:92: mysql backend not configured (set W28E603_MATRIX_MYSQL_URL to a disposable test DB URL)
+1 passed, 2 skipped in 1.16s

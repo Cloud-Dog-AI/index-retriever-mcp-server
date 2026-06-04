@@ -173,6 +173,15 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="file_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Get metadata for a stored file by ID."),
         ToolSpec(name="file_download", input_model=GenericToolInput, output_model=GenericToolOutput, description="Download stored file content by ID. Returns base64-encoded content."),
         ToolSpec(name="file_delete", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a stored file by ID."),
+        # -- W28E-603 Document Structure (Phase 1: model & persistence foundation) --
+        ToolSpec(name="structure_health", input_model=GenericToolInput, output_model=GenericToolOutput, description="Report document-structure subsystem health, including the canonical structure store probe."),
+        ToolSpec(name="structure_document_create", input_model=GenericToolInput, output_model=GenericToolOutput, description="Create or idempotently replace a canonical document-structure record (document plus pages/blocks/sections/styles/tables/figures/relations)."),
+        ToolSpec(name="structure_document_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve a canonical structure document by its structure_document_id, optionally including child objects."),
+        ToolSpec(name="structure_document_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List canonical structure documents, filtered by profile, collection or status, with pagination."),
+        ToolSpec(name="structure_document_delete", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a canonical structure document and all of its child objects."),
+        ToolSpec(name="structure_outline_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Return the section hierarchy (outline) for a structure document as a nested tree."),
+        ToolSpec(name="structure_pages_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List page-level layout records for a structure document."),
+        ToolSpec(name="structure_sections_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List section records for a structure document."),
     ]
     for spec in specs:
         registry.register(spec)

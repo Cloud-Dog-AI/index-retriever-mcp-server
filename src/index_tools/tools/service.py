@@ -828,6 +828,21 @@ class IndexService:
         self._loop_thread = None
         self._loop_ready.wait(timeout=float(_cfg("queue.startup_wait_seconds", 1.0) or 1.0))
 
+    @property
+    def structure(self) -> Any:
+        """Lazy transport-neutral document-structure service (W28E-603 Phase 1).
+
+        Constructed on first access and cached, sharing this service's audit logger so
+        structure create/delete events land in the same audit stream.
+        """
+        existing = getattr(self, "_structure_service", None)
+        if existing is None:
+            from index_tools.structure import StructureService
+
+            existing = StructureService(audit_logger=self.audit_logger)
+            self._structure_service = existing
+        return existing
+
     def close(self) -> None:
         """Stop service-owned background workers."""
         if self._closed:

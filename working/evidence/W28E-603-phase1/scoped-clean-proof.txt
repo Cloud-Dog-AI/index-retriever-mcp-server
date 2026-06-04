@@ -1,0 +1,14 @@
+ M docs/MCP_DOCUMENTATION.md
+ M docs/REQUIREMENTS.md
+ M docs/TESTS.md
+ M src/index_server/api_server.py
+ M src/index_server/mcp_server.py
+ M src/index_tools/db/__init__.py
+ M src/index_tools/tools/registry.py
+ M src/index_tools/tools/service.py
+ M tests/unit/UT1_40/test_ut1_40_tool_registry.py
+?? src/index_tools/db/structure_models.py
+?? src/index_tools/structure/
+?? tests/integration/IT_W28E603_StructureTransports/
+?? tests/system/ST_W28E603_StructureBackendMatrix/
+?? tests/unit/UT_W28E603_Structure/

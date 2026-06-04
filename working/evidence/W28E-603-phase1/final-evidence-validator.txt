@@ -1,0 +1,28 @@
+W28E-603 Phase 1 — FINAL EVIDENCE VALIDATOR
+scope: design brief §24 Phase 1 (Model & Persistence Foundation) — Phase 1 of 6
+
+requirements-map rows: 16; PASS: 16; non-PASS: 0
+  [PASS] P1.1 — Canonical structure model + schema version (brief §6, §24-Phase1)
+  [PASS] P1.2 — cloud_dog_db persistence integration (brief §7.1)
+  [PASS] P1.3 — Migrations through existing mechanism (brief §7.1)
+  [PASS] P1.4 — Basic CRUD APIs under /api/v1/structure (brief §12, §24-Phase1)
+  [PASS] P1.5 — Basic MCP listing/get tools (brief §13, §24-Phase1)
+  [PASS] P1.6 — Backend matrix smoke tests (brief §24-Phase1)
+  [PASS] HG.1 — LOCAL ONLY — no preprod/Docker push/SSH
+  [PASS] HG.2 — MUST NOT break existing VDB indexing/search/retrieve (regression)
+  [PASS] HG.3 — 100% platform package reuse / zero bespoke (RULES §1.4, §6.88)
+  [PASS] HG.4 — Canonical structure in cloud_dog_db; VDB derived-only
+  [PASS] CG.1 — Existing IR tests still pass (regression gate)
+  [PASS] CG.2 — §1.4 bespoke grep zero
+  [PASS] DOC.1 — Docs/tests/implementation agree on tool names+routes (brief §25.15, FR-16A)
+  [PASS] AUDIT.1 — Audit logs capture structure create + delete (brief §25.14)
+  [PASS] QG.1 — No new quality-gate regressions (RC-01/RC-09 pre-existing)
+  [PASS (scoped)] SCOPE.1 — Phase 1 of 6 only — full-lane §25 (15 criteria) NOT all met
+
+secret-scan (structure code): no hardcoded secrets/tokens/vault refs (bespoke-grep.txt + manual review)
+checksums: see CHECKSUMS.sha256 + checksums-verify.txt
+regression: tests/unit 199 passed / 0 failed (test-unit-regression-full.log)
+new quality failures introduced: 0 (RC-01/RC-09 pre-existing — quality-preexisting-failures.md)
+
+FINAL_EVIDENCE_VALIDATOR (W28E-603 Phase 1 scope): PASS failures=0
+LANE_COMPLETION (full W28E-603 — all 6 phases / 15 §25 criteria): INCOMPLETE — Phase 1 of 6 delivered; Phases 2-6 pending

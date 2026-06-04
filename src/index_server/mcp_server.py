@@ -243,6 +243,18 @@ def _required_permission_for_tool(tool_name: str) -> str:
         return "collection.write"
     if tool_name == "file_delete":
         return "collection.write"
+    # W28E-603 document structure (Phase 1)
+    if tool_name in {
+        "structure_health",
+        "structure_document_get",
+        "structure_document_list",
+        "structure_outline_get",
+        "structure_pages_list",
+        "structure_sections_list",
+    }:
+        return "collection.read"
+    if tool_name in {"structure_document_create", "structure_document_delete"}:
+        return "collection.write"
     return "admin"
 
 
@@ -985,6 +997,42 @@ def execute_tool(
     if tool_name == "ingest_stream_close":
         from index_server.streaming import ingest_stream_close as _stream_close
         return _stream_close(service=service, session_id=str(arguments["session_id"]))
+    # -- W28E-603 document structure (Phase 1) --
+    if tool_name == "structure_health":
+        return service.structure.health()
+    if tool_name == "structure_document_create":
+        payload = arguments.get("bundle", arguments)
+        return service.structure.create(
+            payload,
+            actor=str(arguments.get("actor", "mcp")),
+            roles=set(identity_roles or set()),
+        )
+    if tool_name == "structure_document_get":
+        include = arguments.get("include")
+        return service.structure.get(
+            str(arguments["structure_document_id"]),
+            include=list(include) if isinstance(include, (list, set, tuple)) else None,
+        )
+    if tool_name == "structure_document_list":
+        return service.structure.list(
+            profile_id=arguments.get("profile") or arguments.get("profile_id"),
+            collection_id=arguments.get("collection") or arguments.get("collection_id"),
+            status=arguments.get("status"),
+            limit=int(arguments.get("limit", 50)),
+            offset=int(arguments.get("offset", 0)),
+        )
+    if tool_name == "structure_document_delete":
+        return service.structure.delete(
+            str(arguments["structure_document_id"]),
+            actor=str(arguments.get("actor", "mcp")),
+            roles=set(identity_roles or set()),
+        )
+    if tool_name == "structure_outline_get":
+        return service.structure.outline(str(arguments["structure_document_id"]))
+    if tool_name == "structure_pages_list":
+        return service.structure.list_pages(str(arguments["structure_document_id"]))
+    if tool_name == "structure_sections_list":
+        return service.structure.list_sections(str(arguments["structure_document_id"]))
     return {"status": "ok"}
 
 
