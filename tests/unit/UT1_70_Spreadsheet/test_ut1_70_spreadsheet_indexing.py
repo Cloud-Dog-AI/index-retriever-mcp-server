@@ -23,6 +23,7 @@ from pathlib import Path
 import openpyxl
 import pytest
 from cloud_dog_vdb.spreadsheet import testing
+from cloud_dog_vdb.spreadsheet.config import SpreadsheetConfig
 from sqlalchemy import func, inspect, select
 
 from index_tools.db.runtime import initialise_database, shutdown_database
@@ -190,6 +191,51 @@ def test_stateless_indexer_upserts_without_db():
     assert result.status == "complete"
     assert captured
     assert any(r.metadata["object_type"] == "table" for r in captured)
+
+
+def test_refresh_mode_manifest_only_skips_backend(db_runtime):
+    indexer = SpreadsheetIndexer(session_manager=db_runtime.session_manager)
+    upserts: list = []
+    deletes: list = []
+    indexer.index(
+        testing.build_multisheet_formal_tables_xlsx(),
+        file_name="s.xlsx",
+        source_uri="upload://s.xlsx",
+        upsert=lambda r: upserts.extend(r),
+        backend_name="chroma",
+    )
+    upserts.clear()
+    result = indexer.index(
+        testing.build_simple_xlsx(),
+        file_name="s.xlsx",
+        source_uri="upload://s.xlsx",
+        upsert=lambda r: upserts.extend(r),
+        delete=lambda keys: deletes.extend(keys),
+        backend_name="chroma",
+        config=SpreadsheetConfig(refresh_mode="manifest_only"),
+    )
+    assert result.upserted == 0 and result.deleted == 0
+    assert upserts == [] and deletes == []
+    # the SQL manifest is still updated: a third source version exists
+    with db_runtime.session_manager.session() as session:
+        versions = session.execute(select(func.count()).select_from(SpreadsheetObject)).scalar_one()
+    assert versions > 0
+
+
+def test_refresh_mode_full_reupserts_all(db_runtime):
+    indexer = SpreadsheetIndexer(session_manager=db_runtime.session_manager)
+    data = testing.build_simple_xlsx()
+    indexer.index(data, file_name="s.xlsx", source_uri="upload://s.xlsx", upsert=lambda r: None, backend_name="chroma")
+    result = indexer.index(
+        _resave(data),
+        file_name="s.xlsx",
+        source_uri="upload://s.xlsx",
+        upsert=lambda r: None,
+        backend_name="chroma",
+        config=SpreadsheetConfig(refresh_mode="full"),
+    )
+    # full mode re-upserts every record even though content is unchanged
+    assert result.upserted == 10
 
 
 def test_ingest_upload_routes_spreadsheet_to_structural_index(service, monkeypatch):

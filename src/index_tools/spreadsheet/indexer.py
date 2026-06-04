@@ -115,6 +115,7 @@ class SpreadsheetIndexer:
             backend_name=backend_name,
             upsert=upsert,
             delete=delete,
+            refresh_mode=config.refresh_mode if config is not None else "incremental",
         )
 
     def _index_with_control_plane(
@@ -127,6 +128,7 @@ class SpreadsheetIndexer:
         backend_name: str,
         upsert: UpsertFn,
         delete: DeleteFn | None,
+        refresh_mode: str = "incremental",
     ) -> SpreadsheetIndexResult:
         workbook = extraction.workbook
         with self._session_manager.session() as session:
@@ -197,27 +199,38 @@ class SpreadsheetIndexer:
                 deleted_keys = [d.object_key for d in decisions if d.refresh_action == "delete"]
                 upsert_keys = {d.object_key for d in decisions if d.refresh_action == "upsert"}
 
-            records_to_upsert = (
-                records if upsert_keys is None else [r for r in records if r.record_id in upsert_keys]
-            )
-            if delete is not None and deleted_keys:
-                delete(deleted_keys)
-            self._upsert_batches(upsert, records_to_upsert)
+            # Apply the refresh mode (section 5.15):
+            #   full          -> upsert all records, delete stale
+            #   incremental   -> upsert new/changed only, delete stale (default)
+            #   delete_stale  -> prune stale records only, no upsert
+            #   manifest_only -> update the SQL manifest only, no backend writes
+            changed = records if upsert_keys is None else [r for r in records if r.record_id in upsert_keys]
+            if refresh_mode == "full":
+                records_to_upsert = records
+            elif refresh_mode == "incremental":
+                records_to_upsert = changed
+            else:
+                records_to_upsert = []
+            do_upsert = refresh_mode in ("full", "incremental")
+            do_delete = refresh_mode in ("full", "incremental", "delete_stale")
 
-            repo.record_sync_state(
-                version, backend_name=backend_name, upserted=len(records_to_upsert), deleted=len(deleted_keys)
-            )
+            if do_delete and delete is not None and deleted_keys:
+                delete(deleted_keys)
+            if do_upsert:
+                self._upsert_batches(upsert, records_to_upsert)
+
+            upserted = len(records_to_upsert) if do_upsert else 0
+            deleted = len(deleted_keys) if do_delete else 0
+            repo.record_sync_state(version, backend_name=backend_name, upserted=upserted, deleted=deleted)
             repo.update_source_hash(source, workbook.file_hash)
-            repo.finish_job(
-                job, status="complete", stats=extraction.stats, warning_count=len(workbook.warnings)
-            )
+            repo.finish_job(job, status="complete", stats=extraction.stats, warning_count=len(workbook.warnings))
 
             return SpreadsheetIndexResult(
                 status="complete",
                 object_counts=extraction.object_count_by_type(),
-                upserted=len(records_to_upsert),
-                deleted=len(deleted_keys),
-                deleted_keys=deleted_keys,
+                upserted=upserted,
+                deleted=deleted,
+                deleted_keys=deleted_keys if do_delete else [],
                 warnings=list(workbook.warnings),
                 job_id=job.id,
                 source_id=source.id,
