@@ -27,22 +27,24 @@ the ST1_14 test update.
   branch head; the final tag is an ancestor of the remote branch head.
 - Checksums: `sha256sum -c CHECKSUMS.sha256` — 44 files OK.
 
-## §25 acceptance-criteria coverage — 13/15 PASS
+## §25 acceptance-criteria coverage — 14/15 PASS
 See `acceptance-criteria-coverage.md` for the per-criterion evidence.
-- **PASS (13):** #1 #2 #3 #4 #6 #7 #8 #9 #10 #11 #12 #14 #15.
-- **PARTIAL (1):** #5 — full live DB dialect matrix. Modelled + migrated + exercised on sqlite/Postgres path;
-  the exhaustive live matrix is **infrastructure-blocked** (dev DB rejects this build host `@10.26.2.1`). Owner:
-  infra credential grant, not index-retriever code.
+- **PASS (14):** #1 #2 #3 #4 #5 #6 #7 #8 #9 #10 #11 #12 #14 #15.
+  - #5 (full SQL dialect matrix) is proven against **real** backends — sqlite + Postgres 16 + MariaDB 11 —
+    CRUD + Alembic migrations round-trip green on disposable ephemeral containers (server2 docker, isolated
+    network). See `db-matrix-proof.txt`. A `cloud_dog_db.config.to_sync_url()` password-masking defect was
+    found and recorded there (owner: cloud_dog_db package maintainer; worked around with trust/empty-auth
+    disposable DBs since authentication is not part of §25 #5).
 - **PENDING (1):** #13 — db-mcp generic exposure. **Cross-service**: lives in `db-mcp-server` repo, not this
   one. Owner: a db-mcp-server lane.
 
-Both remaining criteria are outside index-retriever's code boundary. Every in-repo §25 criterion is delivered,
-tested, and proven from raw artefacts.
+The single remaining criterion is outside index-retriever's code boundary. Every in-repo §25 criterion is
+delivered, tested, and proven from raw artefacts.
 
 ## Honest verdict
-A truthful YES requires all 15 §25 criteria. #5 (infra grant) and #13 (separate service repo) cannot be met
-from within this repository, so the lane-completion answer is **NO** — not for any defect in the delivered
-work, but because two criteria are owned outside index-retriever and must be closed by an infra grant and a
-db-mcp-server lane respectively.
+A truthful YES requires all 15 §25 criteria. #13 lives in a separate service repository (`db-mcp-server`) and
+cannot be met from within index-retriever, so the lane-completion answer is **NO** — not for any defect in the
+delivered work, but because the one remaining criterion is owned outside this repo and must be closed by a
+db-mcp-server lane.
 
-HAVE_ALL_REQUIREMENTS_BEEN_MET: NO  (13/15 §25 criteria; #5 infra-blocked, #13 cross-service — both outside this repo)
+HAVE_ALL_REQUIREMENTS_BEEN_MET: NO  (14/15 §25 criteria; #13 db-mcp generic exposure is cross-service, owned by a db-mcp-server lane)

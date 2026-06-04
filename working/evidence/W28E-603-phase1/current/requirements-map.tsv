@@ -30,3 +30,4 @@ WEBUI.1	Server-rendered structure WebUI workflows (§25 #11)	src/index_server/ad
 REG.8	Full integration tier after A2A+WebUI (regression)	current/full-test-suite-results.md	58 passed 0 failed	pytest tests/integration --env tests/env-IT	PASS
 LINK.1	Structure-to-VDB/chunk record linkage (§25 #6)	src/index_tools/structure/service.py	vdb_record_ids/chunk_ids fields + link_to_vdb_records tool/route	pytest tests/unit/UT_W28E603_Phase25::test_link_to_vdb_records	PASS
 REG.9	Full unit suite after VDB linkage (regression)	current/test-unit-regression-full.log	211 passed 0 failed	pytest tests/unit --env tests/env-UT	PASS
+DBMATRIX.1	Full SQL dialect matrix core behaviour (§25 #5)	current/db-matrix-proof.txt	sqlite+postgres16+mariadb11 round-trip 3 passed	pytest tests/system/ST_W28E603_StructureBackendMatrix (real backends on server2)	PASS
