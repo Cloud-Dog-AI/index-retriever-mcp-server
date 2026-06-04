@@ -67,7 +67,7 @@ try:
 except ImportError:  # pragma: no cover - optional runtime dependency
     psutil = None
 
-from index_server.admin_ui import admin_ui_script, admin_ui_styles, collections_page, profiles_page, security_page
+from index_server.admin_ui import admin_ui_script, admin_ui_styles, collections_page, profiles_page, security_page, structure_page
 from index_server.auth.middleware import AuthMiddleware, AuthResult
 from index_server.logging_runtime import init_platform_logging, shutdown_platform_logging
 from index_server.mcp_server import build_registry, execute_tool
@@ -1200,6 +1200,10 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         """Serve the legacy security management page."""
         return HTMLResponse(content=security_page())
 
+    def admin_ui_structure() -> HTMLResponse:
+        """Serve the document-structure inspection / corpus / template workflow page (W28E-603)."""
+        return HTMLResponse(content=structure_page())
+
     def admin_ui_app_js() -> Response:
         """Serve the legacy admin UI client script."""
         return Response(content=admin_ui_script(), media_type="application/javascript")
@@ -2002,6 +2006,15 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             "ingest_text": "ingest_text",
             "search": "search",
             "retrieve": "retrieve",
+            # W28E-603 structure skills (§25 #12)
+            "structure_extract": "structure_extract",
+            "structure_document_get": "structure_document_get",
+            "structure_outline_get": "structure_outline_get",
+            "structure_corpus_create": "structure_corpus_create",
+            "structure_corpus_analyse": "structure_corpus_analyse",
+            "structure_corpus_patterns_get": "structure_corpus_patterns_get",
+            "structure_template_generate": "structure_template_generate",
+            "structure_template_export": "structure_template_export",
         }
         tool_name = tool_map.get(skill_id)
         if tool_name is None:
@@ -2083,6 +2096,14 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         A2ASkill(id="source_config_get", name="Get Source Config", description="Read a connector source configuration"),
         A2ASkill(id="source_config_update", name="Update Source Config", description="Update a connector source configuration"),
         A2ASkill(id="source_config_delete", name="Delete Source Config", description="Delete a connector source configuration"),
+        A2ASkill(id="structure_extract", name="Extract Document Structure", description="Extract canonical document structure from text or a file (W28E-603)"),
+        A2ASkill(id="structure_document_get", name="Get Document Structure", description="Retrieve a canonical structure document with its child objects (W28E-603)"),
+        A2ASkill(id="structure_outline_get", name="Get Document Outline", description="Retrieve the section-hierarchy outline of a structure document (W28E-603)"),
+        A2ASkill(id="structure_corpus_create", name="Create Structure Corpus", description="Create a named corpus of structure documents (W28E-603)"),
+        A2ASkill(id="structure_corpus_analyse", name="Analyse Structure Corpus", description="Derive section/style/layout/table patterns across a corpus (W28E-603)"),
+        A2ASkill(id="structure_corpus_patterns_get", name="Get Corpus Patterns", description="Retrieve derived structure patterns for a corpus (W28E-603)"),
+        A2ASkill(id="structure_template_generate", name="Generate Structure Template", description="Generate a structure/style template blueprint from corpus patterns (W28E-603)"),
+        A2ASkill(id="structure_template_export", name="Export Structure Template", description="Export a structure template as Markdown or JSON (W28E-603)"),
     ]
     app.post(f"{_CANONICAL_A2A_BASE_PATH}/tasks")(a2a_submit_task)
     app.post("/tasks")(a2a_submit_task)
@@ -2098,6 +2119,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get("/admin/ui/collections")(admin_ui_collections)
     app.get("/collections")(collections_ui)
     app.get("/admin/ui/security")(admin_ui_security)
+    app.get("/admin/ui/structure")(admin_ui_structure)
     app.get("/admin/ui/app.js")(admin_ui_app_js)
     app.get("/admin/ui/styles.css")(admin_ui_styles_css)
     app.get("/api-docs", include_in_schema=False)(api_docs_page)

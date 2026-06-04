@@ -11,7 +11,7 @@ not touched by this lane (no collection/WebUI source changed).
 | security | pytest tests/security --env tests/env-QT | 6 passed, 0 failed |
 | parser | pytest tests/parser --env tests/env-PT | 3 passed, 0 failed |
 | contract | pytest tests/contract --env tests/env-IT | 4 passed, 0 failed |
-| integration | pytest tests/integration --env tests/env-IT | 54 passed, 0 failed |
+| integration | pytest tests/integration --env tests/env-IT | 58 passed, 0 failed |
 | system | pytest tests/system --env tests/env-ST | 26 passed, 2 skipped |
 | application | pytest tests/application --env tests/env-AT | 24 passed (AT_WEBUI_CollectionCrud flaked under full-suite load; passes 2/2 isolated) |
 

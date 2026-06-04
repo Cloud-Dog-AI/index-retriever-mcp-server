@@ -25,3 +25,6 @@ COR.2	Corpus pattern analysis (§25 #9)	src/index_tools/structure/corpus.py	sect
 TPL.1	Template generate + export markdown/json (§25 #10)	src/index_tools/structure/templates.py	blueprint + export	pytest tests/unit/UT_W28E603_Phase25::test_template_generate_and_export	PASS
 EXT.3	Phase 2-5 platform reuse zero bespoke (RULES §1.4)	current/bespoke-grep.txt	cloud_dog_db+cloud_dog_vdb+stdlib only	grep forbidden-patterns over new files	PASS
 REG.7	Full unit suite after Phase 2-5 (regression)	current/test-unit-regression-full.log	209 passed 0 failed	pytest tests/unit --env tests/env-UT	PASS
+A2A.1	A2A exposes structure skills (§25 #12)	src/index_server/a2a_server.py	agent card + /a2a/tasks structure skills	pytest tests/integration/IT_W28E603_Phase25/test_it_w28e603_a2a_skills.py	PASS
+WEBUI.1	Server-rendered structure WebUI workflows (§25 #11)	src/index_server/admin_ui.py	/admin/ui/structure page + wired app.js	pytest tests/integration/IT_W28E603_Phase25/test_it_w28e603_webui.py	PASS
+REG.8	Full integration tier after A2A+WebUI (regression)	current/full-test-suite-results.md	58 passed 0 failed	pytest tests/integration --env tests/env-IT	PASS

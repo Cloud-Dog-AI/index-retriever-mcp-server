@@ -16,14 +16,14 @@ yet complete: WebUI, A2A, db-mcp exposure and the full live DB matrix remain.
 | 8 | Large documents and 40+ corpora analysed (durable jobs) | Phase 4 | PASS (corpus + analysis; computation is durable-job-ready via the existing QueueEngine) |
 | 9 | Corpus analysis produces section/style/layout/table patterns | Phase 4 | PASS (`structure_corpus_analyse` -> StructurePattern + report) |
 | 10 | Template blueprint generated and exported | Phase 5 | PASS (`structure_template_generate` + `structure_template_export` markdown/json) |
-| 11 | WebUI inspection + corpus/template workflows | Phase 3 | PENDING |
-| 12 | A2A exposes selected structure skills | Phase 2/3 | PENDING |
+| 11 | WebUI inspection + corpus/template workflows | Phase 3 | PASS (in-repo server-rendered /admin/ui/structure; React SPA + Playwright are cross-repo in cloud-dog-ui monorepo) |
+| 12 | A2A exposes selected structure skills | Phase 2 | PASS (agent card + /a2a/tasks structure skills) |
 | 13 | db-mcp-service reads/presents the structure DB | Phase 6 (cross-service) | PENDING |
 | 14 | Audit logs capture extraction/analysis/template/deletion | Phase 1/4/5 | PASS (create/extract/corpus-analyse/template-generate/delete all audited) |
 | 15 | Documentation/tests/implementation agree on tool names/routes | Phase 1/2 | PASS (89-tool catalogue + UT1_40 enforcement) |
 
-PASS: #1,#2,#3,#4,#7,#8,#9,#10,#14,#15 (10/15). PARTIAL: #5,#6. PENDING: #11 (WebUI), #12 (A2A), #13 (db-mcp).
+PASS: #1,#2,#3,#4,#7,#8,#9,#10,#11,#12,#14,#15 (12/15). PARTIAL: #5,#6. PENDING: #13 (db-mcp, cross-service).
 
 Acceptance of the full W28E-603 lane requires all 15 criteria PASS-with-raw-artefact. That bar is not yet met
-(WebUI, A2A, db-mcp exposure and the live DB matrix remain). This pack is a running-lane checkpoint, not a
+(db-mcp exposure (cross-service), the live DB matrix (infra), and VDB-record linkage remain). This pack is a running-lane checkpoint, not a
 lane-completion return.

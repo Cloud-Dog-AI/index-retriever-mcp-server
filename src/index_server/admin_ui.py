@@ -601,6 +601,85 @@ async function refreshEvents() {
   }
 }
 
+// -- W28E-603 structure / corpus / template workflows --
+async function structureExtract() {
+  try {
+    const out = await requestJson("POST", "/api/v1/structure/extract", {
+      text: el("struct-extract-text").value,
+      profile: el("struct-extract-profile").value.trim() || "default",
+      collection: el("struct-extract-collection").value.trim() || "default",
+    });
+    setResult("struct-doc-result", out);
+  } catch (error) { setResult("struct-doc-result", error, true); }
+}
+async function structureListDocs() {
+  try {
+    const profile = el("struct-extract-profile").value.trim() || "default";
+    setResult("struct-doc-result", await requestJson("GET", `/api/v1/structure/documents?profile=${encodeURIComponent(profile)}`));
+  } catch (error) { setResult("struct-doc-result", error, true); }
+}
+async function structureOutline() {
+  try {
+    const id = el("struct-doc-id").value.trim();
+    setResult("struct-doc-result", await requestJson("GET", `/api/v1/structure/documents/${encodeURIComponent(id)}/outline`));
+  } catch (error) { setResult("struct-doc-result", error, true); }
+}
+async function corpusCreate() {
+  try {
+    const out = await requestJson("POST", "/api/v1/structure/corpora", {
+      name: el("corpus-name").value.trim(),
+      profile_id: el("struct-extract-profile").value.trim() || "default",
+      document_ids: csvToList(el("corpus-docs").value),
+    });
+    setResult("corpus-result", out);
+  } catch (error) { setResult("corpus-result", error, true); }
+}
+async function corpusList() {
+  try {
+    const profile = el("struct-extract-profile").value.trim() || "default";
+    setResult("corpus-result", await requestJson("GET", `/api/v1/structure/corpora?profile=${encodeURIComponent(profile)}`));
+  } catch (error) { setResult("corpus-result", error, true); }
+}
+async function corpusAnalyse() {
+  try {
+    const id = el("corpus-id").value.trim();
+    setResult("corpus-result", await requestJson("POST", `/api/v1/structure/corpora/${encodeURIComponent(id)}/analyse`));
+  } catch (error) { setResult("corpus-result", error, true); }
+}
+async function corpusPatterns() {
+  try {
+    const id = el("corpus-id").value.trim();
+    setResult("corpus-result", await requestJson("GET", `/api/v1/structure/corpora/${encodeURIComponent(id)}/patterns`));
+  } catch (error) { setResult("corpus-result", error, true); }
+}
+async function templateGenerate() {
+  try {
+    const out = await requestJson("POST", "/api/v1/structure/templates", {
+      corpus_id: el("template-corpus-id").value.trim(),
+      name: el("template-name").value.trim() || undefined,
+    });
+    setResult("template-result", out);
+  } catch (error) { setResult("template-result", error, true); }
+}
+async function templateExport() {
+  try {
+    const id = el("template-id").value.trim();
+    const fmt = el("template-format").value.trim() || "markdown";
+    setResult("template-result", await requestJson("GET", `/api/v1/structure/templates/${encodeURIComponent(id)}/export?format=${encodeURIComponent(fmt)}`));
+  } catch (error) { setResult("template-result", error, true); }
+}
+function bootstrapStructure() {
+  wire("struct-extract-btn", structureExtract);
+  wire("struct-docs-refresh", structureListDocs);
+  wire("struct-outline-btn", structureOutline);
+  wire("corpus-create-btn", corpusCreate);
+  wire("corpus-list-btn", corpusList);
+  wire("corpus-analyse-btn", corpusAnalyse);
+  wire("corpus-patterns-btn", corpusPatterns);
+  wire("template-generate-btn", templateGenerate);
+  wire("template-export-btn", templateExport);
+}
+
 function wire(testId, handler) {
   const node = el(testId);
   if (!node) {
@@ -656,6 +735,7 @@ window.addEventListener("DOMContentLoaded", () => {
   bootstrapProfiles();
   bootstrapCollections();
   bootstrapSecurity();
+  bootstrapStructure();
   if (el("profiles-table-body")) {
     void refreshProfiles();
   }
@@ -678,6 +758,7 @@ def _shell(title: str, description: str, current: str, body: str) -> str:
     profiles_current = 'aria-current="page"' if current == "profiles" else ""
     collections_current = 'aria-current="page"' if current == "collections" else ""
     security_current = 'aria-current="page"' if current == "security" else ""
+    structure_current = 'aria-current="page"' if current == "structure" else ""
     return f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -694,6 +775,7 @@ def _shell(title: str, description: str, current: str, body: str) -> str:
           <a href="/admin/ui/profiles" {profiles_current}>Profiles</a>
           <a href="/admin/ui/collections" {collections_current}>Collections</a>
           <a href="/admin/ui/security" {security_current}>Security</a>
+          <a href="/admin/ui/structure" {structure_current}>Structure</a>
         </div>
         <div class="stack">
           <h1>{title}</h1>
@@ -976,5 +1058,69 @@ def security_page() -> str:
         title="Identity and key control",
         description="Manage users, groups, API keys, and inspect config events through the admin HTTP API.",
         current="security",
+        body=body,
+    )
+
+
+def structure_page() -> str:
+    """Return the document-structure inspection / corpus / template workflow page (W28E-603 §25 #11)."""
+    body = """
+<section class="panel stack" data-testid="structure-panel">
+  <h2>Document structure</h2>
+  <p class="muted">Extract, inspect, analyse corpora, and generate templates through the HTTP API.</p>
+  <div class="form-grid">
+    <label>Profile <input data-testid="struct-extract-profile" type="text" value="default"></label>
+    <label>Collection <input data-testid="struct-extract-collection" type="text" value="default"></label>
+    <label style="grid-column: 1 / -1;">Text to extract
+      <textarea data-testid="struct-extract-text" rows="4" placeholder="# Introduction&#10;..."></textarea></label>
+  </div>
+  <div class="actions">
+    <button data-testid="struct-extract-btn" type="button">Extract structure</button>
+    <button class="secondary" data-testid="struct-docs-refresh" type="button">List documents</button>
+  </div>
+  <div class="form-grid">
+    <label>Structure document id <input data-testid="struct-doc-id" type="text"></label>
+  </div>
+  <div class="actions">
+    <button data-testid="struct-outline-btn" type="button">Get outline</button>
+  </div>
+  <div class="result" data-testid="struct-doc-result" aria-live="polite"></div>
+</section>
+<section class="panel stack" data-testid="corpus-panel">
+  <h2>Corpus analysis</h2>
+  <div class="form-grid">
+    <label>Corpus name <input data-testid="corpus-name" type="text" placeholder="specs"></label>
+    <label style="grid-column: 1 / -1;">Document ids (comma separated)
+      <input data-testid="corpus-docs" type="text"></label>
+    <label>Corpus id <input data-testid="corpus-id" type="text"></label>
+  </div>
+  <div class="actions">
+    <button data-testid="corpus-create-btn" type="button">Create corpus</button>
+    <button class="secondary" data-testid="corpus-list-btn" type="button">List corpora</button>
+    <button data-testid="corpus-analyse-btn" type="button">Analyse corpus</button>
+    <button class="secondary" data-testid="corpus-patterns-btn" type="button">Get patterns</button>
+  </div>
+  <div class="result" data-testid="corpus-result" aria-live="polite"></div>
+</section>
+<section class="panel stack" data-testid="template-panel">
+  <h2>Template intelligence</h2>
+  <div class="form-grid">
+    <label>Corpus id <input data-testid="template-corpus-id" type="text"></label>
+    <label>Template name <input data-testid="template-name" type="text"></label>
+    <label>Template id <input data-testid="template-id" type="text"></label>
+    <label>Export format
+      <select data-testid="template-format"><option value="markdown">markdown</option><option value="json">json</option></select></label>
+  </div>
+  <div class="actions">
+    <button data-testid="template-generate-btn" type="button">Generate template</button>
+    <button class="secondary" data-testid="template-export-btn" type="button">Export template</button>
+  </div>
+  <div class="result" data-testid="template-result" aria-live="polite"></div>
+</section>
+""".strip()
+    return _shell(
+        title="Document structure intelligence",
+        description="Inspect document structure and run corpus + template workflows through the admin HTTP API.",
+        current="structure",
         body=body,
     )
