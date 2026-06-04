@@ -18,3 +18,10 @@ REG.6	Contract parser security tiers green	current/full-test-suite-results.md	4 
 DOC.1	Tool inventory docs agree	docs/MCP_DOCUMENTATION.md	77 tools	pytest tests/unit/UT1_40	PASS
 EV.1	Checksums verify	current/CHECKSUMS.sha256	26 files OK	sha256sum -c CHECKSUMS.sha256	PASS
 EV.2	Remote push proof	current/remote-proof.txt	branch+tags on GitLab	git ls-remote origin	PASS
+EXT.1	Structure extraction via API+MCP (§25 #2)	src/index_tools/structure/extract.py	structure_extract tool + REST route	pytest tests/integration/IT_W28E603_Phase25	PASS
+EXT.2	Provider interface mineru/marker/docling/internal (§25 #3)	src/index_tools/structure/extract.py	SUPPORTED_PROVIDERS + IR normaliser; parsers IT2_8/9/10	pytest tests/unit/UT_W28E603_Phase25::test_normalise_text_blocks_sections_tables	PASS
+COR.1	Corpus CRUD (§25 #8)	src/index_tools/structure/corpus.py	7 corpus tools + REST	pytest tests/unit/UT_W28E603_Phase25::test_corpus_create_get_list	PASS
+COR.2	Corpus pattern analysis (§25 #9)	src/index_tools/structure/corpus.py	section/style/layout/table patterns + report	pytest tests/unit/UT_W28E603_Phase25::test_corpus_analyse_produces_patterns	PASS
+TPL.1	Template generate + export markdown/json (§25 #10)	src/index_tools/structure/templates.py	blueprint + export	pytest tests/unit/UT_W28E603_Phase25::test_template_generate_and_export	PASS
+EXT.3	Phase 2-5 platform reuse zero bespoke (RULES §1.4)	current/bespoke-grep.txt	cloud_dog_db+cloud_dog_vdb+stdlib only	grep forbidden-patterns over new files	PASS
+REG.7	Full unit suite after Phase 2-5 (regression)	current/test-unit-regression-full.log	209 passed 0 failed	pytest tests/unit --env tests/env-UT	PASS

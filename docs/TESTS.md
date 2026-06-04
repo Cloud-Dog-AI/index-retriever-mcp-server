@@ -51,7 +51,7 @@ python3 -m pytest tests/application --env tests/env-AT -q
 ### UT1.40 tool registry completeness
 - File: `tests/unit/UT1_40/test_ut1_40_tool_registry.py`
 - Purpose:
-  - enforce the exact runtime tool inventory count (`60`),
+  - enforce the exact runtime tool inventory count (`89`),
   - ensure names are unique and the registry contract remains stable.
 - Requirements covered:
   - `FR-16A`
@@ -104,7 +104,7 @@ python3 -m pytest tests/application --env tests/env-AT -q
 | FR-14A (Retrieval output contract) | `tests/system/ST1_15/test_st1_15_e2e_gap_coverage.py` | `test_st_15_retrieval_returns_content_and_source_uri_traceability` | COVERED |
 | FR-16 (Management operations) | `tests/unit/UT1_44/test_ut1_44_admin_config_crud.py` | `test_service_admin_config_crud_and_mcp_parity` | COVERED |
 | FR-16 (Management operations) | `tests/integration/IT1_22/test_it1_22_admin_rest_config_crud.py` | `test_admin_rest_profile_user_group_api_key_lifecycle`, `test_admin_rest_rejects_non_admin_mutation` | COVERED |
-| FR-16A (Tool inventory contract) | `tests/unit/UT1_40/test_ut1_40_tool_registry.py` | UT1_40 suite (77-tool count enforcement) | COVERED |
+| FR-16A (Tool inventory contract) | `tests/unit/UT1_40/test_ut1_40_tool_registry.py` | UT1_40 suite (89-tool count enforcement) | COVERED |
 | R-VDB-01 (All 6 adapters) | `tests/integration/IT2_1/` through `tests/integration/IT2_6/` | IT2_1..IT2_6 suites | COVERED |
 | R-VDB-02 (CRUD/search parity) | `tests/contract/CT1_3/test_ct1_3_backend_parity.py` | CT1_3 suite | COVERED |
 | R-PARSE-01 (Parser provider matrix) | `tests/integration/IT2_7/test_it2_7_deepdoc_parser.py` | IT2_7 suite | COVERED |

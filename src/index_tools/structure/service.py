@@ -44,6 +44,9 @@ class StructureService:
         """Bind a repository (defaults to the platform-runtime-backed one) and optional audit logger."""
         self.repository = repository or StructureRepository()
         self.audit_logger = audit_logger
+        self._extractor: Any | None = None
+        self._corpus: Any | None = None
+        self._templates: Any | None = None
 
     # -- helpers ---------------------------------------------------------------
 
@@ -251,6 +254,44 @@ class StructureService:
         """Return structure-subsystem health including the canonical store probe."""
         probe = self.repository.health()
         return {"component": "structure", "schema_version": SCHEMA_VERSION, **probe}
+
+    # -- Phase 2-5 sub-services (extraction / corpus / templates) ---------------
+
+    @property
+    def extractor(self) -> Any:
+        """Lazy structure extractor (parser output -> canonical bundle)."""
+        if self._extractor is None:
+            from index_tools.structure.extract import StructureExtractor
+
+            self._extractor = StructureExtractor(self)
+        return self._extractor
+
+    @property
+    def corpus(self) -> Any:
+        """Lazy corpus service (corpus CRUD + pattern analysis)."""
+        if self._corpus is None:
+            from index_tools.structure.corpus import CorpusService
+
+            self._corpus = CorpusService(structure_repository=self.repository, audit_logger=self.audit_logger)
+        return self._corpus
+
+    @property
+    def templates(self) -> Any:
+        """Lazy template service (blueprint generation + export)."""
+        if self._templates is None:
+            from index_tools.structure.templates import TemplateService
+
+            self._templates = TemplateService(audit_logger=self.audit_logger)
+        return self._templates
+
+    def extract_text(self, text: str, *, profile: str, collection: str, source_uri: str | None = None,
+                     source_filename: str | None = None, provider: str = "internal",
+                     actor: str = "service", roles: set[str] | None = None) -> dict[str, Any]:
+        """Extract canonical structure from inline text and persist it (design brief §25 #2)."""
+        return self.extractor.extract_text(
+            text, profile=profile, collection=collection, source_uri=source_uri,
+            source_filename=source_filename, provider=provider, actor=actor, roles=roles,
+        )
 
 
 def _build_outline(sections: list[StructureSection]) -> list[dict[str, Any]]:

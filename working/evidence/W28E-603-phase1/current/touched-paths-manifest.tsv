@@ -25,3 +25,12 @@ tests/quality/QT_COMPLIANCE/conftest.py	index-retriever-mcp-server	W28E-603 Phas
 docs/MCP_DOCUMENTATION.md	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
 docs/REQUIREMENTS.md	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
 docs/TESTS.md	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/structure/extract.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+src/index_tools/structure/corpus.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+src/index_tools/structure/templates.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+src/index_tools/structure/corpus_models.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+src/index_tools/structure/corpus_repository.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+src/index_tools/db/corpus_models.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+database/migrations/cloud_dog_db/versions/20260604_0003_structure_corpus_templates.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+tests/unit/UT_W28E603_Phase25/test_ut_w28e603_phase25.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+tests/integration/IT_W28E603_Phase25/test_it_w28e603_phase25.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff

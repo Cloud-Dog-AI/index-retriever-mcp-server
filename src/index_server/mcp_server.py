@@ -251,9 +251,24 @@ def _required_permission_for_tool(tool_name: str) -> str:
         "structure_outline_get",
         "structure_pages_list",
         "structure_sections_list",
+        "structure_corpus_list",
+        "structure_corpus_get",
+        "structure_corpus_patterns_get",
+        "structure_template_get",
+        "structure_template_list",
+        "structure_template_export",
     }:
         return "collection.read"
-    if tool_name in {"structure_document_create", "structure_document_delete"}:
+    if tool_name in {
+        "structure_document_create",
+        "structure_document_delete",
+        "structure_extract",
+        "structure_corpus_create",
+        "structure_corpus_update",
+        "structure_corpus_delete",
+        "structure_corpus_analyse",
+        "structure_template_generate",
+    }:
         return "collection.write"
     return "admin"
 
@@ -1059,6 +1074,42 @@ def execute_tool(
         return service.structure.list_pages(str(arguments["structure_document_id"]))
     if tool_name == "structure_sections_list":
         return service.structure.list_sections(str(arguments["structure_document_id"]))
+    # -- W28E-603 Phase 2: extraction --
+    if tool_name == "structure_extract":
+        return service.structure.extract_text(
+            str(arguments.get("text", "")),
+            profile=str(arguments.get("profile", "default")),
+            collection=str(arguments.get("collection", "default")),
+            source_uri=arguments.get("source_uri"),
+            source_filename=arguments.get("source_filename"),
+            provider=str(arguments.get("provider", "internal")),
+            actor=str(arguments.get("actor", "mcp")),
+            roles=set(identity_roles or set()),
+        )
+    # -- W28E-603 Phase 4: corpus --
+    if tool_name == "structure_corpus_create":
+        return service.structure.corpus.create(arguments.get("corpus", arguments), actor=str(arguments.get("actor", "mcp")), roles=set(identity_roles or set()))
+    if tool_name == "structure_corpus_list":
+        return service.structure.corpus.list(profile_id=arguments.get("profile") or arguments.get("profile_id"), limit=int(arguments.get("limit", 50)), offset=int(arguments.get("offset", 0)))
+    if tool_name == "structure_corpus_get":
+        return service.structure.corpus.get(str(arguments["corpus_id"]))
+    if tool_name == "structure_corpus_update":
+        return service.structure.corpus.update(str(arguments["corpus_id"]), arguments.get("updates", arguments), actor=str(arguments.get("actor", "mcp")), roles=set(identity_roles or set()))
+    if tool_name == "structure_corpus_delete":
+        return service.structure.corpus.delete(str(arguments["corpus_id"]), actor=str(arguments.get("actor", "mcp")), roles=set(identity_roles or set()))
+    if tool_name == "structure_corpus_analyse":
+        return service.structure.corpus.analyse(str(arguments["corpus_id"]), actor=str(arguments.get("actor", "mcp")), roles=set(identity_roles or set()))
+    if tool_name == "structure_corpus_patterns_get":
+        return service.structure.corpus.patterns_get(str(arguments["corpus_id"]), pattern_type=arguments.get("pattern_type"))
+    # -- W28E-603 Phase 5: templates --
+    if tool_name == "structure_template_generate":
+        return service.structure.templates.generate(str(arguments["corpus_id"]), name=arguments.get("name"), actor=str(arguments.get("actor", "mcp")), roles=set(identity_roles or set()))
+    if tool_name == "structure_template_get":
+        return service.structure.templates.get(str(arguments["template_id"]))
+    if tool_name == "structure_template_list":
+        return service.structure.templates.list(profile_id=arguments.get("profile") or arguments.get("profile_id"), corpus_id=arguments.get("corpus_id"), limit=int(arguments.get("limit", 50)), offset=int(arguments.get("offset", 0)))
+    if tool_name == "structure_template_export":
+        return service.structure.templates.export(str(arguments["template_id"]), format=str(arguments.get("format", "markdown")))
     return {"status": "ok"}
 
 

@@ -182,6 +182,21 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="structure_outline_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Return the section hierarchy (outline) for a structure document as a nested tree."),
         ToolSpec(name="structure_pages_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List page-level layout records for a structure document."),
         ToolSpec(name="structure_sections_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List section records for a structure document."),
+        # -- W28E-603 Phase 2: structure extraction (providers) --
+        ToolSpec(name="structure_extract", input_model=GenericToolInput, output_model=GenericToolOutput, description="Extract canonical document structure from text or a file via a parser provider (internal/mineru/marker/docling) and persist it."),
+        # -- W28E-603 Phase 4: corpus management + analysis --
+        ToolSpec(name="structure_corpus_create", input_model=GenericToolInput, output_model=GenericToolOutput, description="Create a named corpus (set of structure documents) for cross-document analysis."),
+        ToolSpec(name="structure_corpus_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List structure corpora, optionally filtered by profile."),
+        ToolSpec(name="structure_corpus_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve a single corpus by id."),
+        ToolSpec(name="structure_corpus_update", input_model=GenericToolInput, output_model=GenericToolOutput, description="Update a corpus (name, description, member documents)."),
+        ToolSpec(name="structure_corpus_delete", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a corpus and its derived patterns."),
+        ToolSpec(name="structure_corpus_analyse", input_model=GenericToolInput, output_model=GenericToolOutput, description="Analyse a corpus to derive section/style/layout/table patterns and a report."),
+        ToolSpec(name="structure_corpus_patterns_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve derived patterns for a corpus, optionally filtered by pattern type."),
+        # -- W28E-603 Phase 5: template intelligence --
+        ToolSpec(name="structure_template_generate", input_model=GenericToolInput, output_model=GenericToolOutput, description="Generate a reusable structure/style template blueprint from a corpus's patterns."),
+        ToolSpec(name="structure_template_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve a generated template by id."),
+        ToolSpec(name="structure_template_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List generated templates, optionally filtered by profile or corpus."),
+        ToolSpec(name="structure_template_export", input_model=GenericToolInput, output_model=GenericToolOutput, description="Export a template as Markdown or JSON."),
     ]
     for spec in specs:
         registry.register(spec)

@@ -8,7 +8,7 @@ Use `Authorization: Bearer <your-api-key>` or `X-API-Key: <your-api-key>`; admin
 
 ## Verification Basis
 - Source files reviewed: `src/index_server/a2a_server.py`, `src/index_server/api_server.py`, `src/index_server/mcp_server.py`, `src/index_server/web_server.py`
-- Tool inventory size: 77
+- Tool inventory size: 89
 
 ## Tools
 | Tool | Notes |
@@ -90,6 +90,18 @@ Use `Authorization: Bearer <your-api-key>` or `X-API-Key: <your-api-key>`; admin
 | `structure_outline_get` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
 | `structure_pages_list` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
 | `structure_sections_list` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
+| `structure_extract` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
+| `structure_corpus_create` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
+| `structure_corpus_list` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
+| `structure_corpus_get` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
+| `structure_corpus_update` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
+| `structure_corpus_delete` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
+| `structure_corpus_analyse` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
+| `structure_corpus_patterns_get` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
+| `structure_template_generate` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
+| `structure_template_get` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
+| `structure_template_list` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
+| `structure_template_export` | Source-verified MCP tool name. Input and output schemas are enforced in the server runtime. |
 
 ## Example Call
 ```json
