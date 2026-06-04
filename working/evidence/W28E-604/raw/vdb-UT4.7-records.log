@@ -1,0 +1,18 @@
+# W28E-604 raw test log
+# cwd: /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt/packages/backend/platform-vdb
+# cmd: .venv/bin/python -m pytest tests/unit/UT4.7_SpreadsheetRecords --env tests/env-UT -v -p no:cacheprovider
+# date(UTC): 2026-06-04T11:51:18Z
+# ----------------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.0.3, pluggy-1.6.0 -- /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt/packages/backend/platform-vdb/.venv/bin/python
+rootdir: /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt/packages/backend/platform-vdb
+configfile: pyproject.toml
+plugins: respx-0.23.1, anyio-4.13.0, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=auto, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 3 items
+
+tests/unit/UT4.7_SpreadsheetRecords/test_ss_records.py::test_records_are_backend_neutral_with_scalar_metadata PASSED [ 33%]
+tests/unit/UT4.7_SpreadsheetRecords/test_ss_records.py::test_extra_metadata_is_merged PASSED [ 66%]
+tests/unit/UT4.7_SpreadsheetRecords/test_ss_records.py::test_record_ids_match_searchable_record_ids PASSED [100%]
+
+============================== 3 passed in 0.66s ===============================

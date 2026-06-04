@@ -1,3 +1,4 @@
 repo	dirty_path	note
-platform-vdb	(none)	worktree clean after commits (excl gitignored .venv/__pycache__/pyarrow)
+platform-vdb	working/instructions/W28D-324-AJOBS-D9-ASYNC-BLOCKING-SIBLING-2026-05-19.md	EXTERNAL (not W28E-604): line-ending/whitespace rewrite of another lane's instruction that appeared in the isolated worktree; reverted to origin/main via git checkout. Not in this lane's changeset.
+platform-vdb	(otherwise none)	worktree clean after revert + commits (excl gitignored .venv/__pycache__/pyarrow)
 index-retriever	(none)	worktree clean after commits (excl gitignored .venv/__pycache__/data)

@@ -1,0 +1,12 @@
+# W28E-604 raw gate checks (§1.4 bespoke grep + secret scan)
+# date(UTC): 2026-06-04T11:52:20Z
+# ----------------------------------------------------------------
+$ grep -rn 'os.environ.get|os.environ[' <new-src> (expect 0)
+(0 matches)
+$ grep -rn 'import logging|logging.getLogger|logging.basicConfig' <new-src> (expect 0)
+(0 matches)
+$ grep -rn 'functools.lru_cache|functools.cache' <new-src> (expect 0)
+(0 matches)
+$ find <new-src> -name '*_adapter.py' (expect none — adapters reused from cloud_dog_vdb)
+$ secret scan (expect none)
+(0 matches)
