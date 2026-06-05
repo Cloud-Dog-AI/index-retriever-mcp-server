@@ -1,1 +1,61 @@
-W28E-603 final-evidence-validator output: regenerated below by the authoritative run.
+FINAL_EVIDENCE_VALIDATOR lane=W28E-603 started=2026-06-05T09:03:51+01:00
+Evidence path: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current
+PASS: evidence path exists
+PASS: evidence files tracked under working/evidence/W28E-603-phase1/current: 27
+PASS: evidence path has no dirty/untracked scoped files
+PASS: live remote branch HEAD found: refs/heads/w28e-603-phase1-structure be31d9ccf6a5778044e604643f4f82b199488f17
+PASS: Evidence Matrix header found
+PASS: no future proof language found
+PASS: no forbidden alternate acceptance labels found
+PASS: saved validator outputs are clean
+PASS: mandatory reading proof file found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/00-reading-proof.md
+PASS: RULES.md reread/version proof found
+PASS: AGENT-LESSONS.md reread/version proof found
+PASS: reading proof answers marker found
+PASS: requirements-map.tsv found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/requirements-map.tsv
+PASS: requirements-map.tsv row width check passed
+PASS: requirements-map.tsv required fields are populated
+PASS: requirements-map.tsv final status column is PASS for every row
+PASS: instruction file found for acceptance comparison: /opt/iac/Development/cloud-dog-ai/.w28a862-wt/working/instructions/W28E-603-INDEX-RETRIEVER-DOC-STRUCTURE-2026-05-31.md
+PASS: instruction acceptance list has no extractor-compatible rows
+PASS: touched-paths-manifest.tsv found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/touched-paths-manifest.tsv
+PASS: touched-paths-manifest.tsv header is valid
+PASS: external-dirty-ledger.tsv found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/external-dirty-ledger.tsv
+PASS: external-dirty-ledger.tsv header is valid
+PASS: scoped-clean-proof.txt found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/scoped-clean-proof.txt
+PASS: scoped-clean-proof.txt contains required scoped git commands
+PASS: scoped-clean-proof.txt shows no modified/staged/untracked files
+PASS: remote-proof.txt found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/remote-proof.txt
+PASS: remote-proof.txt contains remote/HEAD proof markers
+INFO: saved proof does not embed live git rev-parse HEAD: be31d9ccf6a5778044e604643f4f82b199488f17
+INFO: saved proof does not embed live remote branch HEAD; live auditor verification is authoritative
+INFO: remote-proof.txt records FINAL_PROOF_TAG candidate: W28E-603-phase1-final
+PASS: FINAL-TAG-VERIFICATION.txt found: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/FINAL-TAG-VERIFICATION.txt
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git rev-parse HEAD
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git ls-remote origin refs/heads/
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git ls-remote origin refs/tags/
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git rev-parse
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: sha256sum -c CHECKSUMS.sha256
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git status
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git diff
+PASS: EVIDENCE_TAG belongs to lane W28E-603
+PASS: EVIDENCE_TAG exists remotely: W28E-603-phase1-evidence be31d9ccf6a5778044e604643f4f82b199488f17
+PASS: FINAL_PROOF_TAG belongs to lane W28E-603
+PASS: FINAL_PROOF_TAG exists remotely: W28E-603-phase1-final be31d9ccf6a5778044e604643f4f82b199488f17
+PASS: FINAL_PROOF_TAG is an ancestor of current remote HEAD
+PASS: sha256sum -c CHECKSUMS.sha256 passed
+PASS: close gate found
+PASS: completion claim present
+FAIL: completion claim conflicts with unresolved blocker or missing evidence text
+/opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt/working/evidence/W28E-603-phase1/current/close-gate.md:54:HAVE_ALL_REQUIREMENTS_BEEN_MET: NO  (14/15 §25 met; #13 owed in-lane — read-only-RBAC-through-stack + audit-source proven end-to-end live; HELD, hard-gated on W28A-871 which is RUNNING)
+PASS: no substantive raw FAIL found
+PASS: no stale failed artefact names found
+PASS: no unavailable/waived/out-of-scope claims found
+
+Repo: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt
+HEAD: be31d9ccf6a5778044e604643f4f82b199488f17
+BRANCH: w28e-603-phase1-structure
+PASS: repo worktree clean: /opt/iac/Development/cloud-dog-ai/.w28e603-ir-wt
+PASS: HEAD equals origin/w28e-603-phase1-structure
+
+FINAL_EVIDENCE_VALIDATOR: FAIL failures=1
