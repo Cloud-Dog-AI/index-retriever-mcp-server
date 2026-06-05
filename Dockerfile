@@ -26,12 +26,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install platform packages from internal PyPI per §3.2.0.
-ARG PYPI_URL=https://pypi.cloud-dog.net/simple
+# Install platform packages from public Gitea PyPI per §3.2.0.
+ARG PYPI_URL=https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
       --extra-index-url ${PYPI_URL} \
-      --trusted-host pypi.cloud-dog.net \
+      --trusted-host gitea.cloud-dog.net \
       --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
       cloud-dog-config \
@@ -39,7 +39,7 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
       cloud-dog-api-kit==0.13.0 \
       cloud-dog-idam \
       cloud-dog-db \
-      cloud-dog-jobs==0.4.0 \
+      cloud-dog-jobs==0.4.1 \
       cloud-dog-storage \
       cloud-dog-llm==0.3.0 \
       cloud-dog-vdb>=0.5.4
@@ -48,7 +48,7 @@ COPY REQUIREMENTS.txt pyproject.toml README.md ./
 COPY src/ ./src/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
-      --trusted-host pypi.cloud-dog.net \
+      --trusted-host gitea.cloud-dog.net \
       --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
       -r REQUIREMENTS.txt
@@ -56,7 +56,7 @@ COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     pip install --no-cache-dir \
       --no-deps \
-      --trusted-host pypi.cloud-dog.net \
+      --trusted-host gitea.cloud-dog.net \
       --trusted-host pypi.org \
       --trusted-host files.pythonhosted.org \
       .
@@ -94,8 +94,8 @@ COPY src/ ./src/
 COPY ui/ ./ui/
 COPY database/ ./database/
 COPY defaults.yaml server_control.sh docker-entrypoint.sh healthcheck.sh ./
-# W28A-F-RF-07-L3 — durable admin-state seed (users/groups/collections/api-keys).
-# Token VALUES are not in this file; only Vault path references — see §9.2.
+# W28A-F-RF-07-L3 - durable admin-state seed (users/groups/collections/api-keys).
+# Token values are not in this file; only placeholder references are copied.
 COPY config/ ./config/
 
 RUN mkdir -p /app/logs /app/data /app/.pids /app/certs && \

@@ -18,7 +18,7 @@ pip install -e ".[dev]"
 
 If your platform packages are served from a package index:
 ```bash
-PYPI_URL=https://packages.example.com/simple/
+PYPI_URL=https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple
 pip install -e ".[dev]" --extra-index-url "$PYPI_URL"
 ```
 
@@ -63,16 +63,16 @@ python -m build
 
 ### Docker Container
 ```bash
-./docker-build.sh latest
+PUBLICATION_TAG_SUFFIX=gitea-test ./docker-build.sh latest
 ```
 
 Build with explicit package index and CA settings:
 ```bash
-PYPI_URL=https://packages.example.com/simple/ \
+PYPI_URL=https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple \
 PYPI_USERNAME=build-user \
 PYPI_PASSWORD=build-password \
 CUSTOM_CA_CERT=./certs/ca.pem \
-./docker-build.sh latest
+PUBLICATION_TAG_SUFFIX=gitea-test ./docker-build.sh latest
 ```
 
 ## Docker Push
@@ -84,25 +84,18 @@ docker push registry.example.com/team/index-retriever-mcp-server:latest
 ## Configuration
 The service loads environment variables, then the env file passed to `server_control.sh`, then `defaults.yaml`.
 
-## Vault Integration
-```bash
-export VAULT_ADDR=https://vault.example.com
-export VAULT_TOKEN=your-token
-export VAULT_MOUNT_POINT=your-mount
-export VAULT_CONFIG_PATH=your-path
-```
+## Local Secrets
+Put local-only values in the env file passed to `server_control.sh` or mounted into Docker. Do not commit real credentials.
 
 ## Publication test tag isolation (W28A-831)
 
 `docker-build.sh` honours `PUBLICATION_TAG_SUFFIX` for building isolated
-publication **test** images that never collide with dev/preprod/release tags
+publication **test** images that never collide with reserved runtime/release tags
 (default unset ⇒ behaviour unchanged):
 
 ```bash
 PUBLICATION_TAG_SUFFIX=gitea-test ./docker-build.sh <version>
-# builds <image>:<version>-gitea-test; internal registry tag is skipped
+# builds <image>:<version>-gitea-test; registry tag is skipped
 ```
 
 - Preview only: `PUBLICATION_DRY_RUN=1 PUBLICATION_TAG_SUFFIX=gitea-test ./docker-build.sh <version>`
-- Cleanup: `cdci/scripts/publication-test-cleanup.sh gitea-test`
-- Full reference: `cdci/docs/PUBLICATION-TAG-ISOLATION.md`

@@ -20,7 +20,7 @@ set -euo pipefail
 VERSION="${1:-latest}"
 CONTAINER="index-retriever-mcp-server"
 FOLDER="cloud-dog"
-REGISTRY="registry.cloud-dog.net:443"
+REGISTRY="${REGISTRY:-}"
 CUSTOM_CA_CERT="${CUSTOM_CA_CERT:-/usr/local/share/ca-certificates/cloud-dog.net.ca.crt}"
 GENERIC_CA_CERT="custom-ca.crt"
 CERT_ARG=""
@@ -56,35 +56,10 @@ echo "=========================================="
 echo "Docker Build: ${FOLDER}/${CONTAINER}:${VERSION}"
 echo "=========================================="
 
-# ── Private PyPI credentials ─────────────────────────────────────
-PYPI_URL="${PYPI_URL:-https://pypi.cloud-dog.net/simple/}"
+# ── PyPI Configuration ───────────────────────────────────────────
+PYPI_URL="${PYPI_URL:-https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple}"
 PYPI_USERNAME="${PYPI_USERNAME:-}"
 PYPI_PASSWORD="${PYPI_PASSWORD:-}"
-
-if [[ -z "${PYPI_USERNAME}" || -z "${PYPI_PASSWORD}" ]]; then
-  if [[ -f /opt/iac/Development/cloud-dog-ai/env-vault ]]; then
-    source /opt/iac/Development/cloud-dog-ai/env-vault
-    VAULT_JSON=$(curl -fsS \
-      -H "X-Vault-Token: ${VAULT_TOKEN}" \
-      "${VAULT_ADDR}/v1/${VAULT_MOUNT_POINT}/data/${VAULT_CONFIG_PATH}" 2>/dev/null || echo "{}")
-    PYPI_USERNAME=$(echo "${VAULT_JSON}" | python3 -c "
-import json,sys
-root=json.load(sys.stdin).get('data',{}).get('data',{})
-blob=root.get('json','{}')
-parsed=json.loads(blob) if isinstance(blob,str) else blob
-d=parsed.get('dev',{}) or root.get('dev',{})
-print(d.get('repository',{}).get('pypi',{}).get('username',''))
-" 2>/dev/null || echo "")
-    PYPI_PASSWORD=$(echo "${VAULT_JSON}" | python3 -c "
-import json,sys
-root=json.load(sys.stdin).get('data',{}).get('data',{})
-blob=root.get('json','{}')
-parsed=json.loads(blob) if isinstance(blob,str) else blob
-d=parsed.get('dev',{}) or root.get('dev',{})
-print(d.get('repository',{}).get('pypi',{}).get('password',''))
-" 2>/dev/null || echo "")
-  fi
-fi
 
 if [[ -n "${PYPI_USERNAME}" ]] && [[ -n "${PYPI_PASSWORD}" ]]; then
   cat > "${PIP_CONF}" << EOF
@@ -115,10 +90,12 @@ fi
 # ── Build ────────────────────────────────────────────────────────
 if [[ -n "${PUBLICATION_DRY_RUN:-}" ]]; then
   echo "DRY-RUN: build tag = ${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
-  if [[ -z "${PUBLICATION_TAG_SUFFIX}" ]]; then
+  if [[ -n "${REGISTRY}" && -z "${PUBLICATION_TAG_SUFFIX}" ]]; then
     echo "DRY-RUN: registry tag = ${REGISTRY}/${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
-  else
+  elif [[ -n "${PUBLICATION_TAG_SUFFIX}" ]]; then
     echo "DRY-RUN: registry tag = (skipped — publication suffix '${PUBLICATION_TAG_SUFFIX}' set)"
+  else
+    echo "DRY-RUN: registry tag = (skipped; set REGISTRY to tag a registry image)"
   fi
   exit 0
 fi
@@ -143,12 +120,14 @@ BUILD_STATUS=${PIPESTATUS[0]}
 
 if [[ ${BUILD_STATUS} -eq 0 ]]; then
   echo "Build OK: ${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
-  if [[ -z "${PUBLICATION_TAG_SUFFIX}" ]]; then
+  if [[ -n "${REGISTRY}" && -z "${PUBLICATION_TAG_SUFFIX}" ]]; then
     docker tag "${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}" \
       "${REGISTRY}/${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
     echo "Tagged: ${REGISTRY}/${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
-  else
+  elif [[ -n "${PUBLICATION_TAG_SUFFIX}" ]]; then
     echo "Publication test image (suffix=${PUBLICATION_TAG_SUFFIX}); internal registry tag skipped (W28A-831 isolation)."
+  else
+    echo "Registry tag skipped; set REGISTRY to tag a registry image."
   fi
 else
   echo "Build FAILED — see docker-build.log"

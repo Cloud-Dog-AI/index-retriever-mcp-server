@@ -1,102 +1,47 @@
-# index-retriever-mcp-server
+# Index Retriever MCP Server
 
-`index-retriever-mcp-server` is the Cloud-Dog AI platform retrieval service for ingesting, indexing, and searching enterprise content across multiple vector database backends and parser providers, exposed through REST, MCP, and A2A-compatible interfaces.
+`index-retriever-mcp-server` exposes document ingestion, retrieval, parser, Web UI, MCP, and A2A-compatible endpoints.
 
-## Quick Start
+## Publication Quick Start
 
-### Prerequisites
-- Python `3.11+`
-- Access to `https://<internal-pypi>/simple/`
-- Vault bootstrap env file: `<workspace>/env-vault`
+Prerequisites:
 
-### Install
+- Docker 24 or newer with BuildKit enabled
+- Python 3.11 or newer if you run the package locally
+- Public package source: `https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple`
+
+Build an isolated publication-test image:
+
 ```bash
-set -a; source <workspace>/env-vault; set +a
+PUBLICATION_TAG_SUFFIX=gitea-test ./docker-build.sh latest
+```
+
+Run the local smoke by executing the shell block in [PUBLICATION-SMOKE.md](PUBLICATION-SMOKE.md) with `TAG=latest-gitea-test`.
+
+The smoke run uses [env.example](env.example) and probes:
+
+- API: `8083`
+- Web: `8080`
+- MCP: `8081`
+- A2A: `8082`
+
+## Local Development
+
+```bash
 python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]" --index-url https://<internal-pypi>/simple/
+. .venv/bin/activate
+pip install --upgrade pip
+pip install -e ".[dev]" --extra-index-url https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple
 ```
 
-### Run
-```bash
-./server_control.sh --env tests/env-IT start all
-./server_control.sh --env tests/env-IT status all
-```
+Runtime configuration is loaded from the env file passed to `server_control.sh`, then from shell environment variables, then from `defaults.yaml`.
 
-### Test
-```bash
-.venv/bin/python -m pytest tests/quality --env tests/env-QT -q
-.venv/bin/python -m pytest tests/unit --env tests/env-UT -q
-```
+## Documentation
 
-## Architecture Overview
-
-The repository separates transport/runtime concerns from indexing/search domain logic:
-- `src/index_server/` for REST/MCP process bootstrap and auth middleware
-- `src/index_tools/` for connectors, parsing orchestration, embeddings, VDB, queue, and service facade
-
-Detailed architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-
-## API Interfaces
-
-| Interface | Base Path | Transport | Reference |
-|---|---|---|---|
-| REST API | `/api/v1` | HTTP/JSON | [docs/API-REFERENCE.md#rest-api](docs/API-REFERENCE.md#rest-api) |
-| MCP API | `/mcp` | Streamable HTTP MCP | [docs/API-REFERENCE.md#mcp-tools](docs/API-REFERENCE.md#mcp-tools) |
-| A2A | `/a2a` | HTTP/JSON (auth-gated) | [docs/API-REFERENCE.md#a2a-endpoints](docs/API-REFERENCE.md#a2a-endpoints) |
-
-## Configuration
-
-Configuration precedence and variable catalogue: [docs/ENV-REFERENCE.md](docs/ENV-REFERENCE.md)  
-Deployment profiles and Vault wiring: [docs/DEPLOY.md](docs/DEPLOY.md)
-
-## Platform Packages
-
-| Package | Version Constraint | Role |
-|---|---|---|
-| `cloud_dog_config` | `>=0.3.1` | layered config and Vault resolution |
-| `cloud_dog_logging` | `>=0.3.3` | structured logs and audit trail |
-| `cloud_dog_api_kit` | `>=0.4.1` | API and MCP app factory |
-| `cloud_dog_idam` | `>=0.2.0` | auth and RBAC enforcement |
-| `cloud_dog_jobs` | `>=0.3.0` | job queue abstraction |
-| `cloud_dog_db` | `>=0.1.0` | DB runtime helper |
-| `cloud_dog_llm` | `>=0.2.1` | embedding/provider integration |
-| `cloud_dog_vdb` | `>=0.5.2` | VDB + parser/OCR abstraction |
-| `cloud_dog_storage` | `>=0.1.1` | storage backends and path utilities |
-
-## Standards Alignment
-
-| Standard | Status |
-|---|---|
-| PS-00 | ✅ |
-| PS-10 | ✅ |
-| PS-20 | ✅ |
-| PS-30 | ✅ |
-| PS-40 | ✅ |
-| PS-50 | ✅ |
-| PS-60 | ✅ |
-| PS-70 | ✅ |
-| PS-75 | ✅ |
-| PS-80 | ✅ |
-| PS-90 | ✅ |
-| PS-95 | ✅ |
-
-## Documentation Links
-
-| Document | Path |
-|---|---|
-| Build Guide | [docs/BUILD.md](docs/BUILD.md) |
-| Deploy Guide | [docs/DEPLOY.md](docs/DEPLOY.md) |
-| API Reference | [docs/API-REFERENCE.md](docs/API-REFERENCE.md) |
-| Environment Reference | [docs/ENV-REFERENCE.md](docs/ENV-REFERENCE.md) |
-| Requirements | [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) |
-| Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| Tests | [docs/TESTS.md](docs/TESTS.md) |
-| Rules | [RULES.md](RULES.md) |
-| Context Handoff | [CONTEXT-SUMMARY.md](CONTEXT-SUMMARY.md) |
-
----
+- [BUILD.md](BUILD.md)
+- [PUBLICATION-SMOKE.md](PUBLICATION-SMOKE.md)
+- [env.example](env.example)
 
 ## Licence
 
-Apache-2.0 — Copyright (c) 2026 Cloud-Dog, Viewdeck Engineering Limited
+Apache-2.0 - Copyright (c) 2026 Cloud-Dog, Viewdeck Engineering Limited

@@ -12,18 +12,18 @@ CLOUD_DOG__A2A_SERVER__PORT=8077
 CLOUD_DOG__A2A_SERVER__HOST=0.0.0.0
 
 # ── Authentication ───────────────────────────────────────────────
-# API key for tool execution (from Vault: vault.dev.keys.api_key)
+# API key for tool execution.
 CLOUD_DOG__INDEX__API_KEY=
 
 # ── VDB Configuration ────────────────────────────────────────────
-# From Vault: vault.dev.vdbs.*
+# Fill these when using an external vector database.
 CLOUD_DOG__INDEX__VDB__PROVIDER=qdrant
 CLOUD_DOG__INDEX__VDB__HOST=
 CLOUD_DOG__INDEX__VDB__PORT=6333
 CLOUD_DOG__INDEX__VDB__COLLECTION=
 
 # ── Embedding Configuration ─────────────────────────────────────
-# From Vault: vault.dev.models.*
+# Fill these when using an external embedding provider.
 CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=ollama
 CLOUD_DOG__INDEX__EMBEDDING__MODEL=bge-m3:567m
 CLOUD_DOG__INDEX__EMBEDDING__BASE_URL=http://host.docker.internal:11434
@@ -33,12 +33,6 @@ CLOUD_DOG__INDEX__EMBEDDING__DIMENSIONS=1024
 CLOUD_DOG__INDEX__LLM__PROVIDER=ollama
 CLOUD_DOG__INDEX__LLM__MODEL=qwen3:14b
 CLOUD_DOG__INDEX__LLM__BASE_URL=http://host.docker.internal:11434
-
-# ── Vault (optional — for credential resolution) ────────────────
-VAULT_ADDR=https://vault.example.com
-VAULT_TOKEN=
-CLOUD_DOG__VAULT__MOUNT_POINT=cloud_dog_ai
-CLOUD_DOG__VAULT__CONFIG_PATH=config
 
 # ── Logging ──────────────────────────────────────────────────────
 CLOUD_DOG__INDEX__LOG__LEVEL=INFO

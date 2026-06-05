@@ -104,6 +104,11 @@ def _cfg_get(key: str, default: str = "") -> str:
     return default
 
 
+def _cfg_truthy(key: str) -> bool:
+    value = _cfg_get(key).strip().lower()
+    return value in {"1", "true", "yes", "on"}
+
+
 class BootstrapSeedError(RuntimeError):
     """Raised when the seed cannot be loaded or applied."""
 
@@ -655,6 +660,7 @@ def _apply_api_key(service: Any, api_key: ApiKeySeed, *, token: str) -> None:
 
 
 _SEED_PATH_ENV = "INDEX_RETRIEVER_BOOTSTRAP_SEED_PATH"
+_SEED_DISABLED_ENV = "INDEX_RETRIEVER_BOOTSTRAP_SEED_DISABLED"
 
 
 def resolve_seed_path() -> str | None:
@@ -672,6 +678,9 @@ def resolve_seed_path() -> str | None:
     only triggered when a seed file exists AND it contains api-keys AND
     Vault is unavailable.
     """
+    if _cfg_truthy(_SEED_DISABLED_ENV):
+        return None
+
     explicit = _cfg_get(_SEED_PATH_ENV).strip()
     if explicit:
         return explicit
