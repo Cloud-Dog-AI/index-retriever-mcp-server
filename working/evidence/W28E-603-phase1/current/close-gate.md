@@ -27,29 +27,28 @@ the ST1_14 test update.
   branch head; the final tag is an ancestor of the remote branch head.
 - Checksums: `sha256sum -c CHECKSUMS.sha256` — 44 files OK.
 
-## §25 acceptance-criteria coverage — 15/15 PASS (with recorded delegation)
+## §25 acceptance-criteria coverage — 14/15 PASS; #13 owed in-lane (HELD)
 See `acceptance-criteria-coverage.md` for the per-criterion evidence.
-- **PASS (15):** #1 #2 #3 #4 #5 #6 #7 #8 #9 #10 #11 #12 #13 #14 #15.
+- **PASS (14):** #1 #2 #3 #4 #5 #6 #7 #8 #9 #10 #11 #12 #14 #15.
   - #5 (full SQL dialect matrix) is proven against **real** backends — sqlite + Postgres 16 + MariaDB 11 —
     CRUD + Alembic migrations round-trip green on disposable ephemeral containers (server2 docker, isolated
     network). See `db-matrix-proof.txt`. A `cloud_dog_db.config.to_sync_url()` password-masking defect was
     found and recorded there (owner: cloud_dog_db package maintainer; worked around with trust/empty-auth
     disposable DBs since authentication is outside §25 #5).
-  - #13 — db-mcp-service reads/presents the structure DB: **IR-scope proven**; db-mcp read-only-RBAC-through-
-    stack + audit-source residual **DELEGATED** to the db-mcp RBAC/audit lane **W28E-603-DBMCP-13R**, **gated
-    on W28A-871** (coordinator authorization: `W28E-603-AUDITOR-DECISION-CRITERION-13-2026-06-05.md`; lane spec
-    `db-mcp-service-delegation.md`). Read/present is proven cross-service in `db-mcp-read-proof.txt` (db-mcp's
-    own connector discovered all 12 `structure_*` tables and read the seeded row incl. `schema_version`,
-    read-only, with no index-retriever call). Index-retriever's side is complete (canonical, discoverable
-    schema, #4 PASS).
-
-Every §25 criterion is delivered and proven from raw artefacts; #13 is met for index-retriever scope with the
-db-mcp residual delegated to the named, gated db-mcp-server lane above.
+- **NOT MET (1) — #13:** db-mcp-service reads/presents the structure DB. The earlier "delegate the db-mcp
+  residual to another lane" decision is **WITHDRAWN** by the coordinator (moving functionality right is
+  rejected). #13 is **owed inside W28E-603** and must be implemented and proven **end-to-end through the live
+  db-mcp stack**: read-only-RBAC-through-stack (analyst data.read PASS / data.create 403 over the live MCP
+  surface) **and** audit-source attribution (a captured live audit record identifying access as db-mcp-service).
+  Only the read/present half is proven so far (`db-mcp-read-proof.txt`, bare connector — bypasses the RBAC/audit
+  server layer, so not end-to-end). That path runs through db-mcp, so **W28A-871 (DB-MCP UAT WebUI recovery) is
+  a HARD prerequisite** and is currently RUNNING. In-lane plan: `db-mcp-13-inlane-plan.md`. Decision of record:
+  `../../W28E-603-AUDITOR-DECISION-CRITERION-13-2026-06-05.md`.
 
 ## Verdict
-Per the coordinator decision (`W28E-603-AUDITOR-DECISION-CRITERION-13-2026-06-05.md`), all 15 §25 criteria are
-met for W28E-603: 14 fully in-repo, plus #13 met for index-retriever scope with its db-mcp residual delegated
-to lane W28E-603-DBMCP-13R (gated on W28A-871). W28E-603 does not ride the W28E-618 deploy until this close
-lands.
+W28E-603 is **HELD / RUNNING at 14/15**. #13 is genuine in-lane work, blocked on W28A-871 (RUNNING); the lane
+will assert `HAVE_ALL_REQUIREMENTS_BEEN_MET: YES` only when all 15 §25 criteria are genuinely met (W28A-871
+lands, then #13 is implemented and proven end-to-end live in this lane). W28E-603 does not ride the W28E-618
+deploy.
 
-HAVE_ALL_REQUIREMENTS_BEEN_MET: YES  (15/15 §25; #13 met for IR scope, db-mcp residual delegated to W28E-603-DBMCP-13R gated on W28A-871 per coordinator decision)
+HAVE_ALL_REQUIREMENTS_BEEN_MET: NO  (14/15 §25 met; #13 owed in-lane — read-only-RBAC-through-stack + audit-source proven end-to-end live; HELD, hard-gated on W28A-871 which is RUNNING)

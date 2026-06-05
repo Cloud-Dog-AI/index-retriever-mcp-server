@@ -18,11 +18,11 @@ yet complete: WebUI, A2A, db-mcp exposure and the full live DB matrix remain.
 | 10 | Template blueprint generated and exported | Phase 5 | PASS (`structure_template_generate` + `structure_template_export` markdown/json) |
 | 11 | WebUI inspection + corpus/template workflows | Phase 3 | PASS (in-repo server-rendered /admin/ui/structure; React SPA + Playwright are cross-repo in cloud-dog-ui monorepo) |
 | 12 | A2A exposes selected structure skills | Phase 2 | PASS (agent card + /a2a/tasks structure skills) |
-| 13 | db-mcp-service reads/presents the structure DB | Phase 6 (cross-service) | PASS (IR-scope: read/present PROVEN cross-service via db-mcp-read-proof.txt — db-mcp connector discovered all 12 structure_* tables + read seeded row incl schema_version, read-only, no IR call; db-mcp read-only-RBAC-through-stack + audit-source residual DELEGATED to lane W28E-603-DBMCP-13R gated on W28A-871 per coordinator decision W28E-603-AUDITOR-DECISION-CRITERION-13-2026-06-05.md) |
+| 13 | db-mcp-service reads/presents the structure DB | owed in-lane (gated W28A-871) | NOT MET (read/present half proven via db-mcp-read-proof.txt — bare connector, bypasses RBAC/audit server layer; full #13 = read-only-RBAC-through-LIVE-stack + audit-source attribution, proven end-to-end IN-LANE, is owed; HARD-gated on W28A-871 (RUNNING); plan db-mcp-13-inlane-plan.md; decision ../../W28E-603-AUDITOR-DECISION-CRITERION-13-2026-06-05.md) |
 | 14 | Audit logs capture extraction/analysis/template/deletion | Phase 1/4/5 | PASS (create/extract/corpus-analyse/template-generate/delete all audited) |
 | 15 | Documentation/tests/implementation agree on tool names/routes | Phase 1/2 | PASS (89-tool catalogue + UT1_40 enforcement) |
 
-PASS: #1,#2,#3,#4,#5,#6,#7,#8,#9,#10,#11,#12,#13,#14,#15 (15/15). #13 met for IR scope (read/present proven); db-mcp read-only-RBAC-through-stack + audit-source residual DELEGATED to lane W28E-603-DBMCP-13R gated on W28A-871 (coordinator decision).
+PASS: #1,#2,#3,#4,#5,#6,#7,#8,#9,#10,#11,#12,#14,#15 (14/15). #13 NOT MET — owed in-lane (read-only-RBAC-through-LIVE-stack + audit-source, proven end-to-end); HELD, hard-gated on W28A-871 (RUNNING). Delegation withdrawn by coordinator.
 
 Acceptance of the full W28E-603 lane requires all 15 criteria PASS-with-raw-artefact. That bar is not yet met
 (db-mcp exposure (cross-service) and the live DB matrix (infra) remain). This pack is a running-lane checkpoint, not a
