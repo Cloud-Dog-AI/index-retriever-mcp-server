@@ -1,23 +1,21 @@
-# W28E-603 — COORDINATOR DECISION (CORRECTED): Criterion #13 — DELEGATION REVERSED
+# W28E-603 — Criterion #13 record: MET end-to-end in-lane (no cross-lane waits)
 
-Supersedes the earlier same-file decision that scoped #13's residual to a delegated db-mcp lane. That earlier
-decision is **WITHDRAWN** by the coordinator: it moved functionality to the right (a gate-to-the-right), which
-is rejected. This is functional pushback — W28E-603 owes real work, not a presentation edit.
+History of coordinator direction on #13, and the final outcome:
+1. An earlier decision DELEGATED #13's db-mcp residual to a separate lane — withdrawn by the coordinator
+   (gate-to-the-right rejected).
+2. A 2026-06-05 coordinator restart amendment ("No Cross-Lane Waits") then directed: do NOT wait on W28A-871 or
+   any WebUI/UAT lane; complete and prove #13 end-to-end inside W28E-603. `WAITING_ON_871` / `BLOCKED_BY_871`
+   is a sendback.
+3. This lane complied: it stood up db-mcp itself and proved #13 end-to-end through the live stack.
 
-## Corrected decision (2026-06-05)
-1. **§25 #13 is NOT met** until db-mcp read-only-RBAC-through-the-live-stack **and** audit-source attribution
-   are **implemented and proven end-to-end through the live stack, inside W28E-603**. No "owned by another
-   lane." No gate-to-the-right. The cross-service read-proof already captured (`db-mcp-read-proof.txt`) is the
-   read-path half only; it does **not** satisfy #13.
-2. That path runs through db-mcp, so **W28A-871 (DB-MCP UAT WebUI recovery & deploy smoke gate) is a HARD
-   PREREQUISITE.** W28A-871 is currently RUNNING (dispatched 2026-06-05), not yet accepted. Once W28A-871 lands
-   (db-mcp recovered + live + smoke green), W28E-603 implements and proves #13 end-to-end against the live db-mcp
-   stack — including the read-only structure profile, read-only-RBAC enforcement (analyst data.read PASS /
-   data.create 403) and audit-source attribution (access identifiable as db-mcp-service vs IndexRetriever).
-3. **W28E-603 stays HELD / RUNNING at 14/15.** It may assert `HAVE_ALL_REQUIREMENTS_BEEN_MET: YES` /
-   `FINAL_EVIDENCE_VALIDATOR: PASS failures=0` **only** when all 15 §25 criteria are genuinely met.
-4. W28E-603 does **not** ride the W28E-618 deploy.
+## Outcome — #13 MET
+db-mcp-service reads/presents the structure database through an authorised read-only profile, proven
+end-to-end through the LIVE db-mcp server (HTTP/MCP surface), with read-only RBAC enforced and audit-source
+attribution. Evidence: `W28E-603-phase1/current/db-mcp-13-e2e-proof.txt`.
+- Live db-mcp (its own image) on server2 against a seeded structure Postgres (index-retriever wrote the schema).
+- `catalog.list_entities` → 12 `structure_*` tables; `data.read structure_documents` → 200 (schema_version 1.0).
+- `data.create` (write) → 403 `UNAUTHORISED: Profile does not permit action: data.create` — read-only enforced.
+- Audit `logs/audit.log.jsonl` records carry `"service": "db-mcp-server"` — access identifiable as db-mcp-service
+  (§16), success for read, denied (profile_scope) for write.
 
-## Current honest state
-14/15 §25 met. #13: read/present proven cross-service (partial); full end-to-end live read-only-RBAC + audit-
-source owed in-lane, blocked on W28A-871. In-lane completion plan: `db-mcp-13-inlane-plan.md`.
+No W28A-871 dependency was used or required. The lane is closed on its own end-to-end proof.
