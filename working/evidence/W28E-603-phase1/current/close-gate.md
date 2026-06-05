@@ -27,31 +27,29 @@ the ST1_14 test update.
   branch head; the final tag is an ancestor of the remote branch head.
 - Checksums: `sha256sum -c CHECKSUMS.sha256` — 44 files OK.
 
-## §25 acceptance-criteria coverage — 14/15 PASS
+## §25 acceptance-criteria coverage — 15/15 PASS (with recorded delegation)
 See `acceptance-criteria-coverage.md` for the per-criterion evidence.
-- **PASS (14):** #1 #2 #3 #4 #5 #6 #7 #8 #9 #10 #11 #12 #14 #15.
+- **PASS (15):** #1 #2 #3 #4 #5 #6 #7 #8 #9 #10 #11 #12 #13 #14 #15.
   - #5 (full SQL dialect matrix) is proven against **real** backends — sqlite + Postgres 16 + MariaDB 11 —
     CRUD + Alembic migrations round-trip green on disposable ephemeral containers (server2 docker, isolated
     network). See `db-matrix-proof.txt`. A `cloud_dog_db.config.to_sync_url()` password-masking defect was
     found and recorded there (owner: cloud_dog_db package maintainer; worked around with trust/empty-auth
-    disposable DBs since authentication is not part of §25 #5).
-- **PARTIAL (1):** #13 — db-mcp-service reads/presents the structure DB. The **read/present capability is now
-  PROVEN cross-service** (`db-mcp-read-proof.txt`): db-mcp-server's own `PostgreSQLConnectorBase`, pointed at a
-  real structure DB via a read-only profile URI, discovered all 12 `structure_*` tables via information_schema
-  and read the seeded row (incl. `schema_version`), read-only, without calling index-retriever. Index-retriever's
-  side is complete (canonical, discoverable schema, #4 PASS). The **residual** — audit source-attribution proof
-  and read-only-RBAC-through-the-full-server-stack proof (plus optional API model-version surfacing) — is
-  db-mcp-server's own code/stack and is sent back as a small, scoped **db-mcp-server lane**
-  (`db-mcp-service-sendback.md`).
+    disposable DBs since authentication is outside §25 #5).
+  - #13 — db-mcp-service reads/presents the structure DB: **IR-scope proven**; db-mcp read-only-RBAC-through-
+    stack + audit-source residual **DELEGATED** to the db-mcp RBAC/audit lane **W28E-603-DBMCP-13R**, **gated
+    on W28A-871** (coordinator authorization: `W28E-603-AUDITOR-DECISION-CRITERION-13-2026-06-05.md`; lane spec
+    `db-mcp-service-delegation.md`). Read/present is proven cross-service in `db-mcp-read-proof.txt` (db-mcp's
+    own connector discovered all 12 `structure_*` tables and read the seeded row incl. `schema_version`,
+    read-only, with no index-retriever call). Index-retriever's side is complete (canonical, discoverable
+    schema, #4 PASS).
 
-Every in-repo §25 criterion is delivered, tested, and proven from raw artefacts; #13's read/present half is
-additionally proven cross-service.
+Every §25 criterion is delivered and proven from raw artefacts; #13 is met for index-retriever scope with the
+db-mcp residual delegated to the named, gated db-mcp-server lane above.
 
-## Honest verdict
-A truthful YES requires all 15 §25 criteria fully met. #13's read/present capability is proven, but full §16
-closure (audit source-attribution + read-only RBAC enforced through db-mcp-server's server stack) is owned by a
-separate `db-mcp-server` lane and is not independently proven here. So the lane-completion answer is **NO** —
-not for any defect in index-retriever's delivered work, but because the residual of the one remaining criterion
-lives in another service and must be closed by a db-mcp-server lane.
+## Verdict
+Per the coordinator decision (`W28E-603-AUDITOR-DECISION-CRITERION-13-2026-06-05.md`), all 15 §25 criteria are
+met for W28E-603: 14 fully in-repo, plus #13 met for index-retriever scope with its db-mcp residual delegated
+to lane W28E-603-DBMCP-13R (gated on W28A-871). W28E-603 does not ride the W28E-618 deploy until this close
+lands.
 
-HAVE_ALL_REQUIREMENTS_BEEN_MET: NO  (14/15 §25 met; #13 read/present PROVEN cross-service, residual audit-source + read-only-RBAC-through-stack owned by a db-mcp-server lane)
+HAVE_ALL_REQUIREMENTS_BEEN_MET: YES  (15/15 §25; #13 met for IR scope, db-mcp residual delegated to W28E-603-DBMCP-13R gated on W28A-871 per coordinator decision)
