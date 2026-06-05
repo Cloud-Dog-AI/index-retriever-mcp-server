@@ -37,8 +37,10 @@ a92821833995844654594cba704109664d5eb65af5425c8d058f2361b4435b18  ../../../../te
 95dcecf2f76bd88b567fd3dcf14f298b67fc4055c8eba4bdf3a2f4f30127f3af  ../../../../docs/MCP_DOCUMENTATION.md
 1809c0b5e7ac57764f7396f157f4babb6f8b40d546917433ffe3c14f09eb8e6d  ../../../../docs/REQUIREMENTS.md
 05be9ef98569629d4a702f011e5855cbf098dae2ce370e6b8e8e1ec207a364f2  ../../../../docs/TESTS.md
-e50e594ece3e07ecdbf74334e96b1b47ee8d2a5e89b8748ca4da4b8d5e874d8b  requirements-map.tsv
-71810b8cc9c80678f908bca143bc0d93ee98aec395b90be738fbafbf25799b22  close-gate.md
+82242d7f117bdbec92ed4d0f5d8908974251c3bb3c9b605a452b6815c69fff44  requirements-map.tsv
+b5714a3c0dd17350c6b961f42343c094fc823d3e06637792cb14345b0c92df33  close-gate.md
 ab8388c5c9c098c00ac739385ae80d4a4b73b835c271226e188a97708022c14a  EVIDENCE-MATRIX.md
-384c549d0c07e41e7896ad86437dd9a24cd8c397e8bb47164c80c60b67c12ef6  acceptance-criteria-coverage.md
+f440741849d44946f622b15542c1cec46d5f7eb4d267fe53f162b8dce7edcef6  acceptance-criteria-coverage.md
 31dcd48934394231c98c64f54457339dba4afc0e1cad034d603d963f5929c3f9  db-matrix-proof.txt
+3ddf6d1685716b85a6c9cce49057521ac762c361c598e2ace1414a62130365c6  db-mcp-read-proof.txt
+a5329f2c342c562acd581ddd7f264a0c8396c0fbeed7e7634fbcacf02f8938de  db-mcp-service-sendback.md

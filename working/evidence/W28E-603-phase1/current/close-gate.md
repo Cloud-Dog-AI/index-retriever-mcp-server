@@ -35,16 +35,23 @@ See `acceptance-criteria-coverage.md` for the per-criterion evidence.
     network). See `db-matrix-proof.txt`. A `cloud_dog_db.config.to_sync_url()` password-masking defect was
     found and recorded there (owner: cloud_dog_db package maintainer; worked around with trust/empty-auth
     disposable DBs since authentication is not part of §25 #5).
-- **PENDING (1):** #13 — db-mcp generic exposure. **Cross-service**: lives in `db-mcp-server` repo, not this
-  one. Owner: a db-mcp-server lane.
+- **PARTIAL (1):** #13 — db-mcp-service reads/presents the structure DB. The **read/present capability is now
+  PROVEN cross-service** (`db-mcp-read-proof.txt`): db-mcp-server's own `PostgreSQLConnectorBase`, pointed at a
+  real structure DB via a read-only profile URI, discovered all 12 `structure_*` tables via information_schema
+  and read the seeded row (incl. `schema_version`), read-only, without calling index-retriever. Index-retriever's
+  side is complete (canonical, discoverable schema, #4 PASS). The **residual** — audit source-attribution proof
+  and read-only-RBAC-through-the-full-server-stack proof (plus optional API model-version surfacing) — is
+  db-mcp-server's own code/stack and is sent back as a small, scoped **db-mcp-server lane**
+  (`db-mcp-service-sendback.md`).
 
-The single remaining criterion is outside index-retriever's code boundary. Every in-repo §25 criterion is
-delivered, tested, and proven from raw artefacts.
+Every in-repo §25 criterion is delivered, tested, and proven from raw artefacts; #13's read/present half is
+additionally proven cross-service.
 
 ## Honest verdict
-A truthful YES requires all 15 §25 criteria. #13 lives in a separate service repository (`db-mcp-server`) and
-cannot be met from within index-retriever, so the lane-completion answer is **NO** — not for any defect in the
-delivered work, but because the one remaining criterion is owned outside this repo and must be closed by a
-db-mcp-server lane.
+A truthful YES requires all 15 §25 criteria fully met. #13's read/present capability is proven, but full §16
+closure (audit source-attribution + read-only RBAC enforced through db-mcp-server's server stack) is owned by a
+separate `db-mcp-server` lane and is not independently proven here. So the lane-completion answer is **NO** —
+not for any defect in index-retriever's delivered work, but because the residual of the one remaining criterion
+lives in another service and must be closed by a db-mcp-server lane.
 
-HAVE_ALL_REQUIREMENTS_BEEN_MET: NO  (14/15 §25 criteria; #13 db-mcp generic exposure is cross-service, owned by a db-mcp-server lane)
+HAVE_ALL_REQUIREMENTS_BEEN_MET: NO  (14/15 §25 met; #13 read/present PROVEN cross-service, residual audit-source + read-only-RBAC-through-stack owned by a db-mcp-server lane)
