@@ -10,9 +10,8 @@
 # `cloud-dog-ai-platform-standards/working/W28A-RF-04-REPORT.md` §Phase B).
 # Re-confirmed live during W28A-RF-07-L1-APPLY (data-level reprovision).
 #
-# RULES.md §9.2 — token VALUES are NEVER stored here. Only Vault path
-# references (token_vault_path: "<kv-path>:<dotted.json.path>") that resolve
-# at apply-time using the service's VAULT_ADDR/VAULT_TOKEN env (injected by TF).
+# RULES.md section 9.2: token values are never stored here. Seed entries keep
+# identity metadata only; rotate API credentials through the administrator API.
 
 bootstrap:
 
