@@ -72,57 +72,9 @@ hydrate_plain_env_from_file() {
   eval "$("${PYTHON_BIN}" - "${ENV_FILE}" <<'PY'
 from __future__ import annotations
 
-import os
-import re
 import shlex
 import sys
 from pathlib import Path
-
-VAULT_REF_PATTERN = re.compile(r"^\$\{(vault\.[^}]+)\}$")
-
-try:
-    from cloud_dog_config.compiler.vault_resolver import resolve_vault_identifier
-    from cloud_dog_config.vault.client import VaultClient, VaultConnectionConfig
-except Exception:
-    resolve_vault_identifier = None
-    VaultClient = None
-    VaultConnectionConfig = None
-
-
-def resolve_value(raw: str) -> str:
-    value = raw.strip()
-    match = VAULT_REF_PATTERN.match(value)
-    if match is None or resolve_vault_identifier is None:
-        return value
-
-    addr = os.environ.get("VAULT_ADDR", "").strip()
-    token = os.environ.get("VAULT_TOKEN", "").strip()
-    if not addr or not token or VaultClient is None or VaultConnectionConfig is None:
-        return value
-
-    mount = os.environ.get("VAULT_MOUNT_POINT", "").strip().strip("/")
-    config_path = os.environ.get("VAULT_CONFIG_PATH", "").strip().strip("/")
-    if config_path:
-        mount = "/".join(part for part in (mount, config_path) if part)
-
-    try:
-        client = VaultClient(
-            VaultConnectionConfig(
-                server=addr,
-                token=token,
-                timeout_seconds=10.0,
-                mount_point=mount,
-            )
-        )
-        resolved = resolve_vault_identifier(match.group(1), vault=client)
-    except Exception:
-        return value
-
-    if isinstance(resolved, (str, int, float, bool)):
-        text = str(resolved).strip()
-        if text:
-            return text
-    return value
 
 
 env_path = Path(sys.argv[1]).resolve()
@@ -134,7 +86,10 @@ for raw in env_path.read_text(encoding="utf-8").splitlines():
     key = key.strip()
     if not key or key.startswith("CLOUD_DOG__") or key.startswith("CLOUD_DOG_DB__"):
         continue
-    print(f"export {key}={shlex.quote(resolve_value(value))}")
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1]
+    print(f"export {key}={shlex.quote(value)}")
 PY
   )"
 }

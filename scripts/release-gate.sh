@@ -47,7 +47,6 @@ if grep -RIn "import openai\|from openai" src/index_tools --include='*.py'; then
   exit 1
 fi
 
-bash scripts/validate-vault.sh
 python3 -m pytest tests --env UT --env ST --env IT --env AT --env QT -q
 python3 -m pytest tests/contract --env IT -q
 python3 -m build --no-isolation

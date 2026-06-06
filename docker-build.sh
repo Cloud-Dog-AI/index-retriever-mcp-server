@@ -28,7 +28,7 @@ PIP_CONF=".pip.conf.build"
 
 # ── Publication tag isolation (W28A-831) ──────────────────────────
 # PUBLICATION_TAG_SUFFIX appends an isolation suffix (e.g. gitea-test,
-# github-test) so publication test images never collide with dev/preprod/
+# github-test) so publication test images never collide with dev/
 # release tags. Empty (the default) leaves behaviour unchanged.
 PUBLICATION_TAG_SUFFIX="${PUBLICATION_TAG_SUFFIX:-}"
 if [[ -n "${PUBLICATION_TAG_SUFFIX}" ]]; then
@@ -37,7 +37,7 @@ if [[ -n "${PUBLICATION_TAG_SUFFIX}" ]]; then
     exit 2
   fi
   case "${PUBLICATION_TAG_SUFFIX}" in
-    latest|dev|preprod|prod|release|stable)
+    latest|dev|prod|release|stable)
       echo "ERROR: PUBLICATION_TAG_SUFFIX '${PUBLICATION_TAG_SUFFIX}' is reserved" >&2
       exit 2 ;;
   esac

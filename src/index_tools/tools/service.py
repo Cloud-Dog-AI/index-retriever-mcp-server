@@ -941,7 +941,7 @@ class IndexService:
         # A123/A117 root-cause fix: the previous fallback dropped chroma into
         # in-memory local_mode whenever the *defaults.yaml* profile happened to
         # carry `vdb.chroma.mode: local` and the operator hadn't supplied
-        # CHROMA_URL — even in a live preprod tier. That made every chroma
+        # CHROMA_URL. That made every chroma
         # profile silently store data in transient process memory using the
         # `deterministic_vector` hash fallback, and it disappeared on every
         # container restart. The new contract is explicit:
@@ -972,7 +972,7 @@ class IndexService:
 
         # W28A-296: if a remote Qdrant URL is configured, NEVER use local mode
         # regardless of env tier. Local mode stores data in process memory which
-        # is lost on every container restart — a silent data-loss defect on preprod.
+        # is lost on every container restart, causing silent data loss.
         qdrant_local_mode = not qdrant_url and "qdrant" in required_providers
         if qdrant_url or qdrant_local_mode:
             vector_stores["qdrant"] = {

@@ -741,7 +741,7 @@ def profiles_page() -> str:
   <div class="form-grid">
     <label>
       Profile ID
-      <input data-testid="profile-id" type="text" autocomplete="off" placeholder="preprod-search">
+      <input data-testid="profile-id" type="text" autocomplete="off" placeholder="sample-search">
     </label>
     <label>
       Backend
