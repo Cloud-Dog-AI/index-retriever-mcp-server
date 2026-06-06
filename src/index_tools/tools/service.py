@@ -973,7 +973,10 @@ class IndexService:
         # W28A-296: if a remote Qdrant URL is configured, NEVER use local mode
         # regardless of env tier. Local mode stores data in process memory which
         # is lost on every container restart, causing silent data loss.
-        qdrant_local_mode = not qdrant_url and "qdrant" in required_providers
+        qdrant_local_mode_flag = str(
+            _env_or_default("CLOUD_DOG__INDEX__VDB__QDRANT_LOCAL_MODE", "")
+        ).strip().lower() in {"1", "true", "yes", "on"}
+        qdrant_local_mode = not qdrant_url and (qdrant_local_mode_flag or "qdrant" in required_providers)
         if qdrant_url or qdrant_local_mode:
             vector_stores["qdrant"] = {
                 "enabled": True,
@@ -2861,12 +2864,13 @@ class IndexService:
         filter_latest_only = "is_latest" not in requested_filters
         if SearchRequest is None:
             raise RuntimeError("cloud_dog_vdb SearchRequest is required")
+        result_limit = max(1, int(planned.get("top_k", top_k)))
         response = self._run_async(
                 self.vdb.search(
                 self._backend_collection_name(profile, collection, provider_id=self._profile_provider(profile)),
                 SearchRequest(
                     query_text=query,
-                    top_k=int(planned.get("top_k", top_k)),
+                    top_k=result_limit,
                     filters=resolved_filters,
                     score_threshold=score_threshold,
                 ),
@@ -2878,7 +2882,7 @@ class IndexService:
                 profile=profile,
                 collection=collection,
                 query=query,
-                top_k=int(planned.get("top_k", top_k)),
+                top_k=result_limit,
                 filters=requested_filters or resolved_filters,
             )
         output: list[dict[str, Any]] = []
@@ -2905,7 +2909,27 @@ class IndexService:
                     metadata=metadata,
                 )
             )
-        return output[: max(1, int(planned.get("top_k", top_k)))]
+        seen_ids: set[str] = set()
+        for row in output:
+            for key in ("record_id", "doc_id", "chunk_id"):
+                value = row.get(key)
+                if value:
+                    seen_ids.add(str(value))
+        for row in self._local_search_results(
+            profile=profile,
+            collection=collection,
+            query=query,
+            top_k=result_limit,
+            filters=requested_filters or resolved_filters,
+        ):
+            row_ids = {str(row[key]) for key in ("record_id", "doc_id", "chunk_id") if row.get(key)}
+            if row_ids and row_ids.intersection(seen_ids):
+                continue
+            output.append(row)
+            seen_ids.update(row_ids)
+            if len(output) >= result_limit:
+                break
+        return output[:result_limit]
 
     @staticmethod
     def _metadata_matches_filters(metadata: dict[str, Any], filters: dict[str, Any]) -> bool:

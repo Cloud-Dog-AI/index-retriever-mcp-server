@@ -812,24 +812,27 @@ def execute_tool(
         )
     if tool_name == "search":
         _enforce_collection_permission(active_auth, active_identity, "collection.read")
+        profile = str(arguments["profile"])
+        collection = str(arguments["collection"])
+        query = str(arguments["query"])
+        top_k = int(arguments.get("top_k", 10))
+        filters = arguments.get("filters")
         try:
             return {
                 "results": service.search(
-                    profile=str(arguments["profile"]),
-                    collection=str(arguments["collection"]),
-                    query=str(arguments["query"]),
-                    top_k=int(arguments.get("top_k", 10)),
-                    filters=arguments.get("filters"),
+                    profile=profile,
+                    collection=collection,
+                    query=query,
+                    top_k=top_k,
+                    filters=filters,
                 )
             }
-        except (RuntimeError, ConnectionError, OSError, TimeoutError) as exc:
+        except (RuntimeError, ConnectionError, OSError, TimeoutError, KeyError) as exc:
             return {
                 "results": [],
                 "error": f"Search backend unavailable: {exc}",
                 "status": "backend_error",
             }
-        except KeyError:
-            raise
         except Exception as exc:  # noqa: BLE001
             return {
                 "results": [],

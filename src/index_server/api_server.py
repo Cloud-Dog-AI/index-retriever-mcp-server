@@ -21,6 +21,7 @@ import socket
 import time
 from collections.abc import Callable
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from datetime import datetime, timezone
 import resource
 import os
@@ -150,6 +151,31 @@ def _read_jsonl_records(path: str, limit: int = 200) -> list[dict[str, Any]]:
     return records
 
 
+def _read_text_log_records(path: str, limit: int = 200) -> list[dict[str, Any]]:
+    """Read the tail of a plain text log file as structured records."""
+    if not path_utils.exists(path):
+        return []
+    try:
+        lines = path_utils.read_text(path, encoding="utf-8", errors="ignore").splitlines()
+    except OSError:
+        return []
+    records: list[dict[str, Any]] = []
+    for line in lines[-limit:]:
+        text = line.strip()
+        if not text:
+            continue
+        records.append(
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "level": "INFO",
+                "logger": os.path.basename(path),
+                "message": text,
+                "source": path,
+            }
+        )
+    return records
+
+
 def _expand_rotated_log_paths(path: str) -> list[str]:
     """Include plain rotated audit files so recent entries survive log rotation."""
     directory, basename = os.path.split(path)
@@ -195,6 +221,14 @@ def _read_jsonl_records_many(paths: list[str], limit: int = 200) -> list[dict[st
     for path in expanded_paths:
         combined.extend(_read_jsonl_records(path, limit=per_file_limit))
     combined.sort(key=lambda entry: _parse_log_timestamp(entry.get("timestamp")) or datetime.min.replace(tzinfo=timezone.utc))
+    return combined[-limit:]
+
+
+def _read_text_log_records_many(paths: list[str], limit: int = 200) -> list[dict[str, Any]]:
+    """Read plain text log records from multiple paths."""
+    combined: list[dict[str, Any]] = []
+    for path in paths:
+        combined.extend(_read_text_log_records(path, limit=limit))
     return combined[-limit:]
 
 
@@ -357,6 +391,239 @@ def _runtime_config_response() -> Response:
         "};\n"
     )
     return Response(content=body, media_type="application/javascript")
+
+
+@dataclass(frozen=True)
+class DocsDocumentSpec:
+    """Project documentation document exposed through the PS-74 WebUI."""
+
+    document_id: str
+    label: str
+    source_path: str
+    kind: str
+    filename: str
+    required: str
+    content_type: str
+    language: str | None = None
+
+
+_DOCS_DOCUMENTS: tuple[DocsDocumentSpec, ...] = (
+    DocsDocumentSpec("readme", "README", "README.md", "markdown", "index-retriever-readme.md", "YES", "text/markdown; charset=utf-8"),
+    DocsDocumentSpec("api-openapi-swagger", "API OpenAPI / Swagger", "docs/openapi.json", "swagger", "index-retriever-openapi.json", "YES", "application/json"),
+    DocsDocumentSpec("mcp-tool-reference", "MCP Tool Reference", "docs/MCP_DOCUMENTATION.md", "markdown", "index-retriever-mcp-tool-reference.md", "YES", "text/markdown; charset=utf-8"),
+    DocsDocumentSpec("a2a-card", "A2A Card / Skills", "start_a2a_server.py (live /.well-known/agent.json; implementation: src/index_server/a2a_server.py)", "json", "index-retriever-a2a-card.json", "YES", "application/json"),
+    DocsDocumentSpec("configuration-summary", "Configuration Summary", "defaults.yaml", "markdown", "index-retriever-configuration-summary.md", "YES", "text/markdown; charset=utf-8"),
+    DocsDocumentSpec("docker-reference", "Docker Reference", "docs/DOCKER.md", "markdown", "index-retriever-docker-reference.md", "YES", "text/markdown; charset=utf-8"),
+    DocsDocumentSpec("index-configuration-doc", "Index Configuration", "docs/REQUIREMENTS.md", "markdown", "index-retriever-index-configuration.md", "YES-PROJECT-SPECIFIC", "text/markdown; charset=utf-8"),
+    DocsDocumentSpec("retrieval-mode-reference", "Retrieval Mode Reference", "docs/API_DOCUMENTATION.md", "markdown", "index-retriever-retrieval-mode-reference.md", "YES-PROJECT-SPECIFIC", "text/markdown; charset=utf-8"),
+    DocsDocumentSpec("embedding-model-policy", "Embedding Model Policy", "docs/REQUIREMENTS.md; docs/PREPROD.md", "markdown", "index-retriever-embedding-model-policy.md", "YES-PROJECT-SPECIFIC", "text/markdown; charset=utf-8"),
+)
+_DOCS_BY_ID = {document.document_id: document for document in _DOCS_DOCUMENTS}
+_DOCS_ACTIONS = {"docs.view", "docs.download", "docs.print", "docs.search", "docs.copy"}
+_DOCS_SECRET_KEY_PARTS = ("secret", "password", "token", "api_key", "apikey", "authorization", "cookie", "credential")
+
+_INDEX_A2A_SKILLS: tuple[dict[str, str], ...] = (
+    {"id": "index_list", "name": "Index List", "description": "List indexed collections for the selected profile"},
+    {"id": "bulk_index", "name": "Bulk Index", "description": "Queue one or more text documents for asynchronous indexing"},
+    {"id": "ingest_text", "name": "Ingest Text", "description": "Ingest text into a profiled collection with embedding and indexing"},
+    {"id": "ingest_upload", "name": "Ingest Upload", "description": "Upload a file for chunking, embedding, and indexing"},
+    {"id": "ingest_reference", "name": "Ingest Reference", "description": "Ingest content from a URI (HTTP, S3, FTP, filesystem, etc.)"},
+    {"id": "search", "name": "Search", "description": "Vector similarity search across indexed collections"},
+    {"id": "retrieve", "name": "Retrieve", "description": "Retrieve a specific document by ID"},
+    {"id": "collection_create", "name": "Create Collection", "description": "Create a new indexed collection within a profile"},
+    {"id": "collection_list", "name": "List Collections", "description": "List collections for a profile"},
+    {"id": "profiles_list", "name": "List Profiles", "description": "List configured storage profiles"},
+    {"id": "ingest_health", "name": "Ingest Health", "description": "Per-profile ingest pipeline health status"},
+    {"id": "backend_health_check", "name": "Backend Health", "description": "Vector database backend health check"},
+    {"id": "file_upload", "name": "File Upload", "description": "Upload a file to service storage (PS-78)"},
+    {"id": "file_list", "name": "File List", "description": "List stored service files (PS-78)"},
+    {"id": "file_get", "name": "File Metadata", "description": "Get stored service file metadata (PS-78)"},
+    {"id": "file_download", "name": "File Download", "description": "Download stored service file content (PS-78)"},
+    {"id": "file_delete", "name": "File Delete", "description": "Delete a stored service file (PS-78)"},
+    {"id": "source_config_create", "name": "Create Source Config", "description": "Create a connector source configuration"},
+    {"id": "source_config_list", "name": "List Source Configs", "description": "List connector source configurations"},
+    {"id": "source_config_get", "name": "Get Source Config", "description": "Read a connector source configuration"},
+    {"id": "source_config_update", "name": "Update Source Config", "description": "Update a connector source configuration"},
+    {"id": "source_config_delete", "name": "Delete Source Config", "description": "Delete a connector source configuration"},
+)
+
+
+def _read_docs_source(relative_path: str) -> str:
+    """Read a documentation source file under the project root."""
+    root = path_utils.resolve_path(_project_root_dir())
+    candidate = path_utils.resolve_path(path_utils.join(root, relative_path))
+    root_prefix = root if root.endswith(os.sep) else f"{root}{os.sep}"
+    if not (candidate == root or candidate.startswith(root_prefix)) or not path_utils.exists(candidate):
+        raise HTTPException(status_code=404, detail=f"Documentation source not found: {relative_path}")
+    return path_utils.read_text(candidate, encoding="utf-8", errors="ignore")
+
+
+def _json_pretty(content: str) -> str:
+    """Format JSON content while preserving the original text on parse failure."""
+    try:
+        return json.dumps(json.loads(content), indent=2, sort_keys=True)
+    except json.JSONDecodeError:
+        return content
+
+
+def _a2a_card_content() -> str:
+    """Render the live A2A card shape used by the index-retriever A2A surface."""
+    card = {
+        "name": "index-retriever",
+        "description": "Index retriever A2A server for vector database search and document ingestion",
+        "url": "/a2a",
+        "version": "1.0.0",
+        "protocolVersion": "0.3.0",
+        "capabilities": {
+            "streaming": True,
+            "pushNotifications": False,
+            "stateTransitionHistory": True,
+        },
+        "skills": [
+            {
+                **skill,
+                "inputModes": ["text/plain", "application/json"],
+                "outputModes": ["text/plain", "application/json"],
+            }
+            for skill in _INDEX_A2A_SKILLS
+        ],
+        "source": {
+            "instruction_source": "start_a2a_server.py",
+            "implementation": "src/index_server/a2a_server.py",
+            "live_endpoint": "/.well-known/agent.json",
+        },
+    }
+    return json.dumps(card, indent=2, sort_keys=True)
+
+
+def _configuration_summary_content() -> str:
+    """Render defaults.yaml as a markdown configuration summary."""
+    source = _read_docs_source("defaults.yaml")
+    return "\n".join(
+        [
+            "# Configuration Summary",
+            "",
+            "Source: `index-retriever-mcp-server/defaults.yaml`.",
+            "",
+            "The index-retriever runtime configuration is loaded through the project configuration hierarchy and defaults to the service-owned settings below.",
+            "",
+            "- [x] Source-attributed from `defaults.yaml`.",
+            "- [x] Rendered inline through the PS-74 markdown widget.",
+            "",
+            "```yaml",
+            source.rstrip(),
+            "```",
+            "",
+        ]
+    )
+
+
+def _requirements_content(title: str, purpose: str, source_path: str = "docs/REQUIREMENTS.md") -> str:
+    """Render a source-backed requirements section as markdown."""
+    source = _read_docs_source(source_path)
+    return "\n".join(
+        [
+            f"# {title}",
+            "",
+            f"Source: `index-retriever-mcp-server/{source_path}`.",
+            "",
+            purpose,
+            "",
+            f"- [x] Source-attributed from `{source_path}`.",
+            "- [x] Rendered inline through the PS-74 markdown widget.",
+            "",
+            source.rstrip(),
+            "",
+        ]
+    )
+
+
+def _embedding_policy_content() -> str:
+    """Combine requirements and preprod evidence docs for the embedding model policy."""
+    requirements = _requirements_content(
+        "Embedding Model Policy",
+        "Embedding provider, model, vector-dimension, and preprod policy material is rendered from the accepted project source documents.",
+        "docs/REQUIREMENTS.md",
+    )
+    preprod = _read_docs_source("docs/PREPROD.md")
+    return "\n".join(
+        [
+            requirements.rstrip(),
+            "",
+            "## Preprod Embedding Policy Source",
+            "",
+            "Source: `index-retriever-mcp-server/docs/PREPROD.md`.",
+            "",
+            preprod.rstrip(),
+            "",
+        ]
+    )
+
+
+def _document_content(document: DocsDocumentSpec) -> str:
+    """Build the rendered content for a documentation document."""
+    if document.document_id == "api-openapi-swagger":
+        return _json_pretty(_read_docs_source("docs/openapi.json"))
+    if document.document_id == "a2a-card":
+        return _a2a_card_content()
+    if document.document_id == "configuration-summary":
+        return _configuration_summary_content()
+    if document.document_id == "index-configuration-doc":
+        return _requirements_content(
+            "Index Configuration",
+            "Index profile, collection, backend, source, lifecycle, and retrieval configuration requirements are rendered from the accepted project requirements document.",
+        )
+    if document.document_id == "retrieval-mode-reference":
+        return _requirements_content(
+            "Retrieval Mode Reference",
+            "Retrieval API, search mode, result shape, and client contract details are rendered from the API documentation source.",
+            "docs/API_DOCUMENTATION.md",
+        )
+    if document.document_id == "embedding-model-policy":
+        return _embedding_policy_content()
+    return _read_docs_source(document.source_path.split(" ", 1)[0].split(";", 1)[0])
+
+
+def _catalogue_document(document: DocsDocumentSpec) -> dict[str, Any]:
+    """Return the catalogue payload for one document."""
+    payload: dict[str, Any] = {
+        "id": document.document_id,
+        "document_id": document.document_id,
+        "label": document.label,
+        "kind": document.kind,
+        "expected_widget": document.kind,
+        "content": _document_content(document),
+        "filename": document.filename,
+        "source_path": f"index-retriever-mcp-server/{document.source_path}",
+        "required": document.required,
+        "content_type": document.content_type,
+        "raw_url": f"/api/docs/raw/{document.document_id}",
+    }
+    if document.language:
+        payload["language"] = document.language
+    return payload
+
+
+def _docs_catalogue_payload() -> dict[str, Any]:
+    """Return the PS-74 v2 document catalogue for the index-retriever docs WebUI."""
+    return {
+        "ok": True,
+        "service": "index-retriever",
+        "route": "/api-docs",
+        "documents": [_catalogue_document(document) for document in _DOCS_DOCUMENTS],
+    }
+
+
+def _redact_docs_value(value: Any) -> Any:
+    """Redact secret-like values from docs action audit parameters."""
+    if isinstance(value, dict):
+        return {
+            key: "***REDACTED***" if any(part in key.lower() for part in _DOCS_SECRET_KEY_PARTS) else _redact_docs_value(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_redact_docs_value(item) for item in value]
+    return value
 
 
 def _spa_not_built_response() -> HTMLResponse:
@@ -691,15 +958,20 @@ def handle_search(
     """Execute handle search."""
     identity = auth.identity_from_headers(headers)
     auth.require_permission(identity, "collection.read")
+    profile = str(payload["profile"])
+    collection = str(payload["collection"])
+    query = str(payload["query"])
+    top_k = int(payload.get("top_k", 10))
+    filters = payload.get("filters")
     try:
         results = service.search(
-            profile=str(payload["profile"]),
-            collection=str(payload["collection"]),
-            query=str(payload["query"]),
-            top_k=int(payload.get("top_k", 10)),
-            filters=payload.get("filters"),
+            profile=profile,
+            collection=collection,
+            query=query,
+            top_k=top_k,
+            filters=filters,
         )
-    except (RuntimeError, ConnectionError, OSError, TimeoutError) as exc:
+    except (RuntimeError, ConnectionError, OSError, TimeoutError, KeyError) as exc:
         return {
             "results": [],
             "error": f"Search backend unavailable: {exc}",
@@ -1101,6 +1373,95 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "collection.read")
         return {"events": active_service.a2a_config_events()}
+
+    def docs_catalogue(request: Request) -> dict[str, Any]:
+        """Expose the authenticated PS-74 documentation catalogue for the SPA."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        return _docs_catalogue_payload()
+
+    def raw_document(document_id: str, request: Request) -> Response:
+        """Return the raw rendered document content used by the Docs WebUI."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        document = _DOCS_BY_ID.get(document_id)
+        if document is None:
+            raise HTTPException(status_code=404, detail="Documentation document not found")
+        return Response(
+            content=_document_content(document),
+            media_type=document.content_type,
+            headers={"Content-Disposition": f'inline; filename="{document.filename}"'},
+        )
+
+    def _write_docs_audit(
+        *,
+        request: Request,
+        identity: Any,
+        action: str,
+        document_id: str,
+        parameters: dict[str, Any],
+        duration_ms: int,
+    ) -> None:
+        """Record a docs UI action through the service audit logger."""
+        document = _DOCS_BY_ID[document_id]
+        audit_logger = getattr(active_service, "audit_logger", None)
+        build_event = getattr(audit_logger, "build_event", None)
+        write_event = getattr(audit_logger, "write_event", None)
+        actor_factory = getattr(audit_logger, "_actor", None)
+        target_factory = getattr(audit_logger, "_target", None)
+        if not all(callable(item) for item in (build_event, write_event, actor_factory, target_factory)):
+            raise RuntimeError("Index retriever audit logger is unavailable for docs action logging")
+
+        correlation_id = get_logging_correlation_id()
+        trace_id = str(request.headers.get("x-request-id") or correlation_id)
+        event = build_event(
+            event_type=action,
+            actor=actor_factory(
+                identity.user_id,
+                roles=identity.roles,
+                ip=_request_ip(request),
+                user_agent=_request_user_agent(request),
+            ),
+            action=action,
+            outcome="success",
+            target=target_factory("document", document_id, target_name=document.label),
+            details={
+                "document_id": document_id,
+                "document_label": document.label,
+                "source_path": f"index-retriever-mcp-server/{document.source_path}",
+                "path": request.url.path,
+                "method": request.method,
+                "trace_id": trace_id,
+                "params": _redact_docs_value(parameters),
+            },
+            duration_ms=duration_ms,
+        )
+        write_event(event)
+
+    def record_docs_action(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        """Record PS-74 document UI interactions into the platform audit stream."""
+        started = time.perf_counter()
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        action = str(payload.get("action") or "")
+        document_id = str(payload.get("document_id") or payload.get("documentId") or "")
+        if action not in _DOCS_ACTIONS:
+            raise HTTPException(status_code=400, detail="Unsupported docs action")
+        if document_id not in _DOCS_BY_ID:
+            raise HTTPException(status_code=400, detail="Unknown documentation document")
+        parameters = payload.get("parameters")
+        if not isinstance(parameters, dict):
+            parameters = payload.get("params") if isinstance(payload.get("params"), dict) else {}
+        duration_ms = int((time.perf_counter() - started) * 1000)
+        _write_docs_audit(
+            request=request,
+            identity=identity,
+            action=action,
+            document_id=document_id,
+            parameters=parameters,
+            duration_ms=duration_ms,
+        )
+        return {"ok": True, "action": action, "document_id": document_id}
 
     def a2a_root(request: Request) -> dict[str, Any]:
         """Execute a2a root."""
@@ -1916,6 +2277,9 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get("/admin/ui/app.js")(admin_ui_app_js)
     app.get("/admin/ui/styles.css")(admin_ui_styles_css)
     app.get("/api-docs", include_in_schema=False)(api_docs_page)
+    app.get("/api/docs")(docs_catalogue)
+    app.get("/api/docs/raw/{document_id}")(raw_document)
+    app.post("/api/docs/audit")(record_docs_action)
     app.get(f"{api_base_path}/tools")(list_tools)
     app.post(f"{api_base_path}/tools/{{tool_name}}")(call_tool)
     # Read-only status tools accept GET (REST convention for status endpoints).
@@ -1984,7 +2348,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                 "logs/index-retriever-audit-mcp.jsonl",
             ],
             "api": "logs/api_server.log",
-            "web": "logs/web_server.log",
+            "web": ["logs/web_server.log", "logs/web.log"],
             "mcp": "logs/mcp_server.log",
             "a2a": "logs/a2a_server.log",
         }
@@ -1993,6 +2357,11 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             entries = _read_jsonl_records_many(log_file, limit=limit)
         else:
             entries = _read_jsonl_records(log_file, limit=limit)
+        if log_source == "web" and not entries:
+            entries = _read_text_log_records_many(
+                log_file if isinstance(log_file, list) else [log_file],
+                limit=limit,
+            )
         entries.reverse()
         return {"entries": entries, "count": len(entries), "source": log_source}
 
