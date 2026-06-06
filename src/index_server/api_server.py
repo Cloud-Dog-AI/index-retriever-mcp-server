@@ -548,6 +548,20 @@ def build_status_payload(
                     document_count += int(metadata.get("doc_count", 0) or 0)
                 except (TypeError, ValueError):
                     continue
+    if document_count == 0:
+        for row in collection_rows:
+            profile = str(row.get("profile", "")).strip() if isinstance(row, dict) else ""
+            collection = str(row.get("collection", "")).strip() if isinstance(row, dict) else ""
+            if not profile or not collection:
+                continue
+            try:
+                count_payload = service.reindex_run(profile, collection)
+                if isinstance(count_payload, dict):
+                    document_count += int(count_payload.get("documents", 0) or 0)
+                else:
+                    document_count += int(count_payload or 0)
+            except Exception:
+                continue
 
     uptime_seconds = max(0, int(time.time() - _BOOT_TIME))
     disk_usage = path_utils.disk_usage(path_utils.cwd())

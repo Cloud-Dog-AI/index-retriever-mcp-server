@@ -1,6 +1,25 @@
 version: '3.8'
 
 services:
+  pgvector:
+    image: pgvector/pgvector:pg16
+    container_name: index-retriever-pgvector
+    profiles:
+      - pgvector
+    network_mode: host
+    command: ["postgres", "-c", "port=15432"]
+    environment:
+      POSTGRES_DB: index_retriever_w28a775
+      POSTGRES_USER: index_retriever
+      POSTGRES_PASSWORD: index_retriever_w28a775
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 15432 -U index_retriever -d index_retriever_w28a775"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
   api:
     build:
       context: .

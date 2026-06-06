@@ -114,6 +114,7 @@ def build_default_tool_registry() -> ToolRegistry:
         # -- A2A Events --
         ToolSpec(name="a2a_config_events", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve the log of admin configuration change events for A2A consumers."),
         # -- Collections --
+        ToolSpec(name="index_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List indexed collections for the selected profile."),
         ToolSpec(name="collections_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List all collections, optionally filtered by profile."),
         ToolSpec(name="list_collections", input_model=GenericToolInput, output_model=GenericToolOutput, description="List all collections, optionally filtered by profile."),
         ToolSpec(name="collection_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve a single collection's metadata, dimensions, and access roles."),
@@ -132,6 +133,7 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="admin_rbac_unbind", input_model=GenericToolInput, output_model=GenericToolOutput, description="Remove a role binding from a user or group entity."),
         # -- Ingest --
         ToolSpec(name="ingest_upload", input_model=GenericToolInput, output_model=IngestOutput, description="Upload a file for chunking, embedding, and indexing into a collection."),
+        ToolSpec(name="bulk_index", input_model=GenericToolInput, output_model=GenericToolOutput, description="Queue one or more text documents for asynchronous indexing into a collection."),
         ToolSpec(name="ingest_text", input_model=IngestTextInput, output_model=IngestOutput, description="Ingest inline text content into a profile and collection."),
         ToolSpec(name="ingest_reference", input_model=IngestReferenceInput, output_model=IngestOutput, description="Ingest content from a URI reference via a configured connector."),
         ToolSpec(name="parsers_list", input_model=ParsersListInput, output_model=ParsersListOutput, description="List available document parsers and their supported MIME types."),

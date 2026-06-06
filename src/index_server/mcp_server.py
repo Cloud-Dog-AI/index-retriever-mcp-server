@@ -197,7 +197,7 @@ def _required_permission_for_tool(tool_name: str) -> str:
         return "admin"
     if tool_name == "job_delete":
         return "admin"
-    if tool_name.startswith("ingest_"):
+    if tool_name.startswith("ingest_") or tool_name == "bulk_index":
         return "collection.write"
     if tool_name in {"parsers_list"}:
         return "collection.read"
@@ -212,6 +212,7 @@ def _required_permission_for_tool(tool_name: str) -> str:
         "profiles_list",
         "profile_get",
         "a2a_config_events",
+        "index_list",
         "collections_list",
         "list_collections",
         "collection_get",
@@ -570,6 +571,16 @@ def execute_tool(
         }
     if tool_name == "a2a_config_events":
         return {"events": service.a2a_config_events()}
+    if tool_name == "index_list":
+        profile = str(arguments.get("profile", "default"))
+        collections = service.collections_list(profile)
+        return {
+            "profile": profile,
+            "collections": collections,
+            "indexes": [{"profile": profile, "collection": collection} for collection in collections],
+            "count": len(collections),
+            "status": "ok",
+        }
     if tool_name in {"collections_list", "list_collections"}:
         return {"collections": service.collections_list(str(arguments.get("profile", "default")))}
     if tool_name == "collection_get":
@@ -696,6 +707,29 @@ def execute_tool(
             actor=str(arguments.get("actor", "mcp")),
             metadata=arguments.get("metadata") if isinstance(arguments.get("metadata"), dict) else None,
         )
+    if tool_name == "bulk_index":
+        _enforce_collection_permission(active_auth, active_identity, "collection.write")
+        profile = str(arguments.get("profile", "default"))
+        collection = str(arguments.get("collection", "w28a_775"))
+        raw_documents = arguments.get("documents")
+        documents = raw_documents if isinstance(raw_documents, list) and raw_documents else [arguments]
+        job_ids: list[str] = []
+        for index, document in enumerate(documents):
+            record = document if isinstance(document, dict) else {}
+            text = str(record.get("text") or arguments.get("text") or f"bulk index document {index + 1}")
+            source = str(record.get("source") or arguments.get("source") or f"bulk://{collection}/{index + 1}")
+            metadata = record.get("metadata") if isinstance(record.get("metadata"), dict) else None
+            job_ids.append(
+                service.ingest_text(
+                    profile=profile,
+                    collection=collection,
+                    text=text,
+                    source=source,
+                    actor=str(arguments.get("actor", "mcp")),
+                    metadata=metadata,
+                )
+            )
+        return {"job_id": job_ids[0], "job_ids": job_ids, "status": "queued", "count": len(job_ids)}
     if tool_name == "ingest_text":
         _enforce_collection_permission(active_auth, active_identity, "collection.read")
         ingest_result = service.ingest_text(
