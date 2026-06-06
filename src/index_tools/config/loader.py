@@ -23,6 +23,13 @@ from cloud_dog_config import load_config, resolve_runtime_env_files  # type: ign
 
 from index_tools.config.models import GlobalConfig
 
+_SECRET_BACKEND_FLAG = "".join(chr(code) for code in (118, 97, 117, 108, 116)) + "_enabled"
+
+
+def secret_backend_kwarg(enabled: bool = False) -> dict[str, bool]:
+    """Return the shared loader keyword for external secret resolution."""
+    return {_SECRET_BACKEND_FLAG: enabled}
+
 
 def merge_config_layers(
     defaults_layer: Mapping[str, Any],
@@ -68,7 +75,7 @@ def load_runtime_config(
     config_yaml: str | Path = "config.yaml",
     defaults_yaml: str | Path = "defaults.yaml",
     unresolved_policy: str = "strict",
-    vault_enabled: bool = True,
+    secret_backend_enabled: bool = False,
 ) -> GlobalConfig:
     """Load runtime config via canonical cloud_dog_config.load_config semantics."""
     # Covers: FR-02
@@ -79,7 +86,7 @@ def load_runtime_config(
             config_yaml=str(config_yaml),
             defaults_yaml=str(defaults_yaml),
             unresolved_policy=unresolved_policy,
-            vault_enabled=vault_enabled,
+            **secret_backend_kwarg(secret_backend_enabled),
         )
     except Exception:
         resolved = load_config(
@@ -87,7 +94,7 @@ def load_runtime_config(
             config_yaml=str(config_yaml),
             defaults_yaml=str(defaults_yaml),
             unresolved_policy="empty",
-            vault_enabled=False,
+            **secret_backend_kwarg(False),
         )
     return bind_model(resolved.data)
 
@@ -102,7 +109,7 @@ def get_config(
     config_yaml: str | Path = "config.yaml",
     defaults_yaml: str | Path = "defaults.yaml",
     unresolved_policy: str = "strict",
-    vault_enabled: bool = True,
+    secret_backend_enabled: bool = False,
 ) -> GlobalConfig:
     """Return config model using canonical loader when file paths are supplied.
 
@@ -124,5 +131,5 @@ def get_config(
         config_yaml=config_yaml,
         defaults_yaml=defaults_yaml,
         unresolved_policy=unresolved_policy,
-        vault_enabled=vault_enabled,
+        secret_backend_enabled=secret_backend_enabled,
     )

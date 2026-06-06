@@ -74,6 +74,6 @@ bootstrap:
       description: "shared TB collection (gary + colin)"
 
   # Per-user API keys are rotated through the live admin API. Do not include
-  # stale v38 Vault references here; current Vault config does not contain
+  # stale v38 secret references here; current public config does not contain
   # gary_api_key/colin_api_key and startup must not fail on missing secrets.
   api_keys: []

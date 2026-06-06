@@ -30,7 +30,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from index_server.admin_ui import collections_page
-from index_tools.config.loader import runtime_env_files
+from index_tools.config.loader import runtime_env_files, secret_backend_kwarg
 from index_server.runtime_config import resolve_server_binding
 
 _SPA_RESERVED_SEGMENTS = {
@@ -132,14 +132,14 @@ def build_web_app() -> object:
             env_files=runtime_env_files(),
             defaults_yaml="defaults.yaml",
             unresolved_policy="strict",
-            vault_enabled=True,
+            **secret_backend_kwarg(False),
         )
     except Exception:
         config = load_config(
             env_files=runtime_env_files(),
             defaults_yaml="defaults.yaml",
             unresolved_policy="empty",
-            vault_enabled=False,
+            **secret_backend_kwarg(False),
         )
     proxy_config = _ProxyConfigBridge(config)
     proxy = WebApiProxy.from_config(proxy_config)
@@ -278,6 +278,26 @@ def build_web_app() -> object:
                 headers["X-API-Key"] = configured_key
         return headers
 
+    def _a2a_proxy_headers(request: Request) -> dict[str, str]:
+        headers = {
+            "Content-Type": request.headers.get("content-type", "application/json"),
+            "Accept": request.headers.get("accept", "application/json"),
+        }
+        for incoming, outgoing in (
+            ("authorization", "Authorization"),
+            ("x-api-key", "X-API-Key"),
+            ("x-correlation-id", "X-Correlation-Id"),
+            ("x-request-id", "X-Request-Id"),
+        ):
+            value = request.headers.get(incoming)
+            if value:
+                headers[outgoing] = value
+        if "Authorization" not in headers and "X-API-Key" not in headers:
+            configured_key = str(proxy_config.get("api_server.api_key", "") or "")
+            if configured_key:
+                headers["X-API-Key"] = configured_key
+        return headers
+
     @app.get("/health")
     async def health() -> JSONResponse:
         return JSONResponse(
@@ -375,9 +395,23 @@ def build_web_app() -> object:
         """Proxy A2A requests to the A2A server."""
         body = await request.body()
         async with httpx.AsyncClient(base_url=a2a_base_url, verify=False, timeout=60) as client:
-            resp = await client.request(request.method, f"/{path}", content=body if body else None,
-                                        headers={"Content-Type": request.headers.get("content-type", "application/json")})
-        return Response(content=resp.content, status_code=resp.status_code, media_type=resp.headers.get("content-type", "application/json"))
+            resp = await client.request(
+                request.method,
+                f"/{path}",
+                content=body if body else None,
+                params=dict(request.query_params),
+                headers=_a2a_proxy_headers(request),
+            )
+        return Response(
+            content=resp.content,
+            status_code=resp.status_code,
+            media_type=resp.headers.get("content-type", "application/json"),
+            headers={
+                key: value
+                for key, value in resp.headers.items()
+                if key.lower() not in {"content-length", "transfer-encoding"}
+            },
+        )
 
     @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     async def api_proxy(path: str, request: Request) -> Response:

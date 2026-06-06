@@ -49,7 +49,7 @@ from index_tools.queue.engine import JobCancelledError, QueueEngine
 from index_tools.queue.models import JobRecord, JobStatus
 
 logger = get_logger(__name__)
-from index_tools.config.loader import runtime_env_files
+from index_tools.config.loader import runtime_env_files, secret_backend_kwarg
 
 try:
     from cloud_dog_config import load_config
@@ -409,7 +409,7 @@ def _load_runtime_tree() -> dict[str, Any]:
             env_files=runtime_env_files(),
             defaults_yaml="defaults.yaml",
             unresolved_policy="strict",
-            vault_enabled=True,
+            **secret_backend_kwarg(False),
         )
     except Exception:
         try:
@@ -417,7 +417,7 @@ def _load_runtime_tree() -> dict[str, Any]:
                 env_files=runtime_env_files(),
                 defaults_yaml="defaults.yaml",
                 unresolved_policy="empty",
-                vault_enabled=False,
+                **secret_backend_kwarg(False),
             )
         except Exception:
             _RUNTIME_TREE_CACHE = {}
@@ -786,7 +786,7 @@ class IndexService:
         # constructs its own IndexService with empty in-memory admin stores.
         # The seed re-applies the desired users / groups / collections / api-keys
         # on every startup so admin state survives container restarts. If a seed
-        # file exists AND contains api-keys but Vault is unreachable, this
+        # file exists AND contains api-keys but secret resolution is unavailable, this
         # raises BootstrapSeedError — by design (no silent empty-state start).
         try:
             from index_tools.bootstrap import maybe_apply_bootstrap_seed

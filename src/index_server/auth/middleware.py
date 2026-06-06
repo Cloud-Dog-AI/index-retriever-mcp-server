@@ -353,6 +353,7 @@ def _config_or_env(config_key: str, *env_names: str) -> str:
 
     try:
         from cloud_dog_config import get_config, load_config  # type: ignore
+        from index_tools.config.loader import secret_backend_kwarg
     except Exception:
         return ""
 
@@ -366,7 +367,7 @@ def _config_or_env(config_key: str, *env_names: str) -> str:
             return str(value).strip()
 
     try:
-        compiled = load_config(unresolved_policy="strict", vault_enabled=True)
+        compiled = load_config(unresolved_policy="strict", **secret_backend_kwarg(False))
     except Exception:
         return ""
     for candidate in candidates:

@@ -39,7 +39,6 @@ def resolve_server_binding(server_name: str) -> ServerBinding:
 
     runtime_config = load_runtime_config(
         unresolved_policy="strict",
-        vault_enabled=True,
     )
     endpoint = getattr(runtime_config, server_name)
     return ServerBinding(host=endpoint.host, port=int(endpoint.port))

@@ -794,7 +794,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     """Execute build api app."""
     # Covers: FR-01, FR-01A, FR-17
     init_platform_logging(surface_name)
-    runtime_cfg = load_runtime_config(env_files=runtime_env_files(), vault_enabled=True, unresolved_policy="strict")
+    runtime_cfg = load_runtime_config(env_files=runtime_env_files(), unresolved_policy="strict")
     if cloud_dog_idam is None:  # pragma: no cover - platform package is mandatory
         raise RuntimeError("cloud_dog_idam is required")
     active_service = service or IndexService(audit_path=_api_audit_path())
@@ -1782,6 +1782,8 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         payload: dict[str, Any],
     ) -> Any:
         tool_map = {
+            "index_list": "index_list",
+            "bulk_index": "bulk_index",
             "file_upload": "file_upload",
             "file_list": "file_list",
             "file_get": "file_get",
@@ -1860,6 +1862,8 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     # A2A agent card and task submission router
     # W28C-427 IDX-SNAG-003: expanded A2A skills to cover admin, file, health, and source-config.
     _a2a_skills = [
+        A2ASkill(id="index_list", name="Index List", description="List indexed collections for the selected profile"),
+        A2ASkill(id="bulk_index", name="Bulk Index", description="Queue one or more text documents for asynchronous indexing"),
         A2ASkill(id="ingest_text", name="Ingest Text", description="Ingest text into a profiled collection with embedding and indexing"),
         A2ASkill(id="ingest_upload", name="Ingest Upload", description="Upload a file for chunking, embedding, and indexing"),
         A2ASkill(id="ingest_reference", name="Ingest Reference", description="Ingest content from a URI (HTTP, S3, FTP, filesystem, etc.)"),
