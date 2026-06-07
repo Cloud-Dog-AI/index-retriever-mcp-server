@@ -33,8 +33,12 @@ Service `web_server.py` (commit 22446fe):
 Via vite preview (port 5197, SPA fallback) the `/idam/*` routes render the React pages and the
 Playwright conformance suite drives them (see 03-playwright-matrix.md).
 
-## Note — instruction scope vs PS-71 standard
+## Note — 5th page /idam/roles is owned by W28A-876 (SENDBACK 2026-06-07)
 
-`71-idam-webui.md` canonical set is 5 pages (adds `/idam/roles`, IW3A). The W28A-734 instruction
-explicitly scopes 4 (`users`/`groups`/`api-keys`/`rbac`). This lane delivers the 4 named pages; the
-Roles page (IW3A) is flagged for a coordinator decision / separate lane and is not silently absorbed.
+`71-idam-webui.md` canonical set is **5** pages (adds `/idam/roles`, §IW3A, Level-MUST, W28A-874 lock).
+This lane delivered 4 (`users`/`groups`/`api-keys`/`rbac`). The Roles page is a **shared** build
+(PS-71 lines 266-271) owned by **W28A-876** (shared `@cloud-dog/idam` Roles component + `cloud_dog_idam`
+roles API + mount in all 9 services incl. index-retriever, directive C). §1.4 forbids a bespoke
+per-service Roles UI. W28A-876 has not landed (no shared component/roles API/`packages/idam`), so
+index-retriever's `/idam/roles` is HELD pending W28A-876, not deliverable from this lane.
+Concrete owner: W28A-876.

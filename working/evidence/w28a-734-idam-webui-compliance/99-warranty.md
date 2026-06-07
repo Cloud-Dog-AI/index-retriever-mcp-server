@@ -54,6 +54,24 @@ I warrant that: no Vault writes were performed and no Vault paths were invented;
 - Commit on canonical GitLab remote proved: YES (remote-proof.txt)
 - RULES §11 warranty signed and included: YES
 
+## STATUS — post-SENDBACK correction (2026-06-07)
+
+Coordinator SENDBACK: this lane delivered **4 of 5** PS-71-mandated IDAM pages. The fifth,
+`/idam/roles` (§IW3A, Level-MUST, W28A-874 lock), is absent. Claiming "100% PS-71 conformance"
+was false; the completion claim below is **RETRACTED**.
+
+The Roles page is a **shared** build owned by **W28A-876** (PS-71 line 266-271 shared-component
+mandate; W28A-876 directive A builds the shared `@cloud-dog/idam` Roles component, directive B the
+`cloud_dog_idam` roles API, directive C mounts `/idam/roles` in all 9 services **including
+index-retriever by name**). §IW3A forbids a bespoke per-service Roles UI (§1.4). W28A-876 has not
+landed (no shared component, no roles API, no `packages/idam`). Therefore index-retriever's
+`/idam/roles` cannot be delivered from this single-service lane without violating the shared-only
+mandate, and this lane is **HELD pending W28A-876**.
+
+What stands (validated, do not redo): the 4 delivered pages (Users/Groups/API-Keys/RBAC) with the
+PS-71 v2 column/label/dialog rebuild, `/admin`→`/idam` migration, the `bootstrap.py` seed-path fix,
+and this evidence pack. Concrete owner of the remaining gap: **W28A-876**.
+
 ## Completion
 
-HAVE_ALL_REQUIREMENTS_BEEN_MET: YES
+HAVE_ALL_REQUIREMENTS_BEEN_MET: NO — 4/5 PS-71 pages; /idam/roles (IW3A) pending shared build W28A-876. Lane HELD.
