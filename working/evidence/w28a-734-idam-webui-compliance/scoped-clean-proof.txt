@@ -1,0 +1,10 @@
+W28A-734 scoped clean proof (service repo, evidence path scoped)
+
+$ git status --short -- working/evidence/w28a-734-idam-webui-compliance/
+(clean - all evidence committed; no modified/staged/untracked scoped files)
+
+$ git diff --name-only -- working/evidence/w28a-734-idam-webui-compliance/
+(clean - no unstaged changes)
+
+$ git diff --cached --name-only -- working/evidence/w28a-734-idam-webui-compliance/
+(clean after evidence commit; live scoped git status is authoritative)
