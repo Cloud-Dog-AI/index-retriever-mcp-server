@@ -55,6 +55,12 @@ _SPA_ADMIN_PATHS = {
     "admin/groups",
     "admin/api-keys",
     "admin/rbac",
+    # PS-71 canonical IDAM WebUI routes (71-idam-webui.md). /admin/* retained as legacy aliases.
+    "idam",
+    "idam/users",
+    "idam/groups",
+    "idam/api-keys",
+    "idam/rbac",
 }
 
 
@@ -426,6 +432,11 @@ def build_web_app() -> object:
     @app.get("/admin/groups")
     @app.get("/admin/api-keys")
     @app.get("/admin/rbac")
+    @app.get("/idam")
+    @app.get("/idam/users")
+    @app.get("/idam/groups")
+    @app.get("/idam/api-keys")
+    @app.get("/idam/rbac")
     async def admin_spa_routes() -> Response:
         return _spa_index()
 

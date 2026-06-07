@@ -407,6 +407,13 @@ def resolve_seed_path() -> str | None:
     container_default = "/app/config/bootstrap-seed.yaml"
     if Path(container_default).is_file():
         return container_default
+    # Local/dev fallback: the repo-relative config alongside this source tree
+    # (src/index_tools/bootstrap.py -> <repo>/config/bootstrap-seed.yaml). Without
+    # this, a local (non-container) run never seeds the admin/groups and the IDAM
+    # WebUI Users/Groups/RBAC pages render empty (PS-71 IW1.6 Admin Seed Guard).
+    repo_default = Path(__file__).resolve().parents[2] / "config" / "bootstrap-seed.yaml"
+    if repo_default.is_file():
+        return str(repo_default)
     return None
 
 
