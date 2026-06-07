@@ -232,6 +232,25 @@ def initialise_database(*, force_reinit: bool = False) -> PlatformDatabaseRuntim
         )
         _run_migrations(runner, sqlite_path)
 
+        # W28A-876 Gate 4b: ensure the canonical cloud_dog_idam role tables exist
+        # so the PS-71 §IW3A Roles page (/api/v1/admin/roles) is backed by the
+        # shared SqlAlchemyRoleStore. Only the role-related tables are created
+        # here; other idam tables are not part of this service's schema.
+        from cloud_dog_idam.storage.sqlalchemy.models import (  # type: ignore[import-not-found,import-untyped]
+            PermissionORM as _PermissionORM,
+            RoleORM as _RoleORM,
+            RolePermissionORM as _RolePermissionORM,
+        )
+        _RoleORM.metadata.create_all(
+            bind=engine,
+            checkfirst=True,
+            tables=[
+                _RoleORM.__table__,
+                _PermissionORM.__table__,
+                _RolePermissionORM.__table__,
+            ],
+        )
+
         _RUNTIME = PlatformDatabaseRuntime(
             settings=settings,
             engine=engine,

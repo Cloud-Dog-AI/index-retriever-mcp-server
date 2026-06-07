@@ -52,6 +52,7 @@ _SPA_RESERVED_SEGMENTS = {
 _SPA_ADMIN_PATHS = {
     "admin",
     "admin/users",
+    "admin/roles",
     "admin/groups",
     "admin/api-keys",
     "admin/rbac",

@@ -1394,6 +1394,67 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         active_service.admin_user_delete(user_id=user_id, roles=identity.roles, actor=identity.user_id)
         return {"status": "ok", "user_id": user_id}
 
+    def admin_roles_list(request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        return {"roles": active_service.roles_list()}
+
+    def admin_roles_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        try:
+            return {
+                "role": active_service.admin_role_create(
+                    roles=identity.roles,
+                    payload=payload,
+                    actor=identity.user_id,
+                )
+            }
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    def admin_roles_get(role_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        try:
+            return {"role": active_service.role_get(role_id)}
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Role not found: {role_id}") from exc
+
+    def admin_roles_update(role_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        try:
+            return {
+                "role": active_service.admin_role_update(
+                    role_id=role_id,
+                    roles=identity.roles,
+                    payload=payload,
+                    actor=identity.user_id,
+                )
+            }
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Role not found: {role_id}") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    def admin_roles_delete(role_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        try:
+            active_service.admin_role_delete(
+                role_id=role_id, roles=identity.roles, actor=identity.user_id
+            )
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Role not found: {role_id}") from exc
+        return {"status": "ok", "role_id": role_id}
+
     def admin_groups_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "admin")
@@ -1934,6 +1995,12 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get("/admin/users/{user_id}")(admin_users_get)
     app.put("/admin/users/{user_id}")(admin_users_update)
     app.delete("/admin/users/{user_id}")(admin_users_delete)
+    app.get("/admin/roles")(admin_roles_list)
+    app.post("/admin/roles")(admin_roles_create)
+    app.get("/admin/roles/{role_id}")(admin_roles_get)
+    app.put("/admin/roles/{role_id}")(admin_roles_update)
+    app.patch("/admin/roles/{role_id}")(admin_roles_update)
+    app.delete("/admin/roles/{role_id}")(admin_roles_delete)
     app.get("/admin/groups")(admin_groups_list)
     app.post("/admin/groups")(admin_groups_create)
     app.get("/admin/groups/{group_id}")(admin_groups_get)

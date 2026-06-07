@@ -107,6 +107,20 @@ except ImportError:  # pragma: no cover
     GroupService = None  # type: ignore[assignment]
     UserService = None  # type: ignore[assignment]
     idam_hash_api_key = None  # type: ignore[assignment]
+
+# W28A-876 Gate 4b: DB-backed role store (PS-71 §IW3A). Roles are persisted via
+# the canonical cloud_dog_idam SqlAlchemyRoleStore over the shared role tables
+# created by index_tools.db.runtime, rather than the in-memory stub.
+try:
+    from cloud_dog_idam.domain.models import Role as IDAMRole
+    from cloud_dog_idam.storage.sqlalchemy.role_store import (
+        BaselineRoleProtected as IDAMBaselineRoleProtected,
+        SqlAlchemyRoleStore as IDAMRoleStore,
+    )
+except ImportError:  # pragma: no cover
+    IDAMRole = None  # type: ignore[assignment]
+    IDAMBaselineRoleProtected = None  # type: ignore[assignment]
+    IDAMRoleStore = None  # type: ignore[assignment]
     IDAMApiKey = None  # type: ignore[assignment]
     IDAMUserStatus = None  # type: ignore[assignment]
     IDAMGroup = None  # type: ignore[assignment]
@@ -1944,6 +1958,183 @@ class IndexService:
             action="deleted",
             actor=actor,
             payload={"group_id": group_id},
+        )
+
+    # ----- Roles (PS-71 §IW3A; canonical cloud_dog_idam role store) -----------
+    # W28A-876 Gate 4b. Roles are persisted via SqlAlchemyRoleStore over the
+    # shared cloud_dog_idam role tables (roles / permissions / role_permissions)
+    # created by index_tools.db.runtime. Baseline admin/user roles are seeded and
+    # protected from deletion (IW3A.4); list/get responses use the IW3A.1 shape
+    # (name / description / permissions / created / baseline).
+
+    @staticmethod
+    def _role_session_manager() -> Any:
+        """Return the shared cloud_dog_db sync session manager for role storage."""
+        from index_tools.db import initialise_database
+
+        return initialise_database().session_manager
+
+    def _ensure_role_store(self) -> None:
+        if IDAMRoleStore is None or IDAMRole is None:
+            raise RuntimeError("cloud_dog_idam role store is unavailable")
+
+    def roles_seed_baseline(self) -> None:
+        """Idempotently seed the baseline admin/user roles (IW3A.4)."""
+        self._ensure_role_store()
+        with self._role_session_manager().session() as session:
+            IDAMRoleStore(session).seed_baseline()
+
+    def roles_list(self) -> list[dict[str, Any]]:
+        """Return all roles in the PS-71 §IW3A.1 column shape."""
+        self._ensure_role_store()
+        with self._role_session_manager().session() as session:
+            store = IDAMRoleStore(session)
+            store.seed_baseline()
+            return store.list_response()
+
+    def role_get(self, role_id: str) -> dict[str, Any]:
+        """Return one role by id in the IW3A.1 shape."""
+        self._ensure_role_store()
+        with self._role_session_manager().session() as session:
+            store = IDAMRoleStore(session)
+            store.seed_baseline()
+            for row in store.list_response():
+                if row["role_id"] == role_id:
+                    return row
+        raise KeyError(role_id)
+
+    def admin_role_create(
+        self,
+        roles: set[str],
+        payload: dict[str, Any],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Create a role record backed by the canonical role store."""
+        self._require_admin(roles)
+        self._ensure_role_store()
+        name = str(payload.get("name") or "").strip()
+        if not name:
+            raise ValueError("name is required")
+        description = str(payload.get("description") or "")
+        permissions = {
+            str(item).strip()
+            for item in (payload.get("permissions") or [])
+            if str(item).strip()
+        }
+        with self._role_session_manager().session() as session:
+            store = IDAMRoleStore(session)
+            store.seed_baseline()
+            if store.get_by_name(name) is not None:
+                raise ValueError(f"Role already exists: {name}")
+            role = store.save(
+                IDAMRole(name=name, description=description, permissions=permissions)
+            )
+            result = {
+                "role_id": role.role_id,
+                "name": role.name,
+                "description": role.description,
+                "permissions": sorted(role.permissions),
+            }
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="create",
+            target_type="role",
+            target_id=result["role_id"],
+            target_name=name,
+            new_value=result,
+        )
+        self._emit_config_event(
+            entity_type="role",
+            entity_id=result["role_id"],
+            action="created",
+            actor=actor,
+            payload=result,
+        )
+        return result
+
+    def admin_role_update(
+        self,
+        role_id: str,
+        roles: set[str],
+        payload: dict[str, Any],
+        actor: str = "admin",
+    ) -> dict[str, Any]:
+        """Update a role's description and/or permission set."""
+        self._require_admin(roles)
+        self._ensure_role_store()
+        raw_perms = payload.get("permissions")
+        permissions = (
+            {str(item).strip() for item in raw_perms if str(item).strip()}
+            if raw_perms is not None
+            else None
+        )
+        description = payload.get("description")
+        with self._role_session_manager().session() as session:
+            store = IDAMRoleStore(session)
+            store.seed_baseline()
+            if store.get(role_id) is None:
+                raise KeyError(role_id)
+            role = store.update(
+                role_id,
+                description=str(description) if description is not None else None,
+                permissions=permissions,
+            )
+            result = {
+                "role_id": role.role_id,
+                "name": role.name,
+                "description": role.description,
+                "permissions": sorted(role.permissions),
+            }
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="update",
+            target_type="role",
+            target_id=role_id,
+            target_name=result["name"],
+            new_value=result,
+        )
+        self._emit_config_event(
+            entity_type="role",
+            entity_id=role_id,
+            action="updated",
+            actor=actor,
+            payload=result,
+        )
+        return result
+
+    def admin_role_delete(
+        self, role_id: str, roles: set[str], actor: str = "admin"
+    ) -> None:
+        """Delete a role. Baseline admin/user roles are protected (403)."""
+        self._require_admin(roles)
+        self._ensure_role_store()
+        with self._role_session_manager().session() as session:
+            store = IDAMRoleStore(session)
+            store.seed_baseline()
+            try:
+                removed = store.delete(role_id)
+            except IDAMBaselineRoleProtected as exc:
+                raise PermissionError(
+                    f"Baseline role cannot be deleted: {exc}"
+                ) from exc
+            if not removed:
+                raise KeyError(role_id)
+        self.audit_logger.log_admin_action(
+            actor=actor,
+            roles=roles,
+            action="delete",
+            target_type="role",
+            target_id=role_id,
+            target_name=role_id,
+        )
+        self._emit_config_event(
+            entity_type="role",
+            entity_id=role_id,
+            action="deleted",
+            actor=actor,
+            payload={"role_id": role_id},
         )
 
     def api_keys_list(self) -> list[dict[str, Any]]:
