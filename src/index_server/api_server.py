@@ -2250,6 +2250,31 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.post("/admin/api-keys")(admin_api_keys_create)
     app.post("/admin/api-keys/revoke-token")(admin_api_keys_revoke_token)
     app.delete("/admin/api-keys/{key_id}")(admin_api_keys_delete)
+    # W28A-876: the shared @cloud-dog/idam admin pages call /api/v1/admin/<entity>.
+    # Traefik strips the /api prefix, so these requests reach this api app as
+    # /v1/admin/<entity> — a path the canonical /admin/<entity> routes above do
+    # NOT serve (→ 404). Mirror the IDAM admin handlers under /v1/admin/<entity>
+    # (same handler callables, same auth) so the shared 5 pages resolve.
+    app.get("/v1/admin/users")(admin_users_list)
+    app.post("/v1/admin/users")(admin_users_create)
+    app.get("/v1/admin/users/{user_id}")(admin_users_get)
+    app.put("/v1/admin/users/{user_id}")(admin_users_update)
+    app.delete("/v1/admin/users/{user_id}")(admin_users_delete)
+    app.get("/v1/admin/roles")(admin_roles_list)
+    app.post("/v1/admin/roles")(admin_roles_create)
+    app.get("/v1/admin/roles/{role_id}")(admin_roles_get)
+    app.put("/v1/admin/roles/{role_id}")(admin_roles_update)
+    app.patch("/v1/admin/roles/{role_id}")(admin_roles_update)
+    app.delete("/v1/admin/roles/{role_id}")(admin_roles_delete)
+    app.get("/v1/admin/groups")(admin_groups_list)
+    app.post("/v1/admin/groups")(admin_groups_create)
+    app.get("/v1/admin/groups/{group_id}")(admin_groups_get)
+    app.put("/v1/admin/groups/{group_id}")(admin_groups_update)
+    app.delete("/v1/admin/groups/{group_id}")(admin_groups_delete)
+    app.get("/v1/admin/api-keys")(admin_api_keys_list)
+    app.post("/v1/admin/api-keys")(admin_api_keys_create)
+    app.post("/v1/admin/api-keys/revoke-token")(admin_api_keys_revoke_token)
+    app.delete("/v1/admin/api-keys/{key_id}")(admin_api_keys_delete)
     app.get("/admin/collections")(admin_collections_list)
     app.post("/admin/collections")(admin_collections_create)
     app.get("/admin/collections/{collection_id}")(admin_collections_get)
