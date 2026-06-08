@@ -1,26 +1,37 @@
 # requirements.lock — index-retriever-mcp-server (W28A-861-R3)
 #
-# Pinned third-party runtime dependencies, resolved for python 3.12 against the
-# PUBLIC index (https://pypi.org/simple/) with pip-tools (pip-compile,
-# --strip-extras). lxml and xmlsec are source-built (--no-binary) to match the
+# FULL sealed lock. Pinned runtime dependencies — the 9 Cloud-Dog platform
+# packages AND the 39 third-party packages — resolved for python 3.12 and
+# verified to install end-to-end (Dockerfile.public, GREEN build on server2,
+# 2026-06-08). lxml and xmlsec are source-built (--no-binary) to match the
 # pinned versions the platform IDAM/SAML stack requires.
 #
-# Install exactly these (no resolver):
-#   pip install --no-deps -r requirements.lock --index-url "${PYPI_URL:-https://pypi.org/simple/}"
+# Index-agnostic: this file pins versions only. It carries NO index URL and NO
+# credentials. The active package index is supplied at install time by the
+# caller (the `pip_conf` BuildKit secret in Dockerfile.public, or --index-url),
+# per PS-97 §3.3 single-index. The platform packages and these exact versions
+# are present on the internal index (pypi.cloud-dog.net); when they are also
+# published to the public boundary index the same pins resolve unchanged.
 #
-# IMPORTANT — partial lock:
-#   The 9 Cloud-Dog platform packages (cloud-dog-config, cloud-dog-logging,
-#   cloud-dog-api-kit, cloud-dog-idam, cloud-dog-db, cloud-dog-jobs,
-#   cloud-dog-storage, cloud-dog-llm, cloud-dog-vdb) are NOT yet published to the
-#   public index, so they CANNOT be pinned here from the public boundary. See
-#   requirements.lock.EXCEPTION.md for the coordinator-approval gap and the exact
-#   version constraints from pyproject.toml. Their own transitive deps are also
-#   not represented in this file until they are published.
+# Install exactly these (no resolver):
+#   pip install --no-deps -r requirements.lock --index-url "${PYPI_URL}"
 #
 # --no-binary directives:
 --no-binary lxml
 --no-binary xmlsec
 #
+# ── Cloud-Dog platform packages (resolved versions, verified in built image) ──
+cloud-dog-config==0.3.2
+cloud-dog-logging==0.4.0
+cloud-dog-api-kit==0.13.0
+cloud-dog-idam==0.4.0
+cloud-dog-db==0.3.0
+cloud-dog-jobs==0.4.1
+cloud-dog-storage==0.1.6
+cloud-dog-llm==0.3.0
+cloud-dog-vdb==0.5.4
+#
+# ── Third-party runtime dependencies ─────────────────────────────────────────
 aiosqlite==0.22.1
 alembic==1.18.4
 annotated-types==0.7.0
