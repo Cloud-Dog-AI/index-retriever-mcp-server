@@ -89,6 +89,7 @@ This file captures lessons learned from W28A-602 (platform adoption), W28A-878/8
 ## Related Projects
 
 - `cloud-dog-llm==0.2.1` is required for the qwen3:14b empty-response fix. Use the internal PyPI source `https://pypi.cloud-dog.net/simple/`.
+  - See central AGENT-LESSONS.md §6.107 for the cross-service rule.
 - Do not use Gitea PyPI for this internal work. The Docker build and local installs must resolve from internal PyPI.
 - `pyproject.toml` needed the minimum `cloud_dog_llm` version raised to `>=0.2.1` so rebuilt images consistently pick up the fixed package.
 - Live/test env files had stale embedding host references. `llm1.cloud-dog.net` needed to be updated to `llm2.cloud-dog.net` across the test env set and related Terraform values.
