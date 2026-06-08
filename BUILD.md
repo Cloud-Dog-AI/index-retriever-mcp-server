@@ -4,7 +4,7 @@
 `index-retriever-mcp-server` - document indexing and retrieval service with parser and vector-backend plugins.
 
 ## Prerequisites
-- Python 3.11+
+- Python 3.12+
 - Docker with BuildKit support
 - pip
 
@@ -16,10 +16,11 @@ pip install --upgrade pip
 pip install -e ".[dev]"
 ```
 
-If your platform packages are served from a package index:
+If your platform packages are served from a single package index, point
+`--index-url` at it (single-index install; do not mix multiple indexes):
 ```bash
-PYPI_URL=https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple
-pip install -e ".[dev]" --extra-index-url "$PYPI_URL"
+PYPI_URL="${PYPI_URL:-https://pypi.org/simple/}"
+pip install -e ".[dev]" --index-url "$PYPI_URL"
 ```
 
 ## Local Configuration
@@ -63,17 +64,20 @@ python -m build
 
 ### Docker Container
 ```bash
-PUBLICATION_TAG_SUFFIX=gitea-test ./docker-build.sh latest
+# Public variant (default): index defaults to https://pypi.org/simple/
+PUBLICATION_TAG_SUFFIX=pub-test ./docker-build.sh latest --variant public
 ```
 
-Build with explicit package index and CA settings:
+Build with an explicit package index and (dev variant) CA settings:
 ```bash
-PYPI_URL=https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple \
+PYPI_URL=https://pypi.org/simple/ \
 PYPI_USERNAME=build-user \
 PYPI_PASSWORD=build-password \
-CUSTOM_CA_CERT=./certs/ca.pem \
-PUBLICATION_TAG_SUFFIX=gitea-test ./docker-build.sh latest
+PUBLICATION_TAG_SUFFIX=pub-test ./docker-build.sh latest --variant public
 ```
+
+The `--variant dev` selector builds the internal `Dockerfile` and defaults its
+index/CA to the internal developer environment; it is not used for publication.
 
 ## Docker Push
 ```bash
@@ -94,8 +98,8 @@ publication **test** images that never collide with reserved runtime/release tag
 (default unset ⇒ behaviour unchanged):
 
 ```bash
-PUBLICATION_TAG_SUFFIX=gitea-test ./docker-build.sh <version>
-# builds <image>:<version>-gitea-test; registry tag is skipped
+PUBLICATION_TAG_SUFFIX=pub-test ./docker-build.sh <version>
+# builds <image>:<version>-pub-test; registry tag is skipped
 ```
 
-- Preview only: `PUBLICATION_DRY_RUN=1 PUBLICATION_TAG_SUFFIX=gitea-test ./docker-build.sh <version>`
+- Preview only: `PUBLICATION_DRY_RUN=1 PUBLICATION_TAG_SUFFIX=pub-test ./docker-build.sh <version>`

@@ -65,7 +65,7 @@ profiles:
     embeddings:
       provider: "openai_compat"
       openai_compat:
-        base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
         api_key: "${EMBED_API_KEY || ''}"
         model: "nomic-embed-text"
         timeout_seconds: 60
@@ -97,7 +97,7 @@ profiles:
     embeddings:
       provider: "openai_compat"
       openai_compat:
-        base_url: "${EMBED_MULTILANG_BASE_URL:${EMBED_BASE_URL:https://llm2.cloud-dog.net}}"
+        base_url: "${EMBED_MULTILANG_BASE_URL:${EMBED_BASE_URL:http://localhost:11434}}"
         api_key: "${EMBED_API_KEY || ''}"
         model: "bge-m3:567m"
         timeout_seconds: 60
@@ -133,7 +133,7 @@ profiles:
     embeddings:
       provider: "openai_compat"
       openai_compat:
-        base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
         api_key: "${EMBED_API_KEY || ''}"
         model: "nomic-embed-text"
         timeout_seconds: 60
@@ -169,7 +169,7 @@ profiles:
     embeddings:
       provider: "openai_compat"
       openai_compat:
-        base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
         api_key: "${EMBED_API_KEY || ''}"
         model: "nomic-embed-text"
         timeout_seconds: 60
@@ -205,7 +205,7 @@ profiles:
     embeddings:
       provider: "openai_compat"
       openai_compat:
-        base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
         api_key: "${EMBED_API_KEY || ''}"
         model: "nomic-embed-text"
         timeout_seconds: 60
@@ -241,7 +241,7 @@ profiles:
     embeddings:
       provider: "openai_compat"
       openai_compat:
-        base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
         api_key: "${EMBED_API_KEY || ''}"
         model: "nomic-embed-text"
         timeout_seconds: 60
@@ -273,7 +273,7 @@ profiles:
     embeddings:
       provider: "openai_compat"
       openai_compat:
-        base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
         api_key: "${EMBED_API_KEY || ''}"
         model: "nomic-embed-text"
         timeout_seconds: 60
@@ -305,7 +305,7 @@ profiles:
     embeddings:
       provider: "openai_compat"
       openai_compat:
-        base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
         api_key: "${EMBED_API_KEY || ''}"
         model: "nomic-embed-text"
         timeout_seconds: 60
@@ -337,7 +337,7 @@ profiles:
     embeddings:
       provider: "openai_compat"
       openai_compat:
-        base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
         api_key: "${EMBED_API_KEY || ''}"
         model: "nomic-embed-text"
         timeout_seconds: 60
@@ -369,7 +369,7 @@ profiles:
     embeddings:
       provider: "openai_compat"
       openai_compat:
-        base_url: "${EMBED_BASE_URL:https://llm1.cloud-dog.net}"
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
         api_key: "${EMBED_API_KEY || ''}"
         model: "nomic-embed-text"
         timeout_seconds: 60

@@ -1,7 +1,35 @@
+# Files in this list are internal-operations artefacts and MUST NEVER reach the
+# public mirror (PS-97 v1.1 §1.1.2). The publication filter omits every path
+# matched here. Everything that carries internal FQDNs/topology, IP/methods/IP
+# design, or local dev-environment paths belongs here.
+
+# Internal ops / methods / design (PS-97 §1.1.2)
+AGENT-LESSONS.md
+RULES.md
+CONTEXT-SUMMARY.md
 docs/PREPROD.md
 docs/DEPLOY-INTERNAL.md
+REQUIREMENTS.md
+
+# Internal/dev Dockerfile (references the internal Gitea index + --extra-index-url);
+# the public mirror ships Dockerfile.public only.
+Dockerfile
+
+# Internal dev/local tooling (reference internal PyPI, env-vault, /opt/iac, Vault)
+local-docker-server.sh
+scripts/validate-vault.sh
+
+# Internal env examples carrying internal FQDNs / ports
+env-docker-example
+docker-env.local
+docker-env.example
+.env.example
+
+# Test scaffolding + internal env files
 tests/env-*
 private/
 working/
-CONTEXT-SUMMARY.md
+archive/
+
+# This control file itself
 .publish-exclude

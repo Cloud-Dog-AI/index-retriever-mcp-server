@@ -1,8 +1,9 @@
 # Publication smoke test
 
-External local-Docker smoke. Starts the published image with the checked-in
-example env file and probes the local API, Web, MCP, and A2A surfaces.
-Live LLM calls are not required for this surface smoke.
+External local-Docker smoke. Starts the published public image with the
+checked-in example env file and probes the local API, Web, MCP, and A2A
+surfaces. Live LLM/embedding calls are not required for this surface smoke —
+those backends are only contacted on ingest/query.
 
 ```bash
 set -euo pipefail
@@ -14,8 +15,8 @@ cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
 docker run -d --name "$NAME" --network host \
-  -e CLOUD_DOG_ENV_FILE=/app/env.example \
-  -v "$PWD/env.example:/app/env.example:ro" \
+  -e CLOUD_DOG_ENV_FILE=/app/env \
+  -v "$PWD/docker-env.public.example:/app/env:ro" \
   "cloud-dog/index-retriever-mcp-server:$TAG"
 
 probe_url() {
@@ -32,11 +33,11 @@ probe_url() {
   return 1
 }
 
-probe_url http://127.0.0.1:8083/health
-probe_url http://127.0.0.1:8080/
-probe_url http://127.0.0.1:8081/health
-probe_url http://127.0.0.1:8082/health
-probe_url http://127.0.0.1:8082/.well-known/agent.json
+probe_url http://127.0.0.1:8074/health
+probe_url http://127.0.0.1:8075/
+probe_url http://127.0.0.1:8076/health
+probe_url http://127.0.0.1:8077/health
+probe_url http://127.0.0.1:8077/.well-known/agent.json
 
 echo "RESULT: PASS"
 ```

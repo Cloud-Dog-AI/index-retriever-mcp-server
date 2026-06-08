@@ -13,15 +13,67 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# index-retriever-mcp-server — Docker Build Script (PS-91)
-# Uses BuildKit secret mount for private PyPI auth — credentials never enter image layers.
+# index-retriever-mcp-server — Docker Build Script (PS-91 / PS-97 v1.1 §1.1.3)
+# Uses BuildKit secret mount for the active package index; credentials/index
+# never enter image layers.
+#
+# Variant selector (PS-97 v1.1 §1.1.3):
+#   --variant public  (default) builds Dockerfile.public for publication.
+#                     Default index is the public PyPI (pypi.org). Override the
+#                     index for an internal/Gitea boundary build via PYPI_URL.
+#   --variant dev     builds Dockerfile (internal/dev) when present in a
+#                     developer checkout. Default index is the internal Gitea
+#                     public index.
+#
+# Usage:
+#   docker-build.sh [VERSION] [--variant dev|public]
+#
+# Env overrides still apply (PYPI_URL, PYPI_USERNAME, PYPI_PASSWORD,
+# CUSTOM_CA_CERT, etc.). The --variant flag selects which Dockerfile is built.
 set -euo pipefail
+
+# ── Argument parsing ────────────────────────────────────────────
+VARIANT="${PUBLICATION_BUILD_VARIANT:-public}"
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --variant)
+      VARIANT="${2:-public}"
+      shift 2
+      ;;
+    --variant=*)
+      VARIANT="${1#*=}"
+      shift
+      ;;
+    *)
+      POSITIONAL+=("$1")
+      shift
+      ;;
+  esac
+done
+set -- "${POSITIONAL[@]+"${POSITIONAL[@]}"}"
+
+case "${VARIANT}" in
+  dev)    DOCKERFILE="Dockerfile" ;;
+  public) DOCKERFILE="Dockerfile.public" ;;
+  *)
+    echo "ERROR: --variant must be 'dev' or 'public' (got: ${VARIANT})" >&2
+    exit 2
+    ;;
+esac
+
+if [[ ! -f "${DOCKERFILE}" ]]; then
+  echo "ERROR: ${DOCKERFILE} not found (variant=${VARIANT})" >&2
+  exit 2
+fi
 
 VERSION="${1:-latest}"
 CONTAINER="index-retriever-mcp-server"
 FOLDER="cloud-dog"
 REGISTRY="${REGISTRY:-}"
-CUSTOM_CA_CERT="${CUSTOM_CA_CERT:-/usr/local/share/ca-certificates/cloud-dog.net.ca.crt}"
+# Dev-variant CA path is supplied by the developer environment (INTERNAL_CA_CERT
+# or CUSTOM_CA_CERT). No internal CA path is hardcoded in this published script.
+CUSTOM_CA_CERT="${CUSTOM_CA_CERT:-${INTERNAL_CA_CERT:-}}"
 GENERIC_CA_CERT="custom-ca.crt"
 CERT_ARG=""
 PIP_CONF=".pip.conf.build"
@@ -53,49 +105,62 @@ cleanup() {
 trap cleanup EXIT
 
 echo "=========================================="
-echo "Docker Build: ${FOLDER}/${CONTAINER}:${VERSION}"
+echo "Docker Build: ${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG} (variant=${VARIANT}, dockerfile=${DOCKERFILE})"
 echo "=========================================="
 
 # ── PyPI Configuration ───────────────────────────────────────────
-PYPI_URL="${PYPI_URL:-https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple}"
+# Variant-specific default index (PS-97 §3.3 single-index; never --extra-index-url):
+#   public -> pypi.org (override PYPI_URL for any other boundary index)
+#   dev    -> INTERNAL_PYPI_URL supplied by the developer environment
+# This published script hardcodes no internal host. Internal/Gitea builds set
+# PYPI_URL (or INTERNAL_PYPI_URL) from their environment.
+if [[ -n "${PYPI_URL:-}" ]]; then
+  : # honour caller override
+elif [[ "${VARIANT}" == "public" ]]; then
+  PYPI_URL="https://pypi.org/simple/"
+elif [[ -n "${INTERNAL_PYPI_URL:-}" ]]; then
+  PYPI_URL="${INTERNAL_PYPI_URL}"
+else
+  echo "ERROR: --variant dev requires PYPI_URL (or INTERNAL_PYPI_URL) to be set" >&2
+  exit 2
+fi
 PYPI_USERNAME="${PYPI_USERNAME:-}"
 PYPI_PASSWORD="${PYPI_PASSWORD:-}"
+PYPI_HOST="$(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${PYPI_URL}').hostname or 'pypi.org')")"
 
 if [[ -n "${PYPI_USERNAME}" ]] && [[ -n "${PYPI_PASSWORD}" ]]; then
   cat > "${PIP_CONF}" << EOF
 [global]
-extra-index-url = https://${PYPI_USERNAME}:${PYPI_PASSWORD}@${PYPI_URL#https://}
-trusted-host = $(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${PYPI_URL}').hostname or 'gitea.cloud-dog.net')")
-               pypi.org
-               files.pythonhosted.org
+index-url = https://${PYPI_USERNAME}:${PYPI_PASSWORD}@${PYPI_URL#https://}
+trusted-host = ${PYPI_HOST}
 EOF
-  echo "pip.conf generated with authenticated PyPI access."
+  echo "pip.conf generated with authenticated single-index access (host=${PYPI_HOST})."
 else
   cat > "${PIP_CONF}" << EOF
 [global]
-extra-index-url = ${PYPI_URL}
-trusted-host = $(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${PYPI_URL}').hostname or 'gitea.cloud-dog.net')")
-               pypi.org
-               files.pythonhosted.org
+index-url = ${PYPI_URL}
+trusted-host = ${PYPI_HOST}
 EOF
-  echo "pip.conf generated with anonymous PyPI access."
+  echo "pip.conf generated with anonymous single-index access (host=${PYPI_HOST})."
 fi
+chmod 600 "${PIP_CONF}"
 
-# ── CA Certificate ───────────────────────────────────────────────
-if [[ -f "${CUSTOM_CA_CERT}" ]]; then
+# ── CA Certificate (dev/internal builds only) ────────────────────
+if [[ "${VARIANT}" == "dev" && -f "${CUSTOM_CA_CERT}" ]]; then
   cp "${CUSTOM_CA_CERT}" "./${GENERIC_CA_CERT}"
   CERT_ARG="--build-arg CUSTOM_CA_CERT=./${GENERIC_CA_CERT}"
 fi
 
 # ── Build ────────────────────────────────────────────────────────
 if [[ -n "${PUBLICATION_DRY_RUN:-}" ]]; then
+  echo "DRY-RUN: variant=${VARIANT} dockerfile=${DOCKERFILE} index=${PYPI_URL}"
   echo "DRY-RUN: build tag = ${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
-  if [[ -n "${REGISTRY}" && -z "${PUBLICATION_TAG_SUFFIX}" ]]; then
+  if [[ "${VARIANT}" == "dev" && -n "${REGISTRY}" && -z "${PUBLICATION_TAG_SUFFIX}" ]]; then
     echo "DRY-RUN: registry tag = ${REGISTRY}/${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
   elif [[ -n "${PUBLICATION_TAG_SUFFIX}" ]]; then
     echo "DRY-RUN: registry tag = (skipped — publication suffix '${PUBLICATION_TAG_SUFFIX}' set)"
   else
-    echo "DRY-RUN: registry tag = (skipped; set REGISTRY to tag a registry image)"
+    echo "DRY-RUN: registry tag = (skipped)"
   fi
   exit 0
 fi
@@ -104,7 +169,7 @@ DOCKER_BUILDKIT=1 docker buildx build \
   --progress=plain \
   --network=host \
   --load \
-  -f Dockerfile \
+  -f "${DOCKERFILE}" \
   --secret id=pip_conf,src="${PIP_CONF}" \
   ${CERT_ARG} \
   --build-arg HTTP_PROXY="${HTTP_PROXY:-}" \
@@ -119,15 +184,15 @@ DOCKER_BUILDKIT=1 docker buildx build \
 BUILD_STATUS=${PIPESTATUS[0]}
 
 if [[ ${BUILD_STATUS} -eq 0 ]]; then
-  echo "Build OK: ${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
-  if [[ -n "${REGISTRY}" && -z "${PUBLICATION_TAG_SUFFIX}" ]]; then
+  echo "Build OK: ${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG} (variant=${VARIANT})"
+  if [[ "${VARIANT}" == "dev" && -n "${REGISTRY}" && -z "${PUBLICATION_TAG_SUFFIX}" ]]; then
     docker tag "${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}" \
       "${REGISTRY}/${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
     echo "Tagged: ${REGISTRY}/${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
   elif [[ -n "${PUBLICATION_TAG_SUFFIX}" ]]; then
     echo "Publication test image (suffix=${PUBLICATION_TAG_SUFFIX}); internal registry tag skipped (W28A-831 isolation)."
   else
-    echo "Registry tag skipped; set REGISTRY to tag a registry image."
+    echo "Public/closed-loop variant built; internal registry tag skipped (PS-97 §1.1.3)."
   fi
 else
   echo "Build FAILED — see docker-build.log"
