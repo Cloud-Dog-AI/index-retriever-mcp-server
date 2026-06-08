@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 from typing import Any
 
@@ -216,6 +217,39 @@ def build_web_app() -> object:
                     json_body = None
 
         proxy_path = path if path.startswith("/") else f"/{path}"
+        # W28A-876 security fix: IDAM admin endpoints (users/roles/groups/api-keys)
+        # must be authorised by the CALLER'S OWN session/credentials, never by the
+        # service api_key that WebApiProxy injects for service-to-service
+        # (mcp/a2a/tools) traffic. Without this, WebApiProxy attaches the admin
+        # api_key to every proxied request, so an UNAUTHENTICATED caller reaches
+        # admin data. Forward these requests verbatim (cookies + caller headers, no
+        # injected key) so the api server's _auth_or_raise enforces auth (401 when
+        # there is no valid session/credential; the authenticated SPA forwards its
+        # session cookie and still resolves to admin).
+        if re.search(r"(?:^|/)(?:api/v1/|v1/)?admin/(?:users|roles|groups|api-keys)(?:/|$)", proxy_path):
+            async with httpx.AsyncClient(
+                base_url=api_base_url,
+                verify=False,
+                timeout=60,
+                cookies=dict(request.cookies),
+            ) as client:
+                raw_admin = await client.request(
+                    request.method,
+                    proxy_path,
+                    content=body or None,
+                    params=dict(request.query_params),
+                    headers=headers,
+                )
+            return Response(
+                content=raw_admin.content,
+                status_code=raw_admin.status_code,
+                media_type=raw_admin.headers.get("content-type", "application/json"),
+                headers={
+                    key: value
+                    for key, value in raw_admin.headers.items()
+                    if key.lower() not in {"content-length", "transfer-encoding"}
+                },
+            )
         if body and json_body is None and request.method.upper() in {"POST", "PUT", "PATCH"}:
             async with httpx.AsyncClient(
                 base_url=api_base_url,
