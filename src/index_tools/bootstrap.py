@@ -50,30 +50,26 @@ from cloud_dog_config.yaml_loader import load_yaml as _load_yaml
 
 
 def _cfg_get(key: str, default: str = "") -> str:
-    """Resolve an env-var-style key via cloud_dog_config.get_config().
+    """Resolve a dotted config key via ``cloud_dog_config.get_config()``.
 
-    Resolution order:
-    1. ``cloud_dog_config.get_config(key)`` for config files and env overrides.
-    2. Process environment for ordinary runtime variables.
-    3. *default* when neither source has a value.
+    Resolution is config-only and relies on the cloud_dog_config precedence
+    chain (``os.environ`` ``CLOUD_DOG__*`` overrides -> env file -> config.yaml ->
+    defaults.yaml). There is NO direct ``os.environ`` read here, per RULES
+    §1.4.1 (zero ``os.environ`` in service ``src/``). Callers pass dotted keys
+    such as ``index.bootstrap.seed_path``; operators override them with the
+    ``CLOUD_DOG__INDEX__BOOTSTRAP__SEED_PATH`` env form, resolved through the
+    config package.
     """
     try:
         from cloud_dog_config import get_config  # type: ignore
     except Exception:  # pragma: no cover
-        get_config = None  # type: ignore[assignment]
-    if get_config is not None:
-        try:
-            value = get_config(key)
-        except Exception:
-            value = None
-        if value is not None and str(value).strip():
-            return str(value)
-
-    import os
-
-    env_val = str(os.environ.get(key, "")).strip()
-    if env_val:
-        return env_val
+        return default
+    try:
+        value = get_config(key)
+    except Exception:
+        value = None
+    if value is not None and str(value).strip():
+        return str(value)
     return default
 
 
@@ -245,7 +241,21 @@ class EnvTokenResolver:
         if not name:
             raise BootstrapSeedError("API-key token environment variable name is empty")
         if name not in self._cache:
+            # Prefer the config path (operators may use the CLOUD_DOG__* form).
             value = _cfg_get(name).strip()
+            if not value:
+                # RULES §1.4.1 BOOTSTRAP-CREDENTIAL CARVE-OUT (sanctioned, by name):
+                # the seed names an operator-set env var that holds the API-key
+                # SECRET (e.g. token_env_var: INDEX_RETRIEVER_ADMIN_API_KEY). The
+                # secret lives in the process environment by operator contract — it
+                # is never written into the seed YAML — and cloud_dog_config cannot
+                # resolve a bare, dynamically-named env var. This one-shot seed-time
+                # credential read is in the same class as the VAULT_* bootstrap
+                # carve-out documented in AGENT-BOOTSTRAP-DIRECTIVE §11. It is the
+                # ONLY direct os.environ read in this service's src/.
+                import os  # noqa: bootstrap-credential carve-out
+
+                value = str(os.environ.get(name, "")).strip()  # noqa: §1.4.1-carve-out
             if not value:
                 raise BootstrapSeedError(
                     f"API-key token environment variable is unset or empty: {name}"
@@ -392,16 +402,19 @@ def _apply_api_key(service: Any, api_key: ApiKeySeed, *, token: str) -> None:
     )
 
 
-_SEED_PATH_ENV = "INDEX_RETRIEVER_BOOTSTRAP_SEED_PATH"
-_SEED_DISABLED_ENV = "INDEX_RETRIEVER_BOOTSTRAP_SEED_DISABLED"
+# Bootstrap seed location/toggle are ordinary (non-secret) configuration, resolved
+# through cloud_dog_config dotted keys (operators override with the
+# CLOUD_DOG__INDEX__BOOTSTRAP__SEED_PATH / __SEED_DISABLED env form). RULES §1.4.1.
+_SEED_PATH_KEY = "index.bootstrap.seed_path"
+_SEED_DISABLED_KEY = "index.bootstrap.seed_disabled"
 
 
 def resolve_seed_path() -> str | None:
     """Return the active bootstrap seed file path, or None if not configured."""
-    if _cfg_truthy(_SEED_DISABLED_ENV):
+    if _cfg_truthy(_SEED_DISABLED_KEY):
         return None
 
-    explicit = _cfg_get(_SEED_PATH_ENV).strip()
+    explicit = _cfg_get(_SEED_PATH_KEY).strip()
     if explicit:
         return explicit
     container_default = "/app/config/bootstrap-seed.yaml"

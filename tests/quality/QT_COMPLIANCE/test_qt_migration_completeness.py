@@ -81,6 +81,14 @@ def test_os_environ_usage_is_confined_to_runtime_boundaries(
         "src/index_server/mcp_server.py",
         "src/index_tools/db/runtime.py",
         "src/index_tools/tools/service.py",
+        # RULES §1.4.1 BOOTSTRAP-CREDENTIAL CARVE-OUT: bootstrap.py's
+        # EnvTokenResolver reads the admin-key SECRET from an operator-named env
+        # var (W28A-861 publication design; the secret is never in the seed YAML
+        # and cloud_dog_config cannot resolve a bare, dynamically-named env var).
+        # One-shot seed-time read, same class as the VAULT_* bootstrap carve-out
+        # (AGENT-BOOTSTRAP-DIRECTIVE §11). Sole os.environ read in this src/ tree;
+        # see EnvTokenResolver.resolve for the inline rationale.
+        "src/index_tools/bootstrap.py",
     }
     pattern = re.compile(r"os\.getenv\(|os\.environ(\[|\.get\()")
     violations: list[str] = []
