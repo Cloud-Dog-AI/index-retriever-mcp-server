@@ -1,0 +1,2 @@
+# §1.4/§6.88 bespoke-pattern grep (zero required) — structure + connectors + phase2-5
+NONE

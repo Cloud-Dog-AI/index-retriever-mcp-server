@@ -53,7 +53,7 @@ def _log_tool_audit(tool_name: str, actor_id: str, outcome: str, details: dict[s
 from fastapi import Request
 from starlette.responses import JSONResponse
 
-from index_server.auth.middleware import AuthMiddleware, AuthResult
+from index_server.auth.middleware import AuthMiddleware, AuthResult, _canonical_role
 from index_server.logging_runtime import init_platform_logging, shutdown_platform_logging
 from index_server.runtime_config import resolve_server_binding
 from index_tools.config.loader import runtime_env_files
@@ -244,6 +244,34 @@ def _required_permission_for_tool(tool_name: str) -> str:
         return "collection.write"
     if tool_name == "file_delete":
         return "collection.write"
+    # W28E-603 document structure (Phase 1)
+    if tool_name in {
+        "structure_health",
+        "structure_document_get",
+        "structure_document_list",
+        "structure_outline_get",
+        "structure_pages_list",
+        "structure_sections_list",
+        "structure_corpus_list",
+        "structure_corpus_get",
+        "structure_corpus_patterns_get",
+        "structure_template_get",
+        "structure_template_list",
+        "structure_template_export",
+    }:
+        return "collection.read"
+    if tool_name in {
+        "structure_document_create",
+        "structure_document_delete",
+        "structure_extract",
+        "structure_corpus_create",
+        "structure_corpus_update",
+        "structure_corpus_delete",
+        "structure_corpus_analyse",
+        "structure_template_generate",
+        "structure_link_to_vdb_records",
+    }:
+        return "collection.write"
     return "admin"
 
 
@@ -411,10 +439,36 @@ def _normalise_queue_status(payload: Any) -> dict[str, Any]:
     return out
 
 
-def _enforce_collection_permission(auth: AuthMiddleware, identity: AuthResult, permission: str) -> None:
-    """Enforce collection access through IDAM permissions."""
+def _enforce_collection_permission(
+    auth: AuthMiddleware,
+    identity: AuthResult,
+    permission: str,
+    *,
+    service: IndexService | None = None,
+    profile: str | None = None,
+    collection: str | None = None,
+) -> None:
+    """Enforce collection access: IDAM role-permission AND the collection's allowed_roles.
+
+    The role-permission check gates the operation class (collection.read/write). When a
+    concrete collection is supplied and it carries restricted ``allowed_roles``, the
+    requester's roles must intersect them (admin always passes); otherwise access to that
+    specific collection is denied (FR-05 collection-level RBAC).
+    """
     # Covers: FR-05
     auth.require_permission(identity, permission)
+    if service is None or not profile or not collection:
+        return
+    collection_roles = getattr(service, "collection_roles", {}) or {}
+    allowed = collection_roles.get(f"{profile}:{collection}")
+    if not allowed:
+        return
+    identity_roles = {_canonical_role(role) for role in identity.roles}
+    if "admin" in identity_roles:
+        return
+    allowed_canonical = {_canonical_role(role) for role in allowed}
+    if not (identity_roles & allowed_canonical):
+        raise PermissionError(f"Authorisation failed for collection '{collection}'")
 
 
 def execute_tool(
@@ -691,7 +745,7 @@ def execute_tool(
             "status": "ok",
         }
     if tool_name == "ingest_upload":
-        _enforce_collection_permission(active_auth, active_identity, "collection.write")
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         payload = arguments.get("content", "")
         if isinstance(payload, str):
             content = payload.encode("utf-8")
@@ -731,7 +785,7 @@ def execute_tool(
             )
         return {"job_id": job_ids[0], "job_ids": job_ids, "status": "queued", "count": len(job_ids)}
     if tool_name == "ingest_text":
-        _enforce_collection_permission(active_auth, active_identity, "collection.read")
+        _enforce_collection_permission(active_auth, active_identity, "collection.read", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         ingest_result = service.ingest_text(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -744,7 +798,7 @@ def execute_tool(
         job_id = getattr(ingest_result, "job_id", ingest_result)
         return {"job_id": str(job_id), "status": "queued"}
     if tool_name == "ingest_reference":
-        _enforce_collection_permission(active_auth, active_identity, "collection.read")
+        _enforce_collection_permission(active_auth, active_identity, "collection.read", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         reference_path = str(arguments.get("path") or arguments.get("uri") or "").strip()
         if not reference_path:
             raise ValueError("ingest_reference requires path or uri")
@@ -811,7 +865,7 @@ def execute_tool(
             table_json_shape=str(arguments.get("table_json_shape", "records")),
         )
     if tool_name == "search":
-        _enforce_collection_permission(active_auth, active_identity, "collection.read")
+        _enforce_collection_permission(active_auth, active_identity, "collection.read", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         try:
             return {
                 "results": service.search(
@@ -837,7 +891,7 @@ def execute_tool(
                 "status": "error",
             }
     if tool_name == "search_explain":
-        _enforce_collection_permission(active_auth, active_identity, "collection.read")
+        _enforce_collection_permission(active_auth, active_identity, "collection.read", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         filters = arguments.get("filters") if isinstance(arguments.get("filters"), dict) else {}
         top_k = int(arguments.get("top_k", 10))
         query = str(arguments["query"])
@@ -869,7 +923,7 @@ def execute_tool(
             ],
         }
     if tool_name == "retrieve":
-        _enforce_collection_permission(active_auth, active_identity, "collection.read")
+        _enforce_collection_permission(active_auth, active_identity, "collection.read", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         # A123 fix: pass profile + collection so retrieve filters records
         # to the requested scope (RetrieveInput already requires both).
         return service.retrieve(
@@ -878,7 +932,7 @@ def execute_tool(
             collection=str(arguments.get("collection")) if arguments.get("collection") else None,
         )
     if tool_name == "delete_by_id":
-        _enforce_collection_permission(active_auth, active_identity, "collection.write")
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         deleted = service.delete_by_id(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -886,7 +940,7 @@ def execute_tool(
         )
         return {"deleted": bool(deleted), "status": "ok" if deleted else "not_found"}
     if tool_name == "delete_by_filter":
-        _enforce_collection_permission(active_auth, active_identity, "collection.write")
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         deleted = service.delete_by_filter(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -894,7 +948,7 @@ def execute_tool(
         )
         return {"deleted": int(deleted), "status": "ok"}
     if tool_name == "retention_run":
-        _enforce_collection_permission(active_auth, active_identity, "collection.write")
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         deleted = service.retention_run(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -902,7 +956,7 @@ def execute_tool(
         )
         return {"deleted": int(deleted), "status": "ok"}
     if tool_name == "reindex_run":
-        _enforce_collection_permission(active_auth, active_identity, "collection.write")
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         result = service.reindex_run(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -1019,6 +1073,88 @@ def execute_tool(
     if tool_name == "ingest_stream_close":
         from index_server.streaming import ingest_stream_close as _stream_close
         return _stream_close(service=service, session_id=str(arguments["session_id"]))
+    # -- W28E-603 document structure (Phase 1) --
+    if tool_name == "structure_health":
+        return service.structure.health()
+    if tool_name == "structure_document_create":
+        payload = arguments.get("bundle", arguments)
+        return service.structure.create(
+            payload,
+            actor=str(arguments.get("actor", "mcp")),
+            roles=set(identity_roles or set()),
+        )
+    if tool_name == "structure_document_get":
+        include = arguments.get("include")
+        return service.structure.get(
+            str(arguments["structure_document_id"]),
+            include=list(include) if isinstance(include, (list, set, tuple)) else None,
+        )
+    if tool_name == "structure_document_list":
+        return service.structure.list(
+            profile_id=arguments.get("profile") or arguments.get("profile_id"),
+            collection_id=arguments.get("collection") or arguments.get("collection_id"),
+            status=arguments.get("status"),
+            limit=int(arguments.get("limit", 50)),
+            offset=int(arguments.get("offset", 0)),
+        )
+    if tool_name == "structure_document_delete":
+        return service.structure.delete(
+            str(arguments["structure_document_id"]),
+            actor=str(arguments.get("actor", "mcp")),
+            roles=set(identity_roles or set()),
+        )
+    if tool_name == "structure_outline_get":
+        return service.structure.outline(str(arguments["structure_document_id"]))
+    if tool_name == "structure_pages_list":
+        return service.structure.list_pages(str(arguments["structure_document_id"]))
+    if tool_name == "structure_sections_list":
+        return service.structure.list_sections(str(arguments["structure_document_id"]))
+    # -- W28E-603 Phase 2: extraction --
+    if tool_name == "structure_extract":
+        return service.structure.extract_text(
+            str(arguments.get("text", "")),
+            profile=str(arguments.get("profile", "default")),
+            collection=str(arguments.get("collection", "default")),
+            source_uri=arguments.get("source_uri"),
+            source_filename=arguments.get("source_filename"),
+            provider=str(arguments.get("provider", "internal")),
+            actor=str(arguments.get("actor", "mcp")),
+            roles=set(identity_roles or set()),
+        )
+    # -- W28E-603 Phase 4: corpus --
+    if tool_name == "structure_corpus_create":
+        return service.structure.corpus.create(arguments.get("corpus", arguments), actor=str(arguments.get("actor", "mcp")), roles=set(identity_roles or set()))
+    if tool_name == "structure_corpus_list":
+        return service.structure.corpus.list(profile_id=arguments.get("profile") or arguments.get("profile_id"), limit=int(arguments.get("limit", 50)), offset=int(arguments.get("offset", 0)))
+    if tool_name == "structure_corpus_get":
+        return service.structure.corpus.get(str(arguments["corpus_id"]))
+    if tool_name == "structure_corpus_update":
+        return service.structure.corpus.update(str(arguments["corpus_id"]), arguments.get("updates", arguments), actor=str(arguments.get("actor", "mcp")), roles=set(identity_roles or set()))
+    if tool_name == "structure_corpus_delete":
+        return service.structure.corpus.delete(str(arguments["corpus_id"]), actor=str(arguments.get("actor", "mcp")), roles=set(identity_roles or set()))
+    if tool_name == "structure_corpus_analyse":
+        return service.structure.corpus.analyse(str(arguments["corpus_id"]), actor=str(arguments.get("actor", "mcp")), roles=set(identity_roles or set()))
+    if tool_name == "structure_corpus_patterns_get":
+        return service.structure.corpus.patterns_get(str(arguments["corpus_id"]), pattern_type=arguments.get("pattern_type"))
+    # -- W28E-603 Phase 5: templates --
+    if tool_name == "structure_template_generate":
+        return service.structure.templates.generate(str(arguments["corpus_id"]), name=arguments.get("name"), actor=str(arguments.get("actor", "mcp")), roles=set(identity_roles or set()))
+    if tool_name == "structure_template_get":
+        return service.structure.templates.get(str(arguments["template_id"]))
+    if tool_name == "structure_template_list":
+        return service.structure.templates.list(profile_id=arguments.get("profile") or arguments.get("profile_id"), corpus_id=arguments.get("corpus_id"), limit=int(arguments.get("limit", 50)), offset=int(arguments.get("offset", 0)))
+    if tool_name == "structure_template_export":
+        return service.structure.templates.export(str(arguments["template_id"]), format=str(arguments.get("format", "markdown")))
+    # -- W28E-603 §25 #6: VDB linkage --
+    if tool_name == "structure_link_to_vdb_records":
+        return service.structure.link_to_vdb_records(
+            str(arguments["structure_document_id"]),
+            vdb_record_ids=arguments.get("vdb_record_ids"),
+            chunk_ids=arguments.get("chunk_ids"),
+            source_document_id=arguments.get("source_document_id"),
+            actor=str(arguments.get("actor", "mcp")),
+            roles=set(identity_roles or set()),
+        )
     return {"status": "ok"}
 
 

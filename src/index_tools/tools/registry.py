@@ -175,6 +175,32 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="file_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Get metadata for a stored file by ID."),
         ToolSpec(name="file_download", input_model=GenericToolInput, output_model=GenericToolOutput, description="Download stored file content by ID. Returns base64-encoded content."),
         ToolSpec(name="file_delete", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a stored file by ID."),
+        # -- W28E-603 Document Structure (Phase 1: model & persistence foundation) --
+        ToolSpec(name="structure_health", input_model=GenericToolInput, output_model=GenericToolOutput, description="Report document-structure subsystem health, including the canonical structure store probe."),
+        ToolSpec(name="structure_document_create", input_model=GenericToolInput, output_model=GenericToolOutput, description="Create or idempotently replace a canonical document-structure record (document plus pages/blocks/sections/styles/tables/figures/relations)."),
+        ToolSpec(name="structure_document_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve a canonical structure document by its structure_document_id, optionally including child objects."),
+        ToolSpec(name="structure_document_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List canonical structure documents, filtered by profile, collection or status, with pagination."),
+        ToolSpec(name="structure_document_delete", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a canonical structure document and all of its child objects."),
+        ToolSpec(name="structure_outline_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Return the section hierarchy (outline) for a structure document as a nested tree."),
+        ToolSpec(name="structure_pages_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List page-level layout records for a structure document."),
+        ToolSpec(name="structure_sections_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List section records for a structure document."),
+        # -- W28E-603 Phase 2: structure extraction (providers) --
+        ToolSpec(name="structure_extract", input_model=GenericToolInput, output_model=GenericToolOutput, description="Extract canonical document structure from text or a file via a parser provider (internal/mineru/marker/docling) and persist it."),
+        # -- W28E-603 Phase 4: corpus management + analysis --
+        ToolSpec(name="structure_corpus_create", input_model=GenericToolInput, output_model=GenericToolOutput, description="Create a named corpus (set of structure documents) for cross-document analysis."),
+        ToolSpec(name="structure_corpus_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List structure corpora, optionally filtered by profile."),
+        ToolSpec(name="structure_corpus_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve a single corpus by id."),
+        ToolSpec(name="structure_corpus_update", input_model=GenericToolInput, output_model=GenericToolOutput, description="Update a corpus (name, description, member documents)."),
+        ToolSpec(name="structure_corpus_delete", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a corpus and its derived patterns."),
+        ToolSpec(name="structure_corpus_analyse", input_model=GenericToolInput, output_model=GenericToolOutput, description="Analyse a corpus to derive section/style/layout/table patterns and a report."),
+        ToolSpec(name="structure_corpus_patterns_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve derived patterns for a corpus, optionally filtered by pattern type."),
+        # -- W28E-603 Phase 5: template intelligence --
+        ToolSpec(name="structure_template_generate", input_model=GenericToolInput, output_model=GenericToolOutput, description="Generate a reusable structure/style template blueprint from a corpus's patterns."),
+        ToolSpec(name="structure_template_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve a generated template by id."),
+        ToolSpec(name="structure_template_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List generated templates, optionally filtered by profile or corpus."),
+        ToolSpec(name="structure_template_export", input_model=GenericToolInput, output_model=GenericToolOutput, description="Export a template as Markdown or JSON."),
+        # -- W28E-603 §25 #6: VDB/chunk linkage --
+        ToolSpec(name="structure_link_to_vdb_records", input_model=GenericToolInput, output_model=GenericToolOutput, description="Link a structure document to existing VDB record/chunk ids and source document."),
     ]
     for spec in specs:
         registry.register(spec)

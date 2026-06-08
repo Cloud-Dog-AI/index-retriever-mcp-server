@@ -1,0 +1,41 @@
+requirement_id	name	raw_artefact	observed_value	verification_command	result
+P1.1	Canonical structure model + schema version	src/index_tools/structure/models.py	SCHEMA_VERSION=1.0 + 9 models	pytest tests/unit/UT_W28E603_Structure	PASS
+P1.2	cloud_dog_db persistence + migration	database/migrations/cloud_dog_db/versions/20260604_0002_structure_foundation.py	9 tables down_revision=20260305_0001	pytest tests/unit/UT_W28E603_Structure	PASS
+P1.3	Basic CRUD API /api/v1/structure	src/index_server/api_server.py	7 routes	pytest tests/integration/IT_W28E603_StructureTransports	PASS
+P1.4	Basic MCP list/get tools	src/index_tools/tools/registry.py	8 structure_ tools	pytest tests/integration/IT_W28E603_StructureTransports	PASS
+P1.5	Backend-matrix smoke	tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py	sqlite PASS	pytest tests/system/ST_W28E603_StructureBackendMatrix	PASS
+HG.1	100 percent platform reuse zero bespoke	current/bespoke-grep.txt	zero matches all categories	grep forbidden-patterns	PASS
+RC.01	Hardcoded loopback compliance	tests/quality/QT_COMPLIANCE/conftest.py	allowlist reconciled	pytest tests/quality::test_rc01_no_hardcoded_urls_or_loopback	PASS
+RC.09	Connector fetch implemented via cloud_dog_storage	src/index_tools/connectors/s3.py	fetch delegates to build_storage_backend	pytest tests/unit/UT1_46	PASS
+RBAC.1	Collection-level RBAC enforced	src/index_server/mcp_server.py	allowed_roles gate added	pytest tests/integration/IT1_21	PASS
+RBAC.2	API-key resolves key roles	src/index_tools/tools/service.py	key-scoped identity	pytest tests/integration/IT1_22	PASS
+REG.1	Unit regression green	current/test-unit-regression-full.log	200 passed 0 failed	pytest tests/unit --env tests/env-UT	PASS
+REG.2	Quality tier green	current/test-quality-full.log	47 passed 0 failed	pytest tests/quality --env tests/env-QT	PASS
+REG.3	Integration tier green	current/full-test-suite-results.md	51 passed 0 failed	pytest tests/integration --env tests/env-IT	PASS
+REG.4	System tier green	current/full-test-suite-results.md	26 passed 2 skipped	pytest tests/system --env tests/env-ST	PASS
+REG.5	Application tier green	current/full-test-suite-results.md	24 passed 0 failed	pytest tests/application --env tests/env-AT	PASS
+REG.6	Contract parser security tiers green	current/full-test-suite-results.md	4 3 6 passed 0 failed	pytest tests/contract tests/parser tests/security	PASS
+DOC.1	Tool inventory docs agree	docs/MCP_DOCUMENTATION.md	77 tools	pytest tests/unit/UT1_40	PASS
+EV.1	Checksums verify	current/CHECKSUMS.sha256	26 files OK	sha256sum -c CHECKSUMS.sha256	PASS
+EV.2	Remote push proof	current/remote-proof.txt	branch+tags on GitLab	git ls-remote origin	PASS
+EXT.1	Structure extraction via API+MCP (§25 #2)	src/index_tools/structure/extract.py	structure_extract tool + REST route	pytest tests/integration/IT_W28E603_Phase25	PASS
+EXT.2	Provider interface mineru/marker/docling/internal (§25 #3)	src/index_tools/structure/extract.py	SUPPORTED_PROVIDERS + IR normaliser; parsers IT2_8/9/10	pytest tests/unit/UT_W28E603_Phase25::test_normalise_text_blocks_sections_tables	PASS
+COR.1	Corpus CRUD (§25 #8)	src/index_tools/structure/corpus.py	7 corpus tools + REST	pytest tests/unit/UT_W28E603_Phase25::test_corpus_create_get_list	PASS
+COR.2	Corpus pattern analysis (§25 #9)	src/index_tools/structure/corpus.py	section/style/layout/table patterns + report	pytest tests/unit/UT_W28E603_Phase25::test_corpus_analyse_produces_patterns	PASS
+TPL.1	Template generate + export markdown/json (§25 #10)	src/index_tools/structure/templates.py	blueprint + export	pytest tests/unit/UT_W28E603_Phase25::test_template_generate_and_export	PASS
+EXT.3	Phase 2-5 platform reuse zero bespoke (RULES §1.4)	current/bespoke-grep.txt	cloud_dog_db+cloud_dog_vdb+stdlib only	grep forbidden-patterns over new files	PASS
+REG.7	Full unit suite after Phase 2-5 (regression)	current/test-unit-regression-full.log	209 passed 0 failed	pytest tests/unit --env tests/env-UT	PASS
+A2A.1	A2A exposes structure skills (§25 #12)	src/index_server/a2a_server.py	agent card + /a2a/tasks structure skills	pytest tests/integration/IT_W28E603_Phase25/test_it_w28e603_a2a_skills.py	PASS
+WEBUI.1	Server-rendered structure WebUI workflows (§25 #11)	src/index_server/admin_ui.py	/admin/ui/structure page + wired app.js	pytest tests/integration/IT_W28E603_Phase25/test_it_w28e603_webui.py	PASS
+REG.8	Full integration tier after A2A+WebUI (regression)	current/full-test-suite-results.md	58 passed 0 failed	pytest tests/integration --env tests/env-IT	PASS
+LINK.1	Structure-to-VDB/chunk record linkage (§25 #6)	src/index_tools/structure/service.py	vdb_record_ids/chunk_ids fields + link_to_vdb_records tool/route	pytest tests/unit/UT_W28E603_Phase25::test_link_to_vdb_records	PASS
+REG.9	Full unit suite after VDB linkage (regression)	current/test-unit-regression-full.log	211 passed 0 failed	pytest tests/unit --env tests/env-UT	PASS
+DBMATRIX.1	Full SQL dialect matrix core behaviour (§25 #5)	current/db-matrix-proof.txt	sqlite+postgres16+mariadb11 round-trip 3 passed	pytest tests/system/ST_W28E603_StructureBackendMatrix (real backends on server2)	PASS
+DBMCP.1	db-mcp-service reads/presents structure DB END-TO-END LIVE (§25 #13)	current/db-mcp-13-e2e-proof.txt	live db-mcp: 12 structure_ tables; data.read 200 / data.create 403; audit service=db-mcp-server	live MCP surface RBAC matrix + audit.log.jsonl on running db-mcp (server2)	PASS
+MERGE.1	Current remote/main fetched, no conflicts (amendment)	current/merge-rebase-conflict-proof.md	origin/main is ancestor of HEAD; lane pins api-kit 0.13.0 = main	git merge-base --is-ancestor origin/main HEAD	PASS
+BUILD.1	Image built from merged worktree state	current/local-docker-smoke.md	cloud-dog/index-retriever-mcp-server:latest sha256:14e1eab4	docker-build.sh latest on server2	PASS
+LSMOKE.1	Local Docker smoke (health/version/SPA/MCP)	current/local-docker-smoke.md	/health ok db+vdb(chroma)+embedding; SPA+version on all surfaces	docker run image + curl probes	PASS
+DEPLOY.1	Preprod deploy via approved path (targeted)	current/preprod-deploy-proof.md	terraform apply 2 add 0 change 2 destroy; image 14e1eab4	terraform apply -target indexretriever	PASS
+PSMOKE.1	Preprod target smoke after deploy	current/preprod-target-smoke.md	indexretriever0 /health ok db+vdb(qdrant)+embedding; structure routes 401 deployed	curl https://indexretriever0.cloud-dog.net	PASS
+SENTINEL.1	Sentinel WebUI smoke (5 services, real browser)	current/sentinel-webui-smoke.md	5/5 SPAs load+mount chromium no fatal JS errors	playwright chromium SPA-root load + console	PASS
+REG.10	W28E-604/W28E-614 regression from merged state	current/w28e-604-w28e-614-regression-proof.md	317 passed 0 failed; estate WebUI clean	pytest unit+quality+integration	PASS

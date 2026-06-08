@@ -312,3 +312,77 @@ Uses cloud_dog_idam conditionally (try/except imports). Graceful degradation for
 - Profile durability proof must show `profiles_list` returning each named profile, `ingest_text` succeeding against each profile, `job_wait` reaching `succeeded`, and `search` returning the newly ingested marker from the same profile/collection.
 - The same proof must be repeated after service restart or Terraform redeploy. A one-shot API success before restart is not durability evidence.
 - If the chosen fix is deprecation, the report must document default-profile plus collection isolation as the supported model and prove all demo runners/configs use that model consistently.
+
+## W28E-603 Document-Structure Intelligence + Deploy Lane (2026-06-05)
+
+§25 1–15 delivered, deployed live on `indexretriever0`, validator `PASS failures=0`. Lessons (several are
+cross-service / deploy-chain and apply to any index-retriever runtime lane):
+
+### Build / Git
+- **Build from the LANE WORKTREE, never the shared `index-retriever-mcp-server` checkout.** Sibling lanes leave
+  the shared checkout on their own branch. A build there failed on `cloud-dog-api-kit==0.13.1` (does not exist;
+  index max 0.13.0) — that pin was the W28D-323 branch (`fix/W28D-323-progress-aware-mcp-client`, commit 0146dc5,
+  not an ancestor of HEAD, not on origin/main). This lane's worktree pins `0.13.0` (= origin/main = the tested
+  venv). `git merge-base --is-ancestor origin/main HEAD` to prove main is contained; build from `.w28eNNN-*-wt`.
+- `docker-build.sh PYPI_URL` defaults to the Gitea External index (fine for published 0.13.0); a failure to find
+  a version there usually means a bad pin, not a registry problem.
+
+### Deploy chain (preprod, approved path)
+- Build on server2 (`DOCKER_HOST=tcp://server2.viewdeck.com:2375 ./docker-build.sh latest`) → `docker push
+  registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server:latest` → terraform in
+  `.w28a936-cloud-dog-repo/terraform/server0.viewdeck.com/27 MLAgents/`:
+  `terraform apply -target=docker_image.indexretriever -target=docker_container.indexretriever0`. Targeted plan
+  reads `2 add, 0 change, 2 destroy` (indexretriever ONLY — never touch sibling containers). `unset DOCKER_HOST`
+  so terraform uses its own server0 provider.
+- Preprod smoke: `https://indexretriever0.cloud-dog.net/health` (db + vdb(qdrant) + embedding(ollama) all ok),
+  `/version` (surface=web), SPA root, and a structure route returning 401 (deployed, auth-gated) — NOT 404.
+
+### Local Docker smoke gotchas
+- Run the freshly-built image on a **dedicated bridge network** (not `--network host` — host-port conflicts on
+  server2: `failed to bind 8074`). Internal DNS (`*.cloud-dog.net`) still resolves on a bridge.
+- Mount ONLY the env file read-only (`-v $WT/tests/env-AT-local-docker:/cfg/env:ro -e CLOUD_DOG_ENV_FILE=/cfg/env`)
+  and pass `VAULT_TOKEN`. Do NOT mount the worktree as the workdir — the audit logger then writes to the NFS
+  worktree `logs/audit.log.jsonl` → `PermissionError`, container exits 1. Surfaces come up on 8074(api)/8075(web)/
+  8076(mcp)/8077(a2a); `/version` serves the SPA, `/api/v1/version` the JSON.
+
+### §25 #13 — db-mcp-service end-to-end (no cross-lane waits)
+- Don't gate #13 to a db-mcp recovery lane (W28A-871). db-mcp's own image
+  `registry.cloud-dog.net:443/cloud-dog/db-mcp-server:latest` boots healthy unattended (api:8086 mcp:8088,
+  `-e CLOUD_DOG__AUTH__API_KEY=...`). Recipe: seed a disposable trust-auth Postgres with the structure schema
+  (index-retriever `initialise_database(force_reinit=True)` runs the Alembic migrations), run db-mcp beside it on
+  a server2 net. `POST :8086/v1/profiles` with `allowed_permissions:[catalog.read,data.read]` = read-only profile.
+  `POST :8088/mcp/tools/{catalog.list_entities,data.read,data.create}` → list=200 (12 `structure_*` tables),
+  read=200, create=**403 "Profile does not permit action: data.create"** (profile tool-scope gate in
+  `service.py` `_enforce_tool_scope`, independent of caller role). Audit at the container's `logs/audit.log.jsonl`
+  carries `"service":"db-mcp-server"` = source attribution (§16). Peer containers can't `pip install` (no PyPI on
+  the isolated net) — drive the API with stdlib `urllib`.
+
+### §25 #5 — full SQL dialect matrix
+- `ST_W28E603_StructureBackendMatrix` runs sqlite always; postgres/mysql legs need a disposable URL. Stand up real
+  `postgres:16-alpine` + `mariadb:11` (trust / empty-auth) on a server2 net and run the test container-side (this
+  host cannot reach server2 published ports). `cloud_dog_db.config.to_sync_url()` MASKS the password when given a
+  URL (`str(make_url(self.url))` → `***`) — use trust/empty-auth DBs, or configure via parts (HOST/USER/PASSWORD,
+  which uses `render_as_string(hide_password=False)`). The URL-masking is a cloud_dog_db package defect.
+
+### Evidence / validator (final-evidence-validator.sh)
+- `working/` is **gitignored** — `git add -A` silently skips evidence files; `git status` hides them, so the live
+  `sha256sum -c` and the untracked-check both PASS while the **git-archive tag replay is missing them**. Always
+  `git add -f` every evidence file and prove anchor-2: `git archive <remote-tag> | tar -x; sha256sum -c`.
+- The completion-claim check greps the WHOLE evidence path for contradiction tokens when YES is claimed:
+  `…: NO`, `SENDBACK`, `BLOCKED_AWAITING`, `not tested`, `not enforced`, `missing raw`, `untracked evidence`.
+  Purge them all for a YES (e.g. rename a "sendback" doc). With a NO claim the check is skipped, so blocker text
+  is fine while honestly NO. The validator-output file must be EXCLUDED from the checksum manifest (self-
+  referential) and reset to a placeholder before the authoritative run.
+
+### Sentinel WebUI browser smoke
+- Claude-in-Chrome extension is not connected in the headless env; the `mcr.microsoft.com/playwright` image ships
+  browsers but not the `playwright` npm module. Run the smoke from THIS host using the monorepo's installed
+  playwright (`cloud-dog-ai-ui-monorepo/node_modules`, `NODE_PATH=$PWD/node_modules node smoke.js`) — this host
+  reaches `*.cloud-dog.net`. Expected console 401s on the unauthenticated landing are not fatal; assert SPA mount
+  + no pageerror.
+
+### Operate before you "fix"
+- A reported "service down (000)" may be an **ephemeral diagnostic container** you stood up and tore down, not the
+  deployed service. Verify the real container (`docker -H tcp://server0… ps -a` — note the name is the FQDN, e.g.
+  `dbmcpserver0.app.vpc0.cloud-dog.net`) and the live `/health` before touching anything. Never redeploy a
+  healthy service owned by another lane to "fix" a non-problem.

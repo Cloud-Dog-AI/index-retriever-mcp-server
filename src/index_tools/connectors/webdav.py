@@ -16,8 +16,11 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
+from cloud_dog_config import get_config
 from cloud_dog_storage.backends.webdav import WebDavStorage
-from cloud_dog_storage.config.models import WebDavConfig
+from cloud_dog_storage.config.models import StorageConfig, WebDavConfig
+from cloud_dog_storage.errors import ConfigurationError
+from cloud_dog_storage.factory import build_storage_backend
 
 from index_tools.connectors.models import FetchPlan
 
@@ -28,6 +31,34 @@ def resolve(uri: str) -> FetchPlan:
     if parsed.scheme not in {"webdav", "webdavs", "http", "https"}:
         raise ValueError("Invalid WebDAV URI")
     return FetchPlan(source_type="webdav", location=uri, metadata={"host": parsed.netloc})
+
+
+def _cfg(field: str) -> str:
+    """Resolve a WebDAV connector config value via cloud_dog_config (env/Vault-backed)."""
+    for key in (f"connectors.webdav.{field}", f"storage.webdav.{field}"):
+        try:
+            value = get_config(key)
+        except Exception:
+            value = None
+        if value not in (None, ""):
+            return str(value).strip()
+    return ""
+
+
+def fetch(plan: FetchPlan, *, timeout_seconds: float = 30.0) -> bytes:
+    """Fetch a WebDAV object through the cloud_dog_storage WebDAV backend (RULES §1.4).
+
+    The server ``base_url`` and credentials resolve from platform config
+    (``storage.webdav.*`` / ``connectors.webdav.*``); the object path comes from the
+    resolved plan. Raises ``ConfigurationError`` when the backend is not configured.
+    """
+    base_url = _cfg("base_url")
+    if not base_url:
+        raise ConfigurationError("WebDAV fetch requires storage.webdav.base_url", backend_name="webdav")
+    config = WebDavConfig(base_url=base_url, username=_cfg("username"), password=_cfg("password"))
+    backend = build_storage_backend(StorageConfig(backend="webdav", webdav=config, timeout_s=int(timeout_seconds)))
+    object_path = urlparse(plan.location).path or "/"
+    return backend.read_bytes(object_path)
 
 
 def build_storage(

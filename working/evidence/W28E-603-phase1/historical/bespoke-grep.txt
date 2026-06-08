@@ -1,0 +1,17 @@
+# W28E-603 Phase 1 — §1.4 / §6.88 bespoke-pattern grep (zero is required)
+# scope: new + modified W28E-603 code
+
+## direct NoSQL drivers (pymongo/couchdb/elasticsearch/opensearchpy/cassandra)
+NONE
+## bespoke logging (import logging / getLogger / basicConfig / __import__ logging)
+NONE
+## bespoke cache (functools.lru_cache / @lru_cache)
+NONE
+## bespoke http singletons (httpx/requests)
+NONE
+## bespoke DB engine/connection (sqlite3/create_engine/psycopg/pymysql)
+NONE
+## direct os.environ/getenv in structure service+repo
+NONE
+## VDB writes for canonical structure (must be NONE — VDB is derived-only, HG.4)
+NONE

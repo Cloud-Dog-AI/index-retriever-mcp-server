@@ -1,0 +1,3 @@
+A  working/evidence/W28E-603-phase1/git-proof.txt
+A  working/evidence/W28E-603-phase1/remote-proof.txt
+ M working/evidence/W28E-603-phase1/scoped-clean-proof.txt

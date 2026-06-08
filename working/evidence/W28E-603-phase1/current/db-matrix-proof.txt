@@ -1,0 +1,25 @@
+# W28E-603 §25 #5 — full SQL dialect matrix proof (real backends)
+Date context: 2026-06-04. Run on server2 docker (DOCKER_HOST=tcp://server2.viewdeck.com:2375).
+Disposable, isolated docker network w28e603-net; ephemeral --rm containers; trust/empty auth (throwaway test DBs).
+
+## Backends
+postgresql: postgres (PostgreSQL) 16.14  (image postgres:16-alpine, container w28e603-pg)
+mysql:      mariadb from 11.8.8-MariaDB, client 15.2 for debian-linux-gnu (x86_64) using  EditLine wrapper  (image mariadb:11, container w28e603-mysql)
+sqlite:     in-process (local guaranteed leg)
+
+## Schema build path
+initialise_database(force_reinit=True) -> cloud_dog_db MigrationRunner.upgrade('head') (Alembic), then
+StructureService create/get/list/list_pages/delete round-trip + KeyError-after-delete assertion.
+
+## Finding (owner: cloud_dog_db package maintainer — NOT index-retriever)
+cloud_dog_db/config/models.py:115 to_sync_url() returns str(make_url(self.url)) which MASKS the password
+as '***' (SQLAlchemy URL.__str__ default). The CLOUD_DOG_DB__URL config path therefore sends a masked
+password and fails auth on a passworded DB. The parts path (line 133) is correct: render_as_string(hide_password=False).
+Workaround here: disposable trust/empty-auth DBs (auth is not part of §25 #5; dialect coverage is).
+Recommended canonical fix: to_sync_url should use make_url(self.url).render_as_string(hide_password=False).
+
+## pytest result
+tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py::test_structure_backend_matrix_round_trip[sqlite] PASSED [ 33%]
+tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py::test_structure_backend_matrix_round_trip[postgresql] PASSED [ 66%]
+tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py::test_structure_backend_matrix_round_trip[mysql] PASSED [100%]
+============================== 3 passed in 1.10s ===============================

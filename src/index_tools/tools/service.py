@@ -842,6 +842,21 @@ class IndexService:
         self._loop_thread = None
         self._loop_ready.wait(timeout=float(_cfg("queue.startup_wait_seconds", 1.0) or 1.0))
 
+    @property
+    def structure(self) -> Any:
+        """Lazy transport-neutral document-structure service (W28E-603 Phase 1).
+
+        Constructed on first access and cached, sharing this service's audit logger so
+        structure create/delete events land in the same audit stream.
+        """
+        existing = getattr(self, "_structure_service", None)
+        if existing is None:
+            from index_tools.structure import StructureService
+
+            existing = StructureService(audit_logger=self.audit_logger)
+            self._structure_service = existing
+        return existing
+
     def close(self) -> None:
         """Stop service-owned background workers."""
         if self._closed:
@@ -2170,26 +2185,8 @@ class IndexService:
         if key_id in self.api_keys:
             raise ValueError(f"API key already exists: {key_id}")
         token = str(payload.get("token", ""))
-        idam_key_id = ""
-        if self._idam_api_keys is not None:
-            owner_id = str(payload.get("user_id") or actor or "api-key-owner")
-            generated_token, metadata = self._idam_api_keys.generate(owner_id)
-            if token and IDAMApiKey is not None and idam_hash_api_key is not None:
-                self._idam_api_keys._keys[metadata.api_key_id] = IDAMApiKey(
-                    api_key_id=metadata.api_key_id,
-                    owner_user_id=owner_id,
-                    key_prefix=token[:3],
-                    key_hash=idam_hash_api_key(token),
-                    status="active",
-                    expires_at=metadata.expires_at,
-                )
-            else:
-                token = generated_token
-            idam_key_id = metadata.api_key_id
-        if not token:
-            token = f"cd_{uuid4().hex}"
-        # Inherit owner user's role if no explicit roles provided
-        # Accept both "user_id" and "owner_user_id" for the owner reference
+        # Resolve the key's roles up front: explicit roles if given, else inherit the
+        # owner user's roles. Accept both "user_id" and "owner_user_id" for the owner.
         _owner_uid = payload.get("user_id") or payload.get("owner_user_id") or ""
         explicit_roles = payload.get("roles")
         if not explicit_roles and _owner_uid:
@@ -2203,6 +2200,32 @@ class IndexService:
                     if idam_role:
                         explicit_roles = [str(idam_role)]
         key_roles = set(str(item) for item in (explicit_roles or ["reader"]))
+
+        # Register the key under a KEY-SCOPED identity that carries the KEY's roles, so the
+        # key's permissions are governed by its own assigned roles — not by whatever roles the
+        # owner user happens to hold. Resolving an api-key then yields the key's roles. (CFG-10 / FR-05)
+        idam_key_id = ""
+        key_principal = f"apikey:{key_id}"
+        if self._idam_api_keys is not None:
+            generated_token, metadata = self._idam_api_keys.generate(key_principal)
+            if token and IDAMApiKey is not None and idam_hash_api_key is not None:
+                self._idam_api_keys._keys[metadata.api_key_id] = IDAMApiKey(
+                    api_key_id=metadata.api_key_id,
+                    owner_user_id=key_principal,
+                    key_prefix=token[:3],
+                    key_hash=idam_hash_api_key(token),
+                    status="active",
+                    expires_at=metadata.expires_at,
+                )
+            else:
+                token = generated_token
+            idam_key_id = metadata.api_key_id
+        if not token:
+            token = f"cd_{uuid4().hex}"
+        # Bind the key's roles to its key-scoped identity in the runtime authoriser so
+        # api-key authentication resolves to the key's roles.
+        if self._idam_auth is not None and hasattr(self._idam_auth, "sync_identity_roles"):
+            self._idam_auth.sync_identity_roles(key_principal, key_roles)
         token_hash = sha256(token.encode("utf-8")).hexdigest()
         record = ApiKeyRecord(
             key_id=key_id,

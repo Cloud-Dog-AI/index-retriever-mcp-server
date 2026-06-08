@@ -46,6 +46,14 @@ AGENT_CARD: dict[str, Any] = {
         {"id": "source_config_get", "name": "Get Source Config", "description": "Read a connector source configuration"},
         {"id": "source_config_update", "name": "Update Source Config", "description": "Update a connector source configuration"},
         {"id": "source_config_delete", "name": "Delete Source Config", "description": "Delete a connector source configuration"},
+        {"id": "structure_extract", "name": "Extract Document Structure", "description": "Extract canonical document structure (pages/blocks/sections/styles/tables) from text or a file (W28E-603)"},
+        {"id": "structure_document_get", "name": "Get Document Structure", "description": "Retrieve a canonical structure document with its child objects (W28E-603)"},
+        {"id": "structure_outline_get", "name": "Get Document Outline", "description": "Retrieve the section-hierarchy outline of a structure document (W28E-603)"},
+        {"id": "structure_corpus_create", "name": "Create Structure Corpus", "description": "Create a named corpus of structure documents for cross-document analysis (W28E-603)"},
+        {"id": "structure_corpus_analyse", "name": "Analyse Structure Corpus", "description": "Derive section/style/layout/table patterns across a corpus (W28E-603)"},
+        {"id": "structure_corpus_patterns_get", "name": "Get Corpus Patterns", "description": "Retrieve derived structure patterns for a corpus (W28E-603)"},
+        {"id": "structure_template_generate", "name": "Generate Structure Template", "description": "Generate a reusable structure/style template blueprint from corpus patterns (W28E-603)"},
+        {"id": "structure_template_export", "name": "Export Structure Template", "description": "Export a structure template as Markdown or JSON (W28E-603)"},
     ],
 }
 

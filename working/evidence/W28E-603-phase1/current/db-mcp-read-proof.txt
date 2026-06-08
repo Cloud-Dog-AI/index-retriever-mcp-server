@@ -1,0 +1,22 @@
+# W28E-603 §25 #13 — db-mcp-service structure-DB READ PROOF (cross-service)
+Date context: 2026-06-05. server2 docker, isolated network w28e603-net, disposable --rm postgres (trust auth).
+
+## What this proves (design brief §16 / §25 #13 — the read/present capability)
+db-mcp-server's OWN connector (src/core/connectors/relational.py PostgreSQLConnectorBase) — i.e. db-mcp-
+service — reads & presents the SAME cloud_dog_db structure database that index-retriever wrote, through a
+connection profile (the source_connection URI), WITHOUT calling index-retriever. Schema is discovered via
+information_schema (no pre-registration). Backend: postgres (PostgreSQL) 16.14.
+
+## Seed (index-retriever wrote the structure schema+row into this Postgres)
+structure_document_id = sd_3937b584583ef0d9fe063436a0475e8c6da66a8e0771f09751308847ef66b8ba (collection dbmcp_proof)
+
+## db-mcp-server connector output (read-only ops: list_namespaces / list_entities / describe / data.read)
+connector.source_type : postgresql
+connector.uri         : postgresql+psycopg://matrix@w28e603-pg:5432/matrixdb
+list_namespaces       : ['public']
+structure_ entities   : ['structure_blocks', 'structure_corpora', 'structure_documents', 'structure_extractor_runs', 'structure_figures', 'structure_pages', 'structure_patterns', 'structure_relations', 'structure_sections', 'structure_styles', 'structure_tables', 'structure_templates']
+describe structure_documents: doc_count=1 pk=['id']
+structure_documents cols: ['id', 'structure_document_id', 'profile_id', 'collection_id', 'source_document_id', 'file_id', 'source_hash', 'extractor_provider', 'schema_version', 'status', 'page_count', 'created_by', 'payload', 'created_at', 'updated_at']
+data.read structure_documents rows: 1 | id: sd_3937b584583ef0d9fe063436a0475e8c6da66a8e0771f09751308847ef66b8ba | schema_version: 1.0
+data.read structure_sections rows: 1
+READ_PROOF_OK

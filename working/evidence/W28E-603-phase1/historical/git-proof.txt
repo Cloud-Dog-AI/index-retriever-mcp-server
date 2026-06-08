@@ -1,0 +1,4 @@
+branch: w28e-603-phase1-structure
+tag: w28e-603-phase1-final
+deliverable commits: 60a3a70 + 465fe94 (+ final evidence commit)
+pushed to GitLab origin: yes (verify via ls-remote)

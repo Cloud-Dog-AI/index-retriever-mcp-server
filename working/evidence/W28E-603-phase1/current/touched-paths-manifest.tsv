@@ -1,0 +1,53 @@
+path	repo	reason	created_or_modified_by_lane	commit_hash
+src/index_tools/structure/__init__.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/structure/ids.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/structure/models.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/structure/repository.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/structure/service.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/db/structure_models.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/db/__init__.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+database/migrations/cloud_dog_db/versions/20260604_0002_structure_foundation.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/tools/registry.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/tools/service.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_server/api_server.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_server/mcp_server.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/connectors/s3.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/connectors/webdav.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/connectors/gdrive.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/connectors/resolver.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+tests/unit/UT_W28E603_Structure/test_ut_w28e603_structure.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+tests/integration/IT_W28E603_StructureTransports/test_it_w28e603_structure_transports.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+tests/unit/UT1_40/test_ut1_40_tool_registry.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+tests/unit/UT1_46/test_ut1_46_w28c427r5_connector_matrix.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+tests/system/ST1_14/test_st1_14_database_migration.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+tests/quality/QT_COMPLIANCE/conftest.py	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+docs/MCP_DOCUMENTATION.md	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+docs/REQUIREMENTS.md	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+docs/TESTS.md	index-retriever-mcp-server	W28E-603 Phase 1 / pre-existing-failure fix	yes	884d501bae514ffcca77c4e1f3f7ff40ce784ad7
+src/index_tools/structure/extract.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+src/index_tools/structure/corpus.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+src/index_tools/structure/templates.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+src/index_tools/structure/corpus_models.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+src/index_tools/structure/corpus_repository.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+src/index_tools/db/corpus_models.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+database/migrations/cloud_dog_db/versions/20260604_0003_structure_corpus_templates.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+tests/unit/UT_W28E603_Phase25/test_ut_w28e603_phase25.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+tests/integration/IT_W28E603_Phase25/test_it_w28e603_phase25.py	index-retriever-mcp-server	W28E-603 Phase 2-5 extraction/corpus/templates	yes	97e7848cd23510b46cf0aa9c80dddacde46cb6ff
+src/index_tools/structure/corpus_models.py	index-retriever-mcp-server	W28E-603 Phases 2-5 (extraction/corpus/templates)	yes	pending-this-commit
+src/index_tools/structure/extract.py	index-retriever-mcp-server	W28E-603 Phases 2-5 (extraction/corpus/templates)	yes	pending-this-commit
+src/index_tools/structure/corpus.py	index-retriever-mcp-server	W28E-603 Phases 2-5 (extraction/corpus/templates)	yes	pending-this-commit
+src/index_tools/structure/templates.py	index-retriever-mcp-server	W28E-603 Phases 2-5 (extraction/corpus/templates)	yes	pending-this-commit
+src/index_tools/structure/corpus_repository.py	index-retriever-mcp-server	W28E-603 Phases 2-5 (extraction/corpus/templates)	yes	pending-this-commit
+src/index_tools/db/corpus_models.py	index-retriever-mcp-server	W28E-603 Phases 2-5 (extraction/corpus/templates)	yes	pending-this-commit
+database/migrations/cloud_dog_db/versions/20260604_0003_structure_corpus_templates.py	index-retriever-mcp-server	W28E-603 Phases 2-5 (extraction/corpus/templates)	yes	pending-this-commit
+tests/unit/UT_W28E603_Phase25/test_ut_w28e603_phase25.py	index-retriever-mcp-server	W28E-603 Phases 2-5 (extraction/corpus/templates)	yes	pending-this-commit
+tests/integration/IT_W28E603_Phase25/test_it_w28e603_phase25.py	index-retriever-mcp-server	W28E-603 Phases 2-5 (extraction/corpus/templates)	yes	pending-this-commit
+src/index_tools/structure/service.py	index-retriever-mcp-server	W28E-603 Phases 2-5 wiring + tool catalogue	yes	pending-this-commit
+src/index_tools/tools/registry.py	index-retriever-mcp-server	W28E-603 Phases 2-5 wiring + tool catalogue	yes	pending-this-commit
+src/index_server/mcp_server.py	index-retriever-mcp-server	W28E-603 Phases 2-5 wiring + tool catalogue	yes	pending-this-commit
+src/index_server/api_server.py	index-retriever-mcp-server	W28E-603 Phases 2-5 wiring + tool catalogue	yes	pending-this-commit
+tests/unit/UT1_40/test_ut1_40_tool_registry.py	index-retriever-mcp-server	W28E-603 Phases 2-5 wiring + tool catalogue	yes	pending-this-commit
+docs/MCP_DOCUMENTATION.md	index-retriever-mcp-server	W28E-603 Phases 2-5 wiring + tool catalogue	yes	pending-this-commit
+docs/REQUIREMENTS.md	index-retriever-mcp-server	W28E-603 Phases 2-5 wiring + tool catalogue	yes	pending-this-commit
+docs/TESTS.md	index-retriever-mcp-server	W28E-603 Phases 2-5 wiring + tool catalogue	yes	pending-this-commit

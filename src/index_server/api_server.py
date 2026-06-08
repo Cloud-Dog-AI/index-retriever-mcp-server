@@ -67,7 +67,7 @@ try:
 except ImportError:  # pragma: no cover - optional runtime dependency
     psutil = None
 
-from index_server.admin_ui import admin_ui_script, admin_ui_styles, collections_page, profiles_page, security_page
+from index_server.admin_ui import admin_ui_script, admin_ui_styles, collections_page, profiles_page, security_page, structure_page
 from index_server.auth.middleware import AuthMiddleware, AuthResult
 from index_server.logging_runtime import init_platform_logging, shutdown_platform_logging
 from index_server.mcp_server import build_registry, execute_tool
@@ -1214,6 +1214,10 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         """Serve the legacy security management page."""
         return HTMLResponse(content=security_page())
 
+    def admin_ui_structure() -> HTMLResponse:
+        """Serve the document-structure inspection / corpus / template workflow page (W28E-603)."""
+        return HTMLResponse(content=structure_page())
+
     def admin_ui_app_js() -> Response:
         """Serve the legacy admin UI client script."""
         return Response(content=admin_ui_script(), media_type="application/javascript")
@@ -1785,6 +1789,224 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=f"File not found: {file_id}") from exc
 
+    # -- W28E-603 Document Structure (Phase 1: model & persistence foundation) --
+    def structure_health(request: Request) -> dict[str, Any]:
+        """Report document-structure subsystem health, including the canonical store probe."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        return active_service.structure.health()
+
+    def structure_documents_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        """Create or idempotently replace a canonical structure document (RBAC: collection.write)."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        try:
+            return active_service.structure.create(payload, actor=identity.user_id, roles=identity.roles)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    def structure_documents_list(
+        profile: str | None = None,
+        collection: str | None = None,
+        status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+        request: Request = None,
+    ) -> dict[str, Any]:
+        """List canonical structure documents with optional filters and pagination."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        return active_service.structure.list(
+            profile_id=profile,
+            collection_id=collection,
+            status=status,
+            limit=limit,
+            offset=offset,
+        )
+
+    def structure_documents_get(
+        structure_document_id: str,
+        include: str | None = None,
+        request: Request = None,
+    ) -> dict[str, Any]:
+        """Retrieve a structure document by id, optionally including child objects (comma-separated)."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        include_list = [item.strip() for item in include.split(",") if item.strip()] if include else None
+        try:
+            return active_service.structure.get(structure_document_id, include=include_list)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Structure document not found: {structure_document_id}") from exc
+
+    def structure_documents_delete(structure_document_id: str, request: Request) -> dict[str, Any]:
+        """Delete a structure document and all of its child objects (RBAC: collection.write)."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        try:
+            return active_service.structure.delete(structure_document_id, actor=identity.user_id, roles=identity.roles)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Structure document not found: {structure_document_id}") from exc
+
+    def structure_documents_outline(structure_document_id: str, request: Request) -> dict[str, Any]:
+        """Return the section hierarchy (outline) for a structure document as a nested tree."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        try:
+            return active_service.structure.outline(structure_document_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Structure document not found: {structure_document_id}") from exc
+
+    def structure_documents_pages(structure_document_id: str, request: Request) -> dict[str, Any]:
+        """List page-level layout records for a structure document."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        try:
+            return active_service.structure.list_pages(structure_document_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Structure document not found: {structure_document_id}") from exc
+
+    def structure_documents_sections(structure_document_id: str, request: Request) -> dict[str, Any]:
+        """List section records for a structure document."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        try:
+            return active_service.structure.list_sections(structure_document_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Structure document not found: {structure_document_id}") from exc
+
+    # -- W28E-603 Phase 2: extraction --
+    def structure_extract(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        """Extract canonical structure from text/file via a parser provider and persist it."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        try:
+            return active_service.structure.extract_text(
+                str(payload.get("text", "")),
+                profile=str(payload.get("profile", "default")),
+                collection=str(payload.get("collection", "default")),
+                source_uri=payload.get("source_uri"),
+                source_filename=payload.get("source_filename"),
+                provider=str(payload.get("provider", "internal")),
+                actor=identity.user_id,
+                roles=identity.roles,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    def structure_link_vdb(structure_document_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        """Link a structure document to existing VDB record/chunk ids (§25 #6)."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        try:
+            return active_service.structure.link_to_vdb_records(
+                structure_document_id,
+                vdb_record_ids=payload.get("vdb_record_ids"),
+                chunk_ids=payload.get("chunk_ids"),
+                source_document_id=payload.get("source_document_id"),
+                actor=identity.user_id, roles=identity.roles,
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Structure document not found: {structure_document_id}") from exc
+
+    # -- W28E-603 Phase 4: corpus --
+    def structure_corpus_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        """Create a corpus (named set of structure documents)."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        try:
+            return active_service.structure.corpus.create(payload, actor=identity.user_id, roles=identity.roles)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    def structure_corpus_list(profile: str | None = None, limit: int = 50, offset: int = 0, request: Request = None) -> dict[str, Any]:
+        """List corpora with optional profile filter."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        return active_service.structure.corpus.list(profile_id=profile, limit=limit, offset=offset)
+
+    def structure_corpus_get(corpus_id: str, request: Request) -> dict[str, Any]:
+        """Retrieve a corpus by id."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        try:
+            return active_service.structure.corpus.get(corpus_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Corpus not found: {corpus_id}") from exc
+
+    def structure_corpus_update(corpus_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        """Update a corpus."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        try:
+            return active_service.structure.corpus.update(corpus_id, payload, actor=identity.user_id, roles=identity.roles)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Corpus not found: {corpus_id}") from exc
+
+    def structure_corpus_delete(corpus_id: str, request: Request) -> dict[str, Any]:
+        """Delete a corpus and its derived patterns."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        try:
+            return active_service.structure.corpus.delete(corpus_id, actor=identity.user_id, roles=identity.roles)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Corpus not found: {corpus_id}") from exc
+
+    def structure_corpus_analyse(corpus_id: str, request: Request) -> dict[str, Any]:
+        """Analyse a corpus to derive patterns + report."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        try:
+            return active_service.structure.corpus.analyse(corpus_id, actor=identity.user_id, roles=identity.roles)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Corpus not found: {corpus_id}") from exc
+
+    def structure_corpus_patterns(corpus_id: str, pattern_type: str | None = None, request: Request = None) -> dict[str, Any]:
+        """Retrieve derived patterns for a corpus."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        try:
+            return active_service.structure.corpus.patterns_get(corpus_id, pattern_type=pattern_type)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Corpus not found: {corpus_id}") from exc
+
+    # -- W28E-603 Phase 5: templates --
+    def structure_template_generate(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        """Generate a template blueprint from a corpus's patterns."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        try:
+            return active_service.structure.templates.generate(str(payload["corpus_id"]), name=payload.get("name"), actor=identity.user_id, roles=identity.roles)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Corpus not found: {payload.get('corpus_id')}") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    def structure_template_list(profile: str | None = None, corpus_id: str | None = None, limit: int = 50, offset: int = 0, request: Request = None) -> dict[str, Any]:
+        """List generated templates."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        return active_service.structure.templates.list(profile_id=profile, corpus_id=corpus_id, limit=limit, offset=offset)
+
+    def structure_template_get(template_id: str, request: Request) -> dict[str, Any]:
+        """Retrieve a template by id."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        try:
+            return active_service.structure.templates.get(template_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Template not found: {template_id}") from exc
+
+    def structure_template_export(template_id: str, format: str = "markdown", request: Request = None) -> dict[str, Any]:
+        """Export a template as Markdown or JSON."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        try:
+            return active_service.structure.templates.export(template_id, format=format)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Template not found: {template_id}") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     assets_dir = _ui_assets_dir()
     if path_utils.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="ui-assets")
@@ -1876,6 +2098,15 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             "ingest_text": "ingest_text",
             "search": "search",
             "retrieve": "retrieve",
+            # W28E-603 structure skills (§25 #12)
+            "structure_extract": "structure_extract",
+            "structure_document_get": "structure_document_get",
+            "structure_outline_get": "structure_outline_get",
+            "structure_corpus_create": "structure_corpus_create",
+            "structure_corpus_analyse": "structure_corpus_analyse",
+            "structure_corpus_patterns_get": "structure_corpus_patterns_get",
+            "structure_template_generate": "structure_template_generate",
+            "structure_template_export": "structure_template_export",
         }
         tool_name = tool_map.get(skill_id)
         if tool_name is None:
@@ -1959,6 +2190,14 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         A2ASkill(id="source_config_get", name="Get Source Config", description="Read a connector source configuration"),
         A2ASkill(id="source_config_update", name="Update Source Config", description="Update a connector source configuration"),
         A2ASkill(id="source_config_delete", name="Delete Source Config", description="Delete a connector source configuration"),
+        A2ASkill(id="structure_extract", name="Extract Document Structure", description="Extract canonical document structure from text or a file (W28E-603)"),
+        A2ASkill(id="structure_document_get", name="Get Document Structure", description="Retrieve a canonical structure document with its child objects (W28E-603)"),
+        A2ASkill(id="structure_outline_get", name="Get Document Outline", description="Retrieve the section-hierarchy outline of a structure document (W28E-603)"),
+        A2ASkill(id="structure_corpus_create", name="Create Structure Corpus", description="Create a named corpus of structure documents (W28E-603)"),
+        A2ASkill(id="structure_corpus_analyse", name="Analyse Structure Corpus", description="Derive section/style/layout/table patterns across a corpus (W28E-603)"),
+        A2ASkill(id="structure_corpus_patterns_get", name="Get Corpus Patterns", description="Retrieve derived structure patterns for a corpus (W28E-603)"),
+        A2ASkill(id="structure_template_generate", name="Generate Structure Template", description="Generate a structure/style template blueprint from corpus patterns (W28E-603)"),
+        A2ASkill(id="structure_template_export", name="Export Structure Template", description="Export a structure template as Markdown or JSON (W28E-603)"),
     ]
     app.post(f"{_CANONICAL_A2A_BASE_PATH}/tasks")(a2a_submit_task)
     app.post("/tasks")(a2a_submit_task)
@@ -1974,6 +2213,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get("/admin/ui/collections")(admin_ui_collections)
     app.get("/collections")(collections_ui)
     app.get("/admin/ui/security")(admin_ui_security)
+    app.get("/admin/ui/structure")(admin_ui_structure)
     app.get("/admin/ui/app.js")(admin_ui_app_js)
     app.get("/admin/ui/styles.css")(admin_ui_styles_css)
     app.get("/api-docs", include_in_schema=False)(api_docs_page)
@@ -2035,6 +2275,31 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get(f"{_LEGACY_API_BASE_PATH}/files/{{file_id}}", include_in_schema=False)(files_get)
     app.get(f"{_LEGACY_API_BASE_PATH}/files/{{file_id}}/download", include_in_schema=False)(files_download)
     app.delete(f"{_LEGACY_API_BASE_PATH}/files/{{file_id}}", include_in_schema=False)(files_delete)
+    # W28E-603 document structure (Phase 1) — separate namespace from search/retrieve/ingest (design brief §12).
+    app.get(f"{api_base_path}/structure/health")(structure_health)
+    app.post(f"{api_base_path}/structure/documents")(structure_documents_create)
+    app.get(f"{api_base_path}/structure/documents")(structure_documents_list)
+    app.get(f"{api_base_path}/structure/documents/{{structure_document_id}}")(structure_documents_get)
+    app.delete(f"{api_base_path}/structure/documents/{{structure_document_id}}")(structure_documents_delete)
+    app.get(f"{api_base_path}/structure/documents/{{structure_document_id}}/outline")(structure_documents_outline)
+    app.get(f"{api_base_path}/structure/documents/{{structure_document_id}}/pages")(structure_documents_pages)
+    app.get(f"{api_base_path}/structure/documents/{{structure_document_id}}/sections")(structure_documents_sections)
+    # W28E-603 Phase 2: extraction
+    app.post(f"{api_base_path}/structure/extract")(structure_extract)
+    app.post(f"{api_base_path}/structure/documents/{{structure_document_id}}/vdb-links")(structure_link_vdb)
+    # W28E-603 Phase 4: corpus
+    app.post(f"{api_base_path}/structure/corpora")(structure_corpus_create)
+    app.get(f"{api_base_path}/structure/corpora")(structure_corpus_list)
+    app.get(f"{api_base_path}/structure/corpora/{{corpus_id}}")(structure_corpus_get)
+    app.put(f"{api_base_path}/structure/corpora/{{corpus_id}}")(structure_corpus_update)
+    app.delete(f"{api_base_path}/structure/corpora/{{corpus_id}}")(structure_corpus_delete)
+    app.post(f"{api_base_path}/structure/corpora/{{corpus_id}}/analyse")(structure_corpus_analyse)
+    app.get(f"{api_base_path}/structure/corpora/{{corpus_id}}/patterns")(structure_corpus_patterns)
+    # W28E-603 Phase 5: templates
+    app.post(f"{api_base_path}/structure/templates")(structure_template_generate)
+    app.get(f"{api_base_path}/structure/templates")(structure_template_list)
+    app.get(f"{api_base_path}/structure/templates/{{template_id}}")(structure_template_get)
+    app.get(f"{api_base_path}/structure/templates/{{template_id}}/export")(structure_template_export)
     app.post(f"{api_base_path}/upload")(upload_ingest)
     app.post(f"{_LEGACY_API_BASE_PATH}/upload", include_in_schema=False)(upload_ingest)
     # W28A-648: Audit log JSONL reader for WebUI DataTable display
