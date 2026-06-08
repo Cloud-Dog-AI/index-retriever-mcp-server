@@ -2287,6 +2287,24 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                 methods=[_method],
                 include_in_schema=False,
             )
+    # W28A-876: mount the canonical SHARED cloud_dog_idam idam_v1_router (resource-registry +
+    # rbac-bindings) at the same dual prefixes the admin pages use, so the RBAC page resolves
+    # /v1/idam/v1/* and /api/v1/idam/v1/*. ONE estate-wide implementation.
+    try:
+        from cloud_dog_idam.api.fastapi.router import (
+            idam_v1_router as _idam_v1_router,
+            set_idam_v1_engine as _set_idam_v1_engine,
+        )
+
+        try:
+            from src.index_server.database import get_engine as _get_idam_engine  # type: ignore
+            _set_idam_v1_engine(_get_idam_engine())
+        except Exception:
+            pass
+        for _ipfx in ("/v1", "/api/v1"):
+            app.include_router(_idam_v1_router, prefix=_ipfx, include_in_schema=False)
+    except Exception:
+        pass
     app.get("/admin/collections")(admin_collections_list)
     app.post("/admin/collections")(admin_collections_create)
     app.get("/admin/collections/{collection_id}")(admin_collections_get)
