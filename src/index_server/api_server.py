@@ -2250,31 +2250,43 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.post("/admin/api-keys")(admin_api_keys_create)
     app.post("/admin/api-keys/revoke-token")(admin_api_keys_revoke_token)
     app.delete("/admin/api-keys/{key_id}")(admin_api_keys_delete)
-    # W28A-876: the shared @cloud-dog/idam admin pages call /api/v1/admin/<entity>.
-    # Traefik strips the /api prefix, so these requests reach this api app as
-    # /v1/admin/<entity> — a path the canonical /admin/<entity> routes above do
-    # NOT serve (→ 404). Mirror the IDAM admin handlers under /v1/admin/<entity>
-    # (same handler callables, same auth) so the shared 5 pages resolve.
-    app.get("/v1/admin/users")(admin_users_list)
-    app.post("/v1/admin/users")(admin_users_create)
-    app.get("/v1/admin/users/{user_id}")(admin_users_get)
-    app.put("/v1/admin/users/{user_id}")(admin_users_update)
-    app.delete("/v1/admin/users/{user_id}")(admin_users_delete)
-    app.get("/v1/admin/roles")(admin_roles_list)
-    app.post("/v1/admin/roles")(admin_roles_create)
-    app.get("/v1/admin/roles/{role_id}")(admin_roles_get)
-    app.put("/v1/admin/roles/{role_id}")(admin_roles_update)
-    app.patch("/v1/admin/roles/{role_id}")(admin_roles_update)
-    app.delete("/v1/admin/roles/{role_id}")(admin_roles_delete)
-    app.get("/v1/admin/groups")(admin_groups_list)
-    app.post("/v1/admin/groups")(admin_groups_create)
-    app.get("/v1/admin/groups/{group_id}")(admin_groups_get)
-    app.put("/v1/admin/groups/{group_id}")(admin_groups_update)
-    app.delete("/v1/admin/groups/{group_id}")(admin_groups_delete)
-    app.get("/v1/admin/api-keys")(admin_api_keys_list)
-    app.post("/v1/admin/api-keys")(admin_api_keys_create)
-    app.post("/v1/admin/api-keys/revoke-token")(admin_api_keys_revoke_token)
-    app.delete("/v1/admin/api-keys/{key_id}")(admin_api_keys_delete)
+    # W28A-876: the shared @cloud-dog/idam admin pages call /api/v1/admin/<entity>
+    # (apiBaseUrl=""). index-retriever's Traefik does NOT strip /api on the main
+    # api router, so the backend receives the FULL /api/v1/admin/<entity> path —
+    # which the canonical /admin/<entity> routes above do NOT serve (→ 404, the
+    # shared pages can't load). Mirror the IDAM admin handlers under BOTH
+    # /v1/admin/<entity> and /api/v1/admin/<entity> (same handler callables, same
+    # auth) so the shared 5 pages resolve regardless of /api-strip behaviour.
+    _idam_admin_routes = [
+        ("GET", "/users", admin_users_list),
+        ("POST", "/users", admin_users_create),
+        ("GET", "/users/{user_id}", admin_users_get),
+        ("PUT", "/users/{user_id}", admin_users_update),
+        ("DELETE", "/users/{user_id}", admin_users_delete),
+        ("GET", "/roles", admin_roles_list),
+        ("POST", "/roles", admin_roles_create),
+        ("GET", "/roles/{role_id}", admin_roles_get),
+        ("PUT", "/roles/{role_id}", admin_roles_update),
+        ("PATCH", "/roles/{role_id}", admin_roles_update),
+        ("DELETE", "/roles/{role_id}", admin_roles_delete),
+        ("GET", "/groups", admin_groups_list),
+        ("POST", "/groups", admin_groups_create),
+        ("GET", "/groups/{group_id}", admin_groups_get),
+        ("PUT", "/groups/{group_id}", admin_groups_update),
+        ("DELETE", "/groups/{group_id}", admin_groups_delete),
+        ("GET", "/api-keys", admin_api_keys_list),
+        ("POST", "/api-keys", admin_api_keys_create),
+        ("POST", "/api-keys/revoke-token", admin_api_keys_revoke_token),
+        ("DELETE", "/api-keys/{key_id}", admin_api_keys_delete),
+    ]
+    for _prefix in ("/v1/admin", "/api/v1/admin"):
+        for _method, _suffix, _handler in _idam_admin_routes:
+            app.add_api_route(
+                f"{_prefix}{_suffix}",
+                _handler,
+                methods=[_method],
+                include_in_schema=False,
+            )
     app.get("/admin/collections")(admin_collections_list)
     app.post("/admin/collections")(admin_collections_create)
     app.get("/admin/collections/{collection_id}")(admin_collections_get)
