@@ -1,1 +1,60 @@
-W28A-734-R3 final evidence validator output is captured live below once EVIDENCE/FINAL_PROOF tags exist on origin; the live run is authoritative.
+FINAL_EVIDENCE_VALIDATOR lane=W28A-734-R3 started=2026-06-09T11:31:23+01:00
+Evidence path: /opt/iac/Development/cloud-dog-ai/.w28a734r3-index-retriever-wt/working/evidence/W28A-734-R3
+PASS: evidence path exists
+PASS: evidence files tracked under working/evidence/W28A-734-R3: 26
+PASS: evidence path has no dirty/untracked scoped files
+PASS: live remote branch HEAD found: refs/heads/w28a-734-r3 4ef79643a122bc4078cdabc741ac82fca4589aa7
+PASS: Evidence Matrix header found
+PASS: no future proof language found
+PASS: no forbidden alternate acceptance labels found
+PASS: saved validator outputs are clean
+PASS: mandatory reading proof file found: /opt/iac/Development/cloud-dog-ai/.w28a734r3-index-retriever-wt/working/evidence/W28A-734-R3/00-reading-proof.txt
+PASS: RULES.md reread/version proof found
+PASS: AGENT-LESSONS.md reread/version proof found
+PASS: reading proof answers marker found
+PASS: requirements-map.tsv found: /opt/iac/Development/cloud-dog-ai/.w28a734r3-index-retriever-wt/working/evidence/W28A-734-R3/requirements-map.tsv
+PASS: requirements-map.tsv row width check passed
+PASS: requirements-map.tsv required fields are populated
+PASS: requirements-map.tsv final status column is PASS for every row
+PASS: instruction file found for acceptance comparison: /opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/working/instructions/W28A-734-R3-INDEX-RETRIEVER-IDAM-RENDER-REVERIFY-2026-06-09.md
+PASS: instruction acceptance list has no extractor-compatible rows
+PASS: touched-paths-manifest.tsv found: /opt/iac/Development/cloud-dog-ai/.w28a734r3-index-retriever-wt/working/evidence/W28A-734-R3/touched-paths-manifest.tsv
+PASS: touched-paths-manifest.tsv header is valid
+PASS: external-dirty-ledger.tsv found: /opt/iac/Development/cloud-dog-ai/.w28a734r3-index-retriever-wt/working/evidence/W28A-734-R3/external-dirty-ledger.tsv
+PASS: external-dirty-ledger.tsv header is valid
+PASS: scoped-clean-proof.txt found: /opt/iac/Development/cloud-dog-ai/.w28a734r3-index-retriever-wt/working/evidence/W28A-734-R3/scoped-clean-proof.txt
+PASS: scoped-clean-proof.txt contains required scoped git commands
+PASS: scoped-clean-proof.txt shows no modified/staged/untracked files
+PASS: remote-proof.txt found: /opt/iac/Development/cloud-dog-ai/.w28a734r3-index-retriever-wt/working/evidence/W28A-734-R3/remote-proof.txt
+PASS: remote-proof.txt contains remote/HEAD proof markers
+INFO: saved proof does not embed live git rev-parse HEAD: 4ef79643a122bc4078cdabc741ac82fca4589aa7
+INFO: saved proof does not embed live remote branch HEAD; live auditor verification is authoritative
+INFO: remote-proof.txt records FINAL_PROOF_TAG candidate: W28A-734-R3-FINAL-PROOF-20260609
+PASS: FINAL-TAG-VERIFICATION.txt found: /opt/iac/Development/cloud-dog-ai/.w28a734r3-index-retriever-wt/working/evidence/W28A-734-R3/FINAL-TAG-VERIFICATION.txt
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git rev-parse HEAD
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git ls-remote origin refs/heads/
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git ls-remote origin refs/tags/
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git rev-parse
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: sha256sum -c CHECKSUMS.sha256
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git status
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git diff
+PASS: EVIDENCE_TAG belongs to lane W28A-734-R3
+PASS: EVIDENCE_TAG exists remotely: W28A-734-R3-evidence-20260609 4ef79643a122bc4078cdabc741ac82fca4589aa7
+PASS: FINAL_PROOF_TAG belongs to lane W28A-734-R3
+PASS: FINAL_PROOF_TAG exists remotely: W28A-734-R3-FINAL-PROOF-20260609 4ef79643a122bc4078cdabc741ac82fca4589aa7
+PASS: FINAL_PROOF_TAG is an ancestor of current remote HEAD
+PASS: sha256sum -c CHECKSUMS.sha256 passed
+PASS: close gate found
+PASS: completion claim present
+PASS: no common contradiction markers found with completion claim
+PASS: no substantive raw FAIL found
+PASS: no stale failed artefact names found
+PASS: no unavailable/waived/out-of-scope claims found
+
+Repo: /opt/iac/Development/cloud-dog-ai/.w28a734r3-index-retriever-wt
+HEAD: 4ef79643a122bc4078cdabc741ac82fca4589aa7
+BRANCH: w28a-734-r3
+PASS: repo worktree clean: /opt/iac/Development/cloud-dog-ai/.w28a734r3-index-retriever-wt
+PASS: HEAD equals origin/w28a-734-r3
+
+FINAL_EVIDENCE_VALIDATOR: PASS failures=0
