@@ -1,6 +1,6 @@
-<testsuites id="" name="" tests="2" failures="0" skipped="0" errors="0" time="12.948865">
-<testsuite name="e2e/w28a734r2-idam-5page.spec.ts" timestamp="2026-06-09T07:40:36.311Z" hostname="chromium" tests="1" failures="0" skipped="0" time="7.687" errors="0">
-<testcase name="all 5 PS-71 /idam/* pages render for an authenticated admin" classname="e2e/w28a734r2-idam-5page.spec.ts" time="7.687">
+<testsuites id="" name="" tests="2" failures="0" skipped="0" errors="0" time="12.501736">
+<testsuite name="e2e/w28a734r2-idam-5page.spec.ts" timestamp="2026-06-09T08:15:21.022Z" hostname="chromium" tests="1" failures="0" skipped="0" time="7.956" errors="0">
+<testcase name="all 5 PS-71 /idam/* pages render for an authenticated admin" classname="e2e/w28a734r2-idam-5page.spec.ts" time="7.956">
 <system-out>
 <![CDATA[
 [[ATTACHMENT|e2e-w28a734r2-idam-5page-a-7f2e3--for-an-authenticated-admin-chromium/trace.zip]]
@@ -8,8 +8,8 @@
 </system-out>
 </testcase>
 </testsuite>
-<testsuite name="e2e/w28a734r2-negative-auth.spec.ts" timestamp="2026-06-09T07:40:36.311Z" hostname="chromium" tests="1" failures="0" skipped="0" time="1.649" errors="0">
-<testcase name="clean-context unauth visitor is gated to login; /auth/me denies (NOT admin)" classname="e2e/w28a734r2-negative-auth.spec.ts" time="1.649">
+<testsuite name="e2e/w28a734r2-negative-auth.spec.ts" timestamp="2026-06-09T08:15:21.022Z" hostname="chromium" tests="1" failures="0" skipped="0" time="1.614" errors="0">
+<testcase name="clean-context unauth visitor is gated to login; /auth/me denies (NOT admin)" classname="e2e/w28a734r2-negative-auth.spec.ts" time="1.614">
 <system-out>
 <![CDATA[
 [[ATTACHMENT|e2e-w28a734r2-negative-aut-a8af4-n-auth-me-denies-NOT-admin--chromium/trace.zip]]
