@@ -1,0 +1,8 @@
+W28A-734-R3 SCOPED CLEAN PROOF
+Lane scope: working/evidence/W28A-734-R3/ in index-retriever-mcp-server (isolated worktree off origin/main).
+Live commands (re-run by auditor; output is authoritative):
+  git status --short -- working/evidence/W28A-734-R3
+  git diff --name-only -- working/evidence/W28A-734-R3
+  git diff --cached --name-only -- working/evidence/W28A-734-R3
+After the lane commit, all three return empty for the lane scope (no modified, staged, or untracked files in scope).
+The shared index-retriever checkout (branch w28a-882-phase-c) and the cloud-dog-ai-ui-monorepo were not mutated by this lane; the temporary reverify spec was removed.

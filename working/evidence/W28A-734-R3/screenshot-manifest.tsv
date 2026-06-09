@@ -1,0 +1,7 @@
+page	file	sha256	captured_url	authed
+idam-users	screenshots/idam-users.png	76cb86bc90e85e94066381c3288849d2501cf84c84bc392bb591e6525cf9a449	https://indexretriever0.cloud-dog.net/idam/users	authed-admin
+idam-groups	screenshots/idam-groups.png	6afdeca776966dd053e6be74e7e284e53e5a4ad0c65cda7232a5379ce435a90c	https://indexretriever0.cloud-dog.net/idam/groups	authed-admin
+idam-api-keys	screenshots/idam-api-keys.png	b9ef9d0da57dca371655a9c1f7da6a9da5ef9142c1123990e22e62e7d85b8cf6	https://indexretriever0.cloud-dog.net/idam/api-keys	authed-admin
+idam-roles	screenshots/idam-roles.png	60f843b014c397bd5f9c55713a7a9a233870267b7da762e9661ea11433448085	https://indexretriever0.cloud-dog.net/idam/roles	authed-admin
+idam-rbac	screenshots/idam-rbac.png	ecf10926169c6854a9e67a9a0982545454a9210ea63e86ee777e6a188dfd6bf2	https://indexretriever0.cloud-dog.net/idam/rbac	authed-admin
+unauth-login-gate	screenshots/unauth-login-gate.png	beee6b594d4fdbfe97b39e71c384dea12b3eb3bdd25fd530f00307c645b9507b	https://indexretriever0.cloud-dog.net/ (clean context)	unauth

@@ -1,0 +1,2 @@
+service	host	expected_image_digest	observed_identity	verification_command	pass_fail
+index-retriever	https://indexretriever0.cloud-dog.net	sha256:0f7c5151ccc907ddd6a2a7183fb8715a7c4a938f3bd4583f1bae5345614019c4 (origin/main 4dc5101-built per W28A-734-R2)	image-id 86a0a563a284 RepoDigest sha256:0f7c5151... bundle index-CBjiSmP2.js Up healthy	docker -H tcp://server0.viewdeck.com:2375 inspect + curl /	PASS

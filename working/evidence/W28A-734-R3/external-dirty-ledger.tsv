@@ -1,0 +1,2 @@
+path	repo	status	suspected_owner_lane	why_external_to_this_lane
+NONE	index-retriever-mcp-server	clean	-	isolated worktree off origin/main contains only this lane evidence; no other dirty files in scope

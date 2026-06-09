@@ -1,0 +1,10 @@
+service	host	endpoint	status	pass_fail
+chatclient0	https://chatclient0.cloud-dog.net	/health	200	PASS
+expertagent0	https://expertagent0.cloud-dog.net	/health	200	PASS
+notificationagent0	https://notificationagent0.cloud-dog.net	/health	200	PASS
+filemcpserver0	https://filemcpserver0.cloud-dog.net	/health	200	PASS
+gitmcpserver0	https://gitmcpserver0.cloud-dog.net	/health	200	PASS
+imapmcpserver0	https://imapmcpserver0.cloud-dog.net	/health	200	PASS
+dbmcpserver0	https://dbmcpserver0.cloud-dog.net	/health	200	PASS
+sqlagent0	https://sqlagent0.cloud-dog.net	/health	200	PASS
+indexretriever0	https://indexretriever0.cloud-dog.net	/health	200	PASS

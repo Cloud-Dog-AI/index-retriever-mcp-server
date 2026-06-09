@@ -1,0 +1,7 @@
+service	surface	operation	url_or_route	raw_evidence_path	pass_fail
+index-retriever	WebUI	authed admin renders Users (3 rows; cols username/display_name/role/groups/enabled/last_login/created; +Add User)	/idam/users	screenshots/idam-users.png + w28a734r3-idam-5page-trace.zip	PASS
+index-retriever	WebUI	authed admin renders Groups (2 rows; cols name/description/member_count/rbac_binding_count; +Add Group)	/idam/groups	screenshots/idam-groups.png	PASS
+index-retriever	WebUI	authed admin renders API Keys (cols label/owner/scope_summary/created/expires/last_used/status; +Generate API Key; legitimate empty state)	/idam/api-keys	screenshots/idam-api-keys.png	PASS
+index-retriever	WebUI	authed admin renders Roles via shared @cloud-dog/idam IdamRolesPage (admin->*, user->resources:read; cols name/description/permissions/created; +Add Role)	/idam/roles	screenshots/idam-roles.png	PASS
+index-retriever	WebUI	authed admin renders RBAC (2 bindings user:admin; cols subject/resource/permission/granted_by/granted_at; View-by Flat; +Add Binding)	/idam/rbac	screenshots/idam-rbac.png	PASS
+index-retriever	API	unauth principal denied (NOT admin)	/auth/me	preprod-unauth-negative-auth.tsv	PASS

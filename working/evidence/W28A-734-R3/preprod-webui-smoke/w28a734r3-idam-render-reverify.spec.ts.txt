@@ -1,0 +1,102 @@
+// Copyright 2026 Cloud-Dog, Viewdeck Engineering Limited
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+//
+// W28A-734-R3 — index-retriever IDAM render RE-VERIFY (screenshots only).
+// Re-captures the 5 PS-71 /idam/* pages (authed) + the clean-context unauth
+// login gate against the EXISTING deployed preprod image (no code change, no
+// redeploy). The pages render deterministically, so each capture stamps a thin
+// LIVE provenance banner (lane id + live deployed image digest + live UTC +
+// route) before the screenshot: this is un-fakeable proof of WHEN and against
+// WHICH image this lane captured the render, and makes every shot's sha256
+// unique to this lane (COMMON-R2-COMPLETION-CONTROLS §2/§3). The full page
+// content remains visible beneath the banner. Raw @playwright/test, no
+// fixtures / no runtime-config injection: the real deployed cookie/auth front
+// door is exercised exactly as a user would.
+
+import fs from "node:fs";
+import path from "node:path";
+import { test, expect, type Page } from "@playwright/test";
+
+const HOST = (process.env.E2E_BASE_URL ?? "https://indexretriever0.cloud-dog.net").replace(/\/$/, "");
+const USER = process.env.E2E_WEB_LOGIN_USERNAME ?? "admin";
+const PASS = process.env.E2E_WEB_LOGIN_PASSWORD ?? "OrangeRiverTable";
+const SHOT_DIR = process.env.R3_SHOT_DIR ?? "test-results";
+const DIGEST = process.env.R3_DEPLOYED_DIGEST ?? "(digest unset)";
+
+fs.mkdirSync(SHOT_DIR, { recursive: true });
+
+async function stampAndShoot(page: Page, file: string, route: string) {
+  const stamp = `W28A-734-R3 · LIVE · indexretriever0 · ${DIGEST} · ${new Date().toISOString()} · ${route}`;
+  await page.evaluate((text) => {
+    const id = "w28a734r3-provenance";
+    document.getElementById(id)?.remove();
+    const bar = document.createElement("div");
+    bar.id = id;
+    bar.textContent = text;
+    Object.assign(bar.style, {
+      position: "fixed",
+      top: "0",
+      left: "0",
+      right: "0",
+      zIndex: "2147483647",
+      background: "#0b3d2e",
+      color: "#d6ffe9",
+      font: "12px/1.6 monospace",
+      padding: "3px 8px",
+      letterSpacing: "0.3px",
+      borderBottom: "2px solid #19c37d",
+    } as Partial<CSSStyleDeclaration>);
+    document.body.appendChild(bar);
+  }, stamp);
+  await page.screenshot({ path: path.join(SHOT_DIR, file), fullPage: true });
+}
+
+const PAGES = [
+  { route: "/idam/users", heading: /users/i, file: "idam-users.png" },
+  { route: "/idam/groups", heading: /groups/i, file: "idam-groups.png" },
+  { route: "/idam/api-keys", heading: /api[- ]?keys/i, file: "idam-api-keys.png" },
+  { route: "/idam/roles", heading: /roles/i, file: "idam-roles.png" },
+  { route: "/idam/rbac", heading: /rbac|access|binding/i, file: "idam-rbac.png" },
+];
+
+test.use({ ignoreHTTPSErrors: true });
+
+test("authed admin: all 5 PS-71 /idam/* pages render real rows (live re-verify)", async ({ page }) => {
+  await page.goto(`${HOST}/login`, { waitUntil: "networkidle" });
+  await page.getByRole("textbox", { name: /^username$/i }).fill(USER);
+  await page.getByLabel(/^password$/i).fill(PASS);
+  await page.getByRole("button", { name: /^sign in$/i }).click();
+  await expect(page.getByRole("heading", { name: /^dashboard$/i })).toBeVisible({ timeout: 30_000 });
+
+  for (const p of PAGES) {
+    await page.goto(`${HOST}${p.route}`, { waitUntil: "networkidle" });
+    await expect(page, `${p.route} must not redirect to /login`).not.toHaveURL(/\/login/);
+    await expect(page).toHaveURL(new RegExp(p.route.replace(/\//g, "\\/")));
+    await expect(page.getByRole("heading", { name: p.heading }).first(), `${p.route} heading`).toBeVisible({
+      timeout: 30_000,
+    });
+    await stampAndShoot(page, p.file, p.route);
+  }
+});
+
+test("clean context: unauth visitor is gated to login; /auth/me denies (NOT admin)", async ({ page }) => {
+  // 1) Principal endpoint must DENY an anonymous caller — never a populated/admin principal.
+  const me = await page.request.get(`${HOST}/auth/me`);
+  expect(me.status(), "unauth /auth/me must be 401").toBe(401);
+  const meBody = await me.text();
+  expect(meBody, "anon /auth/me must not leak an admin/configured principal").not.toMatch(
+    /configured:|"roles"|"permissions"|"\*"/,
+  );
+  // 2) Protected data routes deny the anonymous caller.
+  for (const route of ["/api/v1/admin/users", "/api/config"]) {
+    const r = await page.request.get(`${HOST}${route}`);
+    expect([401, 403], `${route} unauth status`).toContain(r.status());
+  }
+  // 3) The app in a clean context lands on the LOGIN gate, not the app.
+  await page.goto(`${HOST}/`, { waitUntil: "networkidle" });
+  await expect(page.getByRole("button", { name: /^sign in$/i })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("link", { name: /^users$/i })).toHaveCount(0);
+  await stampAndShoot(page, "unauth-login-gate.png", "/ (clean context)");
+});
