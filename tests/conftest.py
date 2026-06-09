@@ -52,6 +52,9 @@ def _ensure_test_run_prefix() -> str:
     if not token:
         token = f"r{uuid4().hex[:8]}"
         os.environ["INDEX_RETRIEVER_TEST_RUN_PREFIX"] = token
+    # Service now reads index.test_run_prefix via cloud_dog_config (RULES §1.4.1);
+    # export the config-path override so the test prefix reaches the service.
+    os.environ["CLOUD_DOG__INDEX__TEST_RUN_PREFIX"] = token
     return token
 
 

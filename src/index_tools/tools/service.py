@@ -706,9 +706,7 @@ class IndexService:
         # W28A-323: per-profile ingest concurrency cap. Serialises embedding
         # calls within the same profile to avoid Ollama contention that causes
         # 480s tail-latency timeouts. Cross-profile calls run in parallel.
-        _max_per_profile = int(os.environ.get(
-            "CLOUD_DOG__INDEX__INGEST__MAX_CONCURRENCY_PER_PROFILE", "1"
-        ))
+        _max_per_profile = int(_cfg_val("index.ingest.max_concurrency_per_profile", 1))
         self._ingest_semaphores: dict[str, threading.Semaphore] = {}
         self._ingest_semaphore_max = max(1, _max_per_profile)
         self._ingest_semaphore_lock = threading.Lock()
@@ -1148,7 +1146,7 @@ class IndexService:
         existing = self._run_async(self.vdb.get_collection(backend_name, provider_id=provider_id))
         if (
             existing is not None
-            and os.environ.get("INDEX_RETRIEVER_TEST_RUN_PREFIX", "").strip()
+            and _cfg_val("index.test_run_prefix", "").strip()
             and provider_id == "weaviate"
             and record is not None
             and not record.metadata.get("backend_collection_ready")
@@ -1180,7 +1178,7 @@ class IndexService:
     def _backend_collection_name(profile: str, collection: str, provider_id: str | None = None) -> str:
         """Return a backend-safe physical collection name for the VDB layer."""
         provider = str(provider_id or "").strip().lower()
-        run_prefix = os.environ.get("INDEX_RETRIEVER_TEST_RUN_PREFIX", "").strip().lower()
+        run_prefix = _cfg_val("index.test_run_prefix", "").strip().lower()
         namespace = f"indexretriever_{run_prefix}" if run_prefix else "indexretriever"
         base_name = _safe_backend_name(f"{namespace}_{profile}_{collection}")
         if provider == "pgvector" and base_name[:1].isdigit():
@@ -1516,7 +1514,7 @@ class IndexService:
             records_to_upsert = superseded_records + records_to_upsert
         # W28D-440E1: batch upsert in groups of INGEST_BATCH_SIZE to avoid
         # overwhelming the embedding backend with too many records at once.
-        batch_size = int(os.environ.get("INDEX_RETRIEVER_INGEST_BATCH_SIZE", "10"))
+        batch_size = int(_cfg_val("index.ingest.batch_size", 10))
         try:
             for batch_start in range(0, len(records_to_upsert), batch_size):
                 batch = records_to_upsert[batch_start:batch_start + batch_size]
@@ -1583,7 +1581,7 @@ class IndexService:
             return
         job = self.queue.get(job_id)
         if (
-            os.environ.get("INDEX_RETRIEVER_TEST_RUN_PREFIX", "").strip()
+            _cfg_val("index.test_run_prefix", "").strip()
             and self._profile_provider(job.profile) in {"infinity", "weaviate"}
         ):
             try:

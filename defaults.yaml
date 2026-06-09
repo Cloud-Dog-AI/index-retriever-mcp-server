@@ -423,3 +423,17 @@ log:
     when: "midnight"
     interval: 1
     compress: true
+
+# Ingest concurrency/batch + test run-prefix consumed via cloud_dog_config get_config
+# (migrated from os.environ — RULES §1.4.1). Override with CLOUD_DOG__INDEX__INGEST__BATCH_SIZE etc.
+index:
+  ingest:
+    max_concurrency_per_profile: 1
+    batch_size: 10
+  test_run_prefix: ""
+  bootstrap:
+    # Location of the optional bootstrap-seed.yaml (users/groups/api-keys). Empty
+    # falls back to the container default /app/config/bootstrap-seed.yaml. Override
+    # with CLOUD_DOG__INDEX__BOOTSTRAP__SEED_PATH. (RULES §1.4.1: config, not env.)
+    seed_path: ""
+    seed_disabled: false

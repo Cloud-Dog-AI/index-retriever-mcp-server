@@ -1357,7 +1357,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         if not users:
             result["bootstrap_hint"] = (
                 "No users configured. Create a bootstrap-seed.yaml with user "
-                "entries and set INDEX_RETRIEVER_BOOTSTRAP_SEED_PATH, or use "
+                "entries and set CLOUD_DOG__INDEX__BOOTSTRAP__SEED_PATH, or use "
                 "POST /admin/users to create the first admin user."
             )
         return result

@@ -1,64 +1,33 @@
-# index-retriever-mcp-server — Agent & Engineer Rules
+# index-retriever-mcp-server — RULES.md
 
-**Version:** 3.0
-**Date:** 2026-04-13
-**Extends:** `cloud-dog-ai-platform-standards/RULES.md` v2.3 (2026-03-31)
+## Common Rules
 
-> **PRIME DIRECTIVE — BINDING ON ALL AGENTS WORKING IN THIS REPOSITORY:**
-> I WILL NEVER: LIE, FUDGE, HACK, FALSIFY, STUB, FAKE, HIDE, PRETEND, SKIP, BYPASS, FABRICATE, SUBSTITUTE, INVENT.
-> IF I CANNOT GUARANTEE 100% COMPLIANCE, I WILL STOP AND SAY SO.
-> IF TESTS FAIL, I WILL REPORT FAILURES HONESTLY.
-> IF I DON'T KNOW, I WILL ASK, NOT GUESS.
->
-> **§1.2 — The programme coordinator MUST independently verify ALL agent claims.**
-> Every claim requires: independent grep/command execution, cross-reference evidence against source,
-> spot-check fixes, reject on ANY discrepancy.
+This project follows the [Cloud-Dog AI Platform Common Rules](../cloud-dog-ai-platform-standards/RULES.md) v2.7+.
+Common rules are NOT restated here; consult central for: integrity (§1), environment+config (§2),
+server+process management (§3), code+change management (§4), testing (§5), documentation (§6),
+repo structure (§7), operational controls (§8), security boundaries (§9), infrastructure
+protection (§10), Vault path verification (§11), implementation truthfulness (§12),
+sandbox dispatch preconditions (§13, W28A-882 Phase F), completion standards (§14), mandatory reading (§15).
 
-## Mandatory Reading Before ANY Work
-1. Platform RULES.md — `cloud-dog-ai-platform-standards/RULES.md` (binding contract)
-2. AGENT-LESSONS.md — `cloud-dog-ai-platform-standards/AGENT-LESSONS.md` (cross-platform knowledge, PC1-PC25)
-3. This file — project-specific rules below
-4. AGENT-BOOTSTRAP-DIRECTIVE.md — `cloud-dog-ai-platform-standards/working/AGENT-BOOTSTRAP-DIRECTIVE.md` (platform orientation)
+The zero-tolerance prohibition on `os.environ.get()` fallback chains in service code is the
+central rule at [RULES.md §1.4.1](../cloud-dog-ai-platform-standards/RULES.md) (landing in
+W28A-882 Phase F; until then see also central §1.4 and incident records at central §1).
 
-## Relevant Platform Incidents
-- §1.1 Falsification incident — relevant to all index-retriever work and all evidence files
-- §1.3 Fabrication incident — relevant to all embedding model names, VDB backends, connectors, ports, and report claims
-- §1.5 Production firewall incident — relevant to all Docker/Terraform deployment work for this service
+## Project-Specific Rules
 
----
+### Verified port assignments
 
-## Section 1 — Platform Rules (Inherited)
+Verified against [`defaults.yaml`](/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/defaults.yaml):
 
-All rules from `cloud-dog-ai-platform-standards/RULES.md` v2.3 apply without exception:
-- **§ 1** Integrity and honesty (non-negotiable)
-- **§ 1.2** Coordinator verification mandate
-- **§ 1.3** Fabrication incident record
-- **§ 1.5** Production firewall incident protections
-- **§ 2** Configuration precedence: `os.environ → env file → config.yaml → defaults.yaml`
-- **§ 2.3** Credential management: Vault primary; `private/` only for credentials not yet in Vault
-- **§ 2.4** Zero hardcoded values (zero tolerance)
-- **§ 3** Server and process management (server_control.sh, Docker rules)
-- **§ 4** Code and change management
-- **§ 5** Testing rules (UT/ST/IT/AT hierarchy, real systems, forensic validation)
-- **§ 6** Documentation standards (REQUIREMENTS, ARCHITECTURE, TESTS, TASKS, etc.)
-- **§ 8.8** Coordinator forensic verification of agent claims
-- **Mandatory Completion Warranty** required on every task completion
-
----
-
-## Section 2 — Vault Configuration
-
-### Load before any operation
-```bash
-set -a; source /opt/iac/Development/cloud-dog-ai/env-vault; set +a
-```
-
-### Validate access
-```bash
-bash scripts/validate-vault.sh
-```
+- API server: `8074`
+- Web server: `8075`
+- MCP server: `8076`
+- A2A server: `8077`
 
 ### Vault sections used by this project
+
+Load `env-vault` per central §2 before any operation. Vault sections this project depends on:
+
 - `dev.databases` — PostgreSQL connection for profiles/jobs/audit metadata
 - `dev.models` — Embedding model definitions (Ollama, OpenRouter, OpenAI-compat)
 - `dev.vdbs` — Vector database connections (Chroma, Qdrant, OpenSearch, Weaviate, PGVector)
@@ -66,37 +35,25 @@ bash scripts/validate-vault.sh
 - `dev.redis` — Redis/Valkey connection (optional job queue multiplier)
 - `dev.repository` — PyPI/NPM registry credentials
 
----
+### Test env files
 
-## Section 3 — Credential Management
+Standard committed non-secret env files (endpoints, ports, feature flags only):
 
-### Standard test env files (committed, non-secret)
 - `tests/env-UT` — unit test config
 - `tests/env-ST` — system test config
 - `tests/env-IT` — integration test config (VDB endpoints, embedding endpoints, filesystem roots)
 - `tests/env-AT` — application test config
 - `tests/env-QT` — quality/security test config
 
-These contain non-secret configuration only (endpoints, ports, feature flags).
+`private/` is NOT required by default. If all credentials are in Vault (`dev.vdbs`, `dev.models`),
+tests only need `tests/env-<TIER>` + sourcing `env-vault`. Per-backend secret files (e.g.
+`private/env-<name>-secrets`) only if credentials are not yet in Vault.
 
-### Private env files (ONLY if credentials not yet in Vault)
-- `private/env-<name>-secrets` — credentials (embedding API keys, VDB auth tokens, DB passwords)
-- Per-backend secret files only if those credentials are not yet in Vault.
+Embedding-provider keys and VDB credentials always come from Vault (`dev.models`, `dev.vdbs`);
+`cloud_dog_logging` redaction enforces no raw credentials in logs.
 
-**NOTE:** `private/` is NOT required by default. If all credentials are in Vault (dev.vdbs, dev.models), tests only need `tests/env-<TIER>` + sourcing `env-vault`.
+### Platform packages — MUST use (no bespoke alternatives)
 
-### Rules
-- All credentials MUST be stored in Vault or `private/` (git-ignored) — never committed
-- NEVER commit real API keys, embedding tokens, or database passwords
-- NEVER log raw credentials (enforced by `cloud_dog_logging` redaction)
-- Embedding provider keys from Vault (`dev.models` section)
-- VDB credentials from Vault (`dev.vdbs` section)
-
----
-
-## Section 4 — Platform Package Rules
-
-### MUST use (no bespoke alternatives)
 | Concern | Package | Bespoke alternative forbidden |
 |---------|---------|------------------------------|
 | Config loading | `cloud_dog_config` | No custom env/YAML loaders |
@@ -107,123 +64,158 @@ These contain non-secret configuration only (endpoints, ports, feature flags).
 | Embeddings | `cloud_dog_llm` | No direct OpenAI/Ollama client calls |
 | VDB operations | `cloud_dog_vdb` | No direct chromadb/qdrant/opensearch client calls |
 
-### Installation
+Installation:
+
 ```bash
 pip install -e ".[dev]" --index-url https://pypi.cloud-dog.net/simple/
 ```
 
----
+### Library / server separation
 
-## Section 4A — Verified Port Assignments
-
-Verified against [defaults.yaml](/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/defaults.yaml):
-- API server: `8074`
-- Web server: `8075`
-- MCP server: `8076`
-- A2A server: `8077`
-
-## Section 4B — Platform Incident Relevance
-
-- **§1.1 Falsification** is directly relevant to ingestion/search evidence, retention/reindex claims, and report claims.
-- **§1.3 Fabrication** is directly relevant to embedding model names, VDB backend names, connector allowlists, and port assignments.
-- **§1.5 Firewall** is directly relevant to any Docker/Terraform deployment or remote validation involving this service.
-
----
-
-## Section 5 — Project-Specific Rules
-
-### Library/server separation
-- `index_tools/` MUST NOT import FastAPI, uvicorn, or MCP transport code
-- `index_retriever_server/` MUST NOT contain pipeline/embedding/VDB logic beyond dispatch and auth
-- All domain logic MUST be testable without starting a server
+- `index_tools/` MUST NOT import FastAPI, uvicorn, or MCP transport code.
+- `index_retriever_server/` MUST NOT contain pipeline/embedding/VDB logic beyond dispatch and auth.
+- All domain logic MUST be testable without starting a server.
 
 ### Connector safety
-- Filesystem connectors MUST enforce configured scope roots
-- Path traversal (`../`) MUST be blocked
-- URI-based connectors MUST validate schemes and hosts against allowlists
-- Uploaded files MUST be stored in a sandboxed temporary directory
+
+- Filesystem connectors MUST enforce configured scope roots.
+- Path traversal (`../`) MUST be blocked.
+- URI-based connectors MUST validate schemes and hosts against allowlists.
+- Uploaded files MUST be stored in a sandboxed temporary directory.
+- Connector registry + profile-based access controls govern which connectors a profile may invoke.
+- Metadata-uplift and legacy-ingest pathways MUST flow through the canonical DiscoveryIndexService
+  + metadata pipeline; bespoke ingest shortcuts are prohibited.
 
 ### Embedding provider usage
-- All embedding calls MUST go through `cloud_dog_llm` adapters
-- NEVER hardcode model names, base URLs, or API keys
-- Model configuration comes from Vault `dev.models` section
-- Batch sizing, retries, and rate limits managed by `cloud_dog_llm`
+
+- All embedding calls MUST go through `cloud_dog_llm` adapters.
+- NEVER hardcode model names, base URLs, or API keys.
+- Model configuration comes from Vault `dev.models` section.
+- Batch sizing, retries, and rate limits managed by `cloud_dog_llm`.
+- Chunking and batch-size policy are owned by `cloud_dog_llm`; this service does not implement
+  its own chunker.
 
 ### Vector backend usage
-- All VDB operations MUST go through `cloud_dog_vdb` adapters
-- NEVER import chromadb, qdrant_client, etc. directly in project code
-- Backend configuration comes from Vault `dev.vdbs` section
-- Each backend MUST pass the same contract test suite
 
-### LlamaIndex/LangChain integration
-- LlamaIndex is the primary framework wrapper
-- LangChain support is optional and enabled per profile
-- Framework code MUST be isolated in `index_tools/` and MUST NOT leak into server layer
-- Framework dependencies MUST be declared as optional extras in `pyproject.toml`
+- All VDB operations MUST go through `cloud_dog_vdb` adapters.
+- NEVER import `chromadb`, `qdrant_client`, etc. directly in project code.
+- Backend configuration comes from Vault `dev.vdbs` section.
+- Each backend MUST pass the same contract test suite.
+- Spreadsheet VDB (`cloud_dog_vdb/spreadsheet`) is part of the supported backend set — see
+  W28E-604 incident below.
 
----
+### LlamaIndex / LangChain integration
 
-## Section 6 — Testing Rules (Project-Specific Extensions)
+- LlamaIndex is the primary framework wrapper.
+- LangChain support is optional and enabled per profile.
+- Framework code MUST be isolated in `index_tools/` and MUST NOT leak into server layer.
+- Framework dependencies MUST be declared as optional extras in `pyproject.toml`.
 
-Platform testing rules (§ 5) apply in full. This section adds index-retriever specifics.
+### Prebuilt UI bundle vendoring (PS-77)
 
-- Backend contract tests MUST run against all enabled VDB backends
-- Integration tests require real VDB, embedding provider, and running API server
-- NEVER mock VDB or embedding providers in ST/IT/AT tests
-- See TESTS.md for complete test plan
+- The web server (`8075`) ships with the prebuilt UI bundle vendored from the monorepo.
+- The vendored bundle is the unit of release — do not edit `dist/` directly; rebuild from the
+  shared `@cloud-dog/ui` source and re-vendor.
+- PS-77 compliance is verified on every deploy.
 
----
+### Testing — project-specific extensions
 
-## Section 7 — Integrity Enforcement Addendum (2026-02-20)
+Platform testing rules (central §5) apply in full. This section adds index-retriever specifics:
 
-This section is mandatory and was added after a documented integrity failure in this project.
+- Backend contract tests MUST run against all enabled VDB backends.
+- Integration tests require real VDB, embedding provider, and running API server.
+- NEVER mock VDB or embedding providers in ST/IT/AT tests.
+- See [TESTS.md](./TESTS.md) for the complete test plan.
 
-### 7.1 Claim Gate (No proof, no claim)
+### Integrity enforcement (project-specific gates)
 
-- NEVER claim `complete`, `100%`, `compliant`, or `verified` without command evidence in the same update.
-- Every claim must include:
-  - exact command run,
-  - observed pass/fail/skip counts,
-  - whether Vault was sourced.
-- If any gate fails, state `NOT COMPLIANT` explicitly.
+The central integrity rules apply (RULES.md §1). The following project-specific gates were
+added after a documented integrity failure in this service (2026-02-20) and remain in force:
 
-### 7.2 Live Backend Proof Gate
+**Claim Gate (no proof, no claim).** Never claim `complete`, `100%`, `compliant`, or `verified`
+without command evidence in the same update. Every claim must include the exact command run,
+observed pass/fail/skip counts, and whether Vault was sourced. If any gate fails, state
+`NOT COMPLIANT` explicitly.
 
-- NEVER claim live backend validation without running both:
-  - CRU operation through `cloud_dog_vdb` or project runtime, and
-  - external verification against the written artefact.
-- Required proof per backend:
-  - `chroma`: HTTP check via `curl` against collection/object state.
-  - `qdrant`: HTTP check via `curl` against collection point.
-  - `weaviate`: HTTP check via `curl` against object endpoint.
-  - `opensearch`: HTTP check via `curl` against `_doc` endpoint.
-  - `pgvector`: protocol-correct SQL verification (`psql`), not HTTP.
+**Live Backend Proof Gate.** Never claim live backend validation without running both a CRU
+operation through `cloud_dog_vdb` (or project runtime) and an external verification against the
+written artefact. Required proof per backend:
 
-### 7.3 Test Integrity Gate
+- `chroma` — HTTP check via `curl` against collection/object state.
+- `qdrant` — HTTP check via `curl` against collection point.
+- `weaviate` — HTTP check via `curl` against object endpoint.
+- `opensearch` — HTTP check via `curl` against `_doc` endpoint.
+- `pgvector` — protocol-correct SQL verification (`psql`), not HTTP.
 
-- Required execution order before any completion claim:
-  1. `bash ../cloud-dog-ai-platform-standards/migration/verify/verify-test-integrity.sh .`
-  2. `python3 -m pytest tests/integration --env tests/env-IT -q -rs` (without Vault; must fail explicitly, not skip)
-  3. full tier run with Vault and exact counts
-  4. coverage run and reported percentage
-- If coverage is below target or unknown, do not claim full compliance.
+**Test Integrity Gate.** Required execution order before any completion claim:
 
-### 7.4 Prohibited Behaviour
+1. `bash ../cloud-dog-ai-platform-standards/migration/verify/verify-test-integrity.sh .`
+2. `python3 -m pytest tests/integration --env tests/env-IT -q -rs` (without Vault; must fail
+   explicitly, not skip).
+3. Full tier run with Vault and exact counts.
+4. Coverage run and reported percentage.
 
-- Do not reinterpret failing or partial results as acceptable.
-- Do not compress nuanced failures into “green” summaries.
-- Do not present intermediate states as final completion.
-- Do not omit skip counts.
+If coverage is below target or unknown, do not claim full compliance.
 
-### 7.5 Mandatory Remediation Behaviour
+**Prohibited behaviour.** Do not reinterpret failing or partial results as acceptable. Do not
+compress nuanced failures into "green" summaries. Do not present intermediate states as final
+completion. Do not omit skip counts.
 
-- If integrity is breached:
-  - record it in `CONTEXT-SUMMARY.md` with exact file/command evidence,
-  - list rule IDs violated,
-  - list corrective actions completed,
-  - list remaining non-compliance.
-- Until all listed items are closed, completion claims are prohibited.
+**Mandatory remediation behaviour.** If integrity is breached: record it in `CONTEXT-SUMMARY.md`
+with exact file/command evidence, list rule IDs violated, list corrective actions completed,
+list remaining non-compliance. Until all listed items are closed, completion claims are
+prohibited.
 
 ---
 
-*Last updated: 2026-03-04*
+## Incident Records
+
+### 2026-02-20 — Local integrity-enforcement addendum
+
+Documented integrity failure in this service led to the project-specific gates above (Claim
+Gate / Live Backend Proof Gate / Test Integrity Gate / Prohibited behaviour / Mandatory
+remediation behaviour). All gates remain in force; they extend central §1 with the
+service-specific live-backend proof obligations.
+
+### W28E-603 — IR doc-structure end-to-end
+
+DONE 2026-06-05 (validator PASS, 15/15 YES, failures=0); deployed to preprod (`indexretriever0`).
+Proven end-to-end LIVE against db-mcp. Key lessons captured here for re-use:
+
+- Build from the LANE worktree, not the shared checkout — concurrent agents on `main` had been
+  hijacking shared-checkout branches (e.g. W28D-323 api-kit 0.13.1 was foreign; ours was 0.13.0).
+- `working/` is gitignored; closeout evidence under `working/evidence/<LANE>/` must be
+  force-added (`git add -f`) and proven from the remote `-final-*` tag via tag-replay, not just
+  from the worktree.
+- "SENDBACK" is a validator contradiction token — treat it as a structural failure, not a
+  retryable warning.
+- Deploy chain: build from lane worktree → push registry → terraform apply targeted from the
+  service-management workspace → verify live digest matches the pinned tag.
+
+### W28E-604 — Excel / spreadsheet indexing
+
+DONE across three phases (validator PASS); pushed to GitLab. Preprod deploy was gated.
+
+- Added `cloud_dog_vdb/spreadsheet` backend and the index-retriever §14 control-plane wiring
+  for it.
+- Chroma `local_mode=in-memory` matrix in test runs.
+- Source-stable object identity for spreadsheet rows.
+- New `excel` source type added to connector + ingest pipeline.
+- Closeout evidence required `git add -f` for the migration artefacts (the gitignored-log
+  rule from the W28E-603 lessons applies here too).
+
+### Platform incident relevance (cross-reference only — content owned by central)
+
+The following platform incidents recorded in central RULES.md §1 are directly relevant to work
+in this repository:
+
+- Central §1.1 — Falsification incident: relevant to ingestion/search evidence, retention /
+  reindex claims, and any report claim against this service.
+- Central §1.3 — Fabrication incident: relevant to embedding model names, VDB backend names,
+  connector allowlists, and port assignments in this service.
+- Central §1.5 — Production firewall incident: relevant to any Docker/Terraform deployment or
+  remote validation involving this service.
+
+---
+
+*Last updated: 2026-06-08 (trimmed to W28A-881 §5 model under W28A-882 Phase D).*
