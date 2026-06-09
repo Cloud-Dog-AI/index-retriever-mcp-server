@@ -59,6 +59,21 @@ _SPA_ADMIN_PATHS = {
     "admin/rbac",
 }
 
+# W28A-734-R2 SECURITY: paths whose authorisation MUST come from the caller's own
+# session cookie or presented api-key/bearer. The web tier forwards them verbatim
+# and NEVER injects the service api_key, so the api server enforces 401 for an
+# unauthenticated caller. Re-narrowing this set re-opens the live /auth/me admin
+# bypass — the original bc610d8 carve-out covered only /admin/<resource> and left
+# /auth/me, /admin/rbac, and /api/* exposed (anonymous => roles:[admin]).
+_CALLER_AUTH_PREFIX_RE = re.compile(r"^/(?:auth|admin|api)(?:/|$)")
+
+
+def _requires_caller_auth(proxy_path: str) -> bool:
+    """True when the proxied path is identity-bearing and must be forwarded
+    verbatim (no injected service api_key) so the api server enforces auth."""
+    path = proxy_path if proxy_path.startswith("/") else f"/{proxy_path}"
+    return bool(_CALLER_AUTH_PREFIX_RE.match(path)) or path == "/me"
+
 
 def _project_root_dir() -> str:
     """Resolve the repository root for runtime assets."""
@@ -217,16 +232,20 @@ def build_web_app() -> object:
                     json_body = None
 
         proxy_path = path if path.startswith("/") else f"/{path}"
-        # W28A-876 security fix: IDAM admin endpoints (users/roles/groups/api-keys)
-        # must be authorised by the CALLER'S OWN session/credentials, never by the
-        # service api_key that WebApiProxy injects for service-to-service
-        # (mcp/a2a/tools) traffic. Without this, WebApiProxy attaches the admin
-        # api_key to every proxied request, so an UNAUTHENTICATED caller reaches
-        # admin data. Forward these requests verbatim (cookies + caller headers, no
-        # injected key) so the api server's _auth_or_raise enforces auth (401 when
-        # there is no valid session/credential; the authenticated SPA forwards its
-        # session cookie and still resolves to admin).
-        if re.search(r"(?:^|/)(?:api/v1/|v1/)?admin/(?:users|roles|groups|api-keys)(?:/|$)", proxy_path):
+        # W28A-734-R2 SECURITY (generalises the W28A-876/bc610d8 admin carve-out):
+        # EVERY caller-identity-bearing endpoint — /auth/* (incl. /auth/me, login,
+        # logout), /me, every /admin/* (incl. rbac), and every /api/* data route —
+        # must be authorised by the CALLER'S OWN session cookie or presented
+        # api-key/bearer, NEVER by the service api_key that WebApiProxy injects for
+        # service-to-service traffic. bc610d8 closed ONLY /admin/(users|roles|
+        # groups|api-keys); the same injection still authenticated UNAUTHENTICATED
+        # callers as the configured admin on /auth/me, /admin/rbac, and /api/*
+        # (the live P0 bypass: anonymous GET /auth/me => roles:[admin]). Forward
+        # these verbatim (cookies + caller headers, NO injected key) so the api
+        # server's _auth_or_raise enforces 401; the authenticated SPA forwards its
+        # session cookie and still resolves to its real identity. Only non-identity
+        # static paths (/app/*, /openapi.json) keep the canonical WebApiProxy hop.
+        if _requires_caller_auth(proxy_path):
             async with httpx.AsyncClient(
                 base_url=api_base_url,
                 verify=False,
@@ -296,7 +315,39 @@ def build_web_app() -> object:
             headers={key: value for key, value in result.headers.items() if key.lower() not in {"content-length", "transfer-encoding"}},
         )
 
-    def _mcp_proxy_headers(request: Request) -> dict[str, str]:
+    async def _caller_session_is_valid(request: Request) -> bool:
+        """True only if the caller presents a VALID cookie session, verified
+        against the api server's /auth/me authority — never cookie presence
+        alone. Gates whether the mcp/a2a console may borrow the service api_key
+        on the caller's behalf; an UNAUTHENTICATED caller must not (W28A-734-R2).
+        The probe forwards cookies only (no injected key), so a 200 with a
+        non-null user proves a real session, not the injected-key bypass."""
+        cookies = dict(request.cookies)
+        if not cookies:
+            return False
+        try:
+            async with httpx.AsyncClient(
+                base_url=api_base_url, verify=False, timeout=15, cookies=cookies
+            ) as client:
+                resp = await client.get("/auth/me")
+        except httpx.HTTPError:
+            return False
+        if resp.status_code != 200:
+            return False
+        try:
+            return bool((resp.json() or {}).get("user"))
+        except ValueError:
+            return False
+
+    async def _service_key_allowed(request: Request) -> bool:
+        """The web tier may attach the configured service api_key to an mcp/a2a
+        hop only when the caller is already authenticated — either by a real
+        presented credential or a validated cookie session."""
+        if request.headers.get("authorization") or request.headers.get("x-api-key"):
+            return True
+        return await _caller_session_is_valid(request)
+
+    def _mcp_proxy_headers(request: Request, *, allow_service_key: bool = False) -> dict[str, str]:
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json, text/event-stream",
@@ -307,13 +358,15 @@ def build_web_app() -> object:
             headers["Authorization"] = authorization
         if x_api_key:
             headers["X-API-Key"] = x_api_key
-        elif not authorization:
+        elif not authorization and allow_service_key:
+            # W28A-734-R2: borrow the service api_key only for an AUTHENTICATED
+            # console session; never inject it for an unauthenticated caller.
             configured_key = str(proxy_config.get("api_server.api_key", "") or "")
             if configured_key:
                 headers["X-API-Key"] = configured_key
         return headers
 
-    def _a2a_proxy_headers(request: Request) -> dict[str, str]:
+    def _a2a_proxy_headers(request: Request, *, allow_service_key: bool = False) -> dict[str, str]:
         headers = {
             "Content-Type": request.headers.get("content-type", "application/json"),
             "Accept": request.headers.get("accept", "application/json"),
@@ -327,7 +380,8 @@ def build_web_app() -> object:
             value = request.headers.get(incoming)
             if value:
                 headers[outgoing] = value
-        if "Authorization" not in headers and "X-API-Key" not in headers:
+        if "Authorization" not in headers and "X-API-Key" not in headers and allow_service_key:
+            # W28A-734-R2: only borrow the service api_key for an AUTHENTICATED caller.
             configured_key = str(proxy_config.get("api_server.api_key", "") or "")
             if configured_key:
                 headers["X-API-Key"] = configured_key
@@ -383,11 +437,12 @@ def build_web_app() -> object:
             "method": "tools/call",
             "params": {"name": tool_name, "arguments": tool_args},
         }
+        allow_service_key = await _service_key_allowed(request)
         async with httpx.AsyncClient(base_url=mcp_base_url, verify=False, timeout=60) as client:
             resp = await client.post(
                 "/mcp",
                 json=jsonrpc_payload,
-                headers=_mcp_proxy_headers(request),
+                headers=_mcp_proxy_headers(request, allow_service_key=allow_service_key),
             )
         try:
             rpc_result = resp.json()
@@ -405,11 +460,12 @@ def build_web_app() -> object:
     async def api_tools_list(request: Request) -> Response:
         """List tools via MCP server."""
         jsonrpc_payload = {"jsonrpc": "2.0", "id": "web-tools-list", "method": "tools/list"}
+        allow_service_key = await _service_key_allowed(request)
         async with httpx.AsyncClient(base_url=mcp_base_url, verify=False, timeout=30) as client:
             resp = await client.post(
                 "/mcp",
                 json=jsonrpc_payload,
-                headers=_mcp_proxy_headers(request),
+                headers=_mcp_proxy_headers(request, allow_service_key=allow_service_key),
             )
         try:
             rpc_result = resp.json()
@@ -429,13 +485,14 @@ def build_web_app() -> object:
     async def a2a_proxy(path: str, request: Request) -> Response:
         """Proxy A2A requests to the A2A server."""
         body = await request.body()
+        allow_service_key = await _service_key_allowed(request)
         async with httpx.AsyncClient(base_url=a2a_base_url, verify=False, timeout=60) as client:
             resp = await client.request(
                 request.method,
                 f"/{path}",
                 content=body if body else None,
                 params=dict(request.query_params),
-                headers=_a2a_proxy_headers(request),
+                headers=_a2a_proxy_headers(request, allow_service_key=allow_service_key),
             )
         return Response(
             content=resp.content,

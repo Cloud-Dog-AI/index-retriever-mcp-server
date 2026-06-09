@@ -24,6 +24,7 @@ from types import SimpleNamespace
 from pathlib import Path
 from datetime import datetime, timezone
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -637,6 +638,34 @@ def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch
     )
     monkeypatch.setattr(web_server.WebApiProxy, "from_config", classmethod(lambda cls, _config: DummyProxy()))
 
+    # W28A-734-R2: identity-bearing proxy paths (/auth/*, /admin/*, /api/*) are now
+    # forwarded VERBATIM through a raw httpx hop (no injected service api_key), so
+    # the api server enforces auth. Emulate that upstream with a MockTransport that
+    # denies (401) any request without a real caller credential and records every
+    # forwarded request, so the test can prove the web tier injects NOTHING.
+    captured_requests: list[httpx.Request] = []
+
+    def _upstream_handler(request: httpx.Request) -> httpx.Response:
+        captured_requests.append(request)
+        has_cred = bool(request.headers.get("x-api-key") or request.headers.get("authorization"))
+        if not has_cred:
+            return httpx.Response(401, json={"detail": "Authentication failed"})
+        if request.url.path == "/auth/me":
+            return httpx.Response(
+                200,
+                json={"user": {"id": "configured:deadbeef0001", "roles": ["admin"], "permissions": ["*"]}},
+            )
+        return httpx.Response(200, json={"status": "ok"})
+
+    _mock_transport = httpx.MockTransport(_upstream_handler)
+    _real_async_client = web_server.httpx.AsyncClient
+
+    def _mock_async_client(*args: object, **kwargs: object) -> httpx.AsyncClient:
+        kwargs["transport"] = _mock_transport
+        return _real_async_client(*args, **kwargs)
+
+    monkeypatch.setattr(web_server.httpx, "AsyncClient", _mock_async_client)
+
     client = TestClient(web_server.build_web_app())
 
     runtime_config = client.get("/runtime-config.js")
@@ -652,9 +681,67 @@ def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch
     assert "Collection inventory" in collections_ui.text
     assert 'data-testid="collections-table-body"' in collections_ui.text
 
+    # Proxied admin endpoint, UNAUTHENTICATED, is forwarded verbatim and denied 401.
     proxied_admin = client.get("/admin/profiles")
     assert proxied_admin.status_code == 401
     assert proxied_admin.json() == {"detail": "Authentication failed"}
+
+    # W28A-734-R2 NEGATIVE-AUTH (the live P0 bypass regression guard):
+    # an UNAUTHENTICATED /auth/me must be denied — NEVER an admin/configured
+    # principal — and the web tier must NOT inject the service api_key on the hop.
+    me_unauth = client.get("/auth/me")
+    assert me_unauth.status_code == 401, me_unauth.text
+    assert "configured:" not in me_unauth.text and "permissions" not in me_unauth.text
+    me_unauth_hops = [r for r in captured_requests if r.url.path == "/auth/me"]
+    assert me_unauth_hops, "web tier did not forward /auth/me to the api server"
+    assert all(
+        not r.headers.get("x-api-key") and not r.headers.get("authorization")
+        for r in me_unauth_hops
+    ), "web tier injected a service api_key onto unauthenticated /auth/me"
+
+    # The same exposure on proxied DATA endpoints (/api/* incl. /api/v1/admin/*),
+    # NOT covered by the old bc610d8 carve-out, is now closed: unauth => 401, no
+    # injected key. (GET /admin/<page> is a public SPA HTML shell, not a data hop.)
+    unsafe_data_paths = ("/api/config", "/api/v1/admin/users")
+    for unsafe_path in unsafe_data_paths:
+        resp = client.get(unsafe_path)
+        assert resp.status_code == 401, f"{unsafe_path}: {resp.status_code}"
+    forwarded_unsafe = [r for r in captured_requests if r.url.path in set(unsafe_data_paths)]
+    assert forwarded_unsafe
+    assert all(not r.headers.get("x-api-key") for r in forwarded_unsafe)
+
+    # A real caller credential is forwarded verbatim (authenticated path still works).
+    me_authed = client.get("/auth/me", headers={"x-api-key": "caller-supplied-key"})
+    assert me_authed.status_code == 200
+    authed_hops = [r for r in captured_requests if r.url.path == "/auth/me" and r.headers.get("x-api-key")]
+    assert authed_hops and all(r.headers.get("x-api-key") == "caller-supplied-key" for r in authed_hops)
+
+
+def test_requires_caller_auth_locks_identity_bearing_paths() -> None:
+    """W28A-734-R2 negative-auth guard: every identity/auth/admin/api path MUST be
+    forwarded verbatim (no injected service api_key). Re-narrowing this set is the
+    bc610d8 partial-fix mistake that left /auth/me an anonymous-admin bypass."""
+    must_be_verbatim = (
+        "/auth/me",
+        "/auth/login",
+        "/auth/logout",
+        "/me",
+        "/admin/users",
+        "/admin/roles",
+        "/admin/groups",
+        "/admin/api-keys",
+        "/admin/rbac",
+        "/admin/profiles",
+        "/api/config",
+        "/api/v1/health",
+        "/api/v1/admin/users",
+    )
+    for path in must_be_verbatim:
+        assert web_server._requires_caller_auth(path), f"identity path not protected: {path}"
+
+    # Non-identity static paths keep the canonical WebApiProxy hop.
+    for path in ("/app/index.html", "/openapi.json", "/health", "/status"):
+        assert not web_server._requires_caller_auth(path), f"static path wrongly forced verbatim: {path}"
 
 
 def test_a2a_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:

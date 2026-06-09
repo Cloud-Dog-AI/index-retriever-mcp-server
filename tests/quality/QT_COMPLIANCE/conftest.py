@@ -101,12 +101,13 @@ def allowlist() -> dict[str, object]:
             # addresses (0.0.0.0, ::) into a routable loopback for the
             # internal reverse-proxy bridge.  The http:// URLs are built
             # from config-resolved host:port, not hardcoded endpoints.
-            # (Line numbers track _normalise_api_host + the three base-URL builders.)
-            "src/index_server/web_server.py:86",
-            "src/index_server/web_server.py:87",
-            "src/index_server/web_server.py:96",
-            "src/index_server/web_server.py:151",
-            "src/index_server/web_server.py:152",
+            # (Line numbers track _normalise_api_host + the three base-URL builders;
+            # shifted +17 by the W28A-734-R2 _requires_caller_auth security predicate.)
+            "src/index_server/web_server.py:103",
+            "src/index_server/web_server.py:104",
+            "src/index_server/web_server.py:113",
+            "src/index_server/web_server.py:168",
+            "src/index_server/web_server.py:169",
         },
         "os_environ_config_adapter_files": set(),
         "unused_env_keys": set(),

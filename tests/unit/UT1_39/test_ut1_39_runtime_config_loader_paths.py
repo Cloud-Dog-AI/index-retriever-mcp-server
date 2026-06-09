@@ -64,10 +64,13 @@ def test_load_runtime_config_delegates_to_canonical_loader(
         config_yaml=Path("config.custom.yaml"),
         defaults_yaml=Path("defaults.custom.yaml"),
         unresolved_policy="strict",
-        vault_enabled=False,
+        secret_backend_enabled=False,
     )
 
     assert result is expected
+    # The public param is `secret_backend_enabled` (W28A-861 zero-Vault-dependency
+    # rename); the loader maps it to the canonical load_config `vault_enabled` kwarg
+    # via secret_backend_kwarg(), so load_config still receives `vault_enabled`.
     assert captured == {
         "env_files": [
             "tests/env-UT-local-docker",
@@ -97,14 +100,17 @@ def test_get_config_uses_runtime_loader_when_defaults_layer_missing(
         config_yaml="config.runtime.yaml",
         defaults_yaml="defaults.runtime.yaml",
         unresolved_policy="strict",
-        vault_enabled=False,
+        secret_backend_enabled=False,
     )
 
     assert result is expected
+    # get_config forwards the public `secret_backend_enabled` param verbatim to
+    # load_runtime_config (the rename mapping to `vault_enabled` happens one layer
+    # deeper, inside load_runtime_config -> load_config).
     assert captured == {
         "env_files": "tests/env-UT-local-docker",
         "config_yaml": "config.runtime.yaml",
         "defaults_yaml": "defaults.runtime.yaml",
         "unresolved_policy": "strict",
-        "vault_enabled": False,
+        "secret_backend_enabled": False,
     }
