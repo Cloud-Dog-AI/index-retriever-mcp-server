@@ -1,0 +1,15 @@
+W28A-734-R2 REMOTE PROOF
+repo: index-retriever-mcp-server   origin: https://git.cloud-dog.net/cloud-dog-ai/index-retriever-mcp-server.git
+branch: main
+Verify commands (live-authoritative):
+  git rev-parse HEAD
+  git ls-remote origin refs/heads/main
+  git ls-remote origin refs/tags/W28A-734-R2-FINAL-PROOF-20260609^{}
+  git merge-base --is-ancestor fdbe063 origin/main   # exit 0 => fdbe063 landed to main (ACCEPTANCE)
+fix commit on origin/main: 2d3b1ab (HEAD==origin/main proven at push: 904c087..2d3b1ab)
+phase-c land: fdbe063 is ANCESTOR of origin/main (exit 0)
+deployed image digest: registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server@sha256:ee88af465e4a211862327c2ea272451b1df8ccc223c66388bf7a760492240ab5
+live container image id: a014fc0f0c09 (Up healthy)
+EVIDENCE_TAG: W28A-734-R2-evidence-20260609
+FINAL_PROOF_TAG: W28A-734-R2-FINAL-PROOF-20260609
+monorepo cloud-dog-ai-ui-monorepo: e2e specs pushed to origin/main (HEAD==origin/main)

@@ -1,0 +1,6 @@
+service	surface	operation	url_or_tool	raw_evidence_path	pass_fail
+index-retriever	API	unauth /auth/me denied	https://indexretriever0.cloud-dog.net/auth/me	preprod-unauth-negative-auth.tsv (401)	PASS
+index-retriever	API	authed /auth/me admin	/auth/me x-api-key admin	preprod-unauth-negative-auth.tsv (200)	PASS
+index-retriever	API	RBAC denial reader->admin	/api/v1/admin/users x-api-key reader	403	PASS
+index-retriever	WebUI	5-page /idam render	/idam/{users,groups,api-keys,roles,rbac}	preprod-webui-smoke/*.png + trace.zip	PASS
+index-retriever	WebUI	clean-context login gate	/	preprod-webui-smoke/w28a734r2-login-gate.png	PASS

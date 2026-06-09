@@ -1,0 +1,5 @@
+service	host	surface	unauth_principal_status	unauth_principal_body	expected	pass_fail
+index-retriever	https://indexretriever0.cloud-dog.net	/auth/me	401	{"detail":"Authentication failed"}	401/null-not-admin	PASS
+index-retriever	https://indexretriever0.cloud-dog.net	/api/v1/admin/users	401	-	401	PASS
+index-retriever	https://indexretriever0.cloud-dog.net	/api/config	401	-	401	PASS
+index-retriever	https://indexretriever0.cloud-dog.net	/auth/me(admin-key)	200	-	200-authed-ok	PASS

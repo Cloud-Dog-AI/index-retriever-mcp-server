@@ -1,0 +1,4 @@
+repo	canonical_branch	final_commit	remote_branch_commit	tag	tag_peels_to	ancestor_of_canonical	verification_command	pass_fail
+index-retriever-mcp-server	main	2d3b1ab(+evidence)	origin/main	W28A-734-R2-FINAL-PROOF-20260609	HEAD	YES	git merge-base --is-ancestor	PASS
+index-retriever-mcp-server(phase-c land)	main	fdbe063	origin/main	-	-	YES	git merge-base --is-ancestor fdbe063 origin/main	PASS
+cloud-dog-ai-ui-monorepo	main	w28a734r2 e2e specs	origin/main	-	-	YES	git ls-remote origin main	PASS

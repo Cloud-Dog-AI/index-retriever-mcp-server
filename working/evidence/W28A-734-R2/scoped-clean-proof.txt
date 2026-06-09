@@ -1,0 +1,5 @@
+# scoped clean proof (source scope already committed at 2d3b1ab)
+$ git status --short -- src/index_server/web_server.py tests/unit/UT1_31
+$ git diff --name-only -- src/index_server/web_server.py
+$ git diff --cached --name-only -- src/index_server/web_server.py
+(empty output above = scope clean/committed)

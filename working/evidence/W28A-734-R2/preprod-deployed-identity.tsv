@@ -1,0 +1,2 @@
+service	host	expected_image_digest	observed_image_id	verification_command	pass_fail
+index-retriever	https://indexretriever0.cloud-dog.net	sha256:ee88af465e4a211862327c2ea272451b1df8ccc223c66388bf7a760492240ab5	a014fc0f0c09 (Up healthy)	docker ps + docker images --digests	PASS
