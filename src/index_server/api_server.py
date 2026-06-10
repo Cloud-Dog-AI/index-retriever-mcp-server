@@ -917,6 +917,25 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             }
         )
 
+    @app.get("/api/auth/status")
+    async def auth_status(request: Request) -> JSONResponse:
+        # Shared @cloud-dog/idam capability probe (W28A-775): the IDAM pages call
+        # GET /api/auth/status to render the correct admin / non-admin view. Return the
+        # principal's username + admin flag (or 401 unauthenticated) so the probe does not
+        # 404 against this service (which previously broke strict WebUI smokes).
+        sess = _get_session(request)
+        if sess:
+            return JSONResponse(
+                {"username": sess["user_id"], "is_system_admin": str(sess.get("role")) == "admin"}
+            )
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        return JSONResponse(
+            {
+                "username": identity.user_id,
+                "is_system_admin": "admin" in {str(role) for role in identity.roles},
+            }
+        )
+
     @app.post("/auth/logout")
     async def auth_logout(request: Request) -> JSONResponse:
         token = request.cookies.get(_cookie_name)
@@ -1349,10 +1368,42 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         active_service.admin_profile_delete(profile=profile_id, roles=identity.roles, actor=identity.user_id)
         return {"status": "ok", "profile": profile_id}
 
+    # ---- Shared @cloud-dog/idam contract reconciliation (W28A-775) ----
+    # The shared @cloud-dog/idam admin pages use a contract (username / role=user|admin /
+    # name / is_system_admin) that differs from this service's bespoke admin model
+    # (user_id / roles[list] / display_name). Adapt at the API boundary so the shared UI
+    # works without forking either the service layer or the shared component.
+    def _idam_user_request(payload: dict[str, Any]) -> dict[str, Any]:
+        # Shared @cloud-dog/idam posts: username, name, is_system_admin (bool), disabled.
+        p = dict(payload)
+        if "user_id" not in p and p.get("username"):
+            p["user_id"] = str(p["username"])
+        if "display_name" not in p and p.get("name"):
+            p["display_name"] = str(p["name"])
+        if not p.get("roles"):
+            if "is_system_admin" in p:
+                p["roles"] = ["admin"] if bool(p.get("is_system_admin")) else ["reader"]
+            elif p.get("role"):
+                p["roles"] = ["admin"] if str(p["role"]).strip().lower() == "admin" else ["reader"]
+        if "enabled" not in p and "disabled" in p:
+            p["enabled"] = not bool(p.get("disabled"))
+        return p
+
+    def _idam_user_view(record: dict[str, Any]) -> dict[str, Any]:
+        record_roles = record.get("roles") or []
+        return {
+            **record,
+            "id": record.get("user_id"),
+            "username": record.get("user_id"),
+            "name": record.get("display_name"),
+            "is_system_admin": "admin" in record_roles,
+            "disabled": not record.get("enabled", True),
+        }
+
     def admin_users_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "admin")
-        users = active_service.users_list()
+        users = [_idam_user_view(u) for u in active_service.users_list()]
         result: dict[str, Any] = {"users": users}
         if not users:
             result["bootstrap_hint"] = (
@@ -1365,31 +1416,33 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     def admin_users_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "admin")
+        payload = _idam_user_request(payload)
         user_id = str(payload["user_id"])
         return {
-            "user": active_service.admin_user_create(
+            "user": _idam_user_view(active_service.admin_user_create(
                 user_id=user_id,
                 roles=identity.roles,
                 payload=payload,
                 actor=identity.user_id,
-            )
+            ))
         }
 
     def admin_users_get(user_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "collection.read")
-        return {"user": active_service.user_get(user_id)}
+        return {"user": _idam_user_view(active_service.user_get(user_id))}
 
     def admin_users_update(user_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "admin")
+        payload = _idam_user_request(payload)
         return {
-            "user": active_service.admin_user_update(
+            "user": _idam_user_view(active_service.admin_user_update(
                 user_id=user_id,
                 roles=identity.roles,
                 payload=payload,
                 actor=identity.user_id,
-            )
+            ))
         }
 
     def admin_users_delete(user_id: str, request: Request) -> dict[str, Any]:
@@ -1459,39 +1512,62 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             raise HTTPException(status_code=404, detail=f"Role not found: {role_id}") from exc
         return {"status": "ok", "role_id": role_id}
 
+    # Shared @cloud-dog/idam posts groups as: name, description, member_user_ids[].
+    def _idam_group_request(payload: dict[str, Any]) -> dict[str, Any]:
+        p = dict(payload)
+        if "group_id" not in p and p.get("name"):
+            p["group_id"] = str(p["name"])
+        if "members" not in p:
+            raw_members = p.get("member_user_ids") or p.get("members") or []
+            if isinstance(raw_members, list):
+                p["members"] = [str(m) for m in raw_members]
+        return p
+
+    def _idam_group_view(record: dict[str, Any]) -> dict[str, Any]:
+        members = record.get("members") or []
+        return {
+            **record,
+            "id": record.get("group_id"),
+            "name": record.get("group_id"),
+            "member_count": len(members),
+            "members": [{"id": m, "username": m} for m in members],
+        }
+
     def admin_groups_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "admin")
-        return {"groups": active_service.groups_list()}
+        return {"groups": [_idam_group_view(g) for g in active_service.groups_list()]}
 
     def admin_groups_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "admin")
+        payload = _idam_group_request(payload)
         group_id = str(payload["group_id"])
         return {
-            "group": active_service.admin_group_create(
+            "group": _idam_group_view(active_service.admin_group_create(
                 group_id=group_id,
                 roles=identity.roles,
                 payload=payload,
                 actor=identity.user_id,
-            )
+            ))
         }
 
     def admin_groups_get(group_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "collection.read")
-        return {"group": active_service.group_get(group_id)}
+        return {"group": _idam_group_view(active_service.group_get(group_id))}
 
     def admin_groups_update(group_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "admin")
+        payload = _idam_group_request(payload)
         return {
-            "group": active_service.admin_group_update(
+            "group": _idam_group_view(active_service.admin_group_update(
                 group_id=group_id,
                 roles=identity.roles,
                 payload=payload,
                 actor=identity.user_id,
-            )
+            ))
         }
 
     def admin_groups_delete(group_id: str, request: Request) -> dict[str, Any]:
@@ -1500,20 +1576,40 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         active_service.admin_group_delete(group_id=group_id, roles=identity.roles, actor=identity.user_id)
         return {"status": "ok", "group_id": group_id}
 
+    # Shared @cloud-dog/idam posts api keys as: name (label), user_id, groups, expires_at;
+    # reads id / name / key (token) / disabled; revokes via POST .../{id}/revoke.
+    def _idam_api_key_request(payload: dict[str, Any]) -> dict[str, Any]:
+        p = dict(payload)
+        if "label" not in p and p.get("name"):
+            p["label"] = str(p["name"])
+        return p
+
+    def _idam_api_key_view(record: dict[str, Any]) -> dict[str, Any]:
+        view = {
+            **record,
+            "id": record.get("key_id"),
+            "name": record.get("label"),
+            "disabled": bool(record.get("revoked")),
+        }
+        if record.get("token"):
+            view["key"] = record["token"]
+        return view
+
     def admin_api_keys_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "admin")
-        return {"api_keys": active_service.api_keys_list()}
+        return {"api_keys": [_idam_api_key_view(k) for k in active_service.api_keys_list()]}
 
     def admin_api_keys_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "admin")
+        payload = _idam_api_key_request(payload)
         return {
-            "api_key": active_service.admin_api_key_create(
+            "api_key": _idam_api_key_view(active_service.admin_api_key_create(
                 roles=identity.roles,
                 payload=payload,
                 actor=identity.user_id,
-            )
+            ))
         }
 
     def admin_api_keys_delete(key_id: str, request: Request) -> dict[str, Any]:
@@ -1521,11 +1617,26 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         _require_or_raise(request, identity, "admin")
         try:
             return {
-                "api_key": active_service.admin_api_key_revoke(
+                "api_key": _idam_api_key_view(active_service.admin_api_key_revoke(
                     key_id=key_id,
                     roles=identity.roles,
                     actor=identity.user_id,
-                )
+                ))
+            }
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"API key not found: {key_id}") from exc
+
+    def admin_api_keys_revoke(key_id: str, request: Request) -> dict[str, Any]:
+        # Shared @cloud-dog/idam revoke path: POST /v1/admin/api-keys/{id}/revoke.
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        try:
+            return {
+                "api_key": _idam_api_key_view(active_service.admin_api_key_revoke(
+                    key_id=key_id,
+                    roles=identity.roles,
+                    actor=identity.user_id,
+                ))
             }
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=f"API key not found: {key_id}") from exc
@@ -2249,6 +2360,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get("/admin/api-keys")(admin_api_keys_list)
     app.post("/admin/api-keys")(admin_api_keys_create)
     app.post("/admin/api-keys/revoke-token")(admin_api_keys_revoke_token)
+    app.post("/admin/api-keys/{key_id}/revoke")(admin_api_keys_revoke)
     app.delete("/admin/api-keys/{key_id}")(admin_api_keys_delete)
     # W28A-876: the shared @cloud-dog/idam admin pages call /api/v1/admin/<entity>
     # (apiBaseUrl=""). index-retriever's Traefik does NOT strip /api on the main
@@ -2277,6 +2389,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         ("GET", "/api-keys", admin_api_keys_list),
         ("POST", "/api-keys", admin_api_keys_create),
         ("POST", "/api-keys/revoke-token", admin_api_keys_revoke_token),
+        ("POST", "/api-keys/{key_id}/revoke", admin_api_keys_revoke),
         ("DELETE", "/api-keys/{key_id}", admin_api_keys_delete),
     ]
     for _prefix in ("/v1/admin", "/api/v1/admin"):
@@ -2297,8 +2410,11 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         )
 
         try:
-            from src.index_server.database import get_engine as _get_idam_engine  # type: ignore
-            _set_idam_v1_engine(_get_idam_engine())
+            # W28A-775: the canonical RBAC-bindings store needs the service DB engine wired
+            # in, else POST /idam/v1/rbac-bindings returns 503 "store not configured". The
+            # role store already uses initialise_database().session_manager; reuse its engine.
+            from index_tools.db import initialise_database as _init_idam_db
+            _set_idam_v1_engine(_init_idam_db().session_manager.engine)
         except Exception:
             pass
         for _ipfx in ("/v1", "/api/v1"):
