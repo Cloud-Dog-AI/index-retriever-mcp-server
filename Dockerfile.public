@@ -56,7 +56,7 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
       cloud-dog-db \
       "cloud-dog-jobs==0.4.1" \
       cloud-dog-storage \
-      "cloud-dog-llm==0.3.0" \
+      "cloud-dog-llm==0.3.1" \
       "cloud-dog-vdb>=0.5.4"
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir -r REQUIREMENTS.txt
