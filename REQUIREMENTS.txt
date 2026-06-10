@@ -17,14 +17,9 @@ websockets>=12.0,<13.0            # WS streaming (optional)
 # AuthN/AuthZ / RBAC
 python-jose[cryptography]>=3.3,<4.0
 passlib[bcrypt]>=1.7.4,<2.0
-casbin>=1.35,<2.0
 authlib>=1.3,<2.0                 # OIDC integration (Keycloak, etc.)
-ldap3>=2.9,<3.0                   # optional LDAP
-python3-saml>=1.16,<2.0           # optional SAML SP
-xmlsec>=1.3.14,<1.4
 
 # Observability
-structlog>=24.2,<25.0
 rich>=13.7,<14.0
 
 # Storage for profiles/queue/audit (choose one DB; Postgres recommended)
@@ -36,13 +31,8 @@ filelock>=3.15,<4.0
 
 # Job / queue management (simple DB-backed) + optional Redis multiplier
 tenacity>=8.2,<9.0                # retries/backoff
-redis>=5.0,<6.0                   # optional (Redis/Valkey)
 
 # LlamaIndex (core wrapper). Keep adapters modular.
-llama-index-core>=0.11,<0.12
-llama-index-readers-file>=0.2,<0.3
-llama-index-embeddings-openai>=0.2,<0.3
-llama-index-llms-openai>=0.2,<0.3
 # Optional local HF embeddings stay out of the base image because current 0.2.x
 # releases pin against llama-index-core<0.11 and break the 0.11 runtime line.
 # Optional Ollama adapter also targets the older 0.10 core line in 0.2.x.
@@ -54,9 +44,7 @@ langchain-community>=0.2,<0.4
 chromadb>=1.0,<2.0
 qdrant-client>=1.9,<2.0
 weaviate-client>=4.6,<5.0
-opensearch-py>=2.6,<3.0
 psycopg[binary]>=3.2,<4.0          # Postgres sync tooling (optional)
-pgvector>=0.2.5,<0.3
 
 # Content ingestion / conversion
 pypandoc>=1.13,<2.0
@@ -67,14 +55,11 @@ beautifulsoup4>=4.12,<5.0
 lxml==5.2.2
 markdown-it-py>=3.0,<4.0
 chardet>=5.2,<6.0
-python-magic>=0.4.27,<1.0 ; platform_system != "Windows"
 
 # Connectors / remote references
 boto3>=1.34,<2.0                  # S3
-webdavclient3>=3.14,<4.0          # WebDAV
 google-api-python-client>=2.140,<3.0
 google-auth>=2.33,<3.0
-google-auth-oauthlib>=1.2,<2.0
 requests>=2.32,<3.0               # general remote fetch
 aiohttp>=3.9,<4.0                 # async fetch (optional)
 
