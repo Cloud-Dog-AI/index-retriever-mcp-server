@@ -37,8 +37,22 @@ from index_tools.tools.service import DocumentRecord, IndexService
 from tests.http_paths import api_tools_path, mcp_tools_path
 
 
-def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
+def test_api_app_routes_cover_auth_and_errors(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
     # Covers: FR-01, FR-01A, FR-17
+    web_credential = "pw-" + sha256(b"w28a734-flat-login").hexdigest()[:12]
+    original_load_runtime_config = api_server.load_runtime_config
+
+    def _load_test_runtime_config(*args: object, **kwargs: object) -> object:
+        runtime_cfg = original_load_runtime_config(*args, **kwargs)
+        runtime_cfg.web_login.username = "admin"
+        runtime_cfg.web_login.password = web_credential
+        runtime_cfg.web_login.read_write_username = "read-write"
+        runtime_cfg.web_login.read_write_password = web_credential
+        runtime_cfg.web_login.read_only_username = "read-only"
+        runtime_cfg.web_login.read_only_password = web_credential
+        return runtime_cfg
+
+    monkeypatch.setattr(api_server, "load_runtime_config", _load_test_runtime_config)
     collection_create(service, profile="default", collection="ut_visible_collection", roles={"admin"})
     app = api_server.build_api_app(service=service)
     client = TestClient(app)
@@ -47,7 +61,7 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     assert runtime_config.status_code == 200
     assert "window.__RUNTIME_CONFIG__" in runtime_config.text
     assert "API_BASE_URL" in runtime_config.text
-    assert '"AUTH_MODE": "api_key"' in runtime_config.text
+    assert '"AUTH_MODE": "cookie"' in runtime_config.text
 
     anon_me = client.get("/auth/me")
     assert anon_me.status_code == 401
@@ -65,6 +79,33 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     admin_me = client.get("/auth/me", headers={"x-api-key": "valid-admin-token"})
     assert admin_me.status_code == 200
     assert admin_me.json()["user"]["roles"] == ["admin"]
+
+    for username, expected_roles, expected_permissions in (
+        ("admin", ["admin"], {"*"}),
+        ("read-write", ["read-write"], {"collection.read", "collection.write"}),
+        ("read-only", ["read-only"], {"collection.read"}),
+    ):
+        client.post("/auth/logout")
+        login = client.post("/auth/login", json={"username": username, "password": web_credential})
+        assert login.status_code == 200, login.text
+        assert login.json()["user"]["roles"] == expected_roles
+        assert expected_permissions.issubset(set(login.json()["user"]["permissions"]))
+        me = client.get("/auth/me")
+        assert me.status_code == 200
+        assert me.json()["user"]["roles"] == expected_roles
+        assert expected_permissions.issubset(set(me.json()["user"]["permissions"]))
+
+    read_only_write = client.post(
+        "/api/v1/tools/ingest_text",
+        json={
+            "profile": "default",
+            "collection": "ut_visible_collection",
+            "text": "read-only write must fail",
+            "source": "file://unit/read-only.txt",
+        },
+    )
+    assert read_only_write.status_code == 403
+    assert "admin" not in read_only_write.text
 
     root = client.get("/")
     assert root.status_code == 200
@@ -134,6 +175,7 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     assert a2a_root.status_code == 200
     assert a2a_root.json()["base_path"] == "/a2a"
 
+    client.post("/auth/logout")
     unauth = client.get(api_tools_path())
     assert unauth.status_code == 401
     assert unauth.headers["content-type"].startswith("application/json")
@@ -625,7 +667,7 @@ def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch
         def get(self, key: str, default: object = None) -> object:
             values = {
                 "service.environment": "staging",
-                "index.ui.auth_mode": "api_key",
+                "index.ui.auth_mode": "cookie",
                 "index.ui.app_version": "test",
                 "index.ui.default_profile": "default",
                 "index.ui.default_collection": "w12_documents",

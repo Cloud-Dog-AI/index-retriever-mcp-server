@@ -15,7 +15,7 @@
 window.__RUNTIME_CONFIG__ = {
   ENV: "dev",
   API_BASE_URL: `${window.location.origin}`,
-  AUTH_MODE: "api_key",
+  AUTH_MODE: "cookie",
   APP_VERSION: "dev",
   DEFAULT_PROFILE: "default",
   DEFAULT_COLLECTION: "w12_documents"

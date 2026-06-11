@@ -33,7 +33,7 @@ CLOUD_DOG__MCP_SERVER__PORT=8076
 CLOUD_DOG__A2A_SERVER__HOST=0.0.0.0
 CLOUD_DOG__A2A_SERVER__PORT=8077
 CLOUD_DOG__INDEX__AUTH__API_KEYS=test-api-key,12345678,valid-reader-token:reader,valid-writer-token:writer,valid-admin-token:admin
-CLOUD_DOG__INDEX__UI__AUTH_MODE=api_key
+CLOUD_DOG__INDEX__UI__AUTH_MODE=cookie
 
 CLOUD_DOG__DB__DIALECT=sqlite
 CLOUD_DOG__DB__DATABASE=./data/index-retriever-it.db

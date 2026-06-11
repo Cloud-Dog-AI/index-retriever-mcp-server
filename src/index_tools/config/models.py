@@ -194,6 +194,10 @@ class WebLoginConfig(BaseModel):
 
     username: str = "admin"
     password: str = ""
+    read_write_username: str = "read-write"
+    read_write_password: str = ""
+    read_only_username: str = "read-only"
+    read_only_password: str = ""
 
 
 class GlobalConfig(BaseModel):

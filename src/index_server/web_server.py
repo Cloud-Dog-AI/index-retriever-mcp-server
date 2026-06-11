@@ -191,7 +191,7 @@ def build_web_app() -> object:
         }
         payload["MCP_BASE_URL"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__MCP_BASE_URL", "index.ui.mcp_base_url", mcp_base_url)
         payload["A2A_BASE_URL"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__A2A_BASE_URL", "index.ui.a2a_base_url", a2a_base_url)
-        payload["AUTH_MODE"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__AUTH_MODE", "index.ui.auth_mode", "api_key")
+        payload["AUTH_MODE"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__AUTH_MODE", "index.ui.auth_mode", "cookie")
         payload["APP_VERSION"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__APP_VERSION", "index.ui.app_version", "dev")
         payload["BUILD_DATE"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__BUILD_DATE", "index.ui.build_date")
         payload["GIT_COMMIT"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__GIT_COMMIT", "index.ui.git_commit")

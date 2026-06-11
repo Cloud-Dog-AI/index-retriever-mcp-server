@@ -29,4 +29,4 @@ CLOUD_DOG__DB__DIALECT=sqlite
 CLOUD_DOG__DB__DATABASE=./data/index-retriever-it.db
 
 CLOUD_DOG__INDEX__AUTH__API_KEYS=test-api-key,valid-reader-token:reader,valid-writer-token:writer,valid-admin-token:admin
-CLOUD_DOG__INDEX__UI__AUTH_MODE=api_key
+CLOUD_DOG__INDEX__UI__AUTH_MODE=cookie

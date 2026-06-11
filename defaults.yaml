@@ -23,6 +23,10 @@ a2a_server:
 web_login:
   username: "${CLOUD_DOG_WEB_LOGIN_USERNAME:admin}"
   password: "${CLOUD_DOG_WEB_LOGIN_PASSWORD || ''}"
+  read_write_username: "${CLOUD_DOG_WEB_LOGIN_READ_WRITE_USERNAME:read-write}"
+  read_write_password: "${CLOUD_DOG_WEB_LOGIN_READ_WRITE_PASSWORD || ''}"
+  read_only_username: "${CLOUD_DOG_WEB_LOGIN_READ_ONLY_USERNAME:read-only}"
+  read_only_password: "${CLOUD_DOG_WEB_LOGIN_READ_ONLY_PASSWORD || ''}"
 
 auth:
   mode: "apikey+jwt"

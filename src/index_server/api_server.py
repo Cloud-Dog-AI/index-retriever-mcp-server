@@ -299,7 +299,7 @@ def _runtime_config_payload() -> dict[str, str]:
         ),
         "MCP_BASE_URL": _runtime_override("CLOUD_DOG__INDEX__UI__MCP_BASE_URL", "index.ui.mcp_base_url"),
         "A2A_BASE_URL": _runtime_override("CLOUD_DOG__INDEX__UI__A2A_BASE_URL", "index.ui.a2a_base_url"),
-        "AUTH_MODE": _runtime_override("CLOUD_DOG__INDEX__UI__AUTH_MODE", "index.ui.auth_mode", "api_key"),
+        "AUTH_MODE": _runtime_override("CLOUD_DOG__INDEX__UI__AUTH_MODE", "index.ui.auth_mode", "cookie"),
         "APP_VERSION": _runtime_override("CLOUD_DOG__INDEX__UI__APP_VERSION", "index.ui.app_version", "dev"),
         "BUILD_DATE": _runtime_override("CLOUD_DOG__INDEX__UI__BUILD_DATE", "index.ui.build_date"),
         "GIT_COMMIT": _runtime_override("CLOUD_DOG__INDEX__UI__GIT_COMMIT", "index.ui.git_commit"),
@@ -871,9 +871,33 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     # In-memory token session store (no itsdangerous dependency).
     _sessions: dict[str, dict] = {}
-    _admin_username = runtime_cfg.web_login.username.strip() or "admin"
-    _admin_password = runtime_cfg.web_login.password
     _cookie_name = "index_web_session"
+
+    def _login_value(raw: Any, fallback: str = "") -> str:
+        value = str(raw or "").strip()
+        return value or fallback
+
+    _admin_username = _login_value(runtime_cfg.web_login.username, "admin")
+    _admin_password = _login_value(runtime_cfg.web_login.password)
+    _login_accounts: dict[str, dict[str, str]] = {}
+
+    def _add_login_account(username: str, password: str, role: str) -> None:
+        clean_username = _login_value(username)
+        clean_password = _login_value(password)
+        if clean_username and clean_password:
+            _login_accounts[clean_username] = {"password": clean_password, "role": role}
+
+    _add_login_account(_admin_username, _admin_password, "admin")
+    _add_login_account(
+        _login_value(runtime_cfg.web_login.read_write_username, "read-write"),
+        _login_value(runtime_cfg.web_login.read_write_password, _admin_password),
+        "read-write",
+    )
+    _add_login_account(
+        _login_value(runtime_cfg.web_login.read_only_username, "read-only"),
+        _login_value(runtime_cfg.web_login.read_only_password, _admin_password),
+        "read-only",
+    )
 
     def _get_session(request: Request) -> dict | None:
         token = request.cookies.get(_cookie_name)
@@ -884,6 +908,22 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             del _sessions[token]
         return None
 
+    def _session_identity(session: dict[str, Any]) -> AuthResult:
+        return auth.session_identity(
+            str(session.get("user_id") or session.get("user") or ""),
+            {str(session.get("role") or "read-only")},
+        )
+
+    def _user_payload(identity: AuthResult) -> dict[str, Any]:
+        display_roles = flat_roles_for(identity.roles)
+        return {
+            "id": identity.user_id,
+            "displayName": identity.user_id,
+            "email": None,
+            "roles": sorted(display_roles or identity.roles),
+            "permissions": sorted(str(permission) for permission in identity.permissions),
+        }
+
     @app.post("/auth/login")
     async def auth_login(request: Request) -> JSONResponse:
         body = await request.json()
@@ -891,11 +931,15 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         password = str(body.get("password", "")).strip()
         if not username or not password:
             raise HTTPException(status_code=400, detail="Username and password required")
-        if username != _admin_username or password != _admin_password:
+        account = _login_accounts.get(username)
+        expected_password = str((account or {}).get("password", ""))
+        if not account or not secrets.compare_digest(password, expected_password):
             raise HTTPException(status_code=401, detail="Invalid credentials")
         token = secrets.token_urlsafe(32)
-        _sessions[token] = {"user": username, "user_id": "1", "role": "admin", "_created": time.time()}
-        resp = JSONResponse({"user": {"id": "1", "displayName": username, "email": None, "roles": ["admin"], "permissions": ["*"]}})
+        role = str(account["role"])
+        _sessions[token] = {"user": username, "user_id": username, "role": role, "_created": time.time()}
+        identity = auth.session_identity(username, {role})
+        resp = JSONResponse({"user": _user_payload(identity)})
         resp.set_cookie(_cookie_name, token, httponly=True, samesite="lax", max_age=3600, path="/")
         return resp
 
@@ -903,20 +947,9 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     async def auth_me(request: Request) -> JSONResponse:
         sess = _get_session(request)
         if sess:
-            return JSONResponse({"user": {"id": sess["user_id"], "displayName": sess["user"], "email": None, "roles": [sess["role"]], "permissions": ["*"]}})
+            return JSONResponse({"user": _user_payload(_session_identity(sess))})
         identity = _auth_or_raise(request, _headers_from_request(request))
-        display_roles = flat_roles_for(identity.roles)
-        return JSONResponse(
-            {
-                "user": {
-                    "id": identity.user_id,
-                    "displayName": identity.user_id,
-                    "email": None,
-                    "roles": sorted(display_roles or identity.roles),
-                    "permissions": sorted(str(permission) for permission in identity.permissions),
-                }
-            }
-        )
+        return JSONResponse({"user": _user_payload(identity)})
 
     @app.get("/api/auth/status")
     async def auth_status(request: Request) -> JSONResponse:
@@ -926,8 +959,9 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         # 404 against this service (which previously broke strict WebUI smokes).
         sess = _get_session(request)
         if sess:
+            identity = _session_identity(sess)
             return JSONResponse(
-                {"username": sess["user_id"], "is_system_admin": str(sess.get("role")) == "admin"}
+                {"username": identity.user_id, "is_system_admin": "admin" in identity.roles}
             )
         identity = _auth_or_raise(request, _headers_from_request(request))
         return JSONResponse(
@@ -1008,13 +1042,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         if not has_explicit_auth:
             session = _get_session(request)
             if session is not None:
-                identity = AuthResult(
-                    user_id=str(session.get("user", session.get("user_id", "admin"))),
-                    roles={str(session.get("role", "admin"))},
-                    permissions={"*"},
-                    token_type="cookie",
-                )
-                auth.sync_identity_roles(identity.user_id, identity.roles)
+                identity = _session_identity(session)
                 _log_auth_event(
                     request,
                     actor=identity.user_id,

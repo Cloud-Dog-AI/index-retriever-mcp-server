@@ -184,7 +184,7 @@ def _restart_runtime_for_webui() -> None:
     env['CLOUD_DOG_WEB_LOGIN_USERNAME'] = web_username
     env['CLOUD_DOG__WEB_LOGIN__PASSWORD'] = web_password
     env['CLOUD_DOG_WEB_LOGIN_PASSWORD'] = web_password
-    env['CLOUD_DOG__INDEX__UI__AUTH_MODE'] = 'api_key'
+    env['CLOUD_DOG__INDEX__UI__AUTH_MODE'] = 'cookie'
     env['CLOUD_DOG__INDEX__UI__API_BASE_URL'] = api_base_url
     env['CLOUD_DOG__INDEX__AUTH__API_KEYS'] = env.get('CLOUD_DOG__INDEX__AUTH__API_KEYS', _TEST_API_KEYS) or _TEST_API_KEYS
     env['E2E_API_KEY'] = env.get('E2E_API_KEY', _api_admin_token()) or _api_admin_token()
@@ -325,7 +325,7 @@ def run_playwright_spec(spec_name: str) -> None:
     env['E2E_BASE_URL'] = web_url
     env['E2E_API_BASE_URL'] = api_url
     env['E2E_API_KEY'] = env.get('E2E_API_KEY', _api_admin_token()) or _api_admin_token()
-    env['E2E_AUTH_MODE'] = 'api_key'
+    env['E2E_AUTH_MODE'] = 'cookie'
     env['E2E_USE_RUNTIME_INJECTION'] = '1'
     env['E2E_WEB_LOGIN_USERNAME'] = web_username
     env['E2E_WEB_LOGIN_PASSWORD'] = web_password

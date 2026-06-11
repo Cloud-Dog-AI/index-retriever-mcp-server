@@ -243,6 +243,20 @@ class AuthMiddleware:
         for role in clean_roles:
             self._rbac.assign_role_to_user(user_id, role)
 
+    def session_identity(self, user_id: str, roles: set[str]) -> AuthResult:
+        """Build a cookie-session identity using the same RBAC state as API auth."""
+        clean_user_id = str(user_id or "").strip()
+        if not clean_user_id:
+            raise PermissionError("Authentication failed")
+        clean_roles = {_canonical_role(role) for role in roles} or {"viewer"}
+        self.sync_identity_roles(clean_user_id, clean_roles)
+        return AuthResult(
+            user_id=clean_user_id,
+            roles=self._rbac.get_effective_roles(clean_user_id),
+            permissions=self._rbac.get_effective_permissions(clean_user_id),
+            token_type="cookie",
+        )
+
     @staticmethod
     def _authenticate_provider(provider: Any, request: Any) -> Any:
         coroutine = provider.authenticate(request)
