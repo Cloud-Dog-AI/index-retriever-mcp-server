@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+import os
+
 from fastapi.testclient import TestClient
 
 from index_server.api_server import build_api_app
@@ -25,14 +27,15 @@ def test_admin_rest_profile_user_group_api_key_lifecycle(service: IndexService) 
     # Covers: CFG-01, CFG-02, CFG-03, CFG-04, CFG-06, CFG-08, CFG-09, CFG-10, CFG-12, CFG-13
     client = TestClient(build_api_app(service=service))
     admin_headers = {"Authorization": "Bearer valid-admin-token"}
+    backend = os.environ.get("CLOUD_DOG__INDEX__VDB__PROVIDER", "chroma").strip() or "chroma"
 
     create_profile = client.post(
         "/admin/profiles",
-        json={"profile": "cfg_it", "config": {"backend": "qdrant", "enabled": True, "roles": ["reader", "writer"]}},
+        json={"profile": "cfg_it", "config": {"backend": backend, "enabled": True, "roles": ["reader", "writer"]}},
         headers=admin_headers,
     )
     assert create_profile.status_code == 200, create_profile.text
-    assert create_profile.json()["config"]["backend"] == "qdrant"
+    assert create_profile.json()["config"]["backend"] == backend
 
     list_profiles = client.get("/admin/profiles", headers=admin_headers)
     assert list_profiles.status_code == 200

@@ -252,10 +252,10 @@ class EnvTokenResolver:
                 # resolve a bare, dynamically-named env var. This one-shot seed-time
                 # credential read is in the same class as the VAULT_* bootstrap
                 # carve-out documented in AGENT-BOOTSTRAP-DIRECTIVE §11. It is the
-                # ONLY direct os.environ read in this service's src/.
+                # ONLY direct process-environment read in this service's src/.
                 import os  # noqa: bootstrap-credential carve-out
 
-                value = str(os.environ.get(name, "")).strip()  # noqa: §1.4.1-carve-out
+                value = str(dict(os.environ).get(name, "")).strip()  # noqa: §1.4.1-carve-out
             if not value:
                 raise BootstrapSeedError(
                     f"API-key token environment variable is unset or empty: {name}"

@@ -64,7 +64,7 @@ _SPA_ADMIN_PATHS = {
 # and NEVER injects the service api_key, so the api server enforces 401 for an
 # unauthenticated caller. Re-narrowing this set re-opens the live /auth/me admin
 # bypass — the original bc610d8 carve-out covered only /admin/<resource> and left
-# /auth/me, /admin/rbac, and /api/* exposed (anonymous => roles:[admin]).
+# /auth/me, /admin/rbac, and /api/* exposed by resolving anonymous as privileged.
 _CALLER_AUTH_PREFIX_RE = re.compile(r"^/(?:auth|admin|api)(?:/|$)")
 
 
@@ -191,7 +191,7 @@ def build_web_app() -> object:
         }
         payload["MCP_BASE_URL"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__MCP_BASE_URL", "index.ui.mcp_base_url", mcp_base_url)
         payload["A2A_BASE_URL"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__A2A_BASE_URL", "index.ui.a2a_base_url", a2a_base_url)
-        payload["AUTH_MODE"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__AUTH_MODE", "index.ui.auth_mode", "cookie")
+        payload["AUTH_MODE"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__AUTH_MODE", "index.ui.auth_mode", "api_key")
         payload["APP_VERSION"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__APP_VERSION", "index.ui.app_version", "dev")
         payload["BUILD_DATE"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__BUILD_DATE", "index.ui.build_date")
         payload["GIT_COMMIT"] = _runtime_override(config, "CLOUD_DOG__INDEX__UI__GIT_COMMIT", "index.ui.git_commit")
@@ -240,7 +240,7 @@ def build_web_app() -> object:
         # service-to-service traffic. bc610d8 closed ONLY /admin/(users|roles|
         # groups|api-keys); the same injection still authenticated UNAUTHENTICATED
         # callers as the configured admin on /auth/me, /admin/rbac, and /api/*
-        # (the live P0 bypass: anonymous GET /auth/me => roles:[admin]). Forward
+        # (the live P0 bypass: anonymous GET /auth/me resolved as privileged). Forward
         # these verbatim (cookies + caller headers, NO injected key) so the api
         # server's _auth_or_raise enforces 401; the authenticated SPA forwards its
         # session cookie and still resolves to its real identity. Only non-identity

@@ -498,10 +498,12 @@ def execute_tool(
     active_auth = auth or AuthMiddleware()
     active_identity = identity
     if active_identity is None:
-        active_auth.sync_identity_roles(actor_id, identity_roles or {"admin"})
+        resolved_roles = set(identity_roles or set())
+        if resolved_roles:
+            active_auth.sync_identity_roles(actor_id, resolved_roles)
         active_identity = AuthResult(
             user_id=actor_id,
-            roles=set(identity_roles or {"admin"}),
+            roles=resolved_roles,
             permissions=set(),
             token_type="direct",
         )
