@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import pytest
 
-from index_server.auth.middleware import AuthMiddleware
+from index_server.auth.middleware import AuthMiddleware, flat_roles_for
 
 
 def test_a2a_api_key_validation_parity(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -31,7 +31,9 @@ def test_a2a_api_key_validation_parity(monkeypatch: pytest.MonkeyPatch) -> None:
     assert via_header.token_type == "api_key"
     assert via_bearer.token_type == "api_key"
     assert via_auth.token_type == "api_key"
-    assert via_header.roles == via_bearer.roles == via_auth.roles == {"admin"}
+    assert via_header.roles == via_bearer.roles == via_auth.roles
+    assert "admin" in via_header.roles
+    assert flat_roles_for(via_header.roles) == {"admin"}
     assert "*" in via_header.permissions
 
 
@@ -42,7 +44,7 @@ def test_a2a_api_key_invalid_rejected() -> None:
 
 
 def test_api_key_env_mapping_parses_roles_and_skips_empty(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("CLOUD_DOG__INDEX__AUTH__API_KEYS", " , scoped-key:reader|writer , bare-key ")
+    monkeypatch.setenv("CLOUD_DOG__INDEX__AUTH__API_KEYS", " , scoped-key:read-only|read-write , bare-key ")
     monkeypatch.delenv("TEST_A2A_API_KEY", raising=False)
 
     auth = AuthMiddleware()
@@ -50,9 +52,12 @@ def test_api_key_env_mapping_parses_roles_and_skips_empty(monkeypatch: pytest.Mo
     bare = auth.api_key_identity({"x-api-key": "bare-key"})
 
     assert scoped.roles == {"viewer", "user"}
+    assert flat_roles_for(scoped.roles) == {"read-write"}
     assert {"collection.read", "collection.write"}.issubset(scoped.permissions)
-    assert bare.roles == {"admin"}
-    assert "*" in bare.permissions
+    assert "admin" not in bare.roles
+    assert "*" not in bare.permissions
+    assert flat_roles_for(bare.roles) == {"read-only"}
+    assert AuthMiddleware._default_roles() == set()
 
 
 def test_role_specific_api_key_env_mapping_separates_rbac_roles(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -65,10 +70,13 @@ def test_role_specific_api_key_env_mapping_separates_rbac_roles(monkeypatch: pyt
     auth = AuthMiddleware()
 
     assert auth.api_key_identity({"x-api-key": "admin-role-key"}).roles == {"admin"}
+    assert flat_roles_for(auth.api_key_identity({"x-api-key": "admin-role-key"}).roles) == {"admin"}
     assert "*" in auth.api_key_identity({"x-api-key": "admin-role-key"}).permissions
     assert auth.api_key_identity({"x-api-key": "writer-role-key"}).roles == {"user"}
+    assert flat_roles_for(auth.api_key_identity({"x-api-key": "writer-role-key"}).roles) == {"read-write"}
     assert "collection.write" in auth.api_key_identity({"x-api-key": "writer-role-key"}).permissions
     assert auth.api_key_identity({"x-api-key": "reader-role-key"}).roles == {"viewer"}
+    assert flat_roles_for(auth.api_key_identity({"x-api-key": "reader-role-key"}).roles) == {"read-only"}
     assert auth.api_key_identity({"x-api-key": "reader-role-key"}).permissions == {"collection.read"}
 
 

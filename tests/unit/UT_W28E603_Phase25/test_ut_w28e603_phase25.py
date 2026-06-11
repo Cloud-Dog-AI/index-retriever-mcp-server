@@ -31,7 +31,14 @@ def _configure_sqlite_env(monkeypatch, db_path: Path) -> None:
     monkeypatch.setenv("CLOUD_DOG_DB__DATABASE", str(db_path))
     monkeypatch.setenv("CLOUD_DOG__DB__DIALECT", "sqlite")
     monkeypatch.setenv("CLOUD_DOG__DB__DATABASE", str(db_path))
-    for name in ("CLOUD_DOG__DB__URL", "CLOUD_DOG_DB__URL", "DB_URL", "CLOUD_DOG_DB__HOST"):
+    for name in (
+        "CLOUD_DOG__DB__URL",
+        "CLOUD_DOG_DB__URL",
+        "CLOUD_DOG__INDEX__DB__URL",
+        "INDEX_RETRIEVER_DB_URL",
+        "DB_URL",
+        "CLOUD_DOG_DB__HOST",
+    ):
         monkeypatch.delenv(name, raising=False)
 
 

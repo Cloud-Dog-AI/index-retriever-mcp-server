@@ -42,6 +42,8 @@ def _configure_sqlite_env(monkeypatch, db_path: Path) -> None:
     for name in (
         "CLOUD_DOG__DB__URL",
         "CLOUD_DOG_DB__URL",
+        "CLOUD_DOG__INDEX__DB__URL",
+        "INDEX_RETRIEVER_DB_URL",
         "CLOUD_DOG_DB__HOST",
         "CLOUD_DOG_DB__PORT",
         "CLOUD_DOG_DB__USERNAME",

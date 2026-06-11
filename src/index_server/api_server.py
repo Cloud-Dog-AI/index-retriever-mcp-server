@@ -68,7 +68,7 @@ except ImportError:  # pragma: no cover - optional runtime dependency
     psutil = None
 
 from index_server.admin_ui import admin_ui_script, admin_ui_styles, collections_page, profiles_page, security_page, structure_page
-from index_server.auth.middleware import AuthMiddleware, AuthResult
+from index_server.auth.middleware import AuthMiddleware, AuthResult, flat_roles_for
 from index_server.logging_runtime import init_platform_logging, shutdown_platform_logging
 from index_server.mcp_server import build_registry, execute_tool
 from index_server.runtime_config import resolve_server_binding
@@ -299,7 +299,7 @@ def _runtime_config_payload() -> dict[str, str]:
         ),
         "MCP_BASE_URL": _runtime_override("CLOUD_DOG__INDEX__UI__MCP_BASE_URL", "index.ui.mcp_base_url"),
         "A2A_BASE_URL": _runtime_override("CLOUD_DOG__INDEX__UI__A2A_BASE_URL", "index.ui.a2a_base_url"),
-        "AUTH_MODE": _runtime_override("CLOUD_DOG__INDEX__UI__AUTH_MODE", "index.ui.auth_mode", "cookie"),
+        "AUTH_MODE": _runtime_override("CLOUD_DOG__INDEX__UI__AUTH_MODE", "index.ui.auth_mode", "api_key"),
         "APP_VERSION": _runtime_override("CLOUD_DOG__INDEX__UI__APP_VERSION", "index.ui.app_version", "dev"),
         "BUILD_DATE": _runtime_override("CLOUD_DOG__INDEX__UI__BUILD_DATE", "index.ui.build_date"),
         "GIT_COMMIT": _runtime_override("CLOUD_DOG__INDEX__UI__GIT_COMMIT", "index.ui.git_commit"),
@@ -905,13 +905,14 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         if sess:
             return JSONResponse({"user": {"id": sess["user_id"], "displayName": sess["user"], "email": None, "roles": [sess["role"]], "permissions": ["*"]}})
         identity = _auth_or_raise(request, _headers_from_request(request))
+        display_roles = flat_roles_for(identity.roles)
         return JSONResponse(
             {
                 "user": {
                     "id": identity.user_id,
                     "displayName": identity.user_id,
                     "email": None,
-                    "roles": sorted(str(role) for role in identity.roles),
+                    "roles": sorted(display_roles or identity.roles),
                     "permissions": sorted(str(permission) for permission in identity.permissions),
                 }
             }

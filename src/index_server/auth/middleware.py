@@ -54,7 +54,9 @@ INDEX_ROLE_PERMISSIONS: dict[str, set[str]] = {
 _LEGACY_ROLE_ALIASES = {
     "maintainer": "user",
     "writer": "user",
+    "read-write": "user",
     "reader": "viewer",
+    "read-only": "viewer",
     "owner": "admin",
 }
 
@@ -62,6 +64,18 @@ _LEGACY_ROLE_ALIASES = {
 def _canonical_role(raw_role: str) -> str:
     role = str(raw_role or "").strip().lower()
     return _LEGACY_ROLE_ALIASES.get(role, role or "viewer")
+
+
+def flat_roles_for(roles: set[str]) -> set[str]:
+    """Project internal RBAC roles back to the Thread-a flat login roles."""
+    canonical_roles = {_canonical_role(role) for role in roles}
+    if "admin" in canonical_roles:
+        return set(("admin",))
+    if "user" in canonical_roles:
+        return {"read-write"}
+    if "viewer" in canonical_roles:
+        return {"read-only"}
+    return set()
 
 
 class AuthMiddleware:
@@ -90,7 +104,7 @@ class AuthMiddleware:
 
     @staticmethod
     def _default_roles() -> set[str]:
-        return {"admin"}
+        return set()
 
     @classmethod
     def _configured_key_roles(cls) -> list[tuple[str, set[str]]]:

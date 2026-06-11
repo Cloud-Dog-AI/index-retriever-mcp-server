@@ -47,6 +47,24 @@ def test_api_app_routes_cover_auth_and_errors(service: IndexService) -> None:
     assert runtime_config.status_code == 200
     assert "window.__RUNTIME_CONFIG__" in runtime_config.text
     assert "API_BASE_URL" in runtime_config.text
+    assert '"AUTH_MODE": "api_key"' in runtime_config.text
+
+    anon_me = client.get("/auth/me")
+    assert anon_me.status_code == 401
+    assert "admin" not in anon_me.text
+
+    read_only_me = client.get("/auth/me", headers={"x-api-key": "valid-reader-token"})
+    assert read_only_me.status_code == 200
+    assert read_only_me.json()["user"]["roles"] == ["read-only"]
+    assert "admin" not in read_only_me.json()["user"]["roles"]
+
+    read_write_me = client.get("/auth/me", headers={"x-api-key": "valid-writer-token"})
+    assert read_write_me.status_code == 200
+    assert read_write_me.json()["user"]["roles"] == ["read-write"]
+
+    admin_me = client.get("/auth/me", headers={"x-api-key": "valid-admin-token"})
+    assert admin_me.status_code == 200
+    assert admin_me.json()["user"]["roles"] == ["admin"]
 
     root = client.get("/")
     assert root.status_code == 200
@@ -437,11 +455,18 @@ def test_mcp_app_and_execute_tool_paths(service: IndexService) -> None:
     )
     assert bad_payload.status_code == 422
 
-    profiles = mcp_server.execute_tool(service, "profiles_list", {})["profiles"]
+    with pytest.raises(PermissionError):
+        mcp_server.execute_tool(service, "profiles_list", {})
+
+    profiles = mcp_server.execute_tool(service, "profiles_list", {}, identity_roles={"reader"})["profiles"]
     assert "default" in profiles
-    assert mcp_server.execute_tool(service, "backend_health_check", {})["status"] == "ok"
-    assert mcp_server.execute_tool(service, "embedding_health_check", {})["status"] == "ok"
-    assert mcp_server.execute_tool(service, "queue_status", {})["total"] >= 0
+    assert (
+        mcp_server.execute_tool(service, "backend_health_check", {}, identity_roles={"reader"})["status"] == "ok"
+    )
+    assert (
+        mcp_server.execute_tool(service, "embedding_health_check", {}, identity_roles={"reader"})["status"] == "ok"
+    )
+    assert mcp_server.execute_tool(service, "queue_status", {}, identity_roles={"writer"})["total"] >= 0
     with pytest.raises(PermissionError):
         mcp_server.execute_tool(
             service,
