@@ -860,6 +860,20 @@ def test_web_tool_proxy_cookie_role_gates_service_key(monkeypatch: pytest.Monkey
     monkeypatch.setattr(web_server.httpx, "AsyncClient", _mock_async_client)
 
     client = TestClient(web_server.build_web_app())
+    anon_write = client.post(
+        "/api/v1/tools/ingest_text",
+        json={
+            "profile": "default",
+            "collection": "ut_public_web_proxy",
+            "text": "anonymous write must default deny",
+            "source": "file://unit/public-web-proxy-anon.txt",
+        },
+    )
+
+    assert anon_write.status_code == 401
+    assert anon_write.json() == {"detail": "Authentication failed"}
+    assert captured_mcp_requests == []
+
     client.cookies.set("index_web_session", "signed-read-only-cookie")
     read_only_write = client.post(
         "/api/v1/tools/ingest_text",

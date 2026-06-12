@@ -456,6 +456,12 @@ def build_web_app() -> object:
             "params": {"name": tool_name, "arguments": tool_args},
         }
         session_payload = await _caller_session_payload(request)
+        if (
+            session_payload is None
+            and not request.headers.get("authorization")
+            and not request.headers.get("x-api-key")
+        ):
+            return JSONResponse(status_code=401, content={"detail": "Authentication failed"})
         if session_payload is not None:
             from index_server.mcp_server import _required_permission_for_tool
 
