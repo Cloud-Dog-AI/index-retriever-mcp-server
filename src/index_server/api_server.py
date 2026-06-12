@@ -15,6 +15,9 @@
 from __future__ import annotations
 
 import gzip
+import base64
+import hashlib
+import hmac
 import json
 import secrets
 import socket
@@ -899,6 +902,47 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         "read-only",
     )
 
+    def _session_signing_secret() -> bytes:
+        material = _login_value(getattr(runtime_cfg.auth.jwt, "secret", ""), _admin_password)
+        if not material:
+            material = secrets.token_hex(32)
+        return hashlib.sha256(material.encode("utf-8")).digest()
+
+    _session_secret = _session_signing_secret()
+
+    def _b64url_encode(raw: bytes) -> str:
+        return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+    def _b64url_decode(raw: str) -> bytes:
+        padding = "=" * (-len(raw) % 4)
+        return base64.urlsafe_b64decode((raw + padding).encode("ascii"))
+
+    def _sign_session(session: dict[str, Any]) -> str:
+        payload = {
+            "user": str(session.get("user") or ""),
+            "user_id": str(session.get("user_id") or ""),
+            "role": str(session.get("role") or "read-only"),
+            "_created": float(session.get("_created") or time.time()),
+        }
+        payload_bytes = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
+        payload_part = _b64url_encode(payload_bytes)
+        signature = hmac.new(_session_secret, payload_part.encode("ascii"), hashlib.sha256).digest()
+        return f"{payload_part}.{_b64url_encode(signature)}"
+
+    def _unsign_session(token: str) -> dict[str, Any] | None:
+        try:
+            payload_part, signature_part = token.split(".", 1)
+            expected = hmac.new(_session_secret, payload_part.encode("ascii"), hashlib.sha256).digest()
+            supplied = _b64url_decode(signature_part)
+            if not hmac.compare_digest(expected, supplied):
+                return None
+            payload = json.loads(_b64url_decode(payload_part))
+        except (ValueError, TypeError, json.JSONDecodeError, UnicodeDecodeError):
+            return None
+        if not isinstance(payload, dict):
+            return None
+        return payload
+
     def _get_session(request: Request) -> dict | None:
         token = request.cookies.get(_cookie_name)
         if token and token in _sessions:
@@ -906,6 +950,10 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             if time.time() - sess.get("_created", 0) < 3600:
                 return sess
             del _sessions[token]
+        if token:
+            sess = _unsign_session(token)
+            if sess is not None and time.time() - float(sess.get("_created", 0) or 0) < 3600:
+                return sess
         return None
 
     def _session_identity(session: dict[str, Any]) -> AuthResult:
@@ -935,9 +983,10 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         expected_password = str((account or {}).get("password", ""))
         if not account or not secrets.compare_digest(password, expected_password):
             raise HTTPException(status_code=401, detail="Invalid credentials")
-        token = secrets.token_urlsafe(32)
         role = str(account["role"])
-        _sessions[token] = {"user": username, "user_id": username, "role": role, "_created": time.time()}
+        session = {"user": username, "user_id": username, "role": role, "_created": time.time()}
+        token = _sign_session(session)
+        _sessions[token] = session
         identity = auth.session_identity(username, {role})
         resp = JSONResponse({"user": _user_payload(identity)})
         resp.set_cookie(_cookie_name, token, httponly=True, samesite="lax", max_age=3600, path="/")
