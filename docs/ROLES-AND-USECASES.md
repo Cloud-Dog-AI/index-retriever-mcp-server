@@ -4,7 +4,7 @@ Canonical IDAM reference for index-retriever: the role catalog, the use-cases (v
 requirement→role→surface→test traceability matrix, and the WebUI page→use-case→role map. Built by W28A-749
 (IDAM Thread-b) from `docs/REQUIREMENTS.md`, the in-code roles (`src/index_server/auth/middleware.py`), the
 tool registry (`src/index_tools/tools/registry.py`), and the live servers. Companion: `REQUIREMENTS.md`
-(what), `ARCHITECTURE.md` (how), `DATA-MODEL.md` (entities), `API.md` (surfaces), `TESTS.md` (T0–T3).
+(what), `ARCHITECTURE.md` (how), `DATA-MODEL.md` (entities), `API-REFERENCE.md` (surfaces), `TESTS.md` (T0–T3).
 
 ---
 

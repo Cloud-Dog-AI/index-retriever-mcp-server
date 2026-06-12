@@ -1,7 +1,7 @@
 # API — index-retriever-mcp-server
 
-Canonical API/surface reference. Consolidates the former `API-REFERENCE.md`, `API_DOCUMENTATION.md`, and
-`MCP_DOCUMENTATION.md` (preserved under `docs/archive/`). Machine spec: `docs/openapi.json`. Roles/parity:
+Canonical API/surface reference. Consolidates the former `API-REFERENCE.md`, `API-REFERENCE.md`, and
+`MCP-REFERENCE.md` (preserved under `docs/archive/`). Machine spec: `docs/openapi.json`. Roles/parity:
 `ROLES-AND-USECASES.md`. Built/reconciled by W28A-749 (IDAM Thread-b).
 
 ## Surfaces & canonical base paths (FR-01, FR-01A)
@@ -49,4 +49,4 @@ documented catalogue to match runtime exactly — reconciled to 92 by W28A-749. 
   `structure_{extract,health,outline_get,pages_list,sections_list,link_to_vdb_records}`
 - **a2a:** `a2a_config_events`
 
-(Full per-tool params/output: `docs/archive/MCP_DOCUMENTATION.md` + `GET /mcp/tools` live.)
+(Full per-tool params/output: `docs/archive/MCP-REFERENCE.md` + `GET /mcp/tools` live.)

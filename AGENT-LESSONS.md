@@ -81,8 +81,8 @@ This file captures lessons learned from W28A-602 (platform adoption), W28A-878/8
 - This service has four real interfaces and regressions can hide in any of them: API, MCP, A2A, and WebUI. A “green” API/MCP result is not enough.
 - The service/package boundary around metadata is currently documented better than it is implemented. `index-retriever-mcp-server` should own transport, auth, jobs, audit, and request shaping; `cloud_dog_vdb` should own canonical metadata schema, validation, deterministic IDs, provenance normalization, lifecycle helpers, and backend-portable filter semantics.
 - Treat service-local metadata defaults as transition code, not architecture. The metadata uplift review confirmed that the long-term architecture is package-first for metadata logic.
-- Requirements and architecture docs can drift behind package claims. Before implementing more metadata work, check `docs/REQUIREMENTS.md`, `docs/ARCHITECTURE.md`, `docs/API_DOCUMENTATION.md`, and the actual `cloud_dog_vdb` code together; higher-level package docs currently overstate what the validator and ingestion pipeline really enforce.
-- **60 MCP tools** are the current registered inventory. The registry in `src/index_tools/tools/registry.py` (lines 91-152) is the single source of truth. `docs/REQUIREMENTS.md` §7.7 and `docs/MCP_DOCUMENTATION.md` must match exactly. `UT1_40` enforces the count at test time.
+- Requirements and architecture docs can drift behind package claims. Before implementing more metadata work, check `docs/REQUIREMENTS.md`, `docs/ARCHITECTURE.md`, `docs/API-REFERENCE.md`, and the actual `cloud_dog_vdb` code together; higher-level package docs currently overstate what the validator and ingestion pipeline really enforce.
+- **60 MCP tools** are the current registered inventory. The registry in `src/index_tools/tools/registry.py` (lines 91-152) is the single source of truth. `docs/REQUIREMENTS.md` §7.7 and `docs/MCP-REFERENCE.md` must match exactly. `UT1_40` enforces the count at test time.
 - The service uses 9 of 10 platform packages. `cloud_dog_cache` is N/A because the service does not perform caching operations. All other packages are imported and actively used.
 - The `_normalise_api_host()` function in `web_server.py` converts wildcard bind addresses (`0.0.0.0`, `::`) to `127.0.0.1` for the internal reverse-proxy bridge. This is a legitimate loopback reference, not a hardcoded URL — it's allowlisted in the QT compliance conftest.
 
@@ -124,7 +124,7 @@ This file captures lessons learned from W28A-602 (platform adoption), W28A-878/8
 
 - `docs/REQUIREMENTS.md` and `docs/ARCHITECTURE.md` are not passive reference files in this repo. They are operational guardrails and need updating when the real contract changes.
 - The canonical metadata model now has an explicit Phase 1 requirements/architecture baseline in those docs. Future metadata work should update code against that baseline rather than inventing field names or ownership rules ad hoc.
-- `docs/API_DOCUMENTATION.md` still lags the metadata uplift. If a later change alters ingest/search/retrieve metadata contracts, update API docs in the same instruction rather than leaving requirements and API docs out of sync.
+- `docs/API-REFERENCE.md` still lags the metadata uplift. If a later change alters ingest/search/retrieve metadata contracts, update API docs in the same instruction rather than leaving requirements and API docs out of sync.
 - **`docs/TESTS.md` must include exact pass counts** from the most recent sweep run, not just tier presence flags. W28A-964 added a `Last Run` column with exact per-tier pass counts and a Playwright row.
 - **`README.md` package versions must track `pyproject.toml`** exactly. Do not use loose `>=0.1.0` when pyproject.toml requires `>=0.3.1`. Also ensure all 9 used platform packages appear in the table (cloud_dog_storage was missing before W28A-964).
 

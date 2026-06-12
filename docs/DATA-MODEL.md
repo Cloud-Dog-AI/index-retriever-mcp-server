@@ -2,7 +2,7 @@
 
 Canonical entity reference: the identity family, the domain family, and the IDAM cascade edge. Built by
 W28A-749 (IDAM Thread-b) from the live models (file:line cited). Companion: `ROLES-AND-USECASES.md` (roles +
-matrix), `ARCHITECTURE.md` (design), `API.md` (surfaces).
+matrix), `ARCHITECTURE.md` (design), `API-REFERENCE.md` (surfaces).
 
 ## 1. Identity family
 In-memory `IndexService` records, synced to the `cloud_dog_idam` user/group/key services; re-seeded per process

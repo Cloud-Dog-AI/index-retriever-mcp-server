@@ -368,7 +368,7 @@ The `src/` tree contains two top-level packages. The complete directory listing 
 
 The HTTP API is the canonical surface for external integrations and the Admin WebUI.
 
-The full route inventory is maintained in `docs/API_DOCUMENTATION.md`. Key route groups are summarised below:
+The full route inventory is maintained in `docs/API-REFERENCE.md`. Key route groups are summarised below:
 
 | Group | Methods | Paths | Purpose |
 |---|---|---|---|
