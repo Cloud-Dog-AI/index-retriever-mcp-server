@@ -25,7 +25,7 @@ cloud_dog_config / cloud_dog_logging / cloud_dog_api_kit / cloud_dog_idam (0.5.2
 cloud_dog_jobs / cloud_dog_llm / cloud_dog_vdb / cloud_dog_storage — USED. §1.4.1 grep: 0 violations in `src/`.
 
 ## Evidence Matrix
-| Requirement | Raw artefact (path) | Raw value observed | Verification command | Pass |
+| Requirement | Raw artefact | Raw value observed | Verification command | Pass |
 |---|---|---|---|---|
 | GATE 0 reading warrant | `00-reading-proof.md` | 8 files SHA256(12) + 3 rule-ids each | `cat 00-reading-proof.md` | PASS |
 | b-3 matrix (verbatim + cascade) | `docs/ROLES-AND-USECASES.md` | 17 rows, bolded T3-IR-CASCADE | `git show origin/main:docs/ROLES-AND-USECASES.md` | PASS |

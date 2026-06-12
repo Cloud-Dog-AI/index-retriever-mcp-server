@@ -14,3 +14,9 @@ Re-read IN FULL this session (2026-06-12); SHA256(12) verified against current d
 | index-retriever-mcp-server/AGENT-LESSONS.md | 389 | 5cf2f60549a3 | 60->92 MCP tool registry single source (UT1_40); FOREGROUND tests + working/ logs; never source env-UT (use --env) |
 
 GATE 0A ACK emitted: prove current origin/main -> image -> deployed container -> live T0-T3 objective; consume only the named section. Honoured: cascade proven live on the deployed indexretriever0.
+
+## READING PROOF (markers)
+- RULES_REREAD: YES (RULES.md version 2.7)
+- AGENT-LESSONS-REREAD: YES (AGENT-LESSONS.md version 3.17)
+- AGENT-BOOTSTRAP-DIRECTIVE reread: YES (version 5.4)
+- Mandatory files read: the 8 files in the table above, re-read in full this session 2026-06-12.
