@@ -128,3 +128,17 @@ python3 -m pytest tests/application --env tests/env-AT -q
 | FR-17 (WebUI Security Admin) | `tests/application/AT_WEBUI_SecurityAdmin/test_webui_security_admin.py` | AT_WEBUI_SecurityAdmin suite | COVERED |
 | FR-15 (Streaming ingestion) | `tests/integration/IT1_12/test_it1_12.py` | `test_streaming_ingest_sse` | COVERED |
 | FR-P002 (Search Explain) | `tests/unit/UT1_37/test_ut1_37_mcp_vdb041_dispatch.py`, `tests/integration/IT1_7/test_it1_7.py` | `test_execute_tool_search_explain_returns_plan_and_scoring_metadata`, `test_mcp_tool_execution` | COVERED |
+
+## Access-control matrix (T0–T3) — IDAM b-method (W28A-749)
+
+Suites placed under `tests/smoke/access_control_matrix_smoke.py` (T0–T2 backend) and
+`tests/e2e/access-control-webui.spec.ts` (WebUI). Full matrix: `ROLES-AND-USECASES.md §3`. The cascade row
+(`T3-IR-CASCADE`) + resource-scoped enforcement activate only when the deployed image carries
+`cloud_dog_idam==0.5.0` (W28A-749 keystone gate); on 0.4.x the role-based tiers (T0–T2) still run.
+
+| Tier | IDs (representative) | Proves |
+|---|---|---|
+| T0 smoke | `T0-IR-LIFECYCLE`, `T0-IR-INGEST`, `T0-IR-SEARCH`, `T0-IR-SCOPE-DENY`, `T0-IR-TOOLS-COUNT`(==92), `T0-IR-WEBUI-PAGES` | works, no 404, tool inventory == runtime |
+| T1 common-IDAM | `T1-IR-AUTH-401`, `T1-IR-A2A-401`, `T1-IR-WEBUI-401-LOGOUT`, `T1-IR-BASELINE-USER`, `T1-IR-AUDIT-COVERAGE` | anon→401 per surface; baseline user; audit |
+| T2 RBAC-by-role | `T2-IR-ADMINONLY`, `T2-IR-COLLECTION-RBAC`, `T2-IR-NOSECRET`, `T2-IR-PROXY-FORWARD`, `T2-IR-SERVICE-SCOPE`, `T2-IR-JOBS-RBAC` | role gating; no secret to non-admin; proxy forwards principal |
+| T3 business + cascade | `T3-IR-UPLOAD-QUERY`, `T3-IR-REFERENCE/STREAM/DEDUPE`, `T3-IR-PROFILE-CRUD`, `T3-IR-RETENTION`, `T3-IR-SEARCH-SCOPE`, **`T3-IR-CASCADE`**, `T9-IR-PROFILE-LIVE` | UC-01..06 live; **group→collection cascade live (0.5.0-gated)** |

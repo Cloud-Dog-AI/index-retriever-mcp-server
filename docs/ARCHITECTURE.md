@@ -1,9 +1,8 @@
 # Index Retriever MCP Server Architecture
 
-## W28A-421 Review Status
-- Reviewed for external/shareable publication during W28A-421.
-- Source basis: `defaults.yaml`, 4 server source files, 92+ discovered routes/endpoints, and 60 MCP tools.
-- Internal-only absolute paths, environment-specific hosts, and private registries have been removed from this shareable document set.
+## Provenance
+- Canonical architecture for index-retriever-mcp-server. Role references reconciled to `ROLES-AND-USECASES.md §1` by W28A-749 (IDAM Thread-b).
+- Source basis: `defaults.yaml`, the API/Web/MCP/A2A servers, and the runtime tool registry (92 tools).
 
 ## 1. Purpose
 

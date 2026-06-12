@@ -1,9 +1,8 @@
 # Requirements — index-retriever-mcp-server
 
-## W28A-421 Review Status
-- Reviewed for external/shareable publication during W28A-421.
-- Source basis: `defaults.yaml`, 4 server source files, 3 discovered routes/endpoints, and 60 MCP tools.
-- Internal-only absolute paths, environment-specific hosts, and private registries have been removed from this shareable document set.
+## Provenance
+- Canonical requirements for index-retriever-mcp-server. Reconciled to runtime by W28A-749 (IDAM Thread-b).
+- Source basis: `defaults.yaml`, the API/Web/MCP/A2A servers, and the runtime tool registry (92 tools — `src/index_tools/tools/registry.py`, enforced by `UT1_40`).
 
 **Version:** 1.1  
 **Date:** 2026-02-28  
@@ -467,7 +466,7 @@ Admin/maintainer tools SHALL include:
 
 ### FR-16A Complete MCP tool inventory contract
 - The documented MCP catalogue SHALL match the actual registered runtime inventory exactly.
-- The current registered tool count SHALL be **90** tools (includes the W28E-603 document-structure family).
+- The current registered tool count SHALL be **92** tools (verified: `src/index_tools/tools/registry.py` runtime build = 92 unique; `UT1_40` asserts `len(tools) == 92`; includes the 21 W28E-603 document-structure tools). Reconciled to runtime by W28A-749.
 - Tool documentation SHALL include, for every registered tool:
   - tool name,
   - operator intent/description,
@@ -555,7 +554,7 @@ Admin/maintainer tools SHALL include:
 - `ocr_run`
 - `table_extract`
 
-### 7.7 Complete runtime tool inventory (60 tools)
+### 7.7 Complete runtime tool inventory (92 tools)
 
 | Tool | Purpose | Primary inputs | Expected output |
 |------|---------|----------------|-----------------|
