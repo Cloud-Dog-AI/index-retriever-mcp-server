@@ -34,6 +34,9 @@ try:
 except ImportError:  # pragma: no cover — cloud_dog_idam is a required dependency
     raise ImportError("cloud_dog_idam is required — install via: pip install cloud-dog-idam>=0.2.0")
 
+# W28A-749: resource-aware cascade bridge (consumes the cloud_dog_idam 0.5.x keystone, if present).
+from index_server.auth import cascade  # noqa: E402
+
 
 @dataclass(slots=True)
 class AuthResult:
@@ -96,10 +99,19 @@ class AuthMiddleware:
             "CLOUD_DOG__INDEX__AUTH__JWT__SECRET",
         )
         self._jwt_service = JWTTokenService(secret=self._jwt_secret) if self._jwt_secret else None
-        self._rbac = RBACEngine(role_permissions=INDEX_ROLE_PERMISSIONS)
+        # W28A-741 D-NO-BASELINE-1: role_overlay composes the PS-82 §7.2 baseline with
+        # the per-service overlay (per-role union), instead of replacing it. Falls back
+        # to the legacy role_permissions= kwarg if the installed engine predates 0.5.x.
+        try:
+            self._rbac = RBACEngine(role_overlay=INDEX_ROLE_PERMISSIONS)
+        except TypeError:  # pragma: no cover — idam < 0.5.x
+            self._rbac = RBACEngine(role_permissions=INDEX_ROLE_PERMISSIONS)
         self._users: dict[str, IDAMUser] = {}
         self._api_key_manager = APIKeyManager(default_prefix="cd_")
         self._provider = APIKeyProvider(self._api_key_manager, self._users.get)
+        # W28A-749 cascade plumbing (bound by IndexService when CASCADE_AVAILABLE).
+        self._membership: Any | None = None
+        self._binding_repo_cm: Any | None = None
         self._seed_configured_keys(api_keys)
 
     @staticmethod
@@ -368,6 +380,121 @@ class AuthMiddleware:
         if self._rbac.has_permission(identity.user_id, permission):
             return
         raise PermissionError("Authorisation failed")
+
+    def bind_cascade(self, membership: Any, binding_repo_cm: Any) -> None:
+        """Inject the resource-aware cascade ports (W28A-749).
+
+        ``membership`` implements ``groups_of(user_id)``; ``binding_repo_cm`` is a
+        zero-arg callable returning a context manager that yields an
+        ``RBACBindingRepository`` bound to a fresh DB session. No-op effect unless
+        ``cascade.CASCADE_AVAILABLE`` (cloud_dog_idam >= 0.5.x).
+        """
+        self._membership = membership
+        self._binding_repo_cm = binding_repo_cm
+
+    def _cascade_ready(self) -> bool:
+        return bool(
+            cascade.CASCADE_AVAILABLE
+            and self._membership is not None
+            and self._binding_repo_cm is not None
+        )
+
+    def authorise_resource(
+        self,
+        identity: AuthResult,
+        *,
+        permission: str,
+        resource_type: str,
+        resource_id: str,
+    ) -> bool:
+        """Resource-aware authorise (W28A-749, IDAM-B2 §2.2): role perms ∘ RBAC bindings.
+
+        Default-DENY. Admin wildcard short-circuits. When the cascade is not wired
+        (idam < 0.5.x), degrades to today's resource-agnostic flat-permission check so
+        the service still enforces on 0.4.x.
+        """
+        if "*" in identity.permissions:
+            return True
+        if not self._cascade_ready():
+            return permission in identity.permissions
+        try:
+            with self._binding_repo_cm() as repo:
+                return bool(
+                    cascade.authorise(
+                        identity.user_id,
+                        permission=permission,
+                        resource_type=resource_type,
+                        resource_id=resource_id,
+                        engine=self._rbac,
+                        binding_repo=repo,
+                        membership=self._membership,
+                    )
+                )
+        except Exception:  # pragma: no cover — resolver/DB hiccup → fail safe to flat perms
+            return permission in identity.permissions
+
+    def allowed_resource_ids(
+        self, identity: AuthResult, *, resource_type: str, permission: str = "collection.read"
+    ) -> set[str]:
+        """Return the resource_id set the caller may access (LIST filter; IDAM-B2 §2.3).
+
+        ``{"*"}`` means "all of this resource type" (admin or a role-level grant of the
+        permission). Degrades to ``{"*"}`` when the cascade is not wired (0.4.x — no
+        server-side narrowing, today's behaviour).
+        """
+        if "*" in identity.permissions or permission in identity.permissions:
+            return {"*"}
+        if not self._cascade_ready():
+            return {"*"}
+        try:
+            with self._binding_repo_cm() as repo:
+                return set(
+                    cascade.allowed_resource_ids(
+                        identity.user_id,
+                        resource_type,
+                        permission,
+                        engine=self._rbac,
+                        binding_repo=repo,
+                        membership=self._membership,
+                    )
+                )
+        except Exception:  # pragma: no cover
+            return {"*"}
+
+    def has_resource_binding(
+        self, identity: AuthResult, *, permission: str, resource_type: str, resource_id: str
+    ) -> bool:
+        """Return whether a SCOPED RBAC binding (NOT a flat role perm) grants the access.
+
+        Used by the collection-level guard to let a binding-only principal (e.g. a
+        ``restricted`` GROUPUSER) bypass the role-ACL while flat-role holders stay subject
+        to it (preserves the per-collection ``allowed_roles`` semantics for them).
+        """
+        if not self._cascade_ready():
+            return False
+        try:
+            with self._binding_repo_cm() as repo:
+                grants = cascade.effective_grants(
+                    identity.user_id, engine=self._rbac, binding_repo=repo, membership=self._membership
+                )
+                for (rt, rid, perm) in grants.scoped_grants:
+                    if rt == resource_type and perm == permission and rid in (resource_id, "*"):
+                        return True
+                return False
+        except Exception:  # pragma: no cover
+            return False
+
+    def invalidate_user_grants(self, user_id: str) -> None:
+        """Drop cached effective-grants for a user (live cascade on membership change)."""
+        engine = self._rbac
+        for attr in ("_invalidate_user", "invalidate_user"):
+            fn = getattr(engine, attr, None)
+            if callable(fn):
+                try:
+                    fn(user_id)
+                except Exception:  # pragma: no cover
+                    pass
+                return
 
     def auth_health(self) -> dict[str, Any]:
         """Return auth health payload."""

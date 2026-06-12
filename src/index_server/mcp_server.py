@@ -281,8 +281,36 @@ def _enforce_tool_permission(
     identity: AuthResult,
     *,
     actor_id: str,
+    arguments: dict[str, Any] | None = None,
 ) -> None:
-    """Enforce MCP dispatch via cloud_dog_idam permission checks."""
+    """Enforce MCP/API dispatch via cloud_dog_idam permission checks.
+
+    W28A-749: resource-bearing tools (search/retrieve/ingest/... on a collection) route
+    through the resource-aware ``authorise`` (role perms ∘ RBAC bindings) so the
+    group→collection cascade + default-DENY apply. Other tools keep the role-level check.
+    """
+    from index_server.auth import cascade
+
+    spec = cascade.resource_for_tool(tool_name, arguments) if cascade.CASCADE_AVAILABLE else None
+    if spec is not None:
+        permission, resource_type, resource_id = spec
+        if not auth.authorise_resource(
+            identity, permission=permission, resource_type=resource_type, resource_id=resource_id
+        ):
+            _log_tool_audit(
+                tool_name,
+                actor_id,
+                "denied",
+                {
+                    "permission": permission,
+                    "resource_type": resource_type,
+                    "resource_id": resource_id,
+                    "roles": sorted(identity.roles),
+                },
+            )
+            raise PermissionError(f"Authorisation failed for tool '{tool_name}'") from None
+        return
+
     permission = _required_permission_for_tool(tool_name)
     try:
         auth.require_permission(identity, permission)
@@ -456,6 +484,24 @@ def _enforce_collection_permission(
     specific collection is denied (FR-05 collection-level RBAC).
     """
     # Covers: FR-05
+    # W28A-749: a resource-scoped RBAC binding granting this permission on this collection
+    # authorises directly (the binding IS the grant) and bypasses the role-ACL — the
+    # group→collection cascade for a binding-only principal. Flat-role holders fall through to
+    # the role-permission + allowed_roles checks below (preserves per-collection ACL, e.g. IT1_21).
+    from index_server.auth import cascade
+
+    if (
+        cascade.CASCADE_AVAILABLE
+        and profile
+        and collection
+        and auth.has_resource_binding(
+            identity,
+            permission=permission,
+            resource_type=cascade.RESOURCE_TYPE_COLLECTION,
+            resource_id=cascade.collection_resource_id(profile, collection),
+        )
+    ):
+        return
     auth.require_permission(identity, permission)
     if service is None or not profile or not collection:
         return
@@ -508,7 +554,9 @@ def execute_tool(
             token_type="direct",
         )
     roles = active_identity.roles
-    _enforce_tool_permission(tool_name, active_auth, active_identity, actor_id=actor_id)
+    _enforce_tool_permission(
+        tool_name, active_auth, active_identity, actor_id=actor_id, arguments=arguments
+    )
 
     if tool_name == "profiles_list":
         return {"profiles": service.profiles_list()}
@@ -729,9 +777,12 @@ def execute_tool(
             "binding": service.admin_rbac_bind(
                 entity_type=str(arguments["entity_type"]),
                 entity_id=str(arguments["entity_id"]),
-                role=str(arguments["role"]),
+                role=str(arguments.get("role", "")),
                 roles=roles,
                 actor=str(arguments.get("actor", "mcp")),
+                resource_type=arguments.get("resource_type"),
+                resource_id=arguments.get("resource_id"),
+                permission=arguments.get("permission"),
             ),
             "status": "ok",
         }
@@ -740,9 +791,12 @@ def execute_tool(
             "binding": service.admin_rbac_unbind(
                 entity_type=str(arguments["entity_type"]),
                 entity_id=str(arguments["entity_id"]),
-                role=str(arguments["role"]),
+                role=str(arguments.get("role", "")),
                 roles=roles,
                 actor=str(arguments.get("actor", "mcp")),
+                resource_type=arguments.get("resource_type"),
+                resource_id=arguments.get("resource_id"),
+                permission=arguments.get("permission"),
             ),
             "status": "ok",
         }

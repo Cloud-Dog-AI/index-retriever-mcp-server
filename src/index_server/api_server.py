@@ -1378,7 +1378,13 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         """Execute call tool."""
         # Covers: FR-17
         identity = _auth_or_raise(request, _headers_from_request(request))
-        _require_or_raise(request, identity, "collection.read")
+        # W28A-749: resource-bearing tools are gated resource-aware inside execute_tool
+        # (role perms ∘ RBAC bindings — the group→collection cascade). Non-resource tools
+        # keep the coarse collection.read access gate here.
+        from index_server.auth import cascade as _cascade
+
+        if not (_cascade.CASCADE_AVAILABLE and _cascade.resource_for_tool(tool_name, payload) is not None):
+            _require_or_raise(request, identity, "collection.read")
         arguments = dict(payload)
         arguments.setdefault("actor", identity.user_id)
         try:

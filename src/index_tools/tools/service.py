@@ -96,7 +96,7 @@ def _run_async_blocking(coro: Any) -> Any:
     return result.get("value")
 
 try:
-    from cloud_dog_idam import APIKeyManager, GroupService, UserService
+    from cloud_dog_idam import APIKeyManager
     from cloud_dog_idam.api_keys.hashing import hash_api_key as idam_hash_api_key
     from cloud_dog_idam.domain.enums import UserStatus as IDAMUserStatus
     from cloud_dog_idam.domain.models import ApiKey as IDAMApiKey
@@ -104,9 +104,25 @@ try:
     from cloud_dog_idam.domain.models import User as IDAMUser
 except ImportError:  # pragma: no cover
     APIKeyManager = None  # type: ignore[assignment]
-    GroupService = None  # type: ignore[assignment]
-    UserService = None  # type: ignore[assignment]
     idam_hash_api_key = None  # type: ignore[assignment]
+    IDAMUserStatus = None  # type: ignore[assignment]
+    IDAMApiKey = None  # type: ignore[assignment]
+    IDAMGroup = None  # type: ignore[assignment]
+    IDAMUser = None  # type: ignore[assignment]
+
+# W28A-749: UserService/GroupService moved out of the top-level cloud_dog_idam export
+# in 0.5.x (now cloud_dog_idam.users.service / cloud_dog_idam.users.groups). Import
+# resiliently so the 0.4.3→0.5.x bump does not leave the domain models undefined
+# (the old combined import nulled IDAMApiKey/IDAMUser/IDAMGroup on failure).
+try:
+    from cloud_dog_idam.users.groups import GroupService  # idam >= 0.5.x
+    from cloud_dog_idam.users.service import UserService
+except ImportError:  # pragma: no cover
+    try:
+        from cloud_dog_idam import GroupService, UserService  # idam < 0.5.x (legacy)
+    except ImportError:
+        GroupService = None  # type: ignore[assignment]
+        UserService = None  # type: ignore[assignment]
 
 # W28A-876 Gate 4b: DB-backed role store (PS-71 §IW3A). Roles are persisted via
 # the canonical cloud_dog_idam SqlAlchemyRoleStore over the shared role tables
@@ -121,10 +137,6 @@ except ImportError:  # pragma: no cover
     IDAMRole = None  # type: ignore[assignment]
     IDAMBaselineRoleProtected = None  # type: ignore[assignment]
     IDAMRoleStore = None  # type: ignore[assignment]
-    IDAMApiKey = None  # type: ignore[assignment]
-    IDAMUserStatus = None  # type: ignore[assignment]
-    IDAMGroup = None  # type: ignore[assignment]
-    IDAMUser = None  # type: ignore[assignment]
 
 try:
     from cloud_dog_vdb import CollectionSpec, ParserIngestionOptions, Record, SearchRequest, get_vdb_client, ingest_document
@@ -1241,6 +1253,46 @@ class IndexService:
         self._idam_auth = auth
         for user_id in sorted(self.users.keys()):
             self._sync_auth_user(user_id)
+        self._wire_cascade(auth)
+
+    def _wire_cascade(self, auth: Any) -> None:
+        """W28A-749: bind the resource-aware cascade ports + register resource types.
+
+        No-op unless cloud_dog_idam >= 0.5.x provides the resolver/guard
+        (``cascade.CASCADE_AVAILABLE``). Never blocks boot.
+        """
+        from index_server.auth import cascade
+
+        if not cascade.CASCADE_AVAILABLE or auth is None:
+            return
+        try:
+            auth.bind_cascade(cascade.IndexMembershipResolver(self), self._binding_repo_cm)
+            reg = cascade.ResourceRegistryService(project=cascade.PROJECT)
+            reg.register_resource_type(
+                resource_type=cascade.RESOURCE_TYPE_COLLECTION, label="Collection",
+                permissions=["collection.read", "collection.write"],
+                list_endpoint="/api/v1/tools/collections_list", project=cascade.PROJECT,
+            )
+            reg.register_resource_type(
+                resource_type=cascade.RESOURCE_TYPE_PROFILE, label="Index Profile",
+                permissions=["collection.read", "collection.write"],
+                list_endpoint="/api/v1/tools/profiles_list", project=cascade.PROJECT,
+            )
+        except Exception:  # pragma: no cover — never block boot on cascade wiring
+            pass
+
+    def _binding_repo_cm(self):
+        """Return a context manager yielding an RBACBindingRepository over a fresh session."""
+        from contextlib import contextmanager
+
+        from index_server.auth import cascade
+
+        @contextmanager
+        def _cm():
+            with self._role_session_manager().session() as session:
+                yield cascade.RBACBindingRepository(session)
+
+        return _cm()
 
     def _effective_user_roles(self, user_id: str) -> set[str]:
         record = self.users.get(user_id)
@@ -1928,6 +1980,10 @@ class IndexService:
         self._sync_idam_group(group_id)
         for member in sorted(prior_members.union(record.members)):
             self._sync_auth_user(member)
+            # W28A-749: membership change → invalidate cached grants so the group→resource
+            # cascade resolves/revokes live within one request (no restart).
+            if self._idam_auth is not None and hasattr(self._idam_auth, "invalidate_user_grants"):
+                self._idam_auth.invalidate_user_grants(member)
         self.audit_logger.log_admin_action(
             actor=actor,
             roles=roles,
@@ -2838,18 +2894,35 @@ class IndexService:
         for group_id, record in sorted(self.groups.items()):
             for role in sorted(record.roles):
                 bindings.append({"entity_type": "group", "entity_id": group_id, "role": role})
+        bindings.extend(self._resource_bindings_list())  # W28A-749 resource-scoped bindings
         return bindings
 
     def admin_rbac_bind(
         self,
         entity_type: str,
         entity_id: str,
-        role: str,
-        roles: set[str],
+        role: str = "",
+        roles: set[str] | None = None,
         actor: str = "admin",
+        *,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
+        permission: str | None = None,
     ) -> dict[str, Any]:
-        """Bind a role to a user or group."""
+        """Bind a role (legacy) OR a resource-scoped RBAC binding (W28A-749 cascade).
+
+        Resource-scoped form (``resource_type`` + ``permission`` present): persists a
+        cloud_dog_idam ``RBACBinding`` row ``subject:entity → project/resource_type:resource_id
+        = permission`` so a group bound to a collection cascades to its members. Legacy form
+        (role only) assigns a role to the user/group as before.
+        """
+        roles = roles if roles is not None else set()
         self._require_admin(roles)
+        if resource_type and permission:
+            return self._bind_resource_binding(
+                entity_type, entity_id, str(resource_type), str(resource_id or "*"),
+                str(permission), roles, actor,
+            )
         target_role = str(role).strip()
         if not target_role:
             raise ValueError("role is required")
@@ -2889,12 +2962,22 @@ class IndexService:
         self,
         entity_type: str,
         entity_id: str,
-        role: str,
-        roles: set[str],
+        role: str = "",
+        roles: set[str] | None = None,
         actor: str = "admin",
+        *,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
+        permission: str | None = None,
     ) -> dict[str, Any]:
-        """Unbind a role from a user or group."""
+        """Unbind a role (legacy) OR a resource-scoped RBAC binding (W28A-749 cascade)."""
+        roles = roles if roles is not None else set()
         self._require_admin(roles)
+        if resource_type and permission:
+            return self._unbind_resource_binding(
+                entity_type, entity_id, str(resource_type), str(resource_id or "*"),
+                str(permission), roles, actor,
+            )
         target_role = str(role).strip()
         if entity_type == "user":
             if entity_id not in self.users:
@@ -2927,6 +3010,117 @@ class IndexService:
             payload=binding,
         )
         return binding
+
+    # --- W28A-749 resource-scoped binding persistence (cloud_dog_idam 0.5.x cascade) ---
+    def _resource_invalidate(self, entity_type: str, entity_id: str) -> None:
+        """Invalidate cached grants for affected principals so the cascade is live (no restart)."""
+        auth = self._idam_auth
+        if auth is None or not hasattr(auth, "invalidate_user_grants"):
+            return
+        if entity_type == "group":
+            group = self.groups.get(entity_id)
+            members = set(group.members) if group is not None else set()
+        else:
+            members = {entity_id}
+        for uid in members:
+            auth.invalidate_user_grants(uid)
+
+    def _bind_resource_binding(
+        self, entity_type: str, entity_id: str, resource_type: str, resource_id: str,
+        permission: str, roles: set[str], actor: str,
+    ) -> dict[str, Any]:
+        from index_server.auth import cascade
+
+        if not cascade.CASCADE_AVAILABLE:
+            raise RuntimeError("resource-scoped RBAC bindings require cloud_dog_idam>=0.5.0")
+        binding_id = str(uuid4())
+        with self._role_session_manager().session() as session:
+            repo = cascade.RBACBindingRepository(session)
+            repo.save(cascade.RBACBindingORM(
+                binding_id=binding_id, subject_type=entity_type, subject_id=entity_id,
+                project=cascade.PROJECT, resource_type=resource_type, resource_id=resource_id,
+                permission=permission, granted_by=actor,
+            ))
+        self._resource_invalidate(entity_type, entity_id)
+        binding = {
+            "entity_type": entity_type, "entity_id": entity_id, "resource_type": resource_type,
+            "resource_id": resource_id, "permission": permission, "binding_id": binding_id,
+        }
+        self.audit_logger.log_admin_action(
+            actor=actor, roles=roles, action="bind", target_type="rbac_binding",
+            target_id=f"{entity_type}:{entity_id}:{resource_type}:{resource_id}:{permission}",
+            target_name=f"{entity_type}:{entity_id}", new_value=binding,
+        )
+        self._emit_config_event(
+            entity_type="rbac_binding", entity_id=f"{entity_type}:{entity_id}",
+            action="bound", actor=actor, payload=binding,
+        )
+        return binding
+
+    def _unbind_resource_binding(
+        self, entity_type: str, entity_id: str, resource_type: str, resource_id: str,
+        permission: str, roles: set[str], actor: str,
+    ) -> dict[str, Any]:
+        from index_server.auth import cascade
+
+        if not cascade.CASCADE_AVAILABLE:
+            raise RuntimeError("resource-scoped RBAC bindings require cloud_dog_idam>=0.5.0")
+        removed = 0
+        with self._role_session_manager().session() as session:
+            repo = cascade.RBACBindingRepository(session)
+            for row in repo.by_subject(entity_type, entity_id):
+                if (
+                    str(getattr(row, "resource_type", "")) == resource_type
+                    and str(getattr(row, "resource_id", "*")) == resource_id
+                    and str(getattr(row, "permission", "")) == permission
+                ):
+                    session.delete(row)
+                    removed += 1
+            if removed:
+                session.commit()
+        self._resource_invalidate(entity_type, entity_id)
+        binding = {
+            "entity_type": entity_type, "entity_id": entity_id, "resource_type": resource_type,
+            "resource_id": resource_id, "permission": permission, "removed": removed,
+        }
+        self.audit_logger.log_admin_action(
+            actor=actor, roles=roles, action="unbind", target_type="rbac_binding",
+            target_id=f"{entity_type}:{entity_id}:{resource_type}:{resource_id}:{permission}",
+            target_name=f"{entity_type}:{entity_id}", prior_value=binding,
+        )
+        self._emit_config_event(
+            entity_type="rbac_binding", entity_id=f"{entity_type}:{entity_id}",
+            action="unbound", actor=actor, payload=binding,
+        )
+        return binding
+
+    def _resource_bindings_list(self) -> list[dict[str, Any]]:
+        from index_server.auth import cascade
+
+        if not cascade.CASCADE_AVAILABLE:
+            return []
+        out: list[dict[str, Any]] = []
+        try:
+            with self._role_session_manager().session() as session:
+                repo = cascade.RBACBindingRepository(session)
+                seen: set[tuple] = set()
+                subjects = [("user", u) for u in self.users] + [("group", g) for g in self.groups]
+                for et, eid in subjects:
+                    for row in repo.by_subject(et, eid):
+                        key = (
+                            et, eid, str(getattr(row, "resource_type", "")),
+                            str(getattr(row, "resource_id", "*")), str(getattr(row, "permission", "")),
+                        )
+                        if key in seen:
+                            continue
+                        seen.add(key)
+                        out.append({
+                            "entity_type": et, "entity_id": eid, "resource_type": key[2],
+                            "resource_id": key[3], "permission": key[4],
+                        })
+        except Exception:  # pragma: no cover
+            return []
+        return out
 
     def _profile_backend(self, profile: str) -> str:
         profile_data = self.profiles.get(profile, self.profiles["default"])

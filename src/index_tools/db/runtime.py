@@ -251,6 +251,19 @@ def initialise_database(*, force_reinit: bool = False) -> PlatformDatabaseRuntim
             ],
         )
 
+        # W28A-749: the rbac_bindings table backs the group→resource cascade
+        # (cloud_dog_idam 0.5.x RBACBinding). Capability-gated — absent on idam < 0.5.x.
+        try:
+            from cloud_dog_idam.storage.sqlalchemy.models import (  # type: ignore[import-not-found,import-untyped]
+                RBACBindingORM as _RBACBindingORM,
+            )
+
+            _RBACBindingORM.metadata.create_all(
+                bind=engine, checkfirst=True, tables=[_RBACBindingORM.__table__]
+            )
+        except Exception:  # pragma: no cover — idam < 0.5.x has no RBACBindingORM
+            pass
+
         _RUNTIME = PlatformDatabaseRuntime(
             settings=settings,
             engine=engine,
