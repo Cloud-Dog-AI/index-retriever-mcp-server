@@ -1,10 +1,10 @@
-FINAL_EVIDENCE_VALIDATOR lane=W28A-749 started=2026-06-12T12:34:48+01:00
+FINAL_EVIDENCE_VALIDATOR lane=W28A-749 started=2026-06-12T12:35:48+01:00
 Evidence path: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749
 PASS: evidence path exists
 PASS: evidence files tracked under working/evidence/W28A-749: 19
 FAIL: evidence path has dirty/untracked scoped files
  M working/evidence/W28A-749/final-evidence-validator.txt
-PASS: live remote branch HEAD found: refs/heads/w28a-749-idam f7762c69b4e17369603963dda707f940274c469b
+PASS: live remote branch HEAD found: refs/heads/w28a-749-idam 71fd718eb273031088b71d9677ea8eb1346ea5cc
 PASS: Evidence Matrix header found
 PASS: no future proof language found
 PASS: no forbidden alternate acceptance labels found
@@ -28,7 +28,7 @@ PASS: scoped-clean-proof.txt contains required scoped git commands
 PASS: scoped-clean-proof.txt shows no modified/staged/untracked files
 PASS: remote-proof.txt found: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/remote-proof.txt
 PASS: remote-proof.txt contains remote/HEAD proof markers
-INFO: saved proof does not embed live git rev-parse HEAD: f7762c69b4e17369603963dda707f940274c469b
+INFO: saved proof does not embed live git rev-parse HEAD: 71fd718eb273031088b71d9677ea8eb1346ea5cc
 INFO: saved proof does not embed live remote branch HEAD; live auditor verification is authoritative
 INFO: remote-proof.txt records FINAL_PROOF_TAG candidate: W28A-749-FINAL-PROOF
 PASS: FINAL-TAG-VERIFICATION.txt found: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/FINAL-TAG-VERIFICATION.txt
@@ -40,9 +40,9 @@ PASS: FINAL-TAG-VERIFICATION.txt contains marker: sha256sum -c CHECKSUMS.sha256
 INFO: FINAL-TAG-VERIFICATION.txt missing marker: git status; live auditor verification is authoritative
 INFO: FINAL-TAG-VERIFICATION.txt missing marker: git diff; live auditor verification is authoritative
 PASS: EVIDENCE_TAG belongs to lane W28A-749
-PASS: EVIDENCE_TAG exists remotely: W28A-749-EVIDENCE f7762c69b4e17369603963dda707f940274c469b
+PASS: EVIDENCE_TAG exists remotely: W28A-749-EVIDENCE 71fd718eb273031088b71d9677ea8eb1346ea5cc
 PASS: FINAL_PROOF_TAG belongs to lane W28A-749
-PASS: FINAL_PROOF_TAG exists remotely: W28A-749-FINAL-PROOF f7762c69b4e17369603963dda707f940274c469b
+PASS: FINAL_PROOF_TAG exists remotely: W28A-749-FINAL-PROOF 71fd718eb273031088b71d9677ea8eb1346ea5cc
 PASS: FINAL_PROOF_TAG is an ancestor of current remote HEAD
 PASS: sha256sum -c CHECKSUMS.sha256 passed
 PASS: close gate found
@@ -53,7 +53,7 @@ PASS: no stale failed artefact names found
 PASS: no unavailable/waived/out-of-scope claims found
 
 Repo: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server
-HEAD: f7762c69b4e17369603963dda707f940274c469b
+HEAD: 71fd718eb273031088b71d9677ea8eb1346ea5cc
 BRANCH: w28a-749-idam
 FAIL: repo-wide worktree dirty/untracked: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server
  M working/evidence/W28A-749/final-evidence-validator.txt
