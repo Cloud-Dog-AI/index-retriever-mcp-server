@@ -797,6 +797,86 @@ def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch
     assert authed_hops and all(r.headers.get("x-api-key") == "caller-supplied-key" for r in authed_hops)
 
 
+def test_web_tool_proxy_cookie_role_gates_service_key(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    class DummyConfig:
+        def get(self, key: str, default: object = None) -> object:
+            values = {
+                "index.ui.auth_mode": "cookie",
+                "test.api_key": "service-admin-key",
+            }
+            return values.get(key, default)
+
+    index_path = tmp_path / "index.html"
+    index_path.write_text("<html><body><div id='root'></div></body></html>", encoding="utf-8")
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir()
+
+    monkeypatch.setattr(web_server, "load_config", lambda **_kwargs: DummyConfig())
+    monkeypatch.setattr(web_server, "runtime_env_files", lambda: [])
+    monkeypatch.setattr(web_server, "_ui_index_path", lambda: index_path)
+    monkeypatch.setattr(web_server, "_ui_dist_dir", lambda: tmp_path)
+    monkeypatch.setattr(web_server, "_ui_assets_dir", lambda: assets_dir)
+    monkeypatch.setattr(
+        web_server,
+        "resolve_server_binding",
+        lambda name: {
+            "api_server": ServerBinding(host="127.0.0.1", port=8074),
+            "mcp_server": ServerBinding(host="127.0.0.1", port=8076),
+            "a2a_server": ServerBinding(host="127.0.0.1", port=8077),
+        }[name],
+    )
+
+    captured_mcp_requests: list[httpx.Request] = []
+
+    def _upstream_handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/auth/me":
+            if request.headers.get("cookie"):
+                return httpx.Response(
+                    200,
+                    json={
+                        "user": {
+                            "id": "read-only",
+                            "roles": ["read-only"],
+                            "permissions": ["collection.read"],
+                        }
+                    },
+                )
+            return httpx.Response(401, json={"detail": "Authentication failed"})
+        if request.url.path == "/mcp":
+            captured_mcp_requests.append(request)
+            return httpx.Response(
+                200,
+                json={"result": {"structuredContent": {"job_id": "should-not-run"}}},
+            )
+        return httpx.Response(404, json={"detail": "unexpected path"})
+
+    _mock_transport = httpx.MockTransport(_upstream_handler)
+    _real_async_client = web_server.httpx.AsyncClient
+
+    def _mock_async_client(*args: object, **kwargs: object) -> httpx.AsyncClient:
+        kwargs["transport"] = _mock_transport
+        return _real_async_client(*args, **kwargs)
+
+    monkeypatch.setattr(web_server.httpx, "AsyncClient", _mock_async_client)
+
+    client = TestClient(web_server.build_web_app())
+    client.cookies.set("index_web_session", "signed-read-only-cookie")
+    read_only_write = client.post(
+        "/api/v1/tools/ingest_text",
+        headers={"x-api-key": "valid-admin-token"},
+        json={
+            "profile": "default",
+            "collection": "ut_public_web_proxy",
+            "text": "read-only cookie must not borrow or be upgraded by service/admin keys",
+            "source": "file://unit/public-web-proxy.txt",
+        },
+    )
+
+    assert read_only_write.status_code == 403
+    assert read_only_write.json() == {"detail": "Authorisation failed for tool 'ingest_text'"}
+    assert captured_mcp_requests == []
+
+
 def test_requires_caller_auth_locks_identity_bearing_paths() -> None:
     """W28A-734-R2 negative-auth guard: every identity/auth/admin/api path MUST be
     forwarded verbatim (no injected service api_key). Re-narrowing this set is the

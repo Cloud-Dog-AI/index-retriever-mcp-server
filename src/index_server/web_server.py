@@ -316,28 +316,41 @@ def build_web_app() -> object:
         )
 
     async def _caller_session_is_valid(request: Request) -> bool:
-        """True only if the caller presents a VALID cookie session, verified
-        against the api server's /auth/me authority — never cookie presence
-        alone. Gates whether the mcp/a2a console may borrow the service api_key
-        on the caller's behalf; an UNAUTHENTICATED caller must not (W28A-734-R2).
-        The probe forwards cookies only (no injected key), so a 200 with a
-        non-null user proves a real session, not the injected-key bypass."""
+        """True only if the caller presents a valid cookie session."""
+        return await _caller_session_payload(request) is not None
+
+    async def _caller_session_payload(request: Request) -> dict[str, Any] | None:
+        """Resolve the caller's cookie session via the api server authority.
+
+        The probe forwards cookies only, never caller headers or an injected
+        service key. A non-null payload therefore proves the cookie identity that
+        must govern any web-console service-key hop.
+        """
         cookies = dict(request.cookies)
         if not cookies:
-            return False
+            return None
         try:
             async with httpx.AsyncClient(
                 base_url=api_base_url, verify=False, timeout=15, cookies=cookies
             ) as client:
                 resp = await client.get("/auth/me")
         except httpx.HTTPError:
-            return False
+            return None
         if resp.status_code != 200:
-            return False
+            return None
         try:
-            return bool((resp.json() or {}).get("user"))
+            payload = resp.json() or {}
         except ValueError:
+            return None
+        return payload if payload.get("user") else None
+
+    def _caller_payload_has_permission(payload: dict[str, Any], permission: str) -> bool:
+        user = payload.get("user")
+        if not isinstance(user, dict):
             return False
+        roles = {str(value).strip() for value in user.get("roles", []) if str(value).strip()}
+        permissions = {str(value).strip() for value in user.get("permissions", []) if str(value).strip()}
+        return "*" in permissions or permission in permissions or (permission == "admin" and "admin" in roles)
 
     async def _service_key_allowed(request: Request) -> bool:
         """The web tier may attach the configured service api_key to an mcp/a2a
@@ -347,13 +360,18 @@ def build_web_app() -> object:
             return True
         return await _caller_session_is_valid(request)
 
-    def _mcp_proxy_headers(request: Request, *, allow_service_key: bool = False) -> dict[str, str]:
+    def _mcp_proxy_headers(
+        request: Request,
+        *,
+        allow_service_key: bool = False,
+        ignore_caller_credentials: bool = False,
+    ) -> dict[str, str]:
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json, text/event-stream",
         }
-        authorization = request.headers.get("authorization")
-        x_api_key = request.headers.get("x-api-key")
+        authorization = None if ignore_caller_credentials else request.headers.get("authorization")
+        x_api_key = None if ignore_caller_credentials else request.headers.get("x-api-key")
         if authorization:
             headers["Authorization"] = authorization
         if x_api_key:
@@ -437,12 +455,26 @@ def build_web_app() -> object:
             "method": "tools/call",
             "params": {"name": tool_name, "arguments": tool_args},
         }
-        allow_service_key = await _service_key_allowed(request)
+        session_payload = await _caller_session_payload(request)
+        if session_payload is not None:
+            from index_server.mcp_server import _required_permission_for_tool
+
+            permission = _required_permission_for_tool(tool_name)
+            if not _caller_payload_has_permission(session_payload, permission):
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": f"Authorisation failed for tool '{tool_name}'"},
+                )
+        allow_service_key = session_payload is not None or await _service_key_allowed(request)
         async with httpx.AsyncClient(base_url=mcp_base_url, verify=False, timeout=60) as client:
             resp = await client.post(
                 "/mcp",
                 json=jsonrpc_payload,
-                headers=_mcp_proxy_headers(request, allow_service_key=allow_service_key),
+                headers=_mcp_proxy_headers(
+                    request,
+                    allow_service_key=allow_service_key,
+                    ignore_caller_credentials=session_payload is not None,
+                ),
             )
         try:
             rpc_result = resp.json()
