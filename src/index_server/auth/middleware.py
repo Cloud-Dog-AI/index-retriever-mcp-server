@@ -361,6 +361,10 @@ class AuthMiddleware:
     def require_permission(self, identity: AuthResult, permission: str) -> None:
         """Authorise through cloud_dog_idam RBAC permission state."""
         # Covers: FR-05
+        if "*" in identity.permissions or permission in identity.permissions:
+            return
+        if identity.token_type == "cookie":
+            raise PermissionError("Authorisation failed")
         if self._rbac.has_permission(identity.user_id, permission):
             return
         raise PermissionError("Authorisation failed")

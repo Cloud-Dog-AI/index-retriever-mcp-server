@@ -1038,20 +1038,18 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     def _auth_or_raise(request: Request, headers: dict[str, str]) -> Any:
         """Internal helper to auth or raise."""
         _sync_logging_correlation(request)
-        has_explicit_auth = bool(headers.get("x-api-key") or headers.get("authorization"))
-        if not has_explicit_auth:
-            session = _get_session(request)
-            if session is not None:
-                identity = _session_identity(session)
-                _log_auth_event(
-                    request,
-                    actor=identity.user_id,
-                    outcome="success",
-                    action="authenticate",
-                    roles=identity.roles,
-                    auth_mechanism="cookie",
-                )
-                return identity
+        session = _get_session(request)
+        if session is not None:
+            identity = _session_identity(session)
+            _log_auth_event(
+                request,
+                actor=identity.user_id,
+                outcome="success",
+                action="authenticate",
+                roles=identity.roles,
+                auth_mechanism="cookie",
+            )
+            return identity
         try:
             identity = auth.identity_from_headers(headers)
         except PermissionError as exc:

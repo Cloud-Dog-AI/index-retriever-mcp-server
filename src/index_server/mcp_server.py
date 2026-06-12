@@ -787,7 +787,7 @@ def execute_tool(
             )
         return {"job_id": job_ids[0], "job_ids": job_ids, "status": "queued", "count": len(job_ids)}
     if tool_name == "ingest_text":
-        _enforce_collection_permission(active_auth, active_identity, "collection.read", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         ingest_result = service.ingest_text(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -800,7 +800,7 @@ def execute_tool(
         job_id = getattr(ingest_result, "job_id", ingest_result)
         return {"job_id": str(job_id), "status": "queued"}
     if tool_name == "ingest_reference":
-        _enforce_collection_permission(active_auth, active_identity, "collection.read", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         reference_path = str(arguments.get("path") or arguments.get("uri") or "").strip()
         if not reference_path:
             raise ValueError("ingest_reference requires path or uri")

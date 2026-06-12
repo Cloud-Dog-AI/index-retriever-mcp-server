@@ -107,6 +107,19 @@ def test_api_app_routes_cover_auth_and_errors(monkeypatch: pytest.MonkeyPatch, s
     assert read_only_write.status_code == 403
     assert "admin" not in read_only_write.text
 
+    read_only_mixed_auth_write = client.post(
+        "/api/v1/tools/ingest_text",
+        headers={"x-api-key": "valid-admin-token"},
+        json={
+            "profile": "default",
+            "collection": "ut_visible_collection",
+            "text": "read-only cookie must override injected API key",
+            "source": "file://unit/read-only-mixed-auth.txt",
+        },
+    )
+    assert read_only_mixed_auth_write.status_code == 403
+    assert "admin" not in read_only_mixed_auth_write.text
+
     root = client.get("/")
     assert root.status_code == 200
     assert "id=\"root\"" in root.text
