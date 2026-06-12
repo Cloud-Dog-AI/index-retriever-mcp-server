@@ -1,14 +1,17 @@
-FINAL_EVIDENCE_VALIDATOR lane=W28A-749 started=2026-06-12T12:35:48+01:00
+FINAL_EVIDENCE_VALIDATOR lane=W28A-749 started=2026-06-12T12:36:43+01:00
 Evidence path: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749
 PASS: evidence path exists
 PASS: evidence files tracked under working/evidence/W28A-749: 19
-FAIL: evidence path has dirty/untracked scoped files
- M working/evidence/W28A-749/final-evidence-validator.txt
-PASS: live remote branch HEAD found: refs/heads/w28a-749-idam 71fd718eb273031088b71d9677ea8eb1346ea5cc
+PASS: evidence path has no dirty/untracked scoped files
+PASS: live remote branch HEAD found: refs/heads/w28a-749-idam eae4bf51caf1da597b84486092fd8187e3567c2d
 PASS: Evidence Matrix header found
 PASS: no future proof language found
 PASS: no forbidden alternate acceptance labels found
-PASS: saved validator outputs are clean
+INFO: saved validator output contains FAIL; current live validator result is authoritative
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/final-evidence-validator.txt:5:FAIL: evidence path has dirty/untracked scoped files
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/final-evidence-validator.txt:51:PASS: no substantive raw FAIL found
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/final-evidence-validator.txt:58:FAIL: repo-wide worktree dirty/untracked: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/final-evidence-validator.txt:63:FINAL_EVIDENCE_VALIDATOR: FAIL failures=2
 PASS: mandatory reading proof file found: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/00-reading-proof.md
 PASS: RULES.md reread/version proof found
 PASS: AGENT-LESSONS.md reread/version proof found
@@ -28,7 +31,7 @@ PASS: scoped-clean-proof.txt contains required scoped git commands
 PASS: scoped-clean-proof.txt shows no modified/staged/untracked files
 PASS: remote-proof.txt found: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/remote-proof.txt
 PASS: remote-proof.txt contains remote/HEAD proof markers
-INFO: saved proof does not embed live git rev-parse HEAD: 71fd718eb273031088b71d9677ea8eb1346ea5cc
+INFO: saved proof does not embed live git rev-parse HEAD: eae4bf51caf1da597b84486092fd8187e3567c2d
 INFO: saved proof does not embed live remote branch HEAD; live auditor verification is authoritative
 INFO: remote-proof.txt records FINAL_PROOF_TAG candidate: W28A-749-FINAL-PROOF
 PASS: FINAL-TAG-VERIFICATION.txt found: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/FINAL-TAG-VERIFICATION.txt
@@ -40,9 +43,9 @@ PASS: FINAL-TAG-VERIFICATION.txt contains marker: sha256sum -c CHECKSUMS.sha256
 INFO: FINAL-TAG-VERIFICATION.txt missing marker: git status; live auditor verification is authoritative
 INFO: FINAL-TAG-VERIFICATION.txt missing marker: git diff; live auditor verification is authoritative
 PASS: EVIDENCE_TAG belongs to lane W28A-749
-PASS: EVIDENCE_TAG exists remotely: W28A-749-EVIDENCE 71fd718eb273031088b71d9677ea8eb1346ea5cc
+PASS: EVIDENCE_TAG exists remotely: W28A-749-EVIDENCE eae4bf51caf1da597b84486092fd8187e3567c2d
 PASS: FINAL_PROOF_TAG belongs to lane W28A-749
-PASS: FINAL_PROOF_TAG exists remotely: W28A-749-FINAL-PROOF 71fd718eb273031088b71d9677ea8eb1346ea5cc
+PASS: FINAL_PROOF_TAG exists remotely: W28A-749-FINAL-PROOF eae4bf51caf1da597b84486092fd8187e3567c2d
 PASS: FINAL_PROOF_TAG is an ancestor of current remote HEAD
 PASS: sha256sum -c CHECKSUMS.sha256 passed
 PASS: close gate found
@@ -50,14 +53,12 @@ PASS: completion claim present
 PASS: no common contradiction markers found with completion claim
 PASS: no substantive raw FAIL found
 PASS: no stale failed artefact names found
-PASS: no unavailable/waived/out-of-scope claims found
+PASS: unavailable/waived/out-of-scope claims cite proof or authorization markers
 
 Repo: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server
-HEAD: 71fd718eb273031088b71d9677ea8eb1346ea5cc
+HEAD: eae4bf51caf1da597b84486092fd8187e3567c2d
 BRANCH: w28a-749-idam
-FAIL: repo-wide worktree dirty/untracked: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server
- M working/evidence/W28A-749/final-evidence-validator.txt
-INFO: If every listed path is outside this lane's scope, list it in external-dirty-ledger.tsv and rerun. The final validator must still end with FINAL_EVIDENCE_VALIDATOR: PASS failures=0.
+PASS: repo worktree clean: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server
 PASS: HEAD equals origin/w28a-749-idam
 
-FINAL_EVIDENCE_VALIDATOR: FAIL failures=2
+FINAL_EVIDENCE_VALIDATOR: PASS failures=0
