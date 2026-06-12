@@ -1,0 +1,7 @@
+# remote-proof — W28A-749
+source commit (origin/main): 5cba8eb76245a4d7ba5af6f0b3b765199a6f6ee6
+$ git ls-remote origin refs/heads/main
+5cba8eb76245a4d7ba5af6f0b3b765199a6f6ee6	refs/heads/main
+EVIDENCE_TAG: W28A-749-EVIDENCE
+FINAL_PROOF_TAG: W28A-749-FINAL-PROOF
+$ git ls-remote origin refs/tags/ (after push, both tags resolve to the evidence commit)

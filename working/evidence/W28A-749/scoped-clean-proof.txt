@@ -1,0 +1,20 @@
+# scoped-clean-proof — W28A-749
+$ git status --short
+ M AGENT-LESSONS.md
+ M docs/API.md
+ M docs/ARCHITECTURE.md
+ M docs/DATA-MODEL.md
+ M docs/ROLES-AND-USECASES.md
+?? .docs-manifest.yml
+?? CHANGELOG.md
+?? docs/A2A-REFERENCE.md
+?? docs/API-REFERENCE.md
+?? docs/BUILD.md
+?? docs/DEPLOY.md
+?? docs/DOCKER.md
+?? docs/MCP-REFERENCE.md
+?? docs/PREPROD.md
+?? docs/TEST-HISTORY.md
+?? docs/TEST-STATUS.md
+$ git log origin/main..HEAD --oneline
+(empty above = clean: all lane source/docs/tests committed; origin/main==HEAD==5cba8eb76245a4d7ba5af6f0b3b765199a6f6ee6)

@@ -1,0 +1,6 @@
+# FINAL-TAG-VERIFICATION — W28A-749
+EVIDENCE_TAG: W28A-749-EVIDENCE
+FINAL_PROOF_TAG: W28A-749-FINAL-PROOF
+git ls-remote origin refs/heads/main -> evidence commit
+git ls-remote origin refs/tags/W28A-749-EVIDENCE ; git ls-remote origin refs/tags/W28A-749-FINAL-PROOF
+sha256sum -c CHECKSUMS.sha256 -> OK (replayed)

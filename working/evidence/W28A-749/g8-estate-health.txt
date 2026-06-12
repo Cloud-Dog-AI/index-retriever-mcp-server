@@ -1,0 +1,4 @@
+estate /health (target + 4 sentinels + siblings), all 200:
+indexretriever0=200 chatclient0=200 expertagent0=200 notificationagent0=200 filemcpserver0=200
+dbmcpserver0=200 gitmcpserver0=200 imapmcpserver0=200 sqlagentmcp0=200
+indexretriever0 /api-docs=200 ; 60s stability 10..60s all 200.

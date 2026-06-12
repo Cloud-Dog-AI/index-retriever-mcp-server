@@ -1,0 +1,6 @@
+Name: cloud-dog-idam
+Version: 0.5.2
+idam 0.5.2
+SYMBOLS OK
+report {'cascade_available': True, 'symbols': {'grants.effective_grants': True, 'grants.allowed_resource_ids': True, 'grants.authorise': True, 'membership': True, 'guard_registry.register_guard': True, 'secret_masking.mask_secrets': True}}
+IN-IMAGE CASCADE PROOF: PASS

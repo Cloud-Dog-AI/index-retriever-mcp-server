@@ -1,0 +1,6 @@
+indexretriever0: status=200 title="Cloud-Dog Index Retriever" mounted=true pageerrors=0 failedAssets=0 -> PASS
+chatclient0: status=200 title="Cloud-Dog : Chat client" mounted=true pageerrors=0 failedAssets=0 -> PASS
+expertagent0: status=200 title="Cloud-Dog : Expert Agent" mounted=true pageerrors=0 failedAssets=0 -> PASS
+notificationagent0: status=200 title="Cloud-Dog : Notification agent" mounted=true pageerrors=0 failedAssets=0 -> PASS
+filemcpserver0: status=200 title="Cloud-Dog File MCP" mounted=true pageerrors=0 failedAssets=0 -> PASS
+BROWSER-SMOKE: PASS (5/5 — target + 4 sentinels)
