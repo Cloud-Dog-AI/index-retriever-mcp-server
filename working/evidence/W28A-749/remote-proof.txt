@@ -1,8 +1,16 @@
-# remote-proof — W28A-749 (closeout state)
+# remote-proof — W28A-749 (closeout state; SHAs reproduced live by the auditor)
+
 source-code commit (the deployed image was built from this src tree): 5cba8eb
-src/+build diff 5cba8eb..origin/main == 0 lines (no source/deploy mismatch; later commits are docs+evidence only)
-EVIDENCE_TAG: W28A-749-EVIDENCE
-FINAL_PROOF_TAG: W28A-749-FINAL-PROOF
-origin/main HEAD == origin/w28a-749-idam == W28A-749-EVIDENCE == W28A-749-FINAL-PROOF (all the closeout commit)
-$ git ls-remote origin refs/heads/main ; git ls-remote origin refs/tags/W28A-749-EVIDENCE ; git ls-remote origin refs/tags/W28A-749-FINAL-PROOF
-registry image digest: sha256:02c322e26c62f18beb88625034dbcd5331087812495859b45b0ca2e6f513e3c9
+  proof: git diff 5cba8eb..origin/main -- src/ Dockerfile Dockerfile.public pyproject.toml  ->  0 lines (no source/deploy mismatch)
+registry image digest (live indexretriever0): sha256:02c322e26c62f18beb88625034dbcd5331087812495859b45b0ca2e6f513e3c9
+
+Two-anchor model (a committed proof cannot embed its own commit SHA; the live tag peel is authoritative):
+  - W28A-749-EVIDENCE  -> the evidence-content commit E
+  - W28A-749-FINAL-PROOF -> the final proof commit (adds the saved validator output) == origin/main == origin/w28a-749-idam
+  - ancestry: 5cba8eb (source) is an ancestor of E (EVIDENCE) is an ancestor of FINAL-PROOF == origin/main HEAD
+
+Reproduce the current anchors (auditor runs these — all four resolve to the final closeout commit):
+  $ git ls-remote origin refs/heads/main
+  $ git ls-remote origin refs/heads/w28a-749-idam
+  $ git ls-remote origin refs/tags/W28A-749-EVIDENCE
+  $ git ls-remote origin refs/tags/W28A-749-FINAL-PROOF

@@ -1,6 +1,8 @@
 # FINAL-TAG-VERIFICATION — W28A-749
 EVIDENCE_TAG: W28A-749-EVIDENCE
 FINAL_PROOF_TAG: W28A-749-FINAL-PROOF
-git ls-remote origin refs/heads/main -> closeout commit
-git ls-remote origin refs/tags/W28A-749-EVIDENCE ; git ls-remote origin refs/tags/W28A-749-FINAL-PROOF
+Model: EVIDENCE_TAG = evidence-content commit; FINAL_PROOF_TAG = final proof commit = origin/main = origin/w28a-749-idam; FINAL_PROOF_TAG is an ancestor of (equal to) origin/main HEAD.
+git ls-remote origin refs/heads/main
+git ls-remote origin refs/tags/W28A-749-EVIDENCE
+git ls-remote origin refs/tags/W28A-749-FINAL-PROOF
 sha256sum -c CHECKSUMS.sha256 -> OK
