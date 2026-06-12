@@ -416,7 +416,13 @@ class AuthMiddleware:
         if "*" in identity.permissions:
             return True
         if not self._cascade_ready():
-            return permission in identity.permissions
+            # degrade to today's resource-agnostic role check (mirrors require_permission,
+            # incl. the RBAC-engine has_permission fallback and the cookie constraint).
+            try:
+                self.require_permission(identity, permission)
+                return True
+            except PermissionError:
+                return False
         try:
             with self._binding_repo_cm() as repo:
                 return bool(
