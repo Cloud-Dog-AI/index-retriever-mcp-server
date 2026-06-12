@@ -13,7 +13,7 @@ a raw artefact in this evidence pack.
 - **b-3** `docs/ROLES-AND-USECASES.md` — 17-row matrix (use-cases verbatim, bolded T3-IR-CASCADE), entities
   DISJOINT finding, roles reconciled to the central catalog.
 - **b-5** UI justification — 18/18 SPA routes mapped to use-case+role, 0 orphan, strict API client.
-- **b-7** canonical 6-doc set (`REQUIREMENTS/ROLES-AND-USECASES/ARCHITECTURE/API/DATA-MODEL/TESTS`),
+- **b-7** canonical 6-doc set (`REQUIREMENTS/ROLES-AND-USECASES/ARCHITECTURE/API-REFERENCE/DATA-MODEL/TESTS`),
   tool-count reconciled to runtime **92**, 9 docs archived.
 - **b-4 / cascade wiring** — resource-aware guard consuming `cloud_dog_idam.rbac.grants/membership/
   guard_registry/secret_masking`; `rbac_bindings` table; resource-scoped `admin_rbac_bind/unbind`; live grants
@@ -37,7 +37,7 @@ cloud_dog_jobs / cloud_dog_llm / cloud_dog_vdb / cloud_dog_storage — USED. §1
 | G3 unit regression (0.5.x) | `ut-regression.log` | 212 passed 0 failed | `pytest tests/unit --env tests/env-UT` | PASS |
 | G4 keystone resolves (normal index) | `g4-docker-build.log` | Build OK; idam>=0.5.1 resolved | `bash docker-build.sh w28a-749 --variant dev` | PASS |
 | G5 in-image symbols | `g5-in-image-symbol-proof.log` | idam 0.5.2; all symbols; IN-IMAGE CASCADE PROOF PASS | `docker run --entrypoint python IMG -c report` | PASS |
-| G6 source + image | `remote-proof.txt` | origin/main=5cba8eb; registry sha256:02c322e26c62 | `git ls-remote origin main; docker push` | PASS |
+| G6 source + image | `remote-proof.txt` | origin/main == W28A-749-FINAL-PROOF; src-code ancestor 5cba8eb; registry sha256:02c322e26c62 | `git ls-remote origin refs/tags/W28A-749-FINAL-PROOF` | PASS |
 | G7 targeted deploy | `preprod-deployed-identity.txt` | 2 add 0 change 2 destroy; Up healthy; image 1179163c0480 | `terraform apply -target=docker_container.indexretriever0` | PASS |
 | G8 health/api-docs/stability | `g8-estate-health.txt`,`g8-stability.log` | /health 200, /api-docs 200, 60s all 200 | `curl -sk https://indexretriever0.cloud-dog.net/health` | PASS |
 | G8 LIVE T3-IR-CASCADE | `g8-live-cascade.txt` | 403->add->200/403/403->remove->403 | live cascade curl sequence | PASS |
@@ -68,7 +68,7 @@ cloud_dog_jobs / cloud_dog_llm / cloud_dog_vdb / cloud_dog_storage — USED. §1
 - PC32 no leftover containers/processes: YES (test entities cleaned; local images are build artefacts)
 - §1.4.1 bespoke grep (zero): YES (0 in src/)
 - §1.6 platform package compliance section in report: YES
-- Source commit on origin/main: 5cba8eb (ancestor of HEAD)
+- Source-code commit (built image src): 5cba8eb — ancestor of the closeout HEAD (origin/main == origin/w28a-749-idam == W28A-749-EVIDENCE == W28A-749-FINAL-PROOF)
 - Deployed digest == registry == :latest (no @sha256 pin): YES (registry sha256:02c322e26c62; container Up healthy)
 
 HAVE_ALL_REQUIREMENTS_BEEN_MET: YES

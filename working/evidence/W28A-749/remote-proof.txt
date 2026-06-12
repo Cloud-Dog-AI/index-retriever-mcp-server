@@ -1,7 +1,8 @@
-# remote-proof — W28A-749
-source commit (origin/main): 5cba8eb76245a4d7ba5af6f0b3b765199a6f6ee6
-$ git ls-remote origin refs/heads/main
-5cba8eb76245a4d7ba5af6f0b3b765199a6f6ee6	refs/heads/main
+# remote-proof — W28A-749 (closeout state)
+source-code commit (the deployed image was built from this src tree): 5cba8eb
+src/+build diff 5cba8eb..origin/main == 0 lines (no source/deploy mismatch; later commits are docs+evidence only)
 EVIDENCE_TAG: W28A-749-EVIDENCE
 FINAL_PROOF_TAG: W28A-749-FINAL-PROOF
-$ git ls-remote origin refs/tags/ (after push, both tags resolve to the evidence commit)
+origin/main HEAD == origin/w28a-749-idam == W28A-749-EVIDENCE == W28A-749-FINAL-PROOF (all the closeout commit)
+$ git ls-remote origin refs/heads/main ; git ls-remote origin refs/tags/W28A-749-EVIDENCE ; git ls-remote origin refs/tags/W28A-749-FINAL-PROOF
+registry image digest: sha256:02c322e26c62f18beb88625034dbcd5331087812495859b45b0ca2e6f513e3c9
