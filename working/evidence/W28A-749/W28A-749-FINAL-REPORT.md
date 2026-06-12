@@ -37,7 +37,7 @@ cloud_dog_jobs / cloud_dog_llm / cloud_dog_vdb / cloud_dog_storage — USED. §1
 | G3 unit regression (0.5.x) | `ut-regression.log` | 212 passed 0 failed | `pytest tests/unit --env tests/env-UT` | PASS |
 | G4 keystone resolves (normal index) | `g4-docker-build.log` | Build OK; idam>=0.5.1 resolved | `bash docker-build.sh w28a-749 --variant dev` | PASS |
 | G5 in-image symbols | `g5-in-image-symbol-proof.log` | idam 0.5.2; all symbols; IN-IMAGE CASCADE PROOF PASS | `docker run --entrypoint python IMG -c report` | PASS |
-| G6 source + image | `remote-proof.txt` | origin/main == W28A-749-FINAL-PROOF; src-code ancestor 5cba8eb; registry sha256:02c322e26c62 | `git ls-remote origin refs/tags/W28A-749-FINAL-PROOF` | PASS |
+| G6 source + image | `remote-proof.txt` | W28A-749-FINAL-PROOF is ancestor-proven against origin/main; src-code ancestor 5cba8eb; registry sha256:02c322e26c62 | `git ls-remote origin refs/tags/W28A-749-FINAL-PROOF && git merge-base --is-ancestor W28A-749-FINAL-PROOF origin/main` | PASS |
 | G7 targeted deploy | `preprod-deployed-identity.txt` | 2 add 0 change 2 destroy; Up healthy; image 1179163c0480 | `terraform apply -target=docker_container.indexretriever0` | PASS |
 | G8 health/api-docs/stability | `g8-estate-health.txt`,`g8-stability.log` | /health 200, /api-docs 200, 60s all 200 | `curl -sk https://indexretriever0.cloud-dog.net/health` | PASS |
 | G8 LIVE T3-IR-CASCADE | `g8-live-cascade.txt` | 403->add->200/403/403->remove->403 | live cascade curl sequence | PASS |
@@ -68,7 +68,7 @@ cloud_dog_jobs / cloud_dog_llm / cloud_dog_vdb / cloud_dog_storage — USED. §1
 - PC32 no leftover containers/processes: YES (test entities cleaned; local images are build artefacts)
 - §1.4.1 bespoke grep (zero): YES (0 in src/)
 - §1.6 platform package compliance section in report: YES
-- Source-code commit (built image src): 5cba8eb — ancestor of the closeout HEAD (origin/main == origin/w28a-749-idam == W28A-749-EVIDENCE == W28A-749-FINAL-PROOF)
+- Source-code commit (built image src): 5cba8eb — ancestor of W28A-749-EVIDENCE/W28A-749-FINAL-PROOF (`afb18a8`), and W28A-749-FINAL-PROOF is ancestor-proven against the closeout branch/main head.
 - Deployed digest == registry == :latest (no @sha256 pin): YES (registry sha256:02c322e26c62; container Up healthy)
 
 HAVE_ALL_REQUIREMENTS_BEEN_MET: YES
