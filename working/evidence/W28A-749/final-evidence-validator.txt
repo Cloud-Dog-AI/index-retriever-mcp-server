@@ -1,0 +1,60 @@
+FINAL_EVIDENCE_VALIDATOR lane=W28A-749 started=2026-06-12T12:11:11+01:00
+Evidence path: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749
+PASS: evidence path exists
+PASS: evidence files tracked under working/evidence/W28A-749: 18
+PASS: evidence path has no dirty/untracked scoped files
+PASS: live remote branch HEAD found: refs/heads/w28a-749-idam a0f11983d9f77f0e13734ed2af64e09b23eed9b8
+PASS: Evidence Matrix header found
+PASS: no future proof language found
+PASS: no forbidden alternate acceptance labels found
+PASS: saved validator outputs are clean
+PASS: mandatory reading proof file found: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/00-reading-proof.md
+PASS: RULES.md reread/version proof found
+PASS: AGENT-LESSONS.md reread/version proof found
+PASS: reading proof answers marker found
+PASS: requirements-map.tsv found: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/requirements-map.tsv
+PASS: requirements-map.tsv row width check passed
+PASS: requirements-map.tsv required fields are populated
+PASS: requirements-map.tsv final status column is PASS for every row
+PASS: instruction file found for acceptance comparison: /opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/working/instructions/W28A-749-ACCEPTANCE.md
+PASS: requirement coverage table covers extracted instruction acceptance items
+PASS: touched-paths-manifest.tsv found: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/touched-paths-manifest.tsv
+PASS: touched-paths-manifest.tsv header is valid
+PASS: external-dirty-ledger.tsv found: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/external-dirty-ledger.tsv
+PASS: external-dirty-ledger.tsv header is valid
+PASS: scoped-clean-proof.txt found: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/scoped-clean-proof.txt
+PASS: scoped-clean-proof.txt contains required scoped git commands
+PASS: scoped-clean-proof.txt shows no modified/staged/untracked files
+PASS: remote-proof.txt found: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/remote-proof.txt
+PASS: remote-proof.txt contains remote/HEAD proof markers
+INFO: saved proof does not embed live git rev-parse HEAD: a0f11983d9f77f0e13734ed2af64e09b23eed9b8
+INFO: saved proof does not embed live remote branch HEAD; live auditor verification is authoritative
+INFO: remote-proof.txt records FINAL_PROOF_TAG candidate: W28A-749-FINAL-PROOF
+PASS: FINAL-TAG-VERIFICATION.txt found: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/working/evidence/W28A-749/FINAL-TAG-VERIFICATION.txt
+INFO: FINAL-TAG-VERIFICATION.txt missing marker: git rev-parse HEAD; live auditor verification is authoritative
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git ls-remote origin refs/heads/
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: git ls-remote origin refs/tags/
+INFO: FINAL-TAG-VERIFICATION.txt missing marker: git rev-parse; live auditor verification is authoritative
+PASS: FINAL-TAG-VERIFICATION.txt contains marker: sha256sum -c CHECKSUMS.sha256
+INFO: FINAL-TAG-VERIFICATION.txt missing marker: git status; live auditor verification is authoritative
+INFO: FINAL-TAG-VERIFICATION.txt missing marker: git diff; live auditor verification is authoritative
+PASS: EVIDENCE_TAG belongs to lane W28A-749
+PASS: EVIDENCE_TAG exists remotely: W28A-749-EVIDENCE a0f11983d9f77f0e13734ed2af64e09b23eed9b8
+PASS: FINAL_PROOF_TAG belongs to lane W28A-749
+PASS: FINAL_PROOF_TAG exists remotely: W28A-749-FINAL-PROOF a0f11983d9f77f0e13734ed2af64e09b23eed9b8
+PASS: FINAL_PROOF_TAG is an ancestor of current remote HEAD
+PASS: sha256sum -c CHECKSUMS.sha256 passed
+PASS: close gate found
+PASS: completion claim present
+PASS: no common contradiction markers found with completion claim
+PASS: no substantive raw FAIL found
+PASS: no stale failed artefact names found
+PASS: no unavailable/waived/out-of-scope claims found
+
+Repo: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server
+HEAD: a0f11983d9f77f0e13734ed2af64e09b23eed9b8
+BRANCH: w28a-749-idam
+PASS: repo worktree clean: /opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server
+PASS: HEAD equals origin/w28a-749-idam
+
+FINAL_EVIDENCE_VALIDATOR: PASS failures=0
