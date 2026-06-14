@@ -1,0 +1,38 @@
+{
+  "base_url": "https://hdrdata.org",
+  "canonical_base_url": "https://hdrdata.org",
+  "country_or_aggregation": "AFG",
+  "endpoint_config_defect": "Vault dev.external.HDRO.url resolves to maptiler.com and is not used as HDRO",
+  "endpoint_config_source": "canonical_default",
+  "endpoint_host": "hdrdata.org",
+  "endpoint_path": "/api/CompositeIndices/query",
+  "live_probe": "PASS",
+  "raw_record_count": 36,
+  "record_count": 10,
+  "redacted_request_url": "https://hdrdata.org/api/CompositeIndices/query?apikey=%3Credacted%3E&countryOrAggregation=AFG&year=2022",
+  "sample_records": [
+    {
+      "country": "AFG - Afghanistan",
+      "dimension": "",
+      "index": "GII - Gender Inequality Index",
+      "indicator": "abr - Adolescent Birth Rate (births per 1,000 women ages 15-19)",
+      "value": "65.339",
+      "year": "2022"
+    },
+    {
+      "country": "AFG - Afghanistan",
+      "dimension": "",
+      "index": "HDI - Human Development Index",
+      "indicator": "eys - Expected Years of Schooling (years)",
+      "value": "10.790",
+      "year": "2022"
+    }
+  ],
+  "source_family": "UNDP HDRO Data API 2.0",
+  "supported_indicators": [
+    "HDI",
+    "GII"
+  ],
+  "timestamp_utc": "2026-06-14T19:37:27.367924Z",
+  "year": "2022"
+}

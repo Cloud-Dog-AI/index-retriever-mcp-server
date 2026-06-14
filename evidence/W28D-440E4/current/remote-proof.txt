@@ -1,0 +1,4 @@
+remote=https://git.cloud-dog.net/cloud-dog-ai/index-retriever-mcp-server.git
+origin_main_before=01bd680516cef77c725910602802e8af446cc549
+push_status=PENDING
+tag_status=PENDING

@@ -25,6 +25,8 @@ from index_tools.tools.definitions import (
     ExtractOnlyOutput,
     GenericToolInput,
     GenericToolOutput,
+    HDROExtractInput,
+    HDROExtractOutput,
     IngestOutput,
     IngestReferenceInput,
     IngestPreviewInput,
@@ -127,6 +129,8 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="admin_source_config_create", input_model=GenericToolInput, output_model=GenericToolOutput, description="Create a new source configuration with URI, schedule, and metadata."),
         ToolSpec(name="admin_source_config_update", input_model=GenericToolInput, output_model=GenericToolOutput, description="Update an existing source configuration."),
         ToolSpec(name="admin_source_config_delete", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a source configuration."),
+        # -- Source Extractors --
+        ToolSpec(name="hdro_extract", input_model=HDROExtractInput, output_model=HDROExtractOutput, description="Fetch HDI/GII records from the UNDP HDRO Data API 2.0 using the Vault-backed HDRO API key."),
         # -- RBAC --
         ToolSpec(name="rbac_bindings_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List all RBAC role bindings for users and groups."),
         ToolSpec(name="admin_rbac_bind", input_model=GenericToolInput, output_model=GenericToolOutput, description="Bind a role to a user or group entity."),

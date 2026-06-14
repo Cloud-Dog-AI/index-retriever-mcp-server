@@ -248,3 +248,32 @@ class EmbeddingHealthOutput(BaseModel):
     provider: str
     model: str
     dimensions: int
+
+
+class HDROExtractInput(BaseModel):
+    """HDROExtractInput definition."""
+
+    country_or_aggregation: str = "AFG"
+    year: int = 2022
+    indicators: list[str] = Field(default_factory=lambda: ["HDI", "GII"])
+    limit: int = 20
+
+
+class HDROExtractOutput(BaseModel):
+    """HDROExtractOutput definition."""
+
+    source_family: str
+    canonical_base_url: str
+    base_url: str
+    endpoint_host: str
+    endpoint_path: str
+    redacted_request_url: str
+    endpoint_config_source: str
+    endpoint_config_defect: str = ""
+    country_or_aggregation: str
+    year: str
+    supported_indicators: list[str] = Field(default_factory=list)
+    requested_indicators: list[str] = Field(default_factory=list)
+    records: list[dict[str, Any]] = Field(default_factory=list)
+    record_count: int
+    raw_record_count: int

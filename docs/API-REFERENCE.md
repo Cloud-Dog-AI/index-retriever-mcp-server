@@ -92,7 +92,8 @@ Ports (native split-role): API 8074 / Web 8075 / MCP 8076 / A2A 8077.
 
 ## MCP tool inventory (92 tools)
 The **runtime registry `src/index_tools/tools/registry.py` is the single source of truth** (92 tools, unique;
-`UT1_40` asserts `len(tools) == 92`; 21 are the W28E-603 `structure_*` family). FR-16A requires the
+`UT1_40` asserts `len(tools) == 93`; 21 are the W28E-603 `structure_*` family and one is the
+W28D-440E4 `hdro_extract` source extractor). FR-16A requires the
 documented catalogue to match runtime exactly — reconciled to 92 by W28A-749. Tool categories:
 - **ingest/index:** `ingest_text`, `ingest_upload`, `ingest_reference`, `ingest_preview`, `bulk_index`,
   `ingest_stream_{open,event,close}`, `ingest_health`

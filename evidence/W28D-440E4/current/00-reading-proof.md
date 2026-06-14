@@ -1,0 +1,16 @@
+/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/RULES.md	lines=1192	sha256=1e04c26f8f819f9d4447392899fbc4ccc7685b078225d1bb21617e8ac73be8fd
+/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/AGENT-LESSONS.md	lines=2629	sha256=0daf9c32432d85006baa5237d9e1eb92d997ac83bc6b56f96ff58cc06d86d3ba
+/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/AGENT-BOOTSTRAP-DIRECTIVE.md	lines=714	sha256=651d0179fc81930f2c127bb698c1a977c35f2d2d2a34270a9593c987ddcd40e2
+/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards/working/instructions/W28D-440E5-UNDP-HDRO-EXTRACTOR-AND-VAULT-KEY-ONBOARDING-2026-06-14.md	lines=171	sha256=18babbdd9f9814b8f37a5fd0ba6ea67780314a6a618034c29c55f21fced54b25
+RULES.md	lines=221	sha256=6d3eeb2db34b1ecc11e44f4dad8367127fd1a7f8944ff76493433702e16c92f7
+AGENT-LESSONS.md	lines=389	sha256=e1a30f9a365dac1d653d2aa8c137c8f56290edce13b12a78e53c104d448b4323
+README.md	lines=52	sha256=765827a870b4fcc9eb7f78ffd378e183be0ad48e7010ec067b411a1b368a28d8
+docs/ARCHITECTURE.md	lines=904	sha256=aba515e1b4c057c22ca0308f65207aa77a3316b9ff6703ee8232845dd9962475
+docs/REQUIREMENTS.md	lines=826	sha256=cf855ba5364efb7162fffa532a334db3e23255931d68e2bbd69a28562ca79c9b
+docs/API-REFERENCE.md	lines=114	sha256=c6f6ac4a51a985c363731f2f41498124f01e0f4fa11b42e7804f2068c2579631
+docs/MCP-REFERENCE.md	lines=56	sha256=6cff35f9c5befd3d358ddcd120dfdb75be2907e70ef5acf73d5ce6cfdfc53d96
+docs/TESTS.md	lines=184	sha256=3c80dbae8ca7e5b60aa66179b8656484ab2b83f5aa496dde67395b8a23e7d162
+src/index_tools/config/models.py	lines=221	sha256=046595aef69092497b77d1f82f3e313fc95aff2fd8be0f22fadea36222982a0d
+src/index_tools/config/loader.py	lines=135	sha256=1f4fec4ba77fe1d50886645dd663268a75dd194627117e2259f3789e00e1c90b
+src/index_server/api_server.py	lines=2607	sha256=0ca555cb82509ca02d532a00e936ba06fc4cbeaef579e5d42ca260380ecf978c
+src/index_server/mcp_server.py	lines=1406	sha256=bf8c41a839f97a8c9efb2ca7b2c7ae8877f2b69eb4472240b40d488b4a8a5449

@@ -218,6 +218,7 @@ def _required_permission_for_tool(tool_name: str) -> str:
         "collection_get",
         "source_configs_list",
         "source_config_get",
+        "hdro_extract",
     }:
         return "collection.read"
     if tool_name in {
@@ -743,6 +744,13 @@ def execute_tool(
         return {"source_configs": service.source_configs_list()}
     if tool_name == "source_config_get":
         return {"source_config": service.source_config_get(str(arguments["source_id"]))}
+    if tool_name == "hdro_extract":
+        return service.hdro_extract(
+            country_or_aggregation=str(arguments.get("country_or_aggregation", "AFG")),
+            year=arguments.get("year", 2022),
+            indicators=list(arguments.get("indicators", ["HDI", "GII"])),
+            limit=int(arguments.get("limit", 20)),
+        )
     if tool_name == "admin_source_config_create":
         return {
             "source_config": service.admin_source_config_create(

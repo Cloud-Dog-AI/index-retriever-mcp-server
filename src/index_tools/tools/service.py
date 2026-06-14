@@ -944,6 +944,24 @@ class IndexService:
             }
         return {"ok": True, "profiles": profiles_status}
 
+    def hdro_extract(
+        self,
+        *,
+        country_or_aggregation: str = "AFG",
+        year: int | str = 2022,
+        indicators: list[str] | None = None,
+        limit: int = 20,
+    ) -> dict[str, Any]:
+        """Fetch HDI/GII records from the UNDP HDRO Data API 2.0."""
+        from index_tools.sources.hdro import extract_hdro
+
+        return extract_hdro(
+            country_or_aggregation=country_or_aggregation,
+            year=year,
+            indicators=indicators,
+            limit=limit,
+        )
+
     @classmethod
     def close_all_instances(cls) -> None:
         """Close any service instances still alive in the process."""

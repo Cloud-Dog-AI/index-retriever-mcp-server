@@ -20,6 +20,11 @@ a2a_server:
   port: 8077
   base_path: "${CLOUD_DOG__INDEX_RETRIEVER__A2A_SERVER__BASE_PATH:/a2a}"
 
+external:
+  HDRO:
+    url: "https://hdrdata.org"
+    username: ""
+
 web_login:
   username: "${CLOUD_DOG_WEB_LOGIN_USERNAME:admin}"
   password: "${CLOUD_DOG_WEB_LOGIN_PASSWORD || ''}"
