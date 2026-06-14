@@ -147,3 +147,21 @@ strict API client (FR-17). Canonical entry `/dashboard`; `/`, `/login`, `*` → 
 **No orphan page:** every route maps to a use-case/FR + role above. **Parity:** each page calls only the API
 (FR-17); every admin action is reachable in MCP/API; destructive actions (`/retention-delete`) require explicit
 confirmation (FR-17). The `/idam/*` pages are the shared `@cloud-dog/idam` components (PS-71, W28A-876).
+
+
+<!-- W28C-1710b design-delta additions (2026-06-14T18:01:23Z) -->
+
+## Cross-surface UC mappings (W28C-1710b)
+
+Per T-RUC v1.1 + PS-REQ-TEST-TRACE §3.5, every UC-NNN maps to one OR MORE FR-NNN across surfaces.
+
+This service's surface set: **api, mcp, a2a**.
+
+Detailed UC-by-UC operator-review pass + per-FR cross-surface mapping deferred to W28C-1711. The cross-surface declarations are enabled here.
+
+```yaml
+# Schema for every UC-NNN (default; operator amends per UC):
+surfaces: ['api', 'mcp', 'a2a']
+roles: [admin, read-write, read-only, anon]
+FR-mapping: []  # populated by W28C-1711
+```

@@ -1,3 +1,18 @@
+---
+template-id: T-TST
+template-version: 1.1
+applies-to: docs/TESTS.md
+project: index-retriever-mcp-server
+doc-last-updated: 2026-06-12T16:37:04Z
+doc-git-commit: 167f371208d2dbe673d692b181cfb25f78d51cb9
+doc-git-branch: w28a-749-idam
+doc-age-policy: 90d
+doc-conformance-stamp: 2026-06-12T16:37:04Z
+req-trace-version: 1.0
+total-tests: 0
+coverage-percent: 0
+---
+
 # Tests
 
 ## Service Scope
@@ -142,3 +157,28 @@ Suites placed under `tests/smoke/access_control_matrix_smoke.py` (T0–T2 backen
 | T1 common-IDAM | `T1-IR-AUTH-401`, `T1-IR-A2A-401`, `T1-IR-WEBUI-401-LOGOUT`, `T1-IR-BASELINE-USER`, `T1-IR-AUDIT-COVERAGE` | anon→401 per surface; baseline user; audit |
 | T2 RBAC-by-role | `T2-IR-ADMINONLY`, `T2-IR-COLLECTION-RBAC`, `T2-IR-NOSECRET`, `T2-IR-PROXY-FORWARD`, `T2-IR-SERVICE-SCOPE`, `T2-IR-JOBS-RBAC` | role gating; no secret to non-admin; proxy forwards principal |
 | T3 business + cascade | `T3-IR-UPLOAD-QUERY`, `T3-IR-REFERENCE/STREAM/DEDUPE`, `T3-IR-PROFILE-CRUD`, `T3-IR-RETENTION`, `T3-IR-SEARCH-SCOPE`, **`T3-IR-CASCADE`**, `T9-IR-PROFILE-LIVE` | UC-01..06 live; **group→collection cascade live (0.5.0-gated)** |
+
+## 2. Coverage map
+
+Mandatory 10-column schema per PS-REQ-TEST-TRACE v1.0 §4.2. The per-test catalogue below will be populated by operator-driven Instruction 4 work that binds @pytest.mark.req() decorators to specific REQ-IDs. Until then, all tests carry @pytest.mark.probe (KEEP-AS-PROBE disposition per PS-REQ-TEST-TRACE §7).
+
+| Test ID | Tier | Use case | Requirement | Surface | Scenario | Variants | Env files | Known issue | Last run commit |
+|---|---|---|---|---|---|---|---|---|---|
+
+
+<!-- W28C-1710b design-delta additions (2026-06-14T18:01:23Z) -->
+
+## W28C-1710b design-delta — planned tests catalogue (T-TST v1.1 10-col schema)
+
+Per T-TST v1.1, the planned tests catalogue carries 10 columns: `test-id | tier | use-case | requirement | surface | scenario | variants | env-files | known-issue | last-run-commit`. Test binding (replacement of probe markers with `@pytest.mark.req("FR-NNN")`) is W28C-1711 work.
+
+Consolidation rules (per W28C-1711):
+
+1. One primary test per FR-NNN; variants via `pytest.parametrize`.
+2. Common scenarios (login, RBAC matrix, anon-denied) in `tests/helpers/`.
+3. Cross-surface FR uses parametrized test file; not duplicate files.
+4. Every `surface: webui` FR has a Playwright test (cookie-login + RBAC matrix + screenshot + DOM-assert + console-error-gate + CW-pattern).
+5. Every `surface: api|mcp|a2a` FR has a protocol-level test.
+6. Every `CS-NNN` binds to `@pytest.mark.negative` test with expected denial code.
+7. CRUD-applicable entities have C/R/U/D coverage.
+8. Orphan retirement requires knowledge-extract worksheet.

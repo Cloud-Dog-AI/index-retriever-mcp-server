@@ -1,20 +1,12 @@
 ---
 template-id: T-TSS
 template-version: 1.0
-applies-to: docs/TEST-STATUS.md
-registry: service
-required: must-have
-when-applicable: ""
-template-last-updated: 2026-06-12
-template-owner: platform-standards
-
 project: index-retriever-mcp-server
-doc-last-updated: 2026-06-12
-doc-git-commit: 5cba8eb76245a4d7ba5af6f0b3b765199a6f6ee6
-doc-git-branch: main
-doc-source-shas: []
+doc-last-updated: 2026-06-13T10:59:11.759580+00:00
+doc-git-commit: 5501696a8c127e6629a846a9b6a80fc89a2351f2
+doc-git-branch: w28a-749-idam
 doc-age-policy: 30d
-doc-conformance-stamp: 2026-06-12T12:00:00Z
+doc-conformance-stamp: 2026-06-13T10:59:11.759580+00:00
 ---
 
 # index-retriever-mcp-server — TEST-STATUS
@@ -22,13 +14,362 @@ doc-conformance-stamp: 2026-06-12T12:00:00Z
 > **Template version:** T-TSS v1.0 — overwritten by `scripts/update-test-state.py`. Do not hand-edit.
 
 ## 1. Latest run
-- **Run timestamp:** 2026-06-12T12:00:00Z
-- **Commit:** `5cba8eb76245a4d7ba5af6f0b3b765199a6f6ee6` (`main`)
-- **Totals:** N tests | P passed | F failed | S skipped
+
+- **Run timestamp:** 2026-06-13T10:59:11.759580+00:00
+- **Commit:** `5501696a8c127e6629a846a9b6a80fc89a2351f2` (`w28a-749-idam`)
+- **Totals:** 346 tests | 340 passed | 1 failed | 5 skipped
 
 ## 2. Per-test status
+
 | Test ID | Tier | Status | Last run | Commit | Known issue |
 |---|---|---|---|---|---|
+| `tests.integration.IT1_1.test_it1_1::test_api_health_endpoint` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_10.test_it1_10::test_qdrant_contract_test` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_11.test_it1_11::test_embedding_provider_ollama` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_12.test_it1_12::test_streaming_ingest_sse` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_13.test_it1_13::test_source_metadata_round_trip` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_14.test_it1_14::test_capability_aware_backend_planning` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_15.test_it1_15::test_infinity_adapter_contract_path` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_16.test_it1_16::test_delegation_boundary_via_cloud_dog_vdb_pipeline` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_17.test_it1_17::test_tool_catalogue_wrappers_execute` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_18.test_it1_18_a2a_health_auth_matrix::test_a2a_health_auth_matrix` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_19.test_it1_19_no_fallback_backend_identity::test_no_fallback_backend_identity_it` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_2.test_it1_2::test_api_auth_reject` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_20.test_it1_20_job_management_tools::test_job_management_tools_contract` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_21.test_it1_21_collection_rbac::test_collection_level_rbac_enforced` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_21.test_it1_21_jobs_migration::test_jobs_backend_concurrency_and_recovery` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_22.test_it1_22_admin_rest_config_crud::test_admin_rest_profile_user_group_api_key_lifecycle` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_22.test_it1_22_admin_rest_config_crud::test_admin_rest_rejects_non_admin_mutation` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_23.test_it1_23_core_metadata::test_mt2_preview_reports_parser_and_ocr_provenance` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_23.test_it1_23_core_metadata::test_mt2_text_and_upload_ingest_store_canonical_metadata` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_23.test_it1_23_core_metadata::test_mt3_filters_support_required_metadata_pack_management_fields` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_23.test_it1_23_core_metadata::test_mt3_mt4_round_trip_returns_latest_record_with_canonical_metadata` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_24.test_it1_24_openapi_contract::test_openapi_and_tool_contract_include_canonical_metadata_fields` | UT/ST/IT | fail | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_3.test_it1_3::test_api_auth_accept` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_4.test_it1_4::test_api_rbac_ingest_gating` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_5.test_it1_5::test_api_rbac_admin_gating` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_6.test_it1_6::test_mcp_tool_catalogue` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_7.test_it1_7::test_mcp_tool_execution` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_8.test_it1_8::test_correlation_id_propagation` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT1_9.test_it1_9::test_chroma_contract_test` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_1.test_it2_1_chroma_contract::test_it2_1_chroma_contract_roundtrip` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_10.test_it2_10_marker_parser::test_it2_10_marker_parser_pdf_ir_output` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_11.test_it2_11_transformers_parser::test_it2_11_transformers_parser_pdf_ir_output` | UT/ST/IT | skip | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_12.test_it2_12_internal_parser::test_it2_12_internal_parser_pdf_ir_output` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_13.test_it2_13_ocr_provider_matrix::test_it2_13_ocr_capable_parser_matrix_extracts_text` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_14.test_it2_14_table_extraction_matrix::test_it2_14_table_extraction_returns_structured_tables` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_15_DatabaseStartup.test_it2_15_database_startup::test_it2_15_database_startup_and_crud` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_16.test_it2_16_provenance_contract::test_pdf_ocr_and_table_provenance_fields_recorded` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_16.test_it2_16_provenance_contract::test_plain_text_provenance_contract_fields` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_16.test_it2_16_provenance_contract::test_reingest_provenance_is_preserved_not_overwritten` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_2.test_it2_2_qdrant_contract::test_it2_2_qdrant_contract_roundtrip` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_3.test_it2_3_opensearch_contract::test_it2_3_opensearch_contract_roundtrip` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_4.test_it2_4_pgvector_contract::test_it2_4_pgvector_contract_roundtrip` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_5.test_it2_5_weaviate_contract::test_it2_5_weaviate_contract_roundtrip` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_6.test_it2_6_infinity_contract::test_it2_6_infinity_contract_roundtrip` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_7.test_it2_7_deepdoc_parser::test_it2_7_deepdoc_parser_pdf_ir_output` | UT/ST/IT | skip | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_8.test_it2_8_docling_parser::test_it2_8_docling_parser_pdf_ir_output` | UT/ST/IT | skip | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT2_9.test_it2_9_mineru_parser::test_it2_9_mineru_parser_pdf_ir_output` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT_W28E603_Phase25.test_it_w28e603_a2a_skills::test_a2a_structure_extract_skill_executes` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT_W28E603_Phase25.test_it_w28e603_a2a_skills::test_agent_card_advertises_structure_skills` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT_W28E603_Phase25.test_it_w28e603_phase25::test_phase25_mcp_extract_corpus_template` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT_W28E603_Phase25.test_it_w28e603_phase25::test_phase25_rbac_reader_cannot_write` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT_W28E603_Phase25.test_it_w28e603_phase25::test_phase25_rest_surface` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT_W28E603_Phase25.test_it_w28e603_phase25::test_phase25_vdb_linkage` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT_W28E603_Phase25.test_it_w28e603_webui::test_structure_webui_page_renders_workflow_controls` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT_W28E603_Phase25.test_it_w28e603_webui::test_structure_webui_script_wires_workflows` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT_W28E603_StructureTransports.test_it_w28e603_structure_transports::test_structure_family_in_tools_list` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT_W28E603_StructureTransports.test_it_w28e603_structure_transports::test_structure_mcp_tools_call_real_execution` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT_W28E603_StructureTransports.test_it_w28e603_structure_transports::test_structure_rest_crud_lifecycle` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.integration.IT_W28E603_StructureTransports.test_it_w28e603_structure_transports::test_structure_rest_requires_write_permission` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_migration_completeness::test_cloud_dog_config_drives_loader` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_migration_completeness::test_no_bespoke_auth_hooks` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_migration_completeness::test_no_raw_fastapi_instantiation` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_migration_completeness::test_no_yaml_safe_load_for_config` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_migration_completeness::test_os_environ_usage_is_confined_to_runtime_boundaries` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_package_adoption::test_api_package_adoption` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_package_adoption::test_config_package_adoption` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_package_adoption::test_db_and_vdb_package_adoption` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_package_adoption::test_idam_package_adoption` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_package_adoption::test_logging_package_adoption` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_package_adoption::test_pyproject_declares_required_platform_packages` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_rules_compliance::test_rc01_no_hardcoded_urls_or_loopback` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_rules_compliance::test_rc02_no_hardcoded_credentials` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_rules_compliance::test_rc03_external_imports_not_scattered` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_rules_compliance::test_rc04_headers_and_docstring_coverage` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_rules_compliance::test_rc05_no_mocking_patterns_in_it_at` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_rules_compliance::test_rc06_no_pytest_skip_in_it_at` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_rules_compliance::test_rc07_no_raw_vault_template_in_py_tests` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_rules_compliance::test_rc08_tier_env_files_are_connected_to_runtime` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_rules_compliance::test_rc09_no_stub_placeholders` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_rules_compliance::test_rc10_no_american_spelling_in_user_facing_errors` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_traceability::test_delivery_matrix_generated_for_all_requirements` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_traceability::test_traceability_gap_report_generated` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_traceability::test_traceability_source_docs_exist` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_vault_config_contract::test_defaults_yaml_exists` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_vault_config_contract::test_defaults_yaml_has_no_literal_secrets` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_vault_config_contract::test_env_files_avoid_obvious_literal_secret_values` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_vault_config_contract::test_env_files_have_valid_vault_expression_syntax` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_vault_config_contract::test_env_tiers_exist` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_vault_config_contract::test_no_literal_secrets_in_source` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_COMPLIANCE.test_qt_vault_config_contract::test_sensitive_env_keys_use_vault_or_explicit_test_values` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_LoggingCompliance.test_logging_compliance::test_audit_events_doc_exists` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_LoggingCompliance.test_logging_compliance::test_defaults_yaml_has_integrity_config` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_LoggingCompliance.test_logging_compliance::test_defaults_yaml_has_retention_config` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_LoggingCompliance.test_logging_compliance::test_defaults_yaml_has_rotation_config` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_PACKAGE_COMPLIANCE.test_package_compliance.TestPackageCompliance::test_licence_exists` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_PACKAGE_COMPLIANCE.test_package_compliance.TestPackageCompliance::test_no_bespoke_auth` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_PACKAGE_COMPLIANCE.test_package_compliance.TestPackageCompliance::test_no_bespoke_config_manager` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_PACKAGE_COMPLIANCE.test_package_compliance.TestPackageCompliance::test_no_bespoke_logging` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_PACKAGE_COMPLIANCE.test_package_compliance.TestPackageCompliance::test_no_direct_llm_calls` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_PACKAGE_COMPLIANCE.test_package_compliance.TestPackageCompliance::test_no_hardcoded_secrets` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_PACKAGE_COMPLIANCE.test_package_compliance.TestPackageCompliance::test_no_internal_hostnames` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_PACKAGE_COMPLIANCE.test_package_compliance.TestPackageCompliance::test_no_memory_queue` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_PACKAGE_COMPLIANCE.test_package_compliance.TestPackageCompliance::test_readme_exists` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_PACKAGE_COMPLIANCE.test_package_compliance.TestPackageCompliance::test_runtime_config_endpoint` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_PACKAGE_COMPLIANCE.test_package_compliance.TestPackageCompliance::test_server_control_exists` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.quality.QT_PACKAGE_COMPLIANCE.test_package_compliance.TestPackageCompliance::test_ui_dist_exists` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_1.test_st1_1::test_profile_create_persist` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_10.test_st1_10::test_retention_cleanup` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_11.test_st1_11::test_job_enqueue_execute` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_12.test_st1_12::test_audit_log_persistence` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_13.test_st1_13_no_fallback_backend_identity::test_no_fallback_backend_identity_st` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_14.test_st1_14_database_migration::test_st_db_01_migration_upgrade_on_fresh_sqlite` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_14.test_st1_14_database_migration::test_st_db_02_crud_via_session_manager` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_14.test_st1_14_database_migration_multibackend::test_st_db_03_migration_lifecycle_upgrade_downgrade_upgrade` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_14.test_st1_14_database_migration_multibackend::test_st_db_04_schema_versioning_simulation` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_15.test_st1_15_e2e_gap_coverage::test_st_15_chunking_strategies_ingest_expected_boundaries` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_15.test_st1_15_e2e_gap_coverage::test_st_15_local_ocr_provider_extracts_non_empty_text` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_15.test_st1_15_e2e_gap_coverage::test_st_15_retrieval_returns_content_and_source_uri_traceability` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_2.test_st1_2::test_collection_create_delete` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_3.test_st1_3::test_ingest_upload_pipeline` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_4.test_st1_4::test_ingest_text_pipeline` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_5.test_st1_5::test_ingest_reference_pipeline` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_6.test_st1_6::test_search_top_k` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_7.test_st1_7::test_search_metadata_filter` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_8.test_st1_8::test_delete_by_id` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST1_9.test_st1_9::test_delete_by_filter` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST_IntegrityVerifier.test_integrity_running::test_integrity_log_file_populated` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST_IntegrityVerifier.test_integrity_running::test_integrity_record_fields` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST_IntegrityVerifier.test_integrity_running::test_integrity_verifier_starts_with_server` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST_LogRotation.test_rotation_config::test_rotation_handler_configured` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST_LogRotation.test_rotation_config::test_rotation_parameters_from_config` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.system.ST_W28E603_StructureBackendMatrix.test_st_w28e603_structure_backend_matrix::test_structure_backend_matrix_round_trip[mysql]` | UT/ST/IT | skip | 2026-06-13 | `5501696a` | |
+| `tests.system.ST_W28E603_StructureBackendMatrix.test_st_w28e603_structure_backend_matrix::test_structure_backend_matrix_round_trip[postgresql]` | UT/ST/IT | skip | 2026-06-13 | `5501696a` | |
+| `tests.system.ST_W28E603_StructureBackendMatrix.test_st_w28e603_structure_backend_matrix::test_structure_backend_matrix_round_trip[sqlite]` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_1.test_ut1_1_config_loader_precedence::test_config_loader_precedence` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_10.test_ut1_10_connector_s3_resolve::test_connector_s3_resolve` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_11.test_ut1_11_connector_webdav_resolve::test_connector_webdav_resolve` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_12.test_ut1_12_convert_registry_selection::test_convert_registry_selection` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_13.test_ut1_13_convert_pdf_extract::test_convert_pdf_extract` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_14.test_ut1_14_convert_office_extract::test_convert_office_extract` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_15.test_ut1_15_chunking_token_strategy::test_chunking_token_strategy` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_16.test_ut1_16_chunking_overlap::test_chunking_overlap` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_17.test_ut1_17_metadata_enrichment::test_metadata_enrichment` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_18.test_ut1_18_dedupe_hash_detection::test_dedupe_hash_detection` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_19.test_ut1_19_dedupe_size_mtime_detection::test_dedupe_size_mtime_detection` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_2.test_ut1_2_config_vault_integration::test_config_vault_overlay` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_20.test_ut1_20_dedupe_policy_skip::test_dedupe_policy_skip` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_21.test_ut1_21_dedupe_policy_replace::test_dedupe_policy_replace` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_22.test_ut1_22_dedupe_policy_version::test_dedupe_policy_version` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_23.test_ut1_23_embedding_registry_lookup::test_embedding_registry_lookup` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_24.test_ut1_24_vdb_registry_lookup::test_vdb_registry_lookup` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_25.test_ut1_25_search_query_normalisation::test_search_query_normalisation` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_26.test_ut1_26_search_filter_validation::test_search_filter_validation` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_27.test_ut1_27_job_model_validation::test_job_model_validation` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_28.test_ut1_28_idempotency_key_generation::test_idempotency_key_generation` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_29.test_ut1_29_tool_definition_schemas::test_tool_definition_schemas` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_3.test_ut1_3_config_validation::test_invalid_config_rejected` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_30.test_ut1_30_pipeline_progress_events::test_pipeline_progress_events` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_a2a_run_server_uses_env` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_admin_collection_create_endpoint` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_api_app_base_path_env_override_retains_legacy_compat` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_api_app_routes_cover_auth_and_errors` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_api_create_runtime_app_typeerror_fallback` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_api_run_server_uses_env` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_build_log_payload_synthesises_blank_messages` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_build_status_payload_counts_active_documents_from_runtime` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_entrypoint_and_streaming_wrappers` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_mcp_app_and_execute_tool_paths` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_mcp_build_app_typeerror_fallback` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_mcp_run_server_uses_env` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_read_jsonl_records_many_includes_rotated_siblings` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_requires_caller_auth_locks_identity_bearing_paths` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_web_run_server_uses_env` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_web_runtime_config_and_spa_admin_routes` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_31.test_ut1_31_server_runtime_paths::test_web_tool_proxy_cookie_role_gates_service_key` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_audit_logger_admin_and_security_helpers` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_audit_logger_admin_helper_falls_back_when_privileged_api_missing` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_audit_logger_backend_name_and_write` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_audit_logger_build_event_supports_legacy_audit_event_signature` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_audit_logger_ingest_helper_emits_schema_complete_tool_event` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_audit_logger_security_helper_supports_legacy_actor_signature` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_audit_logger_security_helper_supports_legacy_target_signature` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_build_platform_log_config_uses_surface_specific_log_files` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_collection_schema_and_fetch_plan_defaults` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_connectors_and_converters_paths` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_db_runtime_serialises_sqlite_migrations_and_retries_existing_table` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_handlers_and_config_paths` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_lifecycle_chunking_scope_and_rerank` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_queue_engine_and_redis_bridge_paths` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_queue_engine_recovers_from_existing_table_startup_error` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_32.test_ut1_32_support_module_paths::test_rbac_backend_name_and_matching` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_33.test_ut1_33_service_branch_paths::test_service_delete_reindex_retention_and_stream_errors` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_33.test_ut1_33_service_branch_paths::test_service_document_reference_and_jobs` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_33.test_ut1_33_service_branch_paths::test_service_profile_lifecycle_and_permissions` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_33.test_ut1_33_service_branch_paths::test_service_required_env_resolution` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_34.test_ut1_34_service_and_adapter_branches::test_backend_health_check_works_inside_running_event_loop` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_34.test_ut1_34_service_and_adapter_branches::test_ingest_text_queues_failed_job_for_unregistered_backend_profile` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_34.test_ut1_34_service_and_adapter_branches::test_ingest_uses_backend_collection_name_for_upsert` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_34.test_ut1_34_service_and_adapter_branches::test_inmemory_vdb_filter_threshold_and_empty_query_paths` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_34.test_ut1_34_service_and_adapter_branches::test_live_collection_create_marks_pending_without_blocking_backend_create` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_34.test_ut1_34_service_and_adapter_branches::test_live_ingest_dispatches_async_when_enabled` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_34.test_ut1_34_service_and_adapter_branches::test_search_engine_filter_validation_and_execution` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_34.test_ut1_34_service_and_adapter_branches::test_service_collection_and_admin_paths` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_34.test_ut1_34_service_and_adapter_branches::test_service_collection_create_allows_unregistered_backend_profile` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_34.test_ut1_34_service_and_adapter_branches::test_service_idempotency_retrieve_delete_and_retention` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_34.test_ut1_34_service_and_adapter_branches::test_service_passes_resolved_embedding_settings_into_vdb_client` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_34.test_ut1_34_service_and_adapter_branches::test_service_search_falls_back_to_local_documents_when_vdb_returns_empty` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_34.test_ut1_34_service_and_adapter_branches::test_service_search_wrapper_path` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_35.test_ut1_35_coverage_closure::test_api_main_module_branch` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_35.test_ut1_35_coverage_closure::test_api_middleware_helpers_and_handler_paths` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_35.test_ut1_35_coverage_closure::test_api_require_permission_http403_branch` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_35.test_ut1_35_coverage_closure::test_auth_connector_registry_and_embedding_branches` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_35.test_ut1_35_coverage_closure::test_chunking_dedupe_rbac_and_vdb_registry_edges` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_35.test_ut1_35_coverage_closure::test_mcp_health_and_main_module_paths` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_35.test_ut1_35_coverage_closure::test_mcp_role_mapping_and_execute_paths` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_36.test_ut1_36_service_vdb041_branches::test_backend_capabilities_and_search_plan_fallback_paths` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_36.test_ut1_36_service_vdb041_branches::test_parsers_list_and_parser_test_branches` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_36.test_ut1_36_service_vdb041_branches::test_pipeline_preview_success_and_failure_branches` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_36.test_ut1_36_service_vdb041_branches::test_pipeline_preview_unavailable_branch` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_36.test_ut1_36_service_vdb041_branches::test_preview_bridge_and_parser_probe_helper` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_36.test_ut1_36_service_vdb041_branches::test_redaction_descriptor_and_provider_envelope` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_36.test_ut1_36_service_vdb041_branches::test_search_plan_capability_override_and_filter_rejection` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_36.test_ut1_36_service_vdb041_branches::test_wrapper_tools_and_ocr_paths` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_37.test_ut1_37_mcp_vdb041_dispatch::test_execute_tool_dispatches_vdb_wrapper_calls` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_37.test_ut1_37_mcp_vdb041_dispatch::test_execute_tool_search_explain_returns_plan_and_scoring_metadata` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_37.test_ut1_37_mcp_vdb041_dispatch::test_required_roles_for_new_wrapper_tools` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_38.test_ut1_38_a2a_auth_contract::test_a2a_api_key_invalid_rejected` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_38.test_ut1_38_a2a_auth_contract::test_a2a_api_key_validation_parity` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_38.test_ut1_38_a2a_auth_contract::test_api_key_env_mapping_parses_roles_and_skips_empty` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_38.test_ut1_38_a2a_auth_contract::test_auth_middleware_refreshes_provider_after_runtime_key_update` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_38.test_ut1_38_a2a_auth_contract::test_role_specific_api_key_env_mapping_separates_rbac_roles` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_39.test_ut1_39_runtime_config_loader_paths::test_get_config_uses_runtime_loader_when_defaults_layer_missing` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_39.test_ut1_39_runtime_config_loader_paths::test_load_runtime_config_delegates_to_canonical_loader` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_39.test_ut1_39_runtime_config_loader_paths::test_normalise_env_files_handles_none_scalars_and_sequence` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_4.test_ut1_4_profile_model_validation::test_profile_model_validation` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_40.test_ut1_40_database_abstraction::test_ut_db_01_engine_factory_creates_sqlite_engine` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_40.test_ut1_40_database_abstraction::test_ut_db_02_session_manager_roundtrip` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_40.test_ut1_40_tool_registry::test_ut_40_tool_registry_contract_fields` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_41.test_ut1_41_connector_ftp::test_connector_ftp_fetch_auth_failure` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_41.test_ut1_41_connector_ftp::test_connector_ftp_fetch_connection_refused` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_41.test_ut1_41_connector_ftp::test_connector_ftp_fetch_file_not_found` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_41.test_ut1_41_connector_ftp::test_connector_ftp_resolve_parses_uri` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_41.test_ut1_41_connector_ftp::test_connector_ftp_resolve_rejects_invalid_uri` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_42.test_ut1_42_connector_gdrive::test_connector_gdrive_error_mapping` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_42.test_ut1_42_connector_gdrive::test_connector_gdrive_resolve_query_link` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_42.test_ut1_42_connector_gdrive::test_connector_gdrive_resolve_raw_id` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_42.test_ut1_42_connector_gdrive::test_connector_gdrive_resolve_requires_file_id` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_42.test_ut1_42_connector_gdrive::test_connector_gdrive_resolve_shared_link` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_43.test_ut1_43_embedding_dimension_validation::test_embedding_dimensions_match_and_mismatch_rejected` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_44.test_ut1_44_admin_config_crud::test_service_admin_config_crud_and_mcp_parity` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_45.test_ut1_45_jobs_migration::test_jobs_backend_lifecycle_with_retry` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_45.test_ut1_45_jobs_migration::test_jobs_backend_records_progress_and_dead_letters_failures` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_45.test_ut1_45_jobs_migration::test_jobs_backend_timeout_marks_dead_lettered_terminal_status` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_45.test_w28d314_resource_pool_and_job_types::test_enqueue_passes_resources_to_job_constructor` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_45.test_w28d314_resource_pool_and_job_types::test_enqueue_without_resources_defaults_empty` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_45.test_w28d314_resource_pool_and_job_types::test_package_version_pins` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_45.test_w28d314_resource_pool_and_job_types::test_reindex_run_handler_registered_and_executes` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_45.test_w28d314_resource_pool_and_job_types::test_retention_run_handler_registered_and_executes` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_46.test_ut1_46_w28c427r5_connector_matrix::test_w28c427r5_connector_resolver_matrix` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_46.test_ut1_46_w28c427r5_connector_matrix::test_w28c427r5_s3_fetch_delegates_to_cloud_dog_storage` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_46.test_ut1_46_w28c427r5_connector_matrix::test_w28c427r5_source_config_policy_gate_rejects_unsupported_before_fetch` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_46_JobLifecycleSimulation.test_job_lifecycle::test_lifecycle_create_queue_cancel` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_46_JobLifecycleSimulation.test_job_lifecycle::test_lifecycle_create_queue_run_fail_retry_succeed` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_46_JobLifecycleSimulation.test_job_lifecycle::test_lifecycle_create_queue_run_succeed` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_46_JobLifecycleSimulation.test_job_lifecycle::test_lifecycle_create_queue_run_timeout` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_47.test_ut1_47_core_metadata::test_mt1_build_metadata_emits_canonical_fields_and_passes_validation` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_47.test_ut1_47_core_metadata::test_mt1_build_metadata_emits_metadata_pack_aliases` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_47.test_ut1_47_core_metadata::test_mt1_build_metadata_is_deterministic_for_same_inputs` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_47.test_ut1_47_core_metadata::test_mt1_metadata_validation_rejects_invalid_enum_and_timestamp` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_47.test_ut1_47_core_metadata::test_mt4_changed_content_marks_old_record_superseded_and_hides_it_from_default_search` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_47.test_ut1_47_core_metadata::test_mt4_ingest_populates_embedding_dim_and_user_id` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_47.test_ut1_47_core_metadata::test_mt4_same_content_reingest_reuses_canonical_identity` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_47.test_ut1_47_core_metadata::test_mt4_search_filters_support_metadata_pack_fields_and_date_operators` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_47.test_ut1_47_core_metadata::test_mt5_delete_by_filter_marks_local_records_deleted_when_backend_returns_zero` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_47.test_ut1_47_core_metadata::test_mt5_delete_by_id_marks_local_record_deleted_when_backend_delete_returns_false` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_47.test_ut1_47_core_metadata::test_mt5_deleted_record_is_hidden_from_search_results` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_47.test_ut1_47_core_metadata::test_mt5_retention_skips_archived_records_and_ttl_expiry_identifies_candidates` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_48.test_ut1_48_admin_empty_state_hint::test_ut1_48_users_list_after_create` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_48.test_ut1_48_admin_empty_state_hint::test_ut1_48_users_list_empty_state` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_5.test_ut1_5_rbac_policy_eval::test_rbac_policy_eval` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_6.test_ut1_6_connector_scope_enforcement::test_scope_blocks_escape` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_7.test_ut1_7_audit_event_shape::test_audit_event_shape` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_8.test_ut1_8_audit_redaction::test_audit_redaction` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT1_9.test_ut1_9_connector_filesystem_resolve::test_connector_filesystem_resolve` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_AuditLogFormat.test_audit_log_format::test_audit_event_has_all_au3_fields` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_AuditLogFormat.test_audit_log_format::test_audit_event_no_secrets` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_AuditLogFormat.test_audit_log_format::test_audit_event_outcome_values` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_AuditLogFormat.test_audit_log_format::test_audit_event_timestamp_format` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_apply_seed_fails_fast_when_secret_missing` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_apply_seed_handles_token_rotation` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_apply_seed_is_idempotent` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_apply_seed_no_api_keys_does_not_require_secrets` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_apply_seed_populates_all_admin_stores` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_apply_seed_role_acl_invariants` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_load_seed_api_key_missing_token_env_var` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_load_seed_api_key_missing_username` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_load_seed_missing_file_raises` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_load_seed_parses_canonical_shape` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_load_seed_rejects_inline_token` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_maybe_apply_bootstrap_seed_no_path_returns_none` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_repo_default_bootstrap_seed_is_parseable` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_resolve_seed_path_explicit_config_wins` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_resolve_seed_path_returns_explicit_nonexistent_as_is` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_resolver_caches_repeat_lookups` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_resolver_empty_env_fails_fast` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_resolver_empty_name_raises` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_resolver_missing_env_fails_fast` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_Bootstrap.test_bootstrap_seed_apply::test_resolver_resolves_from_env` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28D440E1.test_ingest_text_robustness.TestCompactSourceHuntRegression::test_compact_extract_searchable` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28D440E1.test_ingest_text_robustness.TestCompactSourceHuntRegression::test_compact_extract_succeeds` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28D440E1.test_ingest_text_robustness.TestEmbeddingBackend500::test_embedding_batch_error_has_structured_details` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28D440E1.test_ingest_text_robustness.TestEmbeddingBackend500::test_embedding_failure_surfaces_in_job_error` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28D440E1.test_ingest_text_robustness.TestIngestTextLargePayload::test_large_payload_chunks_into_at_least_50` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28D440E1.test_ingest_text_robustness.TestIngestTextLargePayload::test_large_payload_ingest_succeeds` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28D440E1.test_ingest_text_robustness.TestIngestTextLargePayload::test_large_payload_produces_chunk_records` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28D440E1.test_ingest_text_robustness.TestSearchSourceUriFilter::test_source_uri_exact_filter` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28D440E1.test_ingest_text_robustness.TestSearchSourceUriFilter::test_source_uri_filter_excludes_non_matching` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Phase25.test_ut_w28e603_phase25::test_corpus_analyse_produces_patterns` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Phase25.test_ut_w28e603_phase25::test_corpus_create_get_list` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Phase25.test_ut_w28e603_phase25::test_corpus_create_requires_name_and_profile` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Phase25.test_ut_w28e603_phase25::test_corpus_delete_removes_patterns` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Phase25.test_ut_w28e603_phase25::test_extract_text_persists_and_audits` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Phase25.test_ut_w28e603_phase25::test_link_missing_doc_raises` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Phase25.test_ut_w28e603_phase25::test_link_to_vdb_records` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Phase25.test_ut_w28e603_phase25::test_normalise_text_blocks_sections_tables` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Phase25.test_ut_w28e603_phase25::test_template_export_bad_format` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Phase25.test_ut_w28e603_phase25::test_template_generate_and_export` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Phase25.test_ut_w28e603_phase25::test_template_generate_requires_analysis` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Structure.test_ut_w28e603_structure::test_create_assigns_ids_and_persists` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Structure.test_ut_w28e603_structure::test_create_requires_profile_and_collection` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Structure.test_ut_w28e603_structure::test_delete_removes_document_and_children` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Structure.test_ut_w28e603_structure::test_deterministic_document_id_is_stable_and_distinct` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Structure.test_ut_w28e603_structure::test_deterministic_page_and_block_ids` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Structure.test_ut_w28e603_structure::test_get_list_and_include_filtering` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Structure.test_ut_w28e603_structure::test_health_reports_structure_component` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Structure.test_ut_w28e603_structure::test_idempotent_recreate_keeps_single_document` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Structure.test_ut_w28e603_structure::test_missing_document_raises_key_error` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Structure.test_ut_w28e603_structure::test_outline_builds_section_tree` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Structure.test_ut_w28e603_structure::test_pages_and_sections_listing` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.UT_W28E603_Structure.test_ut_w28e603_structure::test_schema_version_constant` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.test_w28a295_multiprofile_load::test_default_profile_preserved` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.test_w28a295_multiprofile_load::test_multilang_profile_registered` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.test_w28d443_tb_profile_durability::test_tb_profiles_coexist_with_defaults` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.test_w28d443_tb_profile_durability::test_tb_profiles_have_embeddings_config` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.test_w28d443_tb_profile_durability::test_tb_profiles_registered` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
+| `tests.unit.test_w28d443_tb_profile_durability::test_tb_profiles_survive_reinit` | UT/ST/IT | pass | 2026-06-13 | `5501696a` | |
 
 ## 3. Failures (detail)
-- `<test-id>`: <message>
+
+- `tests.integration.IT1_24.test_it1_24_openapi_contract::test_openapi_and_tool_contract_include_canonical_metadata_fields`: FileNotFoundError: [Errno 2] No such file or directory: '/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server/docs/API_DOCUMENTATION.md'

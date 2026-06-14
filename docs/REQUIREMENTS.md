@@ -1,3 +1,18 @@
+---
+template-id: T-REQ
+template-version: 1.1
+applies-to: docs/REQUIREMENTS.md
+project: index-retriever-mcp-server
+doc-last-updated: 2026-06-12T16:37:04Z
+doc-git-commit: 167f371208d2dbe673d692b181cfb25f78d51cb9
+doc-git-branch: w28a-749-idam
+doc-age-policy: indefinite
+doc-conformance-stamp: 2026-06-12T16:37:04Z
+req-trace-version: 1.0
+req-id-prefixes-used: [SV, BO, BR, FR, UC, CS, NF, R, F]
+surface-coverage: [api, mcp, a2a, webui]
+---
+
 # Requirements — index-retriever-mcp-server
 
 ## Provenance
@@ -764,3 +779,48 @@ The service MUST use `cloud_dog_logging` as the only application and audit loggi
 Every auditable event MUST emit a PS-40/NIST AU-3 audit record with: `event_type`, `action`, `timestamp`, `service`, `component`, `service_instance`, `environment`, `source_host`, `source_process`, `source_application`, `source_address` where available, `destination_address` where available, `outcome`, actor identity including user/service/system plus account/process/device identifiers where available, `target`, `process_id`, `affected_files` where relevant, `correlation_id`, `trace_id`, and `request_id`.
 
 Auditable events MUST include authentication and authorisation decisions, user/group/API-key/RBAC changes, profile/collection/source/ingest/search/retrieve/delete/retention/reindex/parser/OCR operations, MCP/A2A/API calls, job lifecycle changes, configuration changes, data access and mutation, denials, failures, and privileged operations. Secrets MUST be redacted before persistence. Tests MUST cover schema fields, event coverage, redaction, append-only audit persistence, retention/integrity, and WebUI observability rendering/filtering.
+
+## 5. Cyber Security & Negative Flows
+
+Mandatory schema per PS-REQ-TEST-TRACE v1.0 §3.4. Every project covers anon-denied, wrong-role-denied, missing-param-error per declared surface. The CS rows below are platform-baseline; project-specific extensions append in §5.1.
+
+| ID | Threat / negative scenario | Surface | Role(s) attempted | Expected | Tests |
+|---|---|---|---|---|---|
+| `CS-001` | Anon attempts data read | `api`, `mcp`, `a2a`, `webui` | `anon` | `401` | (to be bound in Instruction 4 by operator) |
+| `CS-002` | read-only attempts write | `api`, `mcp` | `read-only` | `403` | (to be bound in Instruction 4 by operator) |
+| `CS-003` | Missing required param | `api` | `admin` | `422` | (to be bound in Instruction 4 by operator) |
+| `CS-004` | Wrong-role privileged op | `mcp` | `read-write` | `403` | (to be bound in Instruction 4 by operator) |
+
+
+<!-- W28C-1710b design-delta additions (2026-06-14T18:01:23Z); SHA chain in working/W28C-1710b/KNOWLEDGE-PRESERVATION-DELTA.md -->
+
+## PS-REQ-TEST-TRACE schema completion (W28C-1710b)
+
+Per the binding contract (`docs/standards/PS-REQ-TEST-TRACE.md` §2 + §3), every FR-NNN row in this file declares the following schema (default values; operator amends per row in W28C-1711):
+
+```yaml
+surface: ['api', 'mcp', 'a2a']  # programme default for index-retriever-mcp-server
+priority: must  # default; operator amends per FR
+since: 2026-06-14  # carried forward unless older anchor known
+last-verified: 2026-06-14
+tests: []  # populated by W28C-1711 binding
+crud: N/A  # default; operator amends per FR
+```
+
+## Baseline CS-NNN rows (PS-REQ-TEST-TRACE §3.4 — added by W28C-1710b)
+
+Every project MUST have CS-NNN rows for `anon-denied`, `wrong-role-denied`, `missing-param-error` per surface. Programme baseline:
+
+| CS-NNN | Scenario | Surface | Expected | Roles |
+|---|---|---|---|---|
+| `CS-005` | anon-denied | `api` | `401` | `anon` |
+| `CS-006` | anon-denied | `mcp` | `401` | `anon` |
+| `CS-007` | anon-denied | `a2a` | `401` | `anon` |
+| `CS-008` | wrong-role-denied | `api` | `403` | `read-only` |
+| `CS-009` | wrong-role-denied | `mcp` | `403` | `read-only` |
+| `CS-010` | wrong-role-denied | `a2a` | `403` | `read-only` |
+| `CS-011` | missing-param-error | `api` | `422` | `*` |
+| `CS-012` | missing-param-error | `mcp` | `422` | `*` |
+| `CS-013` | missing-param-error | `a2a` | `422` | `*` |
+
+_These CS-NNN rows are pending W28C-1711 test binding. Each row binds to one or more `@pytest.mark.negative` tests with explicit expected denial code._
