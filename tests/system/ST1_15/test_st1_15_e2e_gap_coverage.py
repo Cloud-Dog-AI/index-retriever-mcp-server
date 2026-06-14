@@ -151,6 +151,9 @@ def _render_png(text: str) -> bytes:
     output = BytesIO()
     image.save(output, format="PNG")
     return output.getvalue()
+@pytest.mark.ST
+@pytest.mark.mcp
+@pytest.mark.req("FR-009")
 
 
 def test_st_15_chunking_strategies_ingest_expected_boundaries(live_service: LiveIndexRuntime) -> None:
@@ -210,6 +213,9 @@ def test_st_15_chunking_strategies_ingest_expected_boundaries(live_service: Live
             chunker=expectation.chunker,
         )
         assert chunks == expectation.expected_chunks
+@pytest.mark.ST
+@pytest.mark.mcp
+@pytest.mark.req("FR-009")
 
 
 def test_st_15_local_ocr_provider_extracts_non_empty_text() -> None:
@@ -230,6 +236,9 @@ def test_st_15_local_ocr_provider_extracts_non_empty_text() -> None:
     assert normalised
     assert "alpha" in normalised
     assert "ocr" in normalised
+@pytest.mark.ST
+@pytest.mark.mcp
+@pytest.mark.req("FR-009")
 
 
 def test_st_15_retrieval_returns_content_and_source_uri_traceability(
