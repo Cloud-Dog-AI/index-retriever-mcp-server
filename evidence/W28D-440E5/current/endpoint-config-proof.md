@@ -7,5 +7,5 @@ canonical_endpoint_config=defaults.yaml external.HDRO.url https://hdrdata.org
 selected_endpoint_host=hdrdata.org
 allowed_hosts=hdrdata.org,www.hdrdata.org
 unsafe_endpoint_behavior=reject unknown non-HDRO host; fall back to canonical only for known maptiler mismatch defect
-proof_files=evidence/W28D-440E4/current/00-hdro-vault-preflight.md,evidence/W28D-440E4/current/hdro-live-probe.json,evidence/W28D-440E4/current/ut.log,evidence/W28D-440E4/current/it.log
+proof_files=evidence/W28D-440E5/current/00-hdro-vault-preflight.md,evidence/W28D-440E5/current/hdro-live-probe.json,evidence/W28D-440E5/current/ut.log,evidence/W28D-440E5/current/it.log
 endpoint_config_safe=PASS

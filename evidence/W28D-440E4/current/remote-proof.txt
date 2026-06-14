@@ -1,9 +1,0 @@
-remote=https://git.cloud-dog.net/cloud-dog-ai/index-retriever-mcp-server.git
-origin_main_after_evidence_push=016aa786e1f3da1acbf882a889b33efdad496b30
-local_head=016aa786e1f3da1acbf882a889b33efdad496b30
-evidence_tag=W28D-440E4-EVIDENCE
-evidence_tag_remote_target=016aa786e1f3da1acbf882a889b33efdad496b30
-evidence_tag_matches_head=True
-final_tag=W28D-440E4-FINAL-PROOF
-final_tag_status=created_after_final_evidence_commit
-push_status=PASS

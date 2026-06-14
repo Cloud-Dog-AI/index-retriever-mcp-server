@@ -1,0 +1,8 @@
+worktree=/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server-w28d-440e4
+branch=w28d-440e4-hdro
+origin_main_before_repair=e5da57af766598932c047d6903e92293777be6d6
+HEAD_before_repair=e5da57af766598932c047d6903e92293777be6d6
+status_before_evidence_commit=dirty_owned_changes_only
+renamed_test_dirs_to=W28D440E5
+invalid_prior_close_pack_removed=True
+scoped_clean_proof=PASS_PENDING_COMMIT

@@ -1,0 +1,5 @@
+path	status	note
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server	untouched	primary checkout not used for implementation
+/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server-w28d-440e4	dirty-owned	isolated worktree for W28D-440E5 sendback repair
+/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-platform-standards	read-only	read updated W28D-440E5 instruction and sendback; no edits
+Vault dev.external.HDRO	read-only	read/probe only; no Vault writes

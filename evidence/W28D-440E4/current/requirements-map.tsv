@@ -1,9 +1,0 @@
-check	command	observed	status
-tool_count_registry	pytest tests/unit/UT1_40/test_ut1_40_tool_registry.py --env tests/env-UT -q	93 tools, hdro_extract present	PASS
-docs_requirements_tool_count	grep -n "93" docs/REQUIREMENTS.md docs/API-REFERENCE.md	docs updated to 93 tools and hdro_extract trace	PASS
-vault_endpoint_mismatch	evidence/W28D-440E4/current/00-hdro-vault-preflight.md	Vault dev.external.HDRO.url host maptiler.com; selected endpoint hdrdata.org	PASS
-canonical_live_probe	pytest tests/integration/IT_W28D440E4/test_hdro_live.py --env tests/env-IT -q	1 passed; endpoint_host=hdrdata.org; HDI/GII records returned	PASS
-unit_redaction	pytest tests/unit/UT_W28D440E4 --env tests/env-UT -q	secret redaction and missing-key negative tests passed	PASS
-mcp_service_surface	pytest tests/unit/UT_W28D440E4/test_hdro_extractor.py::test_hdro_extract_invokes_through_mcp_service_surface --env tests/env-UT -q	execute_tool hdro_extract returned records	PASS
-source_hunt_regression	pytest tests/unit/UT_W28D440E4/test_hdro_extractor.py::test_w28d440e1_compact_source_hunt_regression_still_succeeds --env tests/env-UT -q	compact source-hunt ingest succeeded	PASS
-secret_scan	python in-memory scan against live Vault key	raw_key_hits=0	PASS

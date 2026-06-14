@@ -481,7 +481,7 @@ Admin/maintainer tools SHALL include:
 
 ### FR-16A Complete MCP tool inventory contract
 - The documented MCP catalogue SHALL match the actual registered runtime inventory exactly.
-- The current registered tool count SHALL be **93** tools (verified: `src/index_tools/tools/registry.py` runtime build = 93 unique; `UT1_40` asserts `len(tools) == 93`; includes the 21 W28E-603 document-structure tools and the W28D-440E4 UNDP HDRO extractor). Reconciled to runtime by W28D-440E4.
+- The current registered tool count SHALL be **93** tools (verified: `src/index_tools/tools/registry.py` runtime build = 93 unique; `UT1_40` asserts `len(tools) == 93`; includes the 21 W28E-603 document-structure tools and the W28D-440E5 UNDP HDRO extractor). Reconciled to runtime by W28D-440E5.
 - Tool documentation SHALL include, for every registered tool:
   - tool name,
   - operator intent/description,

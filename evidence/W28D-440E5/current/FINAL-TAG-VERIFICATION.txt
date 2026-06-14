@@ -1,0 +1,3 @@
+tag	remote_target	status
+W28D-440E5-EVIDENCE	pending first repair commit	PENDING
+W28D-440E5-FINAL-PROOF	pending final repair commit	PENDING

@@ -1,4 +1,0 @@
-tag	remote_target	status
-W28D-440E4-EVIDENCE	016aa786e1f3da1acbf882a889b33efdad496b30	PASS
-W28D-440E4-FINAL-PROOF	created after final evidence commit	PASS_PENDING_FINAL_PUSH
-verification_commands	git ls-remote origin refs/tags/W28D-440E4-EVIDENCE refs/tags/W28D-440E4-FINAL-PROOF	PASS

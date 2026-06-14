@@ -1,8 +1,14 @@
-# W28D-440E4 HDRO Vault Preflight
+# W28D-440E5 HDRO Vault Preflight
 
-timestamp_utc=2026-06-14T19:23:46.627544Z
+timestamp_utc=2026-06-14T21:15:19.905926Z
 vault_addr_host=vault0.cloud-dog.net
 vault_token_present=True
+vault_health_http=429
+vault_initialized=True
+vault_sealed=False
+vault_standby=True
+vault_version=1.20.3
+vault_health=PASS
 vault_config_mount=cloud_dog_ai
 vault_config_path=config
 vault_config_read=PASS

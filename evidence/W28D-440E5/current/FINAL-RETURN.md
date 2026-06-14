@@ -1,0 +1,3 @@
+ACCEPT-ready pending W28D-440E5 remote tags
+validator_line=PENDING
+HAVE_ALL_REQUIREMENTS_BEEN_MET: PENDING
