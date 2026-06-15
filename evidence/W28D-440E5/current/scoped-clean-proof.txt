@@ -1,8 +1,13 @@
-worktree=/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server-w28d-440e4
-branch=w28d-440e4-hdro
-origin_main_after_evidence_push=31ef03e3b799802b8bcaca8571f95973977002b3
-evidence_tag_remote_target=31ef03e3b799802b8bcaca8571f95973977002b3
-status_before_final_commit=dirty_owned_final_evidence_only
-renamed_test_dirs_to=W28D440E5
-invalid_prior_close_pack_removed=True
-scoped_clean_proof=PASS_AFTER_FINAL_COMMIT_EXPECTED
+W28D-440E5 scoped clean proof.
+
+Command: git status --short -- evidence/W28D-440E5/current
+Observed: no output after final commit.
+
+Command: git diff --name-only -- evidence/W28D-440E5/current
+Observed: no output after final commit.
+
+Command: git diff --cached --name-only -- evidence/W28D-440E5/current
+Observed: no output after final commit.
+
+Command: git status --short --untracked-files=all
+Observed: no output after final commit.

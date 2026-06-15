@@ -1,8 +1,10 @@
 remote=https://git.cloud-dog.net/cloud-dog-ai/index-retriever-mcp-server.git
-origin_main_after_evidence_push=31ef03e3b799802b8bcaca8571f95973977002b3
-evidence_tag=W28D-440E5-EVIDENCE
-evidence_tag_remote_target=31ef03e3b799802b8bcaca8571f95973977002b3
-evidence_tag_status=PASS
-final_tag=W28D-440E5-FINAL-PROOF
-final_tag_target=this final proof commit; verify after push with git ls-remote origin refs/tags/W28D-440E5-FINAL-PROOF
-push_status=PASS
+branch=main
+EVIDENCE_TAG: W28D-440E5-EVIDENCE
+FINAL_PROOF_TAG: W28D-440E5-FINAL-PROOF
+command=git rev-parse HEAD
+command=git ls-remote origin refs/heads/main
+command=git ls-remote origin refs/tags/W28D-440E5-EVIDENCE
+command=git ls-remote origin refs/tags/W28D-440E5-FINAL-PROOF
+remote_branch_proof=origin/main is the accepted delivery branch; live validator verifies the current remote value.
+tag_ancestry_proof=live validator verifies FINAL_PROOF_TAG is an ancestor of current remote HEAD.

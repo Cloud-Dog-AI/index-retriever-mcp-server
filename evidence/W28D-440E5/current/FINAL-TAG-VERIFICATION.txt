@@ -1,4 +1,18 @@
-tag	remote_target	status
-W28D-440E5-EVIDENCE	31ef03e3b799802b8bcaca8571f95973977002b3	PASS
-W28D-440E5-FINAL-PROOF	this final proof commit after final push	PASS_PENDING_FINAL_PUSH
-verification_command	git ls-remote origin refs/heads/main refs/tags/W28D-440E5-EVIDENCE refs/tags/W28D-440E5-FINAL-PROOF	PASS
+W28D-440E5 final tag verification.
+
+EVIDENCE_TAG: W28D-440E5-EVIDENCE
+FINAL_PROOF_TAG: W28D-440E5-FINAL-PROOF
+
+Required replay commands:
+git rev-parse HEAD
+git ls-remote origin refs/heads/main
+git ls-remote origin refs/tags/W28D-440E5-EVIDENCE
+git ls-remote origin refs/tags/W28D-440E5-FINAL-PROOF
+git rev-parse W28D-440E5-EVIDENCE
+git rev-parse W28D-440E5-FINAL-PROOF
+sha256sum -c CHECKSUMS.sha256
+git status --short --untracked-files=all
+git diff --name-only -- evidence/W28D-440E5/current
+git diff --cached --name-only -- evidence/W28D-440E5/current
+
+Live validator performs the remote branch and tag ancestry checks.

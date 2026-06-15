@@ -1,35 +1,16 @@
-path	type	purpose
-defaults.yaml	modified	non-secret canonical HDRO URL default
-defaults.hdro.yaml	added	dedicated cloud_dog_config Vault bundle defaults for HDRO secret object
-src/index_tools/sources/__init__.py	added	source package marker
-src/index_tools/sources/hdro.py	added	UNDP HDRO extractor, endpoint safety, redacted transport errors
-src/index_tools/tools/definitions.py	modified	hdro_extract input/output models
-src/index_tools/tools/registry.py	modified	hdro_extract ToolSpec
-src/index_tools/tools/service.py	modified	IndexService.hdro_extract
-src/index_server/mcp_server.py	modified	permission and dispatch for hdro_extract
-src/index_server/api_server.py	modified	A2A skill mapping for hdro_extract
-tests/unit/UT_W28D440E5/test_hdro_extractor.py	added	unit, redaction, service surface, source-hunt regression
-tests/integration/IT_W28D440E5/test_hdro_live.py	added	live Vault-backed hdrdata.org integration
-tests/unit/UT1_40/test_ut1_40_tool_registry.py	modified	tool count 93 and hdro_extract assertion
-docs/REQUIREMENTS.md	modified	requirements trace/tool count update
-docs/API-REFERENCE.md	modified	API reference/tool count update
-prior invalid sendback close pack	removed	replaced by this W28D-440E5 evidence root
-evidence/W28D-440E5/current/00-hdro-vault-preflight.md	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/00-reading-proof.md	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/CHECKSUMS.sha256	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/FINAL-RETURN.md	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/FINAL-TAG-VERIFICATION.txt	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/endpoint-config-proof.md	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/external-dirty-ledger.tsv	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/extractor-design.md	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/final-evidence-validator.txt	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/hdro-live-probe.json	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/it.log	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/mcp-api-smoke.log	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/remote-proof.txt	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/requirements-map.tsv	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/scoped-clean-proof.txt	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/secret-redaction-proof.txt	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/source-hunt-regression.log	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/touched-paths-manifest.tsv	evidence	W28D-440E5 closeout artifact
-evidence/W28D-440E5/current/ut.log	evidence	W28D-440E5 closeout artifact
+path	repo	reason	created_or_modified_by_lane	commit_hash
+defaults.yaml	index-retriever-mcp-server	non-secret canonical HDRO URL default	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+defaults.hdro.yaml	index-retriever-mcp-server	dedicated cloud_dog_config Vault bundle defaults for HDRO secret object	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+src/index_tools/sources/__init__.py	index-retriever-mcp-server	source package marker	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+src/index_tools/sources/hdro.py	index-retriever-mcp-server	UNDP HDRO extractor, endpoint safety, redacted transport errors	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+src/index_tools/tools/definitions.py	index-retriever-mcp-server	hdro_extract input/output models	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+src/index_tools/tools/registry.py	index-retriever-mcp-server	hdro_extract ToolSpec	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+src/index_tools/tools/service.py	index-retriever-mcp-server	IndexService.hdro_extract	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+src/index_server/mcp_server.py	index-retriever-mcp-server	permission and dispatch for hdro_extract	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+src/index_server/api_server.py	index-retriever-mcp-server	A2A skill mapping for hdro_extract	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+tests/unit/UT_W28D440E5/test_hdro_extractor.py	index-retriever-mcp-server	unit, redaction, service surface, source-hunt regression coverage	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+tests/integration/IT_W28D440E5/test_hdro_live.py	index-retriever-mcp-server	live Vault-backed hdrdata.org integration	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+tests/unit/UT1_40/test_ut1_40_tool_registry.py	index-retriever-mcp-server	tool count 93 and hdro_extract assertion	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+docs/REQUIREMENTS.md	index-retriever-mcp-server	requirements trace and tool count update	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+docs/API-REFERENCE.md	index-retriever-mcp-server	API reference and tool count update	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307
+evidence/W28D-440E5/current	index-retriever-mcp-server	W28D-440E5 closeout evidence pack	yes	d6c0c64b3fb1c0c5b5b2d576f320bf54ec2c6307

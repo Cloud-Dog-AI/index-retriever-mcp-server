@@ -1,5 +1,11 @@
 # W28D-440E5 HDRO Vault Preflight
 
+READING PROOF
+Mandatory Reading: COMPLETE
+RULES_REREAD: YES version_sha256=6d3eeb2db34b1ecc11e44f4dad8367127fd1a7f8944ff76493433702e16c92f7
+AGENT-LESSONS_REREAD: YES version_sha256=e1a30f9a365dac1d653d2aa8c137c8f56290edce13b12a78e53c104d448b4323
+reading_proof_answers_marker=present
+
 timestamp_utc=2026-06-14T21:15:19.905926Z
 vault_addr_host=vault0.cloud-dog.net
 vault_token_present=True
