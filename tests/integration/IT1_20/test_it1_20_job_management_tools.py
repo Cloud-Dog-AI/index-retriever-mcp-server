@@ -19,6 +19,7 @@ from fastapi.testclient import TestClient
 from index_server.api_server import build_api_app
 from index_tools.tools.service import IndexService
 from tests.http_paths import api_tools_path
+import pytest
 
 
 def _call_tool(client: TestClient, tool_name: str, payload: dict[str, object], token: str) -> dict[str, object]:
@@ -59,6 +60,9 @@ def _job_actor(job: dict[str, object]) -> str:
         if value:
             return str(value)
     return ""
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_job_management_tools_contract(service: IndexService) -> None:

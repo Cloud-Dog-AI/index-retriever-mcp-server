@@ -59,6 +59,9 @@ class _DummyService:
 
     def embedding_health_check(self):
         return {"status": "ok", "dimensions": 8}
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-017")
 
 
 def test_api_middleware_helpers_and_handler_paths(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -103,6 +106,9 @@ def test_api_middleware_helpers_and_handler_paths(monkeypatch: pytest.MonkeyPatc
         payload={"profile": "default", "collection": "c1", "text": "payload"},
     )
     assert queued == {"job_id": "job-123"}
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-017")
 
 
 def test_api_require_permission_http403_branch(monkeypatch: pytest.MonkeyPatch, service) -> None:
@@ -119,6 +125,9 @@ def test_api_require_permission_http403_branch(monkeypatch: pytest.MonkeyPatch, 
     response = client.get(api_tools_path(), headers={"x-api-key": "test-api-key"})
     assert response.status_code == 403
     assert "denied" in response.text
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-017")
 
 
 def test_api_main_module_branch(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -133,6 +142,9 @@ def test_api_main_module_branch(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CLOUD_DOG__API_SERVER__PORT", api_port)
     runpy.run_module("index_server.api_server", run_name="__main__", alter_sys=True)
     assert captured["port"] == int(api_port)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-017")
 
 
 def test_mcp_role_mapping_and_execute_paths(service, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -200,6 +212,9 @@ def test_mcp_role_mapping_and_execute_paths(service, monkeypatch: pytest.MonkeyP
         registry=registry,
         identity_roles={"admin"},
     ) == {"status": "ok"}
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-017")
 
 
 def test_mcp_health_and_main_module_paths(monkeypatch: pytest.MonkeyPatch, service) -> None:
@@ -224,6 +239,9 @@ def test_mcp_health_and_main_module_paths(monkeypatch: pytest.MonkeyPatch, servi
     monkeypatch.setenv("CLOUD_DOG__MCP_SERVER__PORT", mcp_port)
     runpy.run_module("index_server.mcp_server", run_name="__main__", alter_sys=True)
     assert captured["port"] == int(mcp_port)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-017")
 
 
 def test_auth_connector_registry_and_embedding_branches(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
@@ -259,6 +277,9 @@ def test_auth_connector_registry_and_embedding_branches(monkeypatch: pytest.Monk
     monkeypatch.setattr(embedding_adapter_mod, "cloud_dog_llm", _EmbedModule())
     adapter = EmbeddingAdapter(provider="ollama", model="nomic")
     assert adapter.embed(["abc"])[0][2] == 3.0
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-017")
 
 
 def test_chunking_dedupe_rbac_and_vdb_registry_edges(monkeypatch: pytest.MonkeyPatch) -> None:

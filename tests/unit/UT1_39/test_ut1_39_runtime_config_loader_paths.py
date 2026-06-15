@@ -19,6 +19,10 @@ from types import SimpleNamespace
 from typing import Any
 
 from index_tools.config import loader
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_normalise_env_files_handles_none_scalars_and_sequence() -> None:
@@ -36,6 +40,9 @@ def test_normalise_env_files_handles_none_scalars_and_sequence() -> None:
         "tests/env-IT-local-docker",
         "tests/env-AT-local-docker",
     ]
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_load_runtime_config_delegates_to_canonical_loader(
@@ -81,6 +88,9 @@ def test_load_runtime_config_delegates_to_canonical_loader(
         "unresolved_policy": "strict",
         "vault_enabled": False,
     }
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_get_config_uses_runtime_loader_when_defaults_layer_missing(

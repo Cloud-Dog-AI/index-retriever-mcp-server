@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.embeddings.registry import EmbeddingRegistry
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-012")
 
 
 def test_embedding_registry_lookup() -> None:

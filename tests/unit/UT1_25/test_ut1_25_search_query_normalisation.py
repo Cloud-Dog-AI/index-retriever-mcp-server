@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.search.engine import normalise_query
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-014")
 
 
 def test_search_query_normalisation() -> None:

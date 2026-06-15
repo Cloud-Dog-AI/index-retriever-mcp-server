@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.pipeline.chunking import token_chunks
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-010")
 
 
 def test_chunking_token_strategy() -> None:

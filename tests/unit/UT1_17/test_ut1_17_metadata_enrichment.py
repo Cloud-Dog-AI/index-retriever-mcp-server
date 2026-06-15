@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.pipeline.metadata import build_metadata
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-010")
 
 
 def test_metadata_enrichment() -> None:

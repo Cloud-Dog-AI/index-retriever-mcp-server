@@ -20,6 +20,9 @@ import pytest
 
 from index_tools.queue.models import JobStatus
 from index_tools.tools.service import IndexService, _required_env
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-003")
 
 
 def test_service_profile_lifecycle_and_permissions(service: IndexService) -> None:
@@ -35,6 +38,9 @@ def test_service_profile_lifecycle_and_permissions(service: IndexService) -> Non
         service.admin_profile_delete("default", roles={"admin"})
     service.admin_profile_delete("p1", roles={"admin"})
     assert "p1" not in service.profiles_list()
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-003")
 
 
 def test_service_document_reference_and_jobs(service: IndexService, tmp_path) -> None:
@@ -54,6 +60,9 @@ def test_service_document_reference_and_jobs(service: IndexService, tmp_path) ->
     failed.status = JobStatus.failed
     retried = service.job_retry(job_id)
     assert retried.status in {JobStatus.queued, JobStatus.succeeded}
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-003")
 
 
 def test_service_delete_reindex_retention_and_stream_errors(service: IndexService) -> None:
@@ -94,6 +103,9 @@ def test_service_delete_reindex_retention_and_stream_errors(service: IndexServic
     assert closed["ingested_events"] == 1
     with pytest.raises(RuntimeError):
         service.ingest_stream_event(sid, "chunk-2", actor="writer")
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-003")
 
 
 def test_service_required_env_resolution(monkeypatch: pytest.MonkeyPatch) -> None:

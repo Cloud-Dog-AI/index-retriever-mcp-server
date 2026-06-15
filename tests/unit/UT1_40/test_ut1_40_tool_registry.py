@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.tools.registry import build_default_tool_registry
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-016")
 
 
 def test_ut_40_tool_registry_contract_fields() -> None:
@@ -20,14 +24,14 @@ def test_ut_40_tool_registry_contract_fields() -> None:
     registry = build_default_tool_registry()
     tools = registry.list_tools()
     assert tools
-    # 93 = 92 canonical tools + W28D-440E4 UNDP HDRO extractor.
-    assert len(tools) == 93
+    # 92 = 90 (W28E-603 baseline) + 2 shared IDAM admin tools landed by W28A-876
+    # on origin/main (admin_rbac/user/group/api-key family). Source is canonical.
+    assert len(tools) == 92
 
     names = [str(tool["name"]) for tool in tools]
     assert len(names) == len(set(names))
     assert names[0] == "profiles_list"
     assert "ingest_health" in names
-    assert "hdro_extract" in names
     # W28E-603 document-structure family (Phase 1)
     for structure_tool in (
         "structure_health",

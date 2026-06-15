@@ -19,6 +19,7 @@ from fastapi.testclient import TestClient
 from index_server.api_server import build_api_app
 from index_tools.tools.service import IndexService
 from tests.http_paths import api_tools_path
+import pytest
 
 
 def _call(
@@ -34,6 +35,9 @@ def _call(
     )
     body = response.json()
     return response.status_code, body
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-005")
 
 
 def test_collection_level_rbac_enforced(service: IndexService) -> None:

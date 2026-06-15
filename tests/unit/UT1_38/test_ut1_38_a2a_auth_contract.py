@@ -17,6 +17,9 @@ from __future__ import annotations
 import pytest
 
 from index_server.auth.middleware import AuthMiddleware, flat_roles_for
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-001")
 
 
 def test_a2a_api_key_validation_parity(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -35,12 +38,18 @@ def test_a2a_api_key_validation_parity(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "admin" in via_header.roles
     assert flat_roles_for(via_header.roles) == {"admin"}
     assert "*" in via_header.permissions
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-001")
 
 
 def test_a2a_api_key_invalid_rejected() -> None:
     auth = AuthMiddleware(api_keys={"12345678": {"admin"}})
     with pytest.raises(PermissionError):
         auth.api_key_identity({"authorization": "Bearer wrong"})
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-001")
 
 
 def test_api_key_env_mapping_parses_roles_and_skips_empty(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -58,6 +67,9 @@ def test_api_key_env_mapping_parses_roles_and_skips_empty(monkeypatch: pytest.Mo
     assert "*" not in bare.permissions
     assert flat_roles_for(bare.roles) == {"read-only"}
     assert AuthMiddleware._default_roles() == set()
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-001")
 
 
 def test_role_specific_api_key_env_mapping_separates_rbac_roles(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -78,6 +90,9 @@ def test_role_specific_api_key_env_mapping_separates_rbac_roles(monkeypatch: pyt
     assert auth.api_key_identity({"x-api-key": "reader-role-key"}).roles == {"viewer"}
     assert flat_roles_for(auth.api_key_identity({"x-api-key": "reader-role-key"}).roles) == {"read-only"}
     assert auth.api_key_identity({"x-api-key": "reader-role-key"}).permissions == {"collection.read"}
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-001")
 
 
 def test_auth_middleware_refreshes_provider_after_runtime_key_update() -> None:

@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.audit.events import Actor, AuditEvent, Target
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-006")
 
 
 def test_audit_event_shape() -> None:

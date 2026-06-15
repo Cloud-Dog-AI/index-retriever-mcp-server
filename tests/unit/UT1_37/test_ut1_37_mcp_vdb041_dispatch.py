@@ -18,6 +18,7 @@ from types import SimpleNamespace
 from typing import Any
 
 from index_server import mcp_server
+import pytest
 
 
 class _ToolService:
@@ -117,12 +118,18 @@ class _ToolService:
     def reindex_run(self, profile: str, collection: str) -> dict[str, int]:
         self.calls.append(("reindex_run", {"profile": profile, "collection": collection}))
         return {"documents": 3}
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-013")
 
 
 def test_required_roles_for_new_wrapper_tools() -> None:
     assert mcp_server._required_permission_for_tool("parsers_list") == "collection.read"
     assert mcp_server._required_permission_for_tool("parser_test") == "source.configure"
     assert mcp_server._required_permission_for_tool("extract_only") == "collection.write"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-013")
 
 
 def test_execute_tool_dispatches_vdb_wrapper_calls() -> None:
@@ -250,6 +257,9 @@ def test_execute_tool_dispatches_vdb_wrapper_calls() -> None:
         "retention_run",
         "reindex_run",
     ]
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-013")
 
 
 def test_execute_tool_search_explain_returns_plan_and_scoring_metadata() -> None:
