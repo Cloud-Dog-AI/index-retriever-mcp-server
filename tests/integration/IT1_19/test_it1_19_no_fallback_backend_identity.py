@@ -21,6 +21,7 @@ from index_tools.audit.logger import AuditLogger
 from index_tools.embeddings.adapter import EmbeddingAdapter
 from index_tools.queue.engine import QueueEngine
 from tests.live_runtime import LiveIndexRuntime
+import pytest
 
 
 def _assert_no_fallback_backends(live_service: LiveIndexRuntime, tmp_path: Path) -> None:
@@ -48,6 +49,9 @@ def _assert_no_fallback_backends(live_service: LiveIndexRuntime, tmp_path: Path)
     for provider in required:
         assert provider not in {"fallback", "in-memory"}
         assert live_service.backend_health_check(provider_id=provider) is True
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_no_fallback_backend_identity_it(live_service: LiveIndexRuntime, tmp_path: Path) -> None:

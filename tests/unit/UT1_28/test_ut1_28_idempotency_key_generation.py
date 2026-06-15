@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.queue.engine import QueueEngine
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_idempotency_key_generation() -> None:

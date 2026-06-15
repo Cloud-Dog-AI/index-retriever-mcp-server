@@ -16,7 +16,7 @@ from index_tools.pipeline.dedupe import DedupeIndex, DedupeRecord
 import pytest
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-011")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-011)
 
 
 def test_dedupe_hash_detection() -> None:

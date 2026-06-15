@@ -17,6 +17,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from index_tools.tools.service import IndexService
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_embedding_dimensions_match_and_mismatch_rejected(tmp_path: Path) -> None:

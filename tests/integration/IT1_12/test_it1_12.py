@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from tests.live_runtime import LiveIndexRuntime
+import pytest
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_streaming_ingest_sse(live_service: LiveIndexRuntime) -> None:

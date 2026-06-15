@@ -16,7 +16,7 @@ from index_tools.embeddings.registry import EmbeddingRegistry
 import pytest
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-012")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-012)
 
 
 def test_embedding_registry_lookup() -> None:

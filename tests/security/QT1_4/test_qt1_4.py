@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_server.auth.middleware import AuthMiddleware
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-008")
 
 
 def test_uk_english_compliance() -> None:

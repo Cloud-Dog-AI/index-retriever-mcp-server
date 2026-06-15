@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.queue.models import JobRecord
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_job_model_validation() -> None:

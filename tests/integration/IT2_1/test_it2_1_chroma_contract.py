@@ -24,6 +24,9 @@ pytestmark = pytest.mark.skipif(
     not backend_available("chroma"),
     reason=backend_skip_reason("chroma") or "chroma backend unavailable",
 )
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_it2_1_chroma_contract_roundtrip() -> None:

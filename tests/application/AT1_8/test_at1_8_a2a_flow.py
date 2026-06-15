@@ -25,6 +25,7 @@ from fastapi.testclient import TestClient
 from index_server.api_server import build_api_app
 from tests.http_paths import a2a_base_path, a2a_health_path, api_tools_path
 from tests.live_runtime import LiveIndexRuntime
+import pytest
 
 
 def _http_get(url: str, headers: dict[str, str] | None = None) -> tuple[int, dict[str, object]]:
@@ -56,6 +57,9 @@ def _http_post(url: str, payload: dict[str, object], headers: dict[str, str]) ->
             return exc.code, json.loads(body)
         except json.JSONDecodeError:
             return exc.code, {"detail": body}
+@pytest.mark.AT
+@pytest.mark.mcp
+@pytest.mark.req("FR-004")
 
 
 def test_a2a_namespace_and_shared_auth_flow(

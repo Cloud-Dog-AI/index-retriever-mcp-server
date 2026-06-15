@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.audit.logger import redact_payload
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_audit_redaction() -> None:

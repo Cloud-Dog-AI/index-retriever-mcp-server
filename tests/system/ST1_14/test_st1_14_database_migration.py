@@ -20,6 +20,7 @@ from sqlalchemy import text
 
 from index_tools.db.models import IndexPlatformDbState
 from index_tools.db.runtime import initialise_database, shutdown_database
+import pytest
 
 
 _BASELINE_REVISION = "20260305_0001"
@@ -52,6 +53,9 @@ def _configure_sqlite_env(monkeypatch, db_path: Path) -> None:
     monkeypatch.delenv("CLOUD_DOG__DB__USERNAME", raising=False)
     monkeypatch.delenv("CLOUD_DOG__DB__PASSWORD", raising=False)
     monkeypatch.delenv("DB_URL", raising=False)
+@pytest.mark.ST
+@pytest.mark.mcp
+@pytest.mark.req("FR-005")
 
 
 def test_st_db_01_migration_upgrade_on_fresh_sqlite(monkeypatch, tmp_path: Path) -> None:
@@ -68,6 +72,9 @@ def test_st_db_01_migration_upgrade_on_fresh_sqlite(monkeypatch, tmp_path: Path)
         assert revision == _expected_head()
     finally:
         shutdown_database()
+@pytest.mark.ST
+@pytest.mark.mcp
+@pytest.mark.req("FR-005")
 
 
 def test_st_db_02_crud_via_session_manager(monkeypatch, tmp_path: Path) -> None:

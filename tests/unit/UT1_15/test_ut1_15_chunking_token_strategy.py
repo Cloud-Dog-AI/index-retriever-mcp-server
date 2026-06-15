@@ -16,7 +16,7 @@ from index_tools.pipeline.chunking import token_chunks
 import pytest
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-010")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-010)
 
 
 def test_chunking_token_strategy() -> None:

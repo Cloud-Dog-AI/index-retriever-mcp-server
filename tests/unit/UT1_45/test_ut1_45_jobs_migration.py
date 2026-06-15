@@ -21,6 +21,9 @@ import pytest
 
 from index_tools.queue.engine import QueueEngine
 from index_tools.queue.models import JobRecord, JobStatus
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_jobs_backend_lifecycle_with_retry(tmp_path: Path) -> None:
@@ -64,6 +67,9 @@ def test_jobs_backend_lifecycle_with_retry(tmp_path: Path) -> None:
     assert status["server_id"] == "ut-jobs-retry"
     assert status["failed"] == 0
     assert status["dead_lettered"] == 0
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_jobs_backend_timeout_marks_dead_lettered_terminal_status(tmp_path: Path) -> None:
@@ -97,6 +103,9 @@ def test_jobs_backend_timeout_marks_dead_lettered_terminal_status(tmp_path: Path
     assert job.status is JobStatus.dead_lettered
     assert job.last_error is not None
     assert job.last_error["type"] == "timeout"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_jobs_backend_records_progress_and_dead_letters_failures(tmp_path: Path) -> None:

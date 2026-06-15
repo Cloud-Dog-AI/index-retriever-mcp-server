@@ -15,6 +15,9 @@
 import pytest
 
 from index_tools.tools.service import IndexService
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-008")
 
 
 def test_non_admin_cannot_create_profile(service: IndexService) -> None:

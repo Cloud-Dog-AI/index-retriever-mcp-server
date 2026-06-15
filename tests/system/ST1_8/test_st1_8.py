@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from tests.live_runtime import LiveIndexRuntime
+import pytest
+@pytest.mark.ST
+@pytest.mark.mcp
+@pytest.mark.req("FR-005")
 
 
 def test_delete_by_id(live_service: LiveIndexRuntime) -> None:

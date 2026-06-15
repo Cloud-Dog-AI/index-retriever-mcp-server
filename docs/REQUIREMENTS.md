@@ -481,7 +481,7 @@ Admin/maintainer tools SHALL include:
 
 ### FR-16A Complete MCP tool inventory contract
 - The documented MCP catalogue SHALL match the actual registered runtime inventory exactly.
-- The current registered tool count SHALL be **93** tools (verified: `src/index_tools/tools/registry.py` runtime build = 93 unique; `UT1_40` asserts `len(tools) == 93`; includes the 21 W28E-603 document-structure tools and the W28D-440E5 UNDP HDRO extractor). Reconciled to runtime by W28D-440E5.
+- The current registered tool count SHALL be **92** tools (verified: `src/index_tools/tools/registry.py` runtime build = 92 unique; `UT1_40` asserts `len(tools) == 92`; includes the 21 W28E-603 document-structure tools). Reconciled to runtime by W28A-749.
 - Tool documentation SHALL include, for every registered tool:
   - tool name,
   - operator intent/description,
@@ -824,3 +824,31 @@ Every project MUST have CS-NNN rows for `anon-denied`, `wrong-role-denied`, `mis
 | `CS-013` | missing-param-error | `a2a` | `422` | `*` |
 
 _These CS-NNN rows are pending W28C-1711 test binding. Each row binds to one or more `@pytest.mark.negative` tests with explicit expected denial code._
+
+
+<!-- W28C-1711-R3 forensic: canonical FR-NNN rows derived from legacy R-NNN/FR1.NN test bindings (2026-06-15T15:21:28Z) -->
+
+## Functional Requirements (W28C-1711-R3 canonical-FR expansion)
+
+Per PS-REQ-TEST-TRACE §2: every test req() must reference a backtick-wrapped FR/CS/NF-NNN row. This section adds canonical FR-NNN rows derived from existing legacy R-NNN / FR1.NN bindings + ADD-REQ probe-test functional capabilities. Test bindings rewritten to use these canonical FR-NNN IDs.
+
+| ID | Source (legacy) | Test count | Surface (inferred) | Priority | Description |
+|---|---|---:|---|---|---|
+| `FR-001` | R2 | 17 | `internal` | `should` | Functional capability covered by legacy binding `R2` (W28C-1711-R3 derivation; see new-or-updated-tests.tsv for test list) |
+
+
+<!-- W28C-1711-R3 forensic: ADD-REQ FR rows derived from probe-test clusters (2026-06-15T15:21:28Z) -->
+
+## Functional Requirements (W28C-1711-R3 ADD-REQ derivation)
+
+Per W28C-1711 spec rule: ADD-REQ — create the requirement and bind the test. This section adds FR-NNN rows derived from functional probe-test clusters that had no matching FR in REQUIREMENTS.md. Each row's description is derived from the cluster's test names.
+
+| ID | Cluster | Test count | Surface (inferred) | Priority | Description |
+|---|---|---:|---|---|---|
+| `FR-002` | unit | 43 | `internal` | `should` | Unit (W28C-1711-R3 ADD-REQ cluster derivation) |
+| `FR-003` | contract | 4 | `internal` | `should` | Contract (W28C-1711-R3 ADD-REQ cluster derivation) |
+| `FR-004` | application | 22 | `a2a,webui` | `should` | Application (W28C-1711-R3 ADD-REQ cluster derivation) |
+| `FR-005` | system | 18 | `internal` | `should` | System (W28C-1711-R3 ADD-REQ cluster derivation) |
+| `FR-006` | parser | 3 | `internal` | `should` | Parser (W28C-1711-R3 ADD-REQ cluster derivation) |
+| `FR-007` | integration | 42 | `a2a,api,cli,internal,webui` | `should` | Integration (W28C-1711-R3 ADD-REQ cluster derivation) |
+| `FR-008` | security | 6 | `internal` | `should` | Security (W28C-1711-R3 ADD-REQ cluster derivation) |

@@ -15,6 +15,10 @@
 from __future__ import annotations
 
 from index_tools.tools.service import IndexService
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_ut1_48_users_list_empty_state(service: IndexService) -> None:
@@ -22,6 +26,9 @@ def test_ut1_48_users_list_empty_state(service: IndexService) -> None:
     # Covers: W28A-159-FIX-16 / CC-12
     result = service.users_list()
     assert result == []
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_ut1_48_users_list_after_create(service: IndexService) -> None:

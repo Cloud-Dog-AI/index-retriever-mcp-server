@@ -43,6 +43,9 @@ def engine(tmp_path: Path) -> QueueEngine:
     )
     eng.register_handler("test.op", lambda job: None)
     return eng
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_lifecycle_create_queue_run_succeed(engine: QueueEngine) -> None:
@@ -57,6 +60,9 @@ def test_lifecycle_create_queue_run_succeed(engine: QueueEngine) -> None:
 
     job = engine.get(queued.job_id)
     assert job.status in (JobStatus.succeeded, JobStatus.failed)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_lifecycle_create_queue_run_fail_retry_succeed(engine: QueueEngine) -> None:
@@ -82,6 +88,9 @@ def test_lifecycle_create_queue_run_fail_retry_succeed(engine: QueueEngine) -> N
     engine.process_available(limit=1)
     job = engine.get(queued.job_id)
     assert job.status in (JobStatus.succeeded, JobStatus.queued)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_lifecycle_create_queue_cancel(engine: QueueEngine) -> None:
@@ -92,6 +101,9 @@ def test_lifecycle_create_queue_cancel(engine: QueueEngine) -> None:
 
     cancelled = engine.cancel(queued.job_id)
     assert cancelled.status == JobStatus.cancelled
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_lifecycle_create_queue_run_timeout(engine: QueueEngine) -> None:

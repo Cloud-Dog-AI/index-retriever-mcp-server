@@ -16,7 +16,7 @@ from index_tools.tools.registry import build_default_tool_registry
 import pytest
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-016")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-016)
 
 
 def test_ut_40_tool_registry_contract_fields() -> None:

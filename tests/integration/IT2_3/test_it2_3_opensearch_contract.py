@@ -24,6 +24,9 @@ pytestmark = pytest.mark.skipif(
     not backend_available("opensearch"),
     reason=backend_skip_reason("opensearch") or "opensearch backend unavailable",
 )
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_it2_3_opensearch_contract_roundtrip() -> None:

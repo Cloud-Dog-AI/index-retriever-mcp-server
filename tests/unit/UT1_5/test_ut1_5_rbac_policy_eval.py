@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.security.rbac import RbacAuthoriser, Subject
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_rbac_policy_eval() -> None:

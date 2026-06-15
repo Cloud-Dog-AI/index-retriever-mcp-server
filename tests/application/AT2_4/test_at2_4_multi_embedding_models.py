@@ -18,6 +18,9 @@ import pytest
 
 from tests.application.at2_helpers import build_live_runtime, temporary_env
 from tests.w23a_helpers import embedding_matrix, write_artifact_json
+@pytest.mark.AT
+@pytest.mark.mcp
+@pytest.mark.req("FR-004")
 
 
 @pytest.mark.timeout(600)

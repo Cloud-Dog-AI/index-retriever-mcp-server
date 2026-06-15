@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.pipeline.dedupe import DedupeIndex, DedupeRecord
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_dedupe_policy_version() -> None:

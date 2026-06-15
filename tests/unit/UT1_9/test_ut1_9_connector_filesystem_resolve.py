@@ -15,6 +15,10 @@
 from pathlib import Path
 
 from index_tools.connectors.filesystem import resolve
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_connector_filesystem_resolve(tmp_path: Path) -> None:

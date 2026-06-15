@@ -16,7 +16,9 @@
 (design brief §12, §13, §24 Phase 1). Proves real execution end-to-end through the
 authenticated FastAPI app and the MCP tools endpoint — not mere registration (§13)."""
 
+
 from __future__ import annotations
+import pytest
 
 from fastapi.testclient import TestClient
 
@@ -42,6 +44,9 @@ _DOC = {
     ],
     "blocks": [{"text": "body", "reading_order_index": 0, "block_type": "paragraph"}],
 }
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_structure_rest_crud_lifecycle(service: IndexService) -> None:
@@ -87,6 +92,9 @@ def test_structure_rest_crud_lifecycle(service: IndexService) -> None:
     assert deleted.status_code == 200 and deleted.json()["deleted"] is True
     missing = client.get(f"/api/v1/structure/documents/{sdid}", headers=_ADMIN)
     assert missing.status_code == 404
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_structure_rest_requires_write_permission(service: IndexService) -> None:
@@ -97,6 +105,9 @@ def test_structure_rest_requires_write_permission(service: IndexService) -> None
     # reader may read the (empty) listing
     listing = client.get("/api/v1/structure/documents", headers=_READER)
     assert listing.status_code == 200
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_structure_mcp_tools_call_real_execution(service: IndexService) -> None:
@@ -131,6 +142,9 @@ def test_structure_mcp_tools_call_real_execution(service: IndexService) -> None:
         api_tools_path("structure_document_delete"), json={"structure_document_id": sdid}, headers=_ADMIN
     )
     assert deleted.status_code == 200 and deleted.json()["deleted"] is True
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_structure_family_in_tools_list(service: IndexService) -> None:

@@ -45,6 +45,9 @@ from index_tools.tools.definitions import SearchInput
 from index_tools.tools.handlers import handle_ingest_text, handle_search
 from index_server.logging_runtime import build_platform_log_config
 from tests.unit.helpers import minimal_config
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_collection_schema_and_fetch_plan_defaults() -> None:
@@ -52,6 +55,9 @@ def test_collection_schema_and_fetch_plan_defaults() -> None:
     assert schema.distance_metric == "cosine"
     plan = FetchPlan(source_type="x", location="y")
     assert plan.metadata == {}
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_connectors_and_converters_paths(tmp_path: Path) -> None:
@@ -77,6 +83,9 @@ def test_connectors_and_converters_paths(tmp_path: Path) -> None:
     assert deepdoc.available() is False
     assert mineru.available() is False
     assert pandoc.convert(b"\xff") == "\ufffd"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_lifecycle_chunking_scope_and_rerank() -> None:
@@ -100,6 +109,9 @@ def test_lifecycle_chunking_scope_and_rerank() -> None:
 
     ranked = rerank_by_score([{"score": "1.0"}, {"score": 5}, {"score": object()}])
     assert [row["score"] for row in ranked[:2]] == [5, "1.0"]
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_queue_engine_and_redis_bridge_paths(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -128,6 +140,9 @@ def test_queue_engine_and_redis_bridge_paths(monkeypatch: pytest.MonkeyPatch, tm
 
     assert RedisBridge(enabled=False).status() == "disabled"
     assert RedisBridge(enabled=True, url="redis://local").status() == "enabled"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_queue_engine_recovers_from_existing_table_startup_error(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -154,6 +169,9 @@ def test_queue_engine_recovers_from_existing_table_startup_error(monkeypatch: py
         "sqlite:////tmp/ut1_32_existing.db",
     ]
     assert engine.backend_name() == "cloud_dog_jobs"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_audit_logger_backend_name_and_write(tmp_path: Path) -> None:
@@ -178,6 +196,9 @@ def test_audit_logger_backend_name_and_write(tmp_path: Path) -> None:
     assert payload["actor"]["id"] == "tester"
     assert payload["actor"]["roles"] == ["writer"]
     assert logger.get_backend_name() == "cloud_dog_logging"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_audit_logger_admin_and_security_helpers(tmp_path: Path) -> None:
@@ -214,6 +235,9 @@ def test_audit_logger_admin_and_security_helpers(tmp_path: Path) -> None:
     assert '"event_type": "security.authenticate"' in auth_row
     assert '"ip": "127.0.0.1"' in auth_row
     assert '"user_agent": "pytest"' in auth_row
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_audit_logger_ingest_helper_emits_schema_complete_tool_event(tmp_path: Path) -> None:
@@ -237,6 +261,9 @@ def test_audit_logger_ingest_helper_emits_schema_complete_tool_event(tmp_path: P
     assert '"target": {"type": "tool", "id": "ingest_text", "name": "ingest_text"}' in row
     assert '"actor": {"type": "user", "id": "writer-user"' in row
     assert '"metadata": {"token": "***REDACTED***"}' in row
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_audit_logger_admin_helper_falls_back_when_privileged_api_missing(
@@ -266,6 +293,9 @@ def test_audit_logger_admin_helper_falls_back_when_privileged_api_missing(
     assert captured["outcome"] == "success"
     assert captured["server_id"] == "ut-admin-fallback"
     assert captured["new_value"] == {"enabled": True}
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_audit_logger_security_helper_supports_legacy_actor_signature(
@@ -305,6 +335,9 @@ def test_audit_logger_security_helper_supports_legacy_actor_signature(
     assert actor.id == "reader-user"
     assert actor.roles == ["reader"]
     assert captured["outcome"] == "success"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_audit_logger_security_helper_supports_legacy_target_signature(
@@ -340,6 +373,9 @@ def test_audit_logger_security_helper_supports_legacy_target_signature(
     assert isinstance(target, LegacyTarget)
     assert target.type == "endpoint"
     assert target.id == "/a2a/health"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_audit_logger_build_event_supports_legacy_audit_event_signature(
@@ -389,6 +425,9 @@ def test_audit_logger_build_event_supports_legacy_audit_event_signature(
     assert isinstance(event, LegacyAuditEvent)
     assert event.service == "index-retriever-mcp-server"
     assert event.details == {"password": "[REDACTED]"}
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_build_platform_log_config_uses_surface_specific_log_files() -> None:
@@ -435,6 +474,9 @@ def test_build_platform_log_config_uses_surface_specific_log_files() -> None:
     assert payload["environment"] == "test"
     assert payload["log"]["app_log"] == "logs/web_server.log"
     assert payload["log"]["audit_log"] == "logs/audit.log.jsonl"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_rbac_backend_name_and_matching(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -449,6 +491,9 @@ def test_rbac_backend_name_and_matching(monkeypatch: pytest.MonkeyPatch) -> None
     # W28A-703: fallback removed — cloud_dog_idam is now a hard requirement.
     # Backend name always returns "cloud_dog_idam".
     assert auth.backend_name() == "cloud_dog_idam"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_handlers_and_config_paths() -> None:
@@ -481,6 +526,9 @@ def test_handlers_and_config_paths() -> None:
     assert manager.list() == ["alpha"]
     manager.delete("alpha")
     assert manager.list() == []
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_db_runtime_serialises_sqlite_migrations_and_retries_existing_table(

@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from tests.live_runtime import LiveIndexRuntime
+import pytest
+@pytest.mark.ST
+@pytest.mark.mcp
+@pytest.mark.req("FR-005")
 
 
 def test_ingest_upload_pipeline(live_service: LiveIndexRuntime) -> None:

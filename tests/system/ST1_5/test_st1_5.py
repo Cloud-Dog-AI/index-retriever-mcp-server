@@ -15,6 +15,10 @@
 from pathlib import Path
 
 from tests.live_runtime import LiveIndexRuntime
+import pytest
+@pytest.mark.ST
+@pytest.mark.mcp
+@pytest.mark.req("FR-005")
 
 
 def test_ingest_reference_pipeline(live_service: LiveIndexRuntime, tmp_path: Path) -> None:

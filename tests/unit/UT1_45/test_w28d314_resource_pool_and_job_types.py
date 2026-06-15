@@ -32,6 +32,9 @@ def _make_engine(tmp_path: Path) -> QueueEngine:
         retry_max_attempts=1,
         retry_backoff_seconds=0.01,
     )
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_enqueue_passes_resources_to_job_constructor(tmp_path: Path) -> None:
@@ -61,6 +64,9 @@ def test_enqueue_passes_resources_to_job_constructor(tmp_path: Path) -> None:
     )
     assert queued.status is JobStatus.queued
     assert captured["resources"] == {"embedding-pool": 1}
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_enqueue_without_resources_defaults_empty(tmp_path: Path) -> None:
@@ -89,6 +95,9 @@ def test_enqueue_without_resources_defaults_empty(tmp_path: Path) -> None:
     )
     assert queued.status is JobStatus.queued
     assert captured["resources"] == {}
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_retention_run_handler_registered_and_executes(tmp_path: Path) -> None:
@@ -119,6 +128,9 @@ def test_retention_run_handler_registered_and_executes(tmp_path: Path) -> None:
     result = engine.run(queued.job_id)
     assert result.status is JobStatus.succeeded
     assert calls["count"] == 1
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_reindex_run_handler_registered_and_executes(tmp_path: Path) -> None:
@@ -160,6 +172,9 @@ def test_reindex_run_handler_registered_and_executes(tmp_path: Path) -> None:
     result = engine.run(queued.job_id)
     assert result.status is JobStatus.succeeded
     assert calls["count"] == 1
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_package_version_pins() -> None:

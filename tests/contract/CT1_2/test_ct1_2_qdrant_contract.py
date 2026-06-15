@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from tests.live_runtime import LiveIndexRuntime
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-003")
 
 
 def test_qdrant_contract_crud(live_service: LiveIndexRuntime) -> None:

@@ -14,6 +14,10 @@
 
 from index_server.auth.middleware import AuthMiddleware
 from tests.live_runtime import LiveIndexRuntime
+import pytest
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_api_auth_accept(auth: AuthMiddleware, live_service: LiveIndexRuntime) -> None:

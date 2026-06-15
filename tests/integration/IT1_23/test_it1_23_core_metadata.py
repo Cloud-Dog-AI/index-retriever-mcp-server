@@ -15,6 +15,10 @@
 from __future__ import annotations
 
 from index_tools.tools.service import IndexService
+import pytest
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_mt2_text_and_upload_ingest_store_canonical_metadata(service: IndexService) -> None:
@@ -57,6 +61,9 @@ def test_mt2_text_and_upload_ingest_store_canonical_metadata(service: IndexServi
     assert upload_payload["metadata"]["status"] == "active"
     assert upload_payload["metadata"]["index_family"] == "index-retriever"
     assert upload_rows[0]["content_hash"] == upload_payload["content_hash"]
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_mt2_preview_reports_parser_and_ocr_provenance(service: IndexService) -> None:
@@ -72,6 +79,9 @@ def test_mt2_preview_reports_parser_and_ocr_provenance(service: IndexService) ->
     assert preview["ocr_mode"] == "auto"
     assert isinstance(preview["ocr_applied"], bool)
     assert any(step["stage"] == "parse" for step in preview["checkpoints"])
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_mt3_mt4_round_trip_returns_latest_record_with_canonical_metadata(service: IndexService) -> None:
@@ -113,6 +123,9 @@ def test_mt3_mt4_round_trip_returns_latest_record_with_canonical_metadata(servic
     assert old_record.metadata["lifecycle_state"] == "superseded"
     assert old_record.metadata["status"] == "superseded"
     assert old_record.metadata["is_latest"] is False
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_mt3_filters_support_required_metadata_pack_management_fields(service: IndexService) -> None:

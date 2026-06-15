@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.pipeline.ingest import IngestPipeline
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_pipeline_progress_events() -> None:

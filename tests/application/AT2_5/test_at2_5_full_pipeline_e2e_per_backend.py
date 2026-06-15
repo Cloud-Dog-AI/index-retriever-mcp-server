@@ -25,6 +25,9 @@ from tests.w23a_helpers import (
     run_backend_parser_pipeline,
     write_artifact_json,
 )
+@pytest.mark.AT
+@pytest.mark.mcp
+@pytest.mark.req("FR-004")
 
 
 @pytest.mark.timeout(900)

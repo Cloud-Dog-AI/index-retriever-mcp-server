@@ -19,6 +19,9 @@ import asyncio
 import pytest
 
 from tests.parser.pt1_helpers import available_backends, ingest_baseline_for_provider, write_pt_artifact
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-006")
 
 
 @pytest.mark.timeout(1200)

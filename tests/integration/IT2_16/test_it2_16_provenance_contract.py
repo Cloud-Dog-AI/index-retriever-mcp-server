@@ -46,6 +46,9 @@ def _run_pdf_preview(service: IndexService, pdf_path: Path) -> tuple[str, object
         except Exception as exc:
             errors.append(f"{provider_id}:{type(exc).__name__}:{exc}")
     pytest.fail("All parser providers failed for provenance validation: " + " | ".join(errors), pytrace=False)
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_plain_text_provenance_contract_fields(service: IndexService) -> None:
@@ -62,6 +65,9 @@ def test_plain_text_provenance_contract_fields(service: IndexService) -> None:
     assert "ocr_confidence" in preview
     assert "page" in preview
     assert "table_id" in preview
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_pdf_ocr_and_table_provenance_fields_recorded(service: IndexService) -> None:
@@ -88,6 +94,9 @@ def test_pdf_ocr_and_table_provenance_fields_recorded(service: IndexService) -> 
     assert "table_id" in table_metadata
     assert "page" in table_metadata or "page_number" in table_metadata
     assert table_preview.chunks
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_reingest_provenance_is_preserved_not_overwritten(service: IndexService) -> None:

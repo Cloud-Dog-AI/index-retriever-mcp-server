@@ -24,6 +24,10 @@ from cloud_dog_vdb.metadata.schema import validate_metadata
 
 from index_tools.pipeline.metadata import build_metadata
 from index_tools.tools.service import IndexService
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_mt1_build_metadata_emits_canonical_fields_and_passes_validation() -> None:
@@ -44,6 +48,9 @@ def test_mt1_build_metadata_emits_canonical_fields_and_passes_validation() -> No
     assert metadata["ingested_at"].endswith("Z")
     assert len(json.dumps(metadata, sort_keys=True)) < 65536
     assert validate_metadata(metadata) == []
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_mt1_build_metadata_emits_metadata_pack_aliases() -> None:
@@ -79,6 +86,9 @@ def test_mt1_build_metadata_emits_metadata_pack_aliases() -> None:
     assert metadata["visibility"] == "restricted"
     assert metadata["access_scope"] == "tenant-a"
     assert metadata["retention_class"] == "regulated"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_mt1_metadata_validation_rejects_invalid_enum_and_timestamp() -> None:
@@ -91,6 +101,9 @@ def test_mt1_metadata_validation_rejects_invalid_enum_and_timestamp() -> None:
 
     assert any("lifecycle_state" in error for error in validate_metadata(broken_enum))
     assert any("created_at" in error for error in validate_metadata(broken_time))
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_mt1_build_metadata_is_deterministic_for_same_inputs() -> None:
@@ -101,6 +114,9 @@ def test_mt1_build_metadata_is_deterministic_for_same_inputs() -> None:
     assert first["record_id"] == second["record_id"]
     assert first["content_hash"] == second["content_hash"]
     assert first["source_hash"] == second["source_hash"]
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_mt4_same_content_reingest_reuses_canonical_identity(service: IndexService) -> None:
@@ -120,6 +136,9 @@ def test_mt4_same_content_reingest_reuses_canonical_identity(service: IndexServi
     assert len(rows) == 1
     assert rows[0]["doc_id"] == records[0].doc_id
     assert rows[0]["record_id"] == records[0].record_id
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_mt4_ingest_populates_embedding_dim_and_user_id(service: IndexService) -> None:
@@ -134,6 +153,9 @@ def test_mt4_ingest_populates_embedding_dim_and_user_id(service: IndexService) -
     assert record.metadata["index_record_id"] == record.record_id
     assert record.metadata["collection_id"] == "mt4_identity"
     assert record.metadata["status"] == "active"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_mt4_changed_content_marks_old_record_superseded_and_hides_it_from_default_search(
@@ -158,6 +180,9 @@ def test_mt4_changed_content_marks_old_record_superseded_and_hides_it_from_defau
     assert any(row["record_id"] == new_record.record_id for row in rows)
     assert all(row["record_id"] != old_record.record_id for row in rows)
     assert all(row["is_latest"] is not False for row in rows)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_mt4_search_filters_support_metadata_pack_fields_and_date_operators(service: IndexService) -> None:
@@ -205,6 +230,9 @@ def test_mt4_search_filters_support_metadata_pack_fields_and_date_operators(serv
         },
     )
     assert [row["source_uri"] for row in exact_rows] == ["file://mt4/filter-old.md"]
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_mt5_deleted_record_is_hidden_from_search_results(service: IndexService) -> None:
@@ -216,6 +244,9 @@ def test_mt5_deleted_record_is_hidden_from_search_results(service: IndexService)
 
     rows = service.search("default", "mt5_delete", "delete me payload", top_k=10)
     assert rows == []
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_mt5_delete_by_id_marks_local_record_deleted_when_backend_delete_returns_false(
@@ -233,6 +264,9 @@ def test_mt5_delete_by_id_marks_local_record_deleted_when_backend_delete_returns
     assert service.delete_by_id("default", "mt5_delete_fallback", str(record.record_id or record.doc_id)) is True
     assert record.metadata["lifecycle_state"] == "deleted"
     assert service.search("default", "mt5_delete_fallback", "delete fallback payload", top_k=10) == []
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_mt5_delete_by_filter_marks_local_records_deleted_when_backend_returns_zero(
@@ -255,6 +289,9 @@ def test_mt5_delete_by_filter_marks_local_records_deleted_when_backend_returns_z
     assert deleted == 1
     assert record.metadata["lifecycle_state"] == "deleted"
     assert service.search("default", "mt5_delete_filter", "filter fallback payload", top_k=10) == []
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_mt5_retention_skips_archived_records_and_ttl_expiry_identifies_candidates(service: IndexService) -> None:

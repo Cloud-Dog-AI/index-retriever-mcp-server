@@ -23,6 +23,9 @@ import pytest
 from index_tools.search.engine import SearchEngine, validate_filters
 from index_tools.tools.service import IndexService
 from index_tools.vdb.adapters import InMemoryVdbAdapter
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_service_collection_and_admin_paths(service: IndexService) -> None:
@@ -34,6 +37,9 @@ def test_service_collection_and_admin_paths(service: IndexService) -> None:
         service.admin_collection_delete("default", "keep", roles={"writer"})
     service.admin_collection_delete("default", "keep", roles={"admin"})
     assert service.collections_list("default") == []
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_service_collection_create_allows_unregistered_backend_profile(service: IndexService) -> None:
@@ -55,6 +61,9 @@ def test_service_collection_create_allows_unregistered_backend_profile(service: 
     record = service.collection_get("missing-backend", "pending")
     assert record["collection"] == "pending"
     assert record["metadata"]["backend_binding_pending"] is True
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_live_collection_create_marks_pending_without_blocking_backend_create(
@@ -80,6 +89,9 @@ def test_live_collection_create_marks_pending_without_blocking_backend_create(
 
     record = service.collection_get("default", "lazy-live-binding")
     assert record["metadata"]["backend_binding_pending"] is True
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_ingest_text_queues_failed_job_for_unregistered_backend_profile(service: IndexService) -> None:
@@ -110,6 +122,9 @@ def test_ingest_text_queues_failed_job_for_unregistered_backend_profile(service:
 
     assert job.job_id == job_id
     assert str(getattr(job.status, "value", job.status)).lower() in {"failed", "dead_lettered"}
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_live_ingest_dispatches_async_when_enabled(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
@@ -130,6 +145,9 @@ def test_live_ingest_dispatches_async_when_enabled(monkeypatch: pytest.MonkeyPat
     )
 
     assert started == [job_id]
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_service_idempotency_retrieve_delete_and_retention(
@@ -175,12 +193,18 @@ def test_service_idempotency_retrieve_delete_and_retention(
     )
     removed = service.retention_run("default", "retention_cov", older_than_days=90)
     assert removed >= 1
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_service_search_wrapper_path(service: IndexService) -> None:
     service.ingest_text("default", "search_cov", "alpha beta gamma", "api://search", actor="writer")
     rows = service.search("default", "search_cov", "alpha", top_k=5, filters=None)
     assert rows
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_service_search_falls_back_to_local_documents_when_vdb_returns_empty(
@@ -210,6 +234,9 @@ def test_service_search_falls_back_to_local_documents_when_vdb_returns_empty(
 
     assert len(rows) == 1
     assert "cloud computing fallback document" in rows[0]["text"]
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_ingest_uses_backend_collection_name_for_upsert(
@@ -232,6 +259,9 @@ def test_ingest_uses_backend_collection_name_for_upsert(
         "default", "backend_name_cov", provider_id=provider_id
     )
     assert captured["collection_name"] != "default:backend_name_cov"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_service_passes_resolved_embedding_settings_into_vdb_client(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
@@ -249,6 +279,9 @@ def test_service_passes_resolved_embedding_settings_into_vdb_client(monkeypatch:
     assert isinstance(payload, dict)
     assert payload["embeddings"]["provider"] == service._llm_provider
     assert payload["embeddings"][service._llm_provider]["model"] == service._llm_model
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_backend_health_check_works_inside_running_event_loop(
@@ -284,6 +317,9 @@ def test_backend_health_check_works_inside_running_event_loop(
     )
     assert calls == ["qdrant", "qdrant"]
     assert len(set(loops)) == 1
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_search_engine_filter_validation_and_execution() -> None:
@@ -298,6 +334,9 @@ def test_search_engine_filter_validation_and_execution() -> None:
     engine = SearchEngine(adapter=adapter)
     rows = engine.search("engine_cov", " alpha   beta ", filters={"tenant": "alpha"})
     assert rows
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_inmemory_vdb_filter_threshold_and_empty_query_paths() -> None:

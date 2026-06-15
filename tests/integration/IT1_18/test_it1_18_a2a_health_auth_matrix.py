@@ -23,6 +23,7 @@ from fastapi.testclient import TestClient
 from index_server.api_server import build_api_app
 from tests.http_paths import a2a_health_path
 from tests.live_runtime import LiveIndexRuntime
+import pytest
 
 
 def _http_status(url: str, headers: dict[str, str] | None = None) -> tuple[int, str]:
@@ -32,6 +33,9 @@ def _http_status(url: str, headers: dict[str, str] | None = None) -> tuple[int, 
             return response.status, response.read().decode("utf-8")
     except HTTPError as exc:
         return exc.code, exc.read().decode("utf-8")
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_a2a_health_auth_matrix(

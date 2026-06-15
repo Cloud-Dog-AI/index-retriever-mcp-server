@@ -34,7 +34,7 @@ from index_tools.tools.service import (
 )
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-013")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-013)
 
 
 def test_redaction_descriptor_and_provider_envelope() -> None:
@@ -62,7 +62,7 @@ def test_redaction_descriptor_and_provider_envelope() -> None:
     assert error.envelope["error"]["provider"] == "internal"
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-013")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-013)
 
 
 def test_preview_bridge_and_parser_probe_helper() -> None:
@@ -107,7 +107,7 @@ def test_preview_bridge_and_parser_probe_helper() -> None:
     assert len(ir.text_blocks) == 1
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-013")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-013)
 
 
 def test_backend_capabilities_and_search_plan_fallback_paths(
@@ -134,7 +134,7 @@ def test_backend_capabilities_and_search_plan_fallback_paths(
         )
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-013")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-013)
 
 
 def test_search_plan_capability_override_and_filter_rejection(
@@ -181,7 +181,7 @@ def test_search_plan_capability_override_and_filter_rejection(
         service.search_plan(profile="default", query="alpha", top_k=3, filters={"tenant": "x"})
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-013")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-013)
 
 
 def test_pipeline_preview_unavailable_branch(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
@@ -191,7 +191,7 @@ def test_pipeline_preview_unavailable_branch(monkeypatch: pytest.MonkeyPatch, se
         service._run_pipeline_preview(source=b"payload", source_uri="inline://preview.txt")
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-013")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-013)
 
 
 def test_pipeline_preview_success_and_failure_branches(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
@@ -247,7 +247,7 @@ def test_pipeline_preview_success_and_failure_branches(monkeypatch: pytest.Monke
     assert "[REDACTED]" in str(exc.value)
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-013")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-013)
 
 
 def test_parsers_list_and_parser_test_branches(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
@@ -298,7 +298,7 @@ def test_parsers_list_and_parser_test_branches(monkeypatch: pytest.MonkeyPatch, 
     assert result["table_blocks"] == 1
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-013")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-013)
 
 
 def test_wrapper_tools_and_ocr_paths(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:

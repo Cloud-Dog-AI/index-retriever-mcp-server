@@ -15,6 +15,9 @@
 import pytest
 
 from tests.live_runtime import LiveIndexRuntime
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_infinity_adapter_contract_path(live_service: LiveIndexRuntime) -> None:

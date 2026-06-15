@@ -15,6 +15,10 @@
 from datetime import datetime, timedelta, timezone
 
 from tests.live_runtime import LiveIndexRuntime
+import pytest
+@pytest.mark.ST
+@pytest.mark.mcp
+@pytest.mark.req("FR-005")
 
 
 def test_retention_cleanup(live_service: LiveIndexRuntime) -> None:

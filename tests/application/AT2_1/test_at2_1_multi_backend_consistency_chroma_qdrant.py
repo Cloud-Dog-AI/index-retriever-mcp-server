@@ -17,6 +17,9 @@ from __future__ import annotations
 import pytest
 
 from tests.application.at2_helpers import build_live_runtime
+@pytest.mark.AT
+@pytest.mark.mcp
+@pytest.mark.req("FR-004")
 
 
 @pytest.mark.timeout(300)

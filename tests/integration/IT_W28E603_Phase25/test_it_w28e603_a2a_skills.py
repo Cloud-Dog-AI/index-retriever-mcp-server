@@ -21,6 +21,7 @@ import json
 from fastapi.testclient import TestClient
 
 from index_server.a2a_server import build_a2a_app
+import pytest
 
 _ADMIN = {"authorization": "Bearer valid-admin-token"}
 _STRUCTURE_SKILLS = {
@@ -33,6 +34,9 @@ _STRUCTURE_SKILLS = {
     "structure_template_generate",
     "structure_template_export",
 }
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_agent_card_advertises_structure_skills() -> None:
@@ -41,6 +45,9 @@ def test_agent_card_advertises_structure_skills() -> None:
     assert card.status_code == 200
     skill_ids = {item["id"] for item in card.json()["skills"]}
     assert _STRUCTURE_SKILLS.issubset(skill_ids), f"missing A2A structure skills: {_STRUCTURE_SKILLS - skill_ids}"
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_a2a_structure_extract_skill_executes() -> None:

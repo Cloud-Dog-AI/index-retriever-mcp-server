@@ -15,6 +15,9 @@
 import pytest
 
 from index_tools.search.engine import validate_filters
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_search_filter_validation() -> None:

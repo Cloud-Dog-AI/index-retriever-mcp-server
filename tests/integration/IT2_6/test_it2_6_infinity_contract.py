@@ -24,6 +24,9 @@ pytestmark = pytest.mark.skipif(
     not backend_available("infinity"),
     reason=backend_skip_reason("infinity") or "infinity backend unavailable",
 )
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_it2_6_infinity_contract_roundtrip() -> None:

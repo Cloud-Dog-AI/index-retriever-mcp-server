@@ -30,6 +30,9 @@ pytestmark = pytest.mark.skipif(
 
 def _mineru_timeout_seconds() -> float:
     return float(os.getenv("MINERU_DOC_TIMEOUT_SECONDS", os.getenv("MINERU_TIMEOUT_SECONDS", "240")) or 240)
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_it2_9_mineru_parser_pdf_ir_output() -> None:

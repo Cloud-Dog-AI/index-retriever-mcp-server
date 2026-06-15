@@ -61,7 +61,7 @@ class _DummyService:
         return {"status": "ok", "dimensions": 8}
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-017")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-017)
 
 
 def test_api_middleware_helpers_and_handler_paths(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -108,7 +108,7 @@ def test_api_middleware_helpers_and_handler_paths(monkeypatch: pytest.MonkeyPatc
     assert queued == {"job_id": "job-123"}
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-017")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-017)
 
 
 def test_api_require_permission_http403_branch(monkeypatch: pytest.MonkeyPatch, service) -> None:
@@ -127,7 +127,7 @@ def test_api_require_permission_http403_branch(monkeypatch: pytest.MonkeyPatch, 
     assert "denied" in response.text
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-017")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-017)
 
 
 def test_api_main_module_branch(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -144,7 +144,7 @@ def test_api_main_module_branch(monkeypatch: pytest.MonkeyPatch) -> None:
     assert captured["port"] == int(api_port)
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-017")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-017)
 
 
 def test_mcp_role_mapping_and_execute_paths(service, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -214,7 +214,7 @@ def test_mcp_role_mapping_and_execute_paths(service, monkeypatch: pytest.MonkeyP
     ) == {"status": "ok"}
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-017")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-017)
 
 
 def test_mcp_health_and_main_module_paths(monkeypatch: pytest.MonkeyPatch, service) -> None:
@@ -241,7 +241,7 @@ def test_mcp_health_and_main_module_paths(monkeypatch: pytest.MonkeyPatch, servi
     assert captured["port"] == int(mcp_port)
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-017")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-017)
 
 
 def test_auth_connector_registry_and_embedding_branches(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
@@ -279,7 +279,7 @@ def test_auth_connector_registry_and_embedding_branches(monkeypatch: pytest.Monk
     assert adapter.embed(["abc"])[0][2] == 3.0
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-017")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-017)
 
 
 def test_chunking_dedupe_rbac_and_vdb_registry_edges(monkeypatch: pytest.MonkeyPatch) -> None:

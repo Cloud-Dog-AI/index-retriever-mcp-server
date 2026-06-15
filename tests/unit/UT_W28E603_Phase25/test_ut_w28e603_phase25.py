@@ -80,6 +80,9 @@ More scope.
 
 
 # -- extraction (no DB) --------------------------------------------------------
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 def test_normalise_text_blocks_sections_tables() -> None:
     bundle = normalise_text_to_bundle(_DOC1, profile="p", collection="c", source_filename="d1.md")
@@ -90,6 +93,9 @@ def test_normalise_text_blocks_sections_tables() -> None:
     assert len(bundle.tables) == 1 and bundle.tables[0].column_count == 2
     assert any(b.block_type.value == "table" for b in bundle.blocks)
     assert bundle.extractor_runs and bundle.extractor_runs[0].provider == "internal"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_extract_text_persists_and_audits(service) -> None:
@@ -108,6 +114,9 @@ def _two_doc_corpus(svc) -> str:
     id2 = svc.extract_text(_DOC2, profile="default", collection="docs", source_filename="d2.md", actor="t", roles={"admin"})["document"]["structure_document_id"]
     corp = svc.corpus.create({"name": "specs", "profile_id": "default", "collection_id": "docs", "document_ids": [id1, id2]}, actor="t", roles={"admin"})
     return corp["corpus_id"]
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_corpus_create_get_list(service) -> None:
@@ -116,6 +125,9 @@ def test_corpus_create_get_list(service) -> None:
     assert svc.corpus.get(cid)["document_count"] == 2
     listing = svc.corpus.list(profile_id="default")
     assert listing["total"] == 1 and listing["corpora"][0]["corpus_id"] == cid
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_corpus_analyse_produces_patterns(service) -> None:
@@ -130,6 +142,9 @@ def test_corpus_analyse_produces_patterns(service) -> None:
     assert section_patterns["count"] == 1
     assert section_patterns["patterns"][0]["support_count"] == 2
     assert section_patterns["patterns"][0]["confidence"] == 1.0
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_corpus_delete_removes_patterns(service) -> None:
@@ -139,6 +154,9 @@ def test_corpus_delete_removes_patterns(service) -> None:
     assert svc.corpus.delete(cid, actor="t", roles={"admin"})["deleted"] is True
     with pytest.raises(KeyError):
         svc.corpus.get(cid)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_corpus_create_requires_name_and_profile(service) -> None:
@@ -148,6 +166,9 @@ def test_corpus_create_requires_name_and_profile(service) -> None:
 
 
 # -- templates -----------------------------------------------------------------
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 def test_template_generate_and_export(service) -> None:
     svc, _ = service
@@ -168,6 +189,9 @@ def test_template_generate_and_export(service) -> None:
     assert md["format"] == "markdown" and "Section blueprint" in md["content"]
     js = svc.templates.export(tid, format="json")
     assert js["format"] == "json" and '"template_id"' in js["content"]
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_template_generate_requires_analysis(service) -> None:
@@ -176,6 +200,9 @@ def test_template_generate_requires_analysis(service) -> None:
     # no analyse() called -> no patterns
     with pytest.raises(ValueError):
         svc.templates.generate(cid, actor="t", roles={"admin"})
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_template_export_bad_format(service) -> None:
@@ -188,6 +215,9 @@ def test_template_export_bad_format(service) -> None:
 
 
 # -- VDB linkage (§25 #6) ------------------------------------------------------
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 def test_link_to_vdb_records(service) -> None:
     svc, audit = service
@@ -201,6 +231,9 @@ def test_link_to_vdb_records(service) -> None:
     assert got["document"]["vdb_record_ids"] == ["rec-1", "rec-2"]
     assert len(got["sections"]) == 2  # children preserved through re-persist
     assert audit.events[-1]["action"] == "link_vdb"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_link_missing_doc_raises(service) -> None:

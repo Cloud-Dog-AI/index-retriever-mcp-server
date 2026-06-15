@@ -118,6 +118,9 @@ def _round_trip(dialect: str) -> None:
     assert service.delete(sdid, actor="matrix", roles={"admin"})["deleted"] is True
     with pytest.raises(KeyError):
         service.get(sdid)
+@pytest.mark.ST
+@pytest.mark.mcp
+@pytest.mark.req("FR-005")
 
 
 @pytest.mark.parametrize("dialect", _DIALECTS)

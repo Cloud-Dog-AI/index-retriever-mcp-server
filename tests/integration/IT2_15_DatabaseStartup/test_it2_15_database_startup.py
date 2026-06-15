@@ -21,10 +21,14 @@ from sqlalchemy import Column, MetaData, String, Table, select
 
 from index_server.api_server import build_api_app
 from index_tools.tools.service import IndexService
+import pytest
 
 
 def _headers() -> dict[str, str]:
     return {"x-api-key": "test-api-key", "Authorization": "Bearer test-api-key"}
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_it2_15_database_startup_and_crud(tmp_path) -> None:

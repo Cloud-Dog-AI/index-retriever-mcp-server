@@ -21,6 +21,10 @@ from fastapi.testclient import TestClient
 from index_server.api_server import build_api_app
 from index_tools.tools.service import IndexService
 from tests.http_paths import api_tools_path
+import pytest
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_admin_rest_profile_user_group_api_key_lifecycle(service: IndexService) -> None:
@@ -122,6 +126,9 @@ def test_admin_rest_profile_user_group_api_key_lifecycle(service: IndexService) 
     assert delete_user.status_code == 200
     delete_profile = client.delete("/admin/profiles/cfg_it", headers=admin_headers)
     assert delete_profile.status_code == 200
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_admin_rest_rejects_non_admin_mutation(service: IndexService) -> None:

@@ -22,6 +22,7 @@ from fastapi.testclient import TestClient
 from index_server.api_server import build_api_app
 from tests.http_paths import api_tools_path
 from tests.live_runtime import LiveIndexRuntime
+import pytest
 
 
 def _post_json(url: str, payload: dict[str, object], headers: dict[str, str]) -> tuple[int, dict[str, object]]:
@@ -38,6 +39,9 @@ def _post_json(url: str, payload: dict[str, object], headers: dict[str, str]) ->
     except HTTPError as exc:
         detail = exc.read().decode("utf-8")
         raise AssertionError(f"HTTP {exc.code} for {url}: {detail}") from exc
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_mcp_tool_execution(

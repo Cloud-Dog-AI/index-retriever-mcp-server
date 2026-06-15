@@ -25,6 +25,9 @@ pytestmark = pytest.mark.skipif(
     not parser_available("docling"),
     reason=parser_skip_reason("docling") or "docling parser unavailable",
 )
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_it2_8_docling_parser_pdf_ir_output() -> None:

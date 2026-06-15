@@ -16,7 +16,7 @@ from index_tools.search.engine import normalise_query
 import pytest
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-014")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-014)
 
 
 def test_search_query_normalisation() -> None:

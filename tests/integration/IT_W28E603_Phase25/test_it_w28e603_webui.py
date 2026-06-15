@@ -19,12 +19,17 @@ through the shared admin client script. This verifies the workflow surface + JS 
 endpoints themselves are exercised end-to-end by IT_W28E603_Phase25 and the structure API tests.
 """
 
+
 from __future__ import annotations
+import pytest
 
 from fastapi.testclient import TestClient
 
 from index_server.api_server import build_api_app
 from index_tools.tools.service import IndexService
+@pytest.mark.IT
+@pytest.mark.webui
+@pytest.mark.req("FR-007")
 
 
 def test_structure_webui_page_renders_workflow_controls(service: IndexService) -> None:
@@ -41,6 +46,9 @@ def test_structure_webui_page_renders_workflow_controls(service: IndexService) -
         assert f'data-testid="{testid}"' in html, f"missing control {testid}"
     # the page is reachable from the admin navigation
     assert '/admin/ui/structure' in html
+@pytest.mark.IT
+@pytest.mark.webui
+@pytest.mark.req("FR-007")
 
 
 def test_structure_webui_script_wires_workflows(service: IndexService) -> None:

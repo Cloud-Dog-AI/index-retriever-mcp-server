@@ -15,6 +15,9 @@
 import pytest
 
 from tests.live_runtime import LiveIndexRuntime
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_capability_aware_backend_planning(live_service: LiveIndexRuntime) -> None:

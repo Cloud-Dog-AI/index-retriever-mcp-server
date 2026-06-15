@@ -14,6 +14,10 @@
 
 from index_tools.config.loader import bind_model
 from tests.unit.helpers import minimal_config
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_profile_model_validation() -> None:

@@ -15,6 +15,9 @@
 import pytest
 
 from tests.live_runtime import LiveIndexRuntime
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-003")
 
 
 def test_infinity_contract_crud(live_service: LiveIndexRuntime) -> None:

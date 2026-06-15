@@ -10,6 +10,9 @@ def _set_env():
     os.environ.setdefault("CLOUD_DOG__INDEX__EMBEDDING__MODEL", "nomic-embed-text")
     os.environ.setdefault("CLOUD_DOG__INDEX__AUTH__ADMIN_API_KEY", "test-admin-key")
     os.environ.setdefault("CLOUD_DOG__INDEX__AUTH__API_KEYS", "test-admin-key")
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_multilang_profile_registered(tmp_path):
@@ -30,6 +33,9 @@ def test_multilang_profile_registered(tmp_path):
     embed = ml.get("embeddings", {})
     oc = embed.get("openai_compat", {})
     assert oc.get("model") == "bge-m3:567m", f"expected bge-m3:567m, got {oc.get('model')}"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_default_profile_preserved(tmp_path):

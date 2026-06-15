@@ -14,6 +14,10 @@
 
 from index_tools.tools.definitions import SearchInput, SearchOutput
 from index_tools.tools.registry import ToolRegistry, ToolSpec
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_tool_definition_schemas() -> None:

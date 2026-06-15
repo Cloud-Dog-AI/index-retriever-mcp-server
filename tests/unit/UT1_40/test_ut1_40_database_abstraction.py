@@ -18,6 +18,7 @@ from pathlib import Path
 
 from index_tools.db.models import IndexPlatformDbState
 from index_tools.db.runtime import database_health, initialise_database, shutdown_database
+import pytest
 
 
 def _configure_sqlite_env(monkeypatch, db_path: Path) -> None:
@@ -38,6 +39,9 @@ def _configure_sqlite_env(monkeypatch, db_path: Path) -> None:
     monkeypatch.delenv("CLOUD_DOG__DB__USERNAME", raising=False)
     monkeypatch.delenv("CLOUD_DOG__DB__PASSWORD", raising=False)
     monkeypatch.delenv("DB_URL", raising=False)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_ut_db_01_engine_factory_creates_sqlite_engine(monkeypatch, tmp_path: Path) -> None:
@@ -51,6 +55,9 @@ def test_ut_db_01_engine_factory_creates_sqlite_engine(monkeypatch, tmp_path: Pa
         assert health["ok"] is True
     finally:
         shutdown_database()
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_ut_db_02_session_manager_roundtrip(monkeypatch, tmp_path: Path) -> None:

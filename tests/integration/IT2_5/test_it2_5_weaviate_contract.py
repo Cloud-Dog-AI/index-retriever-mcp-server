@@ -24,6 +24,9 @@ pytestmark = pytest.mark.skipif(
     not backend_available("weaviate"),
     reason=backend_skip_reason("weaviate") or "weaviate backend unavailable",
 )
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_it2_5_weaviate_contract_roundtrip() -> None:

@@ -42,7 +42,7 @@ def _post_json(url: str, payload: dict[str, object], headers: dict[str, str]) ->
         raise AssertionError(f"HTTP {exc.code} for {url}: {detail}") from exc
 @pytest.mark.IT
 @pytest.mark.mcp
-@pytest.mark.req("FR-009")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-009)
 
 
 def test_tool_catalogue_wrappers_execute(

@@ -16,6 +16,9 @@ import pytest
 from pydantic import ValidationError
 
 from index_tools.config.loader import bind_model
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_invalid_config_rejected() -> None:

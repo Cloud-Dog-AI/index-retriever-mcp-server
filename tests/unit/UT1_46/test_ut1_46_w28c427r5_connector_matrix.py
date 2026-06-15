@@ -13,6 +13,9 @@ from cloud_dog_storage.errors import ConfigurationError
 
 from index_tools.connectors.resolver import fetch_source, resolve_source
 from index_tools.tools.service import IndexService
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_w28c427r5_connector_resolver_matrix(tmp_path) -> None:
@@ -42,6 +45,9 @@ def test_w28c427r5_connector_resolver_matrix(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="Unsupported source scheme"):
         _ = resolve_source("ssh://example.com/source.txt", allowed_roots=[str(tmp_path)])
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_w28c427r5_s3_fetch_delegates_to_cloud_dog_storage(monkeypatch) -> None:
@@ -66,6 +72,9 @@ def test_w28c427r5_s3_fetch_delegates_to_cloud_dog_storage(monkeypatch) -> None:
     assert captured["backend"] == "s3"
     assert captured["bucket"] == "my-bucket"
     assert captured["read_path"] == "docs/report.pdf"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_w28c427r5_source_config_policy_gate_rejects_unsupported_before_fetch(service: IndexService) -> None:

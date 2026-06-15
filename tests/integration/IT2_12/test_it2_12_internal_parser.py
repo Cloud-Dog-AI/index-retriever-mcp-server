@@ -17,6 +17,10 @@ from __future__ import annotations
 import asyncio
 
 from tests.integration.it2_matrix_helpers import parse_pdf_with_provider
+import pytest
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_it2_12_internal_parser_pdf_ir_output() -> None:

@@ -31,6 +31,9 @@ pytestmark = pytest.mark.skipif(
 def _marker_timeout_seconds() -> float:
     configured = float(os.getenv("MARKER_MCP_DOC_TIMEOUT_SECONDS", os.getenv("MARKER_MCP_TIMEOUT_SECONDS", "1200")) or 1200)
     return max(360.0, configured)
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_it2_10_marker_parser_pdf_ir_output() -> None:

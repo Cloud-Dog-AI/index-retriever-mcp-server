@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from index_tools.vdb.adapters import InMemoryVdbAdapter
+import pytest
 
 
 def _contract_run(adapter: InMemoryVdbAdapter) -> tuple[int, int, int]:
@@ -23,6 +24,9 @@ def _contract_run(adapter: InMemoryVdbAdapter) -> tuple[int, int, int]:
     d1 = int(adapter.delete_by_doc_id("contract", "doc1"))
     q2 = len(adapter.query("contract", "contract", top_k=10))
     return q1, d1, q2
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-008")
 
 
 def test_backend_contract_conformance() -> None:

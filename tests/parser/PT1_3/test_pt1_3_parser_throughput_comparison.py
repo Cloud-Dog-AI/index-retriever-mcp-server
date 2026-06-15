@@ -17,6 +17,9 @@ from __future__ import annotations
 import pytest
 
 from tests.parser.pt1_helpers import available_parsers, parser_throughput_case, write_pt_artifact
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-006")
 
 
 @pytest.mark.timeout(1200)

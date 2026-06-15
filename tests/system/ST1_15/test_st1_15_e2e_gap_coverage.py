@@ -153,7 +153,7 @@ def _render_png(text: str) -> bytes:
     return output.getvalue()
 @pytest.mark.ST
 @pytest.mark.mcp
-@pytest.mark.req("FR-009")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-009)
 
 
 def test_st_15_chunking_strategies_ingest_expected_boundaries(live_service: LiveIndexRuntime) -> None:
@@ -215,7 +215,7 @@ def test_st_15_chunking_strategies_ingest_expected_boundaries(live_service: Live
         assert chunks == expectation.expected_chunks
 @pytest.mark.ST
 @pytest.mark.mcp
-@pytest.mark.req("FR-009")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-009)
 
 
 def test_st_15_local_ocr_provider_extracts_non_empty_text() -> None:
@@ -238,7 +238,7 @@ def test_st_15_local_ocr_provider_extracts_non_empty_text() -> None:
     assert "ocr" in normalised
 @pytest.mark.ST
 @pytest.mark.mcp
-@pytest.mark.req("FR-009")
+@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-009)
 
 
 def test_st_15_retrieval_returns_content_and_source_uri_traceability(

@@ -63,12 +63,18 @@ def service(tmp_path: Path) -> IndexService:
 
 class TestIngestTextLargePayload:
     """Requirement: test_ingest_text_large_markdown_payload_succeeds_or_preflight_rejects"""
+    @pytest.mark.UT
+    @pytest.mark.mcp
+    @pytest.mark.req("FR-002")
 
     def test_large_payload_chunks_into_at_least_50(self):
         text = _large_markdown()
         chunks = token_chunks(text, chunk_size=64, chunk_overlap=8)
         assert len(chunks) >= 50, f"Expected >=50 chunks, got {len(chunks)}"
         assert len(text) >= 16000, f"Expected >=16000 chars, got {len(text)}"
+    @pytest.mark.UT
+    @pytest.mark.mcp
+    @pytest.mark.req("FR-002")
 
     def test_large_payload_ingest_succeeds(self, service: IndexService):
         """Large Markdown payload (>=50 chunks) should succeed through batched upsert."""
@@ -89,6 +95,9 @@ class TestIngestTextLargePayload:
             f"Expected succeeded, got {job.status}. "
             f"last_error={job.last_error}"
         )
+    @pytest.mark.UT
+    @pytest.mark.mcp
+    @pytest.mark.req("FR-002")
 
     def test_large_payload_produces_chunk_records(self, service: IndexService):
         """Verify that batched upsert creates per-chunk records with chunk_index metadata."""
@@ -115,6 +124,9 @@ class TestIngestTextLargePayload:
 
 class TestEmbeddingBackend500:
     """Requirement: test_embedding_backend_500_records_chunk_context"""
+    @pytest.mark.UT
+    @pytest.mark.mcp
+    @pytest.mark.req("FR-002")
 
     def test_embedding_batch_error_has_structured_details(self):
         err = EmbeddingBatchError(
@@ -137,6 +149,9 @@ class TestEmbeddingBackend500:
         assert details["suggested_action"] == "retry_later_or_ingest_compact_extract"
         assert details["profile"] == "demo27-transparent-borders"
         assert details["collection"] == "report-generation"
+    @pytest.mark.UT
+    @pytest.mark.mcp
+    @pytest.mark.req("FR-002")
 
     def test_embedding_failure_surfaces_in_job_error(self, service: IndexService):
         """When the VDB adapter raises during upsert, the job's last_error
@@ -182,6 +197,9 @@ class TestEmbeddingBackend500:
 
 class TestCompactSourceHuntRegression:
     """Requirement: test_compact_source_hunt_extract_regression"""
+    @pytest.mark.UT
+    @pytest.mark.mcp
+    @pytest.mark.req("FR-002")
 
     def test_compact_extract_succeeds(self, service: IndexService):
         """Compact DEMO-027 source-hunt extract (~1,300 chars) must succeed."""
@@ -200,6 +218,9 @@ class TestCompactSourceHuntRegression:
             f"Compact extract should succeed, got {job.status}. "
             f"last_error={job.last_error}"
         )
+    @pytest.mark.UT
+    @pytest.mark.mcp
+    @pytest.mark.req("FR-002")
 
     def test_compact_extract_searchable(self, service: IndexService):
         """Search must find the compact extract by content."""
@@ -232,6 +253,9 @@ class TestCompactSourceHuntRegression:
 
 class TestSearchSourceUriFilter:
     """Requirement: test_search_can_filter_current_source_uri"""
+    @pytest.mark.UT
+    @pytest.mark.mcp
+    @pytest.mark.req("FR-002")
 
     def test_source_uri_exact_filter(self, service: IndexService):
         """Search with source_uri filter must return only matching documents."""
@@ -267,6 +291,9 @@ class TestSearchSourceUriFilter:
             assert new_source in actual_uri, (
                 f"Filtered result should match source_uri={new_source}, got {actual_uri}"
             )
+    @pytest.mark.UT
+    @pytest.mark.mcp
+    @pytest.mark.req("FR-002")
 
     def test_source_uri_filter_excludes_non_matching(self, service: IndexService):
         """source_uri filter must not return documents from other sources."""

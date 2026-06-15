@@ -21,6 +21,10 @@ from pathlib import Path
 
 from index_tools.queue.engine import QueueEngine
 from index_tools.queue.models import JobRecord, JobStatus
+import pytest
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_jobs_backend_concurrency_and_recovery(tmp_path: Path) -> None:

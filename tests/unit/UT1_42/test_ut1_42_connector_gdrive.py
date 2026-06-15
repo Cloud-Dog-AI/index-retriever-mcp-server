@@ -17,6 +17,13 @@ from __future__ import annotations
 import pytest
 
 from index_tools.connectors.gdrive import map_http_error, resolve
+@pytest.mark.UT
+@pytest.mark.req("CS-013")  # W28C-1711-R3.5 binding
+@pytest.mark.req("CS-012")  # W28C-1711-R3.5 binding
+@pytest.mark.req("CS-007")  # W28C-1711-R3.5 binding
+@pytest.mark.req("CS-006")  # W28C-1711-R3.5 binding
+@pytest.mark.mcp
+@pytest.mark.req("CS-004")
 
 
 def test_connector_gdrive_resolve_raw_id() -> None:
@@ -24,23 +31,35 @@ def test_connector_gdrive_resolve_raw_id() -> None:
     assert plan.source_type == "gdrive"
     assert plan.metadata["file_id"] == "1AbCdEfGhIjKlMnOpQrStUvWxYz"
     assert plan.metadata["download_url"].endswith("1AbCdEfGhIjKlMnOpQrStUvWxYz?alt=media")
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("CS-009")
 
 
 def test_connector_gdrive_resolve_shared_link() -> None:
     plan = resolve("https://drive.google.com/file/d/1ABCDEF/view?usp=sharing")
     assert plan.location == "1ABCDEF"
     assert plan.metadata["file_id"] == "1ABCDEF"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("CS-010")
 
 
 def test_connector_gdrive_resolve_query_link() -> None:
     plan = resolve("https://drive.google.com/open?id=2XYZ")
     assert plan.location == "2XYZ"
     assert plan.metadata["file_id"] == "2XYZ"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_connector_gdrive_resolve_requires_file_id() -> None:
     with pytest.raises(ValueError, match="Google Drive file ID is required"):
         _ = resolve("https://example.com/not-drive")
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_connector_gdrive_error_mapping() -> None:

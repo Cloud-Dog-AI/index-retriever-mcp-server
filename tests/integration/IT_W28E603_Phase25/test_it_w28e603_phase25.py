@@ -15,7 +15,9 @@
 """W28E-603 Phases 2-5 transport tests: extraction + corpus + templates over MCP tools/call and REST
 (design brief §12/§13; §25 #2/#3/#8/#9/#10). Real authenticated execution, offline (internal provider)."""
 
+
 from __future__ import annotations
+import pytest
 
 from fastapi.testclient import TestClient
 
@@ -35,6 +37,9 @@ def _extract(client, text, fname):
                     json={"text": text, "profile": "default", "collection": "it_p25", "source_filename": fname}, headers=_ADMIN)
     assert r.status_code == 200, r.text
     return r.json()["document"]["structure_document_id"]
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_phase25_mcp_extract_corpus_template(service: IndexService) -> None:
@@ -64,6 +69,9 @@ def test_phase25_mcp_extract_corpus_template(service: IndexService) -> None:
 
     exported = client.post(api_tools_path("structure_template_export"), json={"template_id": tid, "format": "markdown"}, headers=_ADMIN)
     assert exported.status_code == 200 and "Section blueprint" in exported.json()["content"]
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_phase25_rest_surface(service: IndexService) -> None:
@@ -100,6 +108,9 @@ def test_phase25_rest_surface(service: IndexService) -> None:
 
     # delete corpus
     assert client.delete(f"/api/v1/structure/corpora/{cid}", headers=_ADMIN).status_code == 200
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_phase25_rbac_reader_cannot_write(service: IndexService) -> None:
@@ -107,6 +118,9 @@ def test_phase25_rbac_reader_cannot_write(service: IndexService) -> None:
     assert client.post("/api/v1/structure/extract", json={"text": _DOC1, "profile": "default", "collection": "x"}, headers=_READER).status_code == 403
     assert client.post("/api/v1/structure/corpora", json={"name": "n", "profile_id": "default"}, headers=_READER).status_code == 403
     assert client.get("/api/v1/structure/corpora", headers=_READER).status_code == 200
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_phase25_vdb_linkage(service: IndexService) -> None:

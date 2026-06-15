@@ -24,6 +24,9 @@ pytestmark = pytest.mark.skipif(
     not backend_available("qdrant"),
     reason=backend_skip_reason("qdrant") or "qdrant backend unavailable",
 )
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_it2_2_qdrant_contract_roundtrip() -> None:

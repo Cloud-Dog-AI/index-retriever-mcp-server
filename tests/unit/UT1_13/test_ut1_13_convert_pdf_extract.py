@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.convert.pdf import extract_text
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_convert_pdf_extract() -> None:

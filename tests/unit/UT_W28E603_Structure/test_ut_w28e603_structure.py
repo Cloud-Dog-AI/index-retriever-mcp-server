@@ -99,10 +99,16 @@ def _sample_bundle() -> StructureBundle:
 
 
 # -- model / id tests (no DB) --------------------------------------------------
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 def test_schema_version_constant() -> None:
     assert SCHEMA_VERSION == "1.0"
     assert StructureDocument(profile_id="p", collection_id="c").schema_version == "1.0"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_deterministic_document_id_is_stable_and_distinct() -> None:
@@ -118,6 +124,9 @@ def test_deterministic_document_id_is_stable_and_distinct() -> None:
     assert first == second
     assert first != other
     assert first.startswith("sd_")
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_deterministic_page_and_block_ids() -> None:
@@ -129,6 +138,9 @@ def test_deterministic_page_and_block_ids() -> None:
 
 
 # -- persistence / service round-trips (sqlite via cloud_dog_db) ---------------
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 def test_create_assigns_ids_and_persists(structure_service) -> None:
     service, audit = structure_service
@@ -145,6 +157,9 @@ def test_create_assigns_ids_and_persists(structure_service) -> None:
     # create is audited (acceptance §25.14)
     assert audit.events and audit.events[-1]["action"] == "create"
     assert audit.events[-1]["target_type"] == "structure_document"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_get_list_and_include_filtering(structure_service) -> None:
@@ -161,6 +176,9 @@ def test_get_list_and_include_filtering(structure_service) -> None:
     listing = service.list(profile_id="default")
     assert listing["total"] == 1
     assert listing["documents"][0]["structure_document_id"] == sdid
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_outline_builds_section_tree(structure_service) -> None:
@@ -172,6 +190,9 @@ def test_outline_builds_section_tree(structure_service) -> None:
     assert roots[0]["title"] == "Introduction"
     assert len(roots[0]["children"]) == 1
     assert roots[0]["children"][0]["title"] == "Scope"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_pages_and_sections_listing(structure_service) -> None:
@@ -181,6 +202,9 @@ def test_pages_and_sections_listing(structure_service) -> None:
     assert pages["count"] == 2 and pages["pages"][0]["page_number"] == 1
     sections = service.list_sections(sdid)
     assert sections["count"] == 2
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_idempotent_recreate_keeps_single_document(structure_service) -> None:
@@ -189,6 +213,9 @@ def test_idempotent_recreate_keeps_single_document(structure_service) -> None:
     second = service.create(_sample_bundle(), actor="tester", roles={"admin"})
     assert first["document"]["structure_document_id"] == second["document"]["structure_document_id"]
     assert service.list(profile_id="default")["total"] == 1
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_delete_removes_document_and_children(structure_service) -> None:
@@ -200,6 +227,9 @@ def test_delete_removes_document_and_children(structure_service) -> None:
     assert audit.events[-1]["action"] == "delete"
     with pytest.raises(KeyError):
         service.get(sdid)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_missing_document_raises_key_error(structure_service) -> None:
@@ -208,6 +238,9 @@ def test_missing_document_raises_key_error(structure_service) -> None:
         service.get("sd_does_not_exist")
     with pytest.raises(KeyError):
         service.delete("sd_does_not_exist")
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_create_requires_profile_and_collection(structure_service) -> None:
@@ -215,6 +248,9 @@ def test_create_requires_profile_and_collection(structure_service) -> None:
     bad = StructureBundle(document=StructureDocument(profile_id="", collection_id=""))
     with pytest.raises(ValueError):
         service.create(bad, actor="tester", roles={"admin"})
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_health_reports_structure_component(structure_service) -> None:

@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.connectors.s3 import resolve
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_connector_s3_resolve() -> None:

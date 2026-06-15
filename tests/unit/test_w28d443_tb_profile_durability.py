@@ -20,6 +20,9 @@ def _set_env():
     os.environ.setdefault("CLOUD_DOG__INDEX__EMBEDDING__MODEL", "nomic-embed-text")
     os.environ.setdefault("CLOUD_DOG__INDEX__AUTH__ADMIN_API_KEY", "test-admin-key")
     os.environ.setdefault("CLOUD_DOG__INDEX__AUTH__API_KEYS", "test-admin-key")
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_tb_profiles_registered(tmp_path):
@@ -33,6 +36,9 @@ def test_tb_profiles_registered(tmp_path):
         p = svc.profiles[name]
         assert p.get("enabled") is True, f"{name} not enabled"
         assert p.get("backend") == "chroma", f"{name} backend wrong: {p.get('backend')}"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_tb_profiles_have_embeddings_config(tmp_path):
@@ -47,6 +53,9 @@ def test_tb_profiles_have_embeddings_config(tmp_path):
         assert oc.get("model") == "nomic-embed-text", (
             f"{name}: expected nomic-embed-text, got {oc.get('model')}"
         )
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_tb_profiles_survive_reinit(tmp_path):
@@ -62,6 +71,9 @@ def test_tb_profiles_survive_reinit(tmp_path):
     for name in TB_PROFILES:
         assert name in profiles1, f"First init missing {name}"
         assert name in profiles2, f"Second init missing {name} (durability fail)"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_tb_profiles_coexist_with_defaults(tmp_path):

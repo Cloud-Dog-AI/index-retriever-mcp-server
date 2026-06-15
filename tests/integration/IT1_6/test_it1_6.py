@@ -20,6 +20,10 @@ from fastapi.testclient import TestClient
 from index_server.mcp_server import build_mcp_app, build_registry, list_tool_names
 from tests.http_paths import mcp_tools_path
 from tests.live_runtime import LiveIndexRuntime
+import pytest
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_mcp_tool_catalogue(

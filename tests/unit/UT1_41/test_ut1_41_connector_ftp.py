@@ -18,6 +18,9 @@ import pytest
 
 from index_tools.connectors import ftp
 from index_tools.connectors.models import FetchPlan
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_connector_ftp_resolve_parses_uri() -> None:
@@ -27,11 +30,17 @@ def test_connector_ftp_resolve_parses_uri() -> None:
     assert plan.metadata["port"] == "2121"
     assert plan.metadata["path"] == "reports/daily.csv"
     assert plan.metadata["username"] == "alice"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_connector_ftp_resolve_rejects_invalid_uri() -> None:
     with pytest.raises(ValueError, match="Invalid FTP URI"):
         _ = ftp.resolve("https://example.com/reports/daily.csv")
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_connector_ftp_fetch_connection_refused(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -51,6 +60,9 @@ def test_connector_ftp_fetch_connection_refused(monkeypatch: pytest.MonkeyPatch)
     plan = FetchPlan(source_type="ftp", location="ftp://example.com/file.txt", metadata={"host": "example.com", "path": "file.txt"})
     with pytest.raises(ConnectionError, match="FTP connection failed"):
         _ = ftp.fetch(plan)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_connector_ftp_fetch_auth_failure(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -77,6 +89,9 @@ def test_connector_ftp_fetch_auth_failure(monkeypatch: pytest.MonkeyPatch) -> No
     )
     with pytest.raises(PermissionError, match="FTP authentication failed"):
         _ = ftp.fetch(plan)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_connector_ftp_fetch_file_not_found(monkeypatch: pytest.MonkeyPatch) -> None:

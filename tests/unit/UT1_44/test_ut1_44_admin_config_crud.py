@@ -21,6 +21,9 @@ import pytest
 from index_server.mcp_server import execute_tool
 from index_tools.tools.registry import build_default_tool_registry
 from index_tools.tools.service import IndexService
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_service_admin_config_crud_and_mcp_parity(service: IndexService) -> None:

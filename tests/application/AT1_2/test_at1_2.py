@@ -15,6 +15,10 @@
 from datetime import datetime, timedelta, timezone
 
 from tests.live_runtime import LiveIndexRuntime
+import pytest
+@pytest.mark.AT
+@pytest.mark.mcp
+@pytest.mark.req("FR-004")
 
 
 def test_full_workflow_deduplicate_skip(live_service: LiveIndexRuntime) -> None:
@@ -41,6 +45,9 @@ def test_full_workflow_deduplicate_skip(live_service: LiveIndexRuntime) -> None:
     assert first.record_id == second.record_id
     rows = live_service.search("default", "at_dedupe", "dedupe", top_k=20)
     assert len(rows) == 1
+@pytest.mark.AT
+@pytest.mark.mcp
+@pytest.mark.req("FR-004")
 
 
 def test_full_workflow_reindex_replace_on_change_or_stale(live_service: LiveIndexRuntime) -> None:

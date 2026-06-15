@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.tools.service import IndexService
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-008")
 
 
 def test_secrets_never_logged(service: IndexService) -> None:

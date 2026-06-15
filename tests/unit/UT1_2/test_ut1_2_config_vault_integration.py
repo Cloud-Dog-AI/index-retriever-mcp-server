@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from index_tools.config.loader import merge_config_layers
+import pytest
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_config_vault_overlay() -> None:

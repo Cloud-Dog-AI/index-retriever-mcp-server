@@ -17,6 +17,9 @@ from pathlib import Path
 import pytest
 
 from index_tools.security.scope import ScopeError, resolve_scoped_path
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_scope_blocks_escape(tmp_path: Path) -> None:

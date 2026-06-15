@@ -190,6 +190,9 @@ async def _run_parity_validation() -> dict[str, dict[str, Any]]:
             await client.delete_collection(collection, provider_id=provider_id)
 
     return observed
+@pytest.mark.AT
+@pytest.mark.mcp
+@pytest.mark.req("FR-004")
 
 
 def test_cross_backend_parity_fixture_and_contract() -> None:

@@ -24,6 +24,7 @@ from fastapi.testclient import TestClient
 from index_server.api_server import build_api_app
 from tests.http_paths import api_tools_path
 from tests.live_runtime import LiveIndexRuntime
+import pytest
 
 
 def _request_json(url: str, *, method: str = "GET", payload: dict[str, object] | None = None, headers: dict[str, str] | None = None) -> tuple[int, dict[str, object]]:
@@ -36,6 +37,9 @@ def _request_json(url: str, *, method: str = "GET", payload: dict[str, object] |
     except HTTPError as exc:
         detail = exc.read().decode("utf-8")
         raise AssertionError(f"HTTP {exc.code} for {url}: {detail}") from exc
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_openapi_and_tool_contract_include_canonical_metadata_fields(

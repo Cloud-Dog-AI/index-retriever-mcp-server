@@ -78,6 +78,9 @@ def _seed_yaml() -> str:
               token_env_var: "{_GARY_ENV}"
         """
     ).strip()
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_load_seed_parses_canonical_shape(tmp_path: Path) -> None:
@@ -89,6 +92,9 @@ def test_load_seed_parses_canonical_shape(tmp_path: Path) -> None:
     assert {c.name for c in seed.collections} == {"ragflow0", "transparentborders"}
     assert [k.username for k in seed.api_keys] == ["gary"]
     assert seed.api_keys[0].token_env_var == _GARY_ENV
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_repo_default_bootstrap_seed_is_parseable() -> None:
@@ -97,11 +103,17 @@ def test_repo_default_bootstrap_seed_is_parseable() -> None:
     seed = load_seed(repo_root / "config" / "bootstrap-seed.yaml")
     assert {item.username for item in seed.users} == {"admin", "gary", "colin"}
     assert seed.api_keys == []
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_load_seed_missing_file_raises(tmp_path: Path) -> None:
     with pytest.raises(BootstrapSeedError, match="not found"):
         load_seed(tmp_path / "nope.yaml")
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_load_seed_rejects_inline_token(tmp_path: Path) -> None:
@@ -120,6 +132,9 @@ def test_load_seed_rejects_inline_token(tmp_path: Path) -> None:
     seed_path.write_text(text, encoding="utf-8")
     with pytest.raises(BootstrapSeedError, match="inline 'token'"):
         load_seed(seed_path)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_load_seed_api_key_missing_username(tmp_path: Path) -> None:
@@ -135,6 +150,9 @@ def test_load_seed_api_key_missing_username(tmp_path: Path) -> None:
     seed_path.write_text(text, encoding="utf-8")
     with pytest.raises(BootstrapSeedError, match="missing 'username'"):
         load_seed(seed_path)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_load_seed_api_key_missing_token_env_var(tmp_path: Path) -> None:
@@ -156,12 +174,18 @@ def test_load_seed_api_key_missing_token_env_var(tmp_path: Path) -> None:
 # Env token resolver (W28A-861: bootstrap secrets resolve from operator-set env
 # vars; the secret never lives in the seed YAML — RULES §1.4.1 carve-out)
 # ──────────────────────────────────────────────────────────────────────────────
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_resolver_resolves_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(_GARY_ENV, "cd_TEST_GARY_TOKEN")
     resolver = EnvTokenResolver()
     assert resolver.resolve(_GARY_ENV) == "cd_TEST_GARY_TOKEN"
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_resolver_missing_env_fails_fast(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -170,6 +194,9 @@ def test_resolver_missing_env_fails_fast(monkeypatch: pytest.MonkeyPatch) -> Non
     resolver = EnvTokenResolver()
     with pytest.raises(BootstrapSeedError, match="unset or empty"):
         resolver.resolve(_GARY_ENV)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_resolver_empty_env_fails_fast(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -177,12 +204,18 @@ def test_resolver_empty_env_fails_fast(monkeypatch: pytest.MonkeyPatch) -> None:
     resolver = EnvTokenResolver()
     with pytest.raises(BootstrapSeedError, match="unset or empty"):
         resolver.resolve(_GARY_ENV)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_resolver_empty_name_raises() -> None:
     resolver = EnvTokenResolver()
     with pytest.raises(BootstrapSeedError, match="name is empty"):
         resolver.resolve("")
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_resolver_caches_repeat_lookups(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -275,6 +308,9 @@ def _seed_api_key_env(
     """Provide the operator-set API-key secrets through the environment."""
     monkeypatch.setenv(_GARY_ENV, gary)
     monkeypatch.setenv(_COLIN_ENV, colin)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_apply_seed_populates_all_admin_stores(
@@ -299,6 +335,9 @@ def test_apply_seed_populates_all_admin_stores(
         sha256("cd_TEST_GARY_TOKEN_0001".encode("utf-8")).hexdigest(),
         sha256("cd_TEST_COLIN_TOKEN_0001".encode("utf-8")).hexdigest(),
     }.issubset(token_hashes)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_apply_seed_role_acl_invariants(
@@ -315,6 +354,9 @@ def test_apply_seed_role_acl_invariants(
     ragflow1 = fresh_service.collections["default:ragflow1"]
     assert gary.roles & ragflow0.allowed_roles
     assert not (gary.roles & ragflow1.allowed_roles)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_apply_seed_is_idempotent(
@@ -339,6 +381,9 @@ def test_apply_seed_is_idempotent(
     )
     # No duplicate user records.
     assert len(fresh_service.users) == 2
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_apply_seed_handles_token_rotation(
@@ -360,6 +405,9 @@ def test_apply_seed_handles_token_rotation(
         r.token_hash == sha256("cd_TEST_GARY_TOKEN_0001".encode("utf-8")).hexdigest()
         for r in revoked
     )
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_apply_seed_fails_fast_when_secret_missing(
@@ -370,6 +418,9 @@ def test_apply_seed_fails_fast_when_secret_missing(
     monkeypatch.delenv(_COLIN_ENV, raising=False)
     with pytest.raises(BootstrapSeedError, match="unset or empty"):
         apply_seed(fresh_service, _canonical_seed(), token_resolver=EnvTokenResolver())
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_apply_seed_no_api_keys_does_not_require_secrets(fresh_service: Any) -> None:
@@ -390,6 +441,9 @@ def test_apply_seed_no_api_keys_does_not_require_secrets(fresh_service: Any) -> 
 # ──────────────────────────────────────────────────────────────────────────────
 # resolve_seed_path / maybe_apply_bootstrap_seed
 # ──────────────────────────────────────────────────────────────────────────────
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_resolve_seed_path_explicit_config_wins(
@@ -410,6 +464,9 @@ def test_resolve_seed_path_explicit_config_wins(
         else default,
     )
     assert resolve_seed_path() == str(seed_file)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_resolve_seed_path_returns_explicit_nonexistent_as_is(
@@ -427,6 +484,9 @@ def test_resolve_seed_path_returns_explicit_nonexistent_as_is(
     # returns the explicit value as-is. maybe_apply_bootstrap_seed will then raise
     # BootstrapSeedError when load_seed runs — which is the correct semantics.
     assert resolve_seed_path() == nope
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 
 
 def test_maybe_apply_bootstrap_seed_no_path_returns_none(

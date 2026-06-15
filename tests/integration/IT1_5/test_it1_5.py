@@ -16,6 +16,9 @@ import pytest
 
 from index_server.admin.endpoints import profile_create
 from tests.live_runtime import LiveIndexRuntime
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_api_rbac_admin_gating(live_service: LiveIndexRuntime) -> None:

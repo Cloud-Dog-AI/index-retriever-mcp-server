@@ -15,6 +15,10 @@
 from datetime import datetime, timedelta, timezone
 
 from tests.live_runtime import LiveIndexRuntime
+import pytest
+@pytest.mark.AT
+@pytest.mark.mcp
+@pytest.mark.req("FR-004")
 
 
 def test_full_workflow_retention_enforcement(live_service: LiveIndexRuntime) -> None:

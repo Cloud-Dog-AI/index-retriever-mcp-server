@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from tests.live_runtime import LiveIndexRuntime
+import pytest
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_delegation_boundary_via_cloud_dog_vdb_pipeline(live_service: LiveIndexRuntime) -> None:

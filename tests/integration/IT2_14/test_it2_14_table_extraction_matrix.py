@@ -41,6 +41,9 @@ def _provider_timeout_seconds(provider_id: str) -> float:
     if provider == "mineru":
         return float(os.getenv("MINERU_DOC_TIMEOUT_SECONDS", os.getenv("MINERU_TIMEOUT_SECONDS", "240")) or 240)
     return float(os.getenv("PARSER_PROVIDER_TIMEOUT_SECONDS", "240") or 240)
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 
 
 def test_it2_14_table_extraction_returns_structured_tables() -> None:

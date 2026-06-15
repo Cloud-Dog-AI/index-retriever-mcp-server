@@ -36,8 +36,14 @@ from index_server.streaming import ingest_stream_close, ingest_stream_event, ing
 from index_tools.tools.service import DocumentRecord, IndexService
 from tests.http_paths import api_tools_path, mcp_tools_path
 @pytest.mark.UT
+@pytest.mark.req("CS-011")  # W28C-1711-R3.5 binding
+@pytest.mark.req("CS-008")  # W28C-1711-R3.5 binding
+@pytest.mark.req("CS-005")  # W28C-1711-R3.5 binding
+@pytest.mark.req("CS-003")  # W28C-1711-R3.5 binding
+@pytest.mark.req("CS-002")  # W28C-1711-R3.5 binding
+@pytest.mark.req("CS-001")  # W28C-1711-R3.5 binding
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_api_app_routes_cover_auth_and_errors(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
@@ -348,7 +354,7 @@ def test_api_app_routes_cover_auth_and_errors(monkeypatch: pytest.MonkeyPatch, s
     assert unknown.status_code == 404
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_api_app_base_path_env_override_retains_legacy_compat(
@@ -371,7 +377,7 @@ def test_api_app_base_path_env_override_retains_legacy_compat(
     assert stale_default.status_code == 404
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_api_create_runtime_app_typeerror_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -392,7 +398,7 @@ def test_api_create_runtime_app_typeerror_fallback(monkeypatch: pytest.MonkeyPat
     assert isinstance(app, DummyApp)
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_build_log_payload_synthesises_blank_messages(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -418,7 +424,7 @@ def test_build_log_payload_synthesises_blank_messages(monkeypatch: pytest.Monkey
     assert payload["logs"][0]["message"] == "create POST /api/v1/tools/profile_get (success)"
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_read_jsonl_records_many_includes_rotated_siblings(tmp_path: Path) -> None:
@@ -445,7 +451,7 @@ def test_read_jsonl_records_many_includes_rotated_siblings(tmp_path: Path) -> No
     ]
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_api_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -474,7 +480,7 @@ def test_api_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     }
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_mcp_app_and_execute_tool_paths(service: IndexService) -> None:
@@ -554,7 +560,7 @@ def test_mcp_app_and_execute_tool_paths(service: IndexService) -> None:
         mcp_server.execute_tool(service, "unknown_tool", {})
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_mcp_build_app_typeerror_fallback(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
@@ -585,7 +591,7 @@ def test_mcp_build_app_typeerror_fallback(monkeypatch: pytest.MonkeyPatch, servi
     assert isinstance(app, DummyApp)
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_mcp_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -614,7 +620,7 @@ def test_mcp_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     }
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_entrypoint_and_streaming_wrappers(monkeypatch: pytest.MonkeyPatch, service: IndexService) -> None:
@@ -634,7 +640,7 @@ def test_entrypoint_and_streaming_wrappers(monkeypatch: pytest.MonkeyPatch, serv
     assert closed["ingested_events"] == 1
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_admin_collection_create_endpoint(service: IndexService) -> None:
@@ -642,7 +648,7 @@ def test_admin_collection_create_endpoint(service: IndexService) -> None:
     assert response == {"status": "created", "collection": "ut_collection"}
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_build_status_payload_counts_active_documents_from_runtime(service: IndexService) -> None:
@@ -685,7 +691,7 @@ def test_build_status_payload_counts_active_documents_from_runtime(service: Inde
     assert payload["collection_count"] >= 1
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_web_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -714,7 +720,7 @@ def test_web_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     }
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -839,7 +845,7 @@ def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch
     assert authed_hops and all(r.headers.get("x-api-key") == "caller-supplied-key" for r in authed_hops)
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_web_tool_proxy_cookie_role_gates_service_key(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -936,7 +942,7 @@ def test_web_tool_proxy_cookie_role_gates_service_key(monkeypatch: pytest.Monkey
     assert captured_mcp_requests == []
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_requires_caller_auth_locks_identity_bearing_paths() -> None:
@@ -966,7 +972,7 @@ def test_requires_caller_auth_locks_identity_bearing_paths() -> None:
         assert not web_server._requires_caller_auth(path), f"static path wrongly forced verbatim: {path}"
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("R2")
+@pytest.mark.req("FR-001")
 
 
 def test_a2a_run_server_uses_env(monkeypatch: pytest.MonkeyPatch) -> None:

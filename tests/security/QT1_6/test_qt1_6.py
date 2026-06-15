@@ -23,6 +23,7 @@ from fastapi.testclient import TestClient
 from index_server.api_server import build_api_app
 from tests.http_paths import api_tools_path
 from tests.live_runtime import LiveIndexRuntime
+import pytest
 
 
 def _post_json(url: str, payload: dict[str, object], headers: dict[str, str]) -> tuple[int, dict[str, object]]:
@@ -39,6 +40,9 @@ def _post_json(url: str, payload: dict[str, object], headers: dict[str, str]) ->
     except HTTPError as exc:
         body = exc.read().decode("utf-8")
         return exc.code, json.loads(body)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-008")
 
 
 def test_provider_diagnostic_error_envelope_secret_safe(
