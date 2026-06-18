@@ -59,7 +59,7 @@ curl -X POST https://<host>/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -H "X-API-Key: ${API_KEY}" \
-  -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"<tool_name>","arguments":{...}},"id":1}'
+  -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"profiles_list","arguments":{...}},"id":1}'
 ```
 
 ---
