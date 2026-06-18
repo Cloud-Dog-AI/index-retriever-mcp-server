@@ -1,4 +1,5 @@
 file	probe_count	reason	operator_decision
+tests/system/ST1_15/test_st1_15_e2e_gap_coverage.py	3	W28C-1711-R3.5 invalid-binding archived (FR-009); FR-09A/FR-10A/FR-14A/FR-16A from docstring need req()-rebind under operator-directed cycle; RETAIN per W28C-1715	DEFAULT-RETAIN-FOR-REVIEW
 tests/unit/test_w28a295_multiprofile_load.py	2	no-FR-mapping-found-in-path-or-docstring; operator-review	DEFAULT-RETAIN-FOR-REVIEW
 tests/unit/test_w28d443_tb_profile_durability.py	4	no-FR-mapping-found-in-path-or-docstring; operator-review	DEFAULT-RETAIN-FOR-REVIEW
 tests/unit/UT1_40/test_ut1_40_tool_registry.py	1	no-FR-mapping-found-in-path-or-docstring; operator-review	DEFAULT-RETAIN-FOR-REVIEW

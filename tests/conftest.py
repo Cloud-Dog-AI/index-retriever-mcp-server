@@ -493,3 +493,80 @@ def live_service_cleanup_verification(env_tiers: list[str]) -> None:
     finally:
         if runtime is not None:
             runtime.cleanup()
+
+
+# ---------------------------------------------------------------------------
+# PS-REQ-TEST-TRACE marker registration + enforcement
+# See PS-REQ-TEST-TRACE v1.0 §6 — added by W28C-1715 functional compliance fix.
+# ---------------------------------------------------------------------------
+
+_PS_REQ_TIER_MARKERS = {"QT", "UT", "ST", "IT", "AT"}
+_PS_REQ_SURFACE_MARKERS = {"api", "mcp", "a2a", "webui", "cli", "internal"}
+
+_CANONICAL_MARKERS = [
+    # Tier markers
+    "UT: unit tests — in-process, no live services",
+    "IT: integration tests — require live VDB / embedding providers",
+    "ST: system tests — require a fully running index-retriever stack",
+    "AT: application / acceptance tests — full end-to-end user workflows",
+    "QT: quality / compliance tests — static analysis, package compliance",
+    # Surface markers
+    "mcp: tests exercising the MCP (Model Context Protocol) surface",
+    "api: tests exercising the REST API surface",
+    "a2a: tests exercising the A2A / agent-to-agent surface",
+    "webui: tests exercising the web UI surface",
+    "cli: tests exercising a command-line interface surface",
+    "internal: tests targeting internal / non-public surfaces",
+    # Traceability markers
+    "req(*ids): bind test to one or more requirement IDs per PS-REQ-TEST-TRACE",
+    "probe: mark test as an exploratory probe not yet bound to a requirement ID",
+    # Supplementary markers
+    "timeout(seconds): per-test wall-clock timeout limit",
+    "slow: mark a test as slow-running (may be excluded from fast runs)",
+    "llm: mark a test as requiring a live LLM provider endpoint",
+    "negative: mark a test as deliberately exercising failure / error paths",
+]
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Register all canonical PS-REQ-TEST-TRACE markers to suppress PytestUnknownMarkWarning."""
+    for marker_decl in _CANONICAL_MARKERS:
+        config.addinivalue_line("markers", marker_decl)
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """PS-REQ-TEST-TRACE marker enforcement — fail session on missing tier/surface/req markers."""
+    import sys
+
+    failures: list[str] = []
+    for item in items:
+        marker_names = {m.name for m in item.iter_markers()}
+        is_probe = "probe" in marker_names
+        if not (marker_names & _PS_REQ_TIER_MARKERS):
+            failures.append(
+                f"{item.nodeid}: missing @pytest.mark.<tier> (one of {sorted(_PS_REQ_TIER_MARKERS)}) "
+                "per PS-REQ-TEST-TRACE §6"
+            )
+        if not (marker_names & _PS_REQ_SURFACE_MARKERS):
+            failures.append(
+                f"{item.nodeid}: missing @pytest.mark.<surface> (one of {sorted(_PS_REQ_SURFACE_MARKERS)}) "
+                "per PS-REQ-TEST-TRACE §6"
+            )
+        if not is_probe:
+            req_marker = item.get_closest_marker("req")
+            if req_marker is None or not req_marker.args:
+                failures.append(
+                    f"{item.nodeid}: missing @pytest.mark.req('FR-NNN') per PS-REQ-TEST-TRACE §6 "
+                    "(add @pytest.mark.probe to mark as orphan)"
+                )
+    if failures:
+        msg = (
+            "PS-REQ-TEST-TRACE marker enforcement failed for "
+            + str(len(failures))
+            + " test(s):\n  "
+            + "\n  ".join(failures[:20])
+        )
+        if len(failures) > 20:
+            msg += f"\n  ... and {len(failures) - 20} more"
+        print(msg, file=sys.stderr)
+        pytest.exit(msg, returncode=2)
