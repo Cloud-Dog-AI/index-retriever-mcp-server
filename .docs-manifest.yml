@@ -6,7 +6,10 @@ canon-set: SERVICE
 canon-template-baseline: 1.0
 
 conditional-docs:
-  []
+  - filename: WEBUI-REFERENCE.md
+    template-id: T-WUI
+    template-version: 1.0
+    reason: service ships a WebUI SPA (ui/dist; cloud-dog-ai-ui-monorepo/apps/index-retriever)
 
 additional-docs:
   []

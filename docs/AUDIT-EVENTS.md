@@ -1,3 +1,22 @@
+---
+template-id: T-AUD
+template-version: 1.0
+applies-to: docs/AUDIT-EVENTS.md
+registry: service
+required: must-have
+when-applicable: ""
+template-last-updated: 2026-06-12
+template-owner: platform-standards
+
+project: index-retriever-mcp-server
+doc-last-updated: 2026-06-18
+doc-git-commit: 16fd5b2c0000000000000000000000000000000000
+doc-git-branch: main
+doc-source-shas: []
+doc-age-policy: 90d
+doc-conformance-stamp: 2026-06-18T00:00:00Z
+---
+
 # Audit Events Catalogue
 
 Project: index-retriever-mcp-server

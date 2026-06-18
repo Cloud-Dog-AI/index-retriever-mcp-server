@@ -1,3 +1,25 @@
+---
+template-id: T-RUC
+template-version: 1.1
+applies-to: docs/ROLES-AND-USECASES.md
+registry: service
+required: must-have
+when-applicable: ""
+template-last-updated: 2026-06-12
+template-owner: platform-standards
+extends-version: 1.0
+extends-via: PS-REQ-TEST-TRACE v1.0
+
+project: index-retriever-mcp-server
+doc-last-updated: 2026-06-18
+doc-git-commit: 16fd5b2c0000000000000000000000000000000000
+doc-git-branch: main
+doc-source-shas: []
+doc-age-policy: indefinite
+doc-conformance-stamp: 2026-06-18T00:00:00Z
+req-trace-version: 1.0
+---
+
 # Roles & Use-Cases — index-retriever-mcp-server
 
 Canonical IDAM reference for index-retriever: the role catalog, the use-cases (verbatim), the
