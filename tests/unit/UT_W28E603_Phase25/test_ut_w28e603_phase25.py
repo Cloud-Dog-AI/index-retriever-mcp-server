@@ -77,6 +77,24 @@ Another intro.
 # Scope
 More scope.
 """
+_UNKNOWN_DOC1 = """# Situation
+Situation text.
+
+# Evidence
+Evidence text.
+
+# Output
+Output text.
+"""
+_UNKNOWN_DOC2 = """# Situation
+Second situation.
+
+# Evidence
+Second evidence.
+
+# Output
+Second output.
+"""
 
 
 # -- extraction (no DB) --------------------------------------------------------
@@ -142,6 +160,8 @@ def test_corpus_analyse_produces_patterns(service) -> None:
     assert section_patterns["count"] == 1
     assert section_patterns["patterns"][0]["support_count"] == 2
     assert section_patterns["patterns"][0]["confidence"] == 1.0
+    assert section_patterns["patterns"][0]["detail"]["source_document_ids"]
+    assert section_patterns["patterns"][0]["detail"]["sequence_details"][0]["title"] == "Introduction"
 @pytest.mark.UT
 @pytest.mark.mcp
 @pytest.mark.req("FR-002")
@@ -171,7 +191,7 @@ def test_corpus_create_requires_name_and_profile(service) -> None:
 @pytest.mark.req("FR-002")
 
 def test_template_generate_and_export(service) -> None:
-    svc, _ = service
+    svc, audit = service
     cid = _two_doc_corpus(svc)
     svc.corpus.analyse(cid, actor="t", roles={"admin"})
     tmpl = svc.templates.generate(cid, name="Spec Template", actor="t", roles={"admin"})
@@ -187,8 +207,15 @@ def test_template_generate_and_export(service) -> None:
 
     md = svc.templates.export(tid, format="markdown")
     assert md["format"] == "markdown" and "Section blueprint" in md["content"]
+    assert "support: 2, confidence: 1.0" in md["content"]
     js = svc.templates.export(tid, format="json")
     assert js["format"] == "json" and '"template_id"' in js["content"]
+
+    deleted = svc.templates.delete(tid, actor="t", roles={"admin"})
+    assert deleted["deleted"] is True and deleted["template_id"] == tid
+    assert audit.events[-1]["action"] == "delete"
+    with pytest.raises(KeyError):
+        svc.templates.get(tid)
 @pytest.mark.UT
 @pytest.mark.mcp
 @pytest.mark.req("FR-002")
@@ -212,6 +239,25 @@ def test_template_export_bad_format(service) -> None:
     tid = svc.templates.generate(cid, actor="t", roles={"admin"})["template_id"]
     with pytest.raises(ValueError):
         svc.templates.export(tid, format="pdf")
+
+
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
+def test_template_preserves_unknown_section_titles(service) -> None:
+    svc, _ = service
+    id1 = svc.extract_text(_UNKNOWN_DOC1, profile="default", collection="docs", source_filename="u1.md", actor="t", roles={"admin"})["document"]["structure_document_id"]
+    id2 = svc.extract_text(_UNKNOWN_DOC2, profile="default", collection="docs", source_filename="u2.md", actor="t", roles={"admin"})["document"]["structure_document_id"]
+    corpus = svc.corpus.create({"name": "unknown headings", "profile_id": "default", "collection_id": "docs", "document_ids": [id1, id2]}, actor="t", roles={"admin"})
+    report = svc.corpus.analyse(corpus["corpus_id"], actor="t", roles={"admin"})
+    assert report["dominant_section_sequence"] == ["unknown", "unknown", "unknown"]
+
+    template = svc.templates.generate(corpus["corpus_id"], actor="t", roles={"admin"})
+    titles = [section["title"] for section in template["sections"]]
+    types = [section["section_type"] for section in template["sections"]]
+    assert titles == ["Situation", "Evidence", "Output"]
+    assert types == ["situation", "evidence", "output"]
+    assert all(section["source_document_ids"] for section in template["sections"])
 
 
 # -- VDB linkage (§25 #6) ------------------------------------------------------

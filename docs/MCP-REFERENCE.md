@@ -1761,7 +1761,23 @@ curl -X POST https://<host>/mcp \
 
 ---
 
-### 2.93 `structure_link_to_vdb_records`
+### 2.93 `structure_template_delete`
+
+- **Description:** Delete a generated structure template through the supported lifecycle path.
+- **RBAC:** `collection.write` (user / read-write or above)
+- **Input schema:**
+  ```json
+  {"type":"object","properties":{"template_id":{"type":"string"}},"required":["template_id"]}
+  ```
+- **Output schema:**
+  ```json
+  {"type":"object","properties":{"template_id":{"type":"string"},"deleted":{"type":"boolean"},"corpus_id":{"type":"string"}}}
+  ```
+- **Errors:** `401`, `403`, `404` template not found.
+
+---
+
+### 2.94 `structure_link_to_vdb_records`
 
 - **Description:** Link a structure document to existing VDB record/chunk ids and source document.
 - **RBAC:** `collection.write` (user / read-write or above)

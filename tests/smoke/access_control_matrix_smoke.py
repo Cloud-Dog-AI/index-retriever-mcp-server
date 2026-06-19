@@ -30,6 +30,7 @@ matches IT1_21): admin=``valid-admin-token``, writer/user=``valid-writer-token``
 
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from index_server.api_server import build_api_app
@@ -43,7 +44,7 @@ WRITER = "valid-writer-token"
 READER = "valid-reader-token"
 A2A_LOCAL = "12345678"
 
-EXPECTED_TOOL_COUNT = 92  # FR-16A; UT1_40 asserts the same runtime value
+EXPECTED_TOOL_COUNT = 94  # FR-16A; UT1_40 asserts the same runtime value
 
 
 def _hdr(token: str | None) -> dict[str, str]:
@@ -60,8 +61,11 @@ def _post(client: TestClient, path: str, payload: dict, token: str | None):
 
 
 # --- T0 smoke -------------------------------------------------------------------
-def test_t0_ir_tools_count_runtime_92(service: IndexService) -> None:
-    """T0-IR-TOOLS-COUNT: runtime registry == 92, unique (reconciles FR-16A docs)."""
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-16A")
+def test_t0_ir_tools_count_runtime_94(service: IndexService) -> None:
+    """T0-IR-TOOLS-COUNT: runtime registry == 94, unique (reconciles FR-16A docs)."""
     reg = build_default_tool_registry()
     tools = reg.list_tools()
     names = [t["name"] if isinstance(t, dict) else t.name for t in tools]

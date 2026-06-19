@@ -115,6 +115,9 @@ class CorpusService:
         block_type_dist: Counter[str] = Counter()
         layout_dist: Counter[str] = Counter()
         table_shape_dist: Counter[str] = Counter()
+        section_sequence_details: dict[str, list[dict[str, Any]]] = {}
+        section_sequence_docs: dict[str, set[str]] = {}
+        section_title_variations: dict[str, dict[int, Counter[str]]] = {}
         analysed = 0
 
         for sdid in corpus.document_ids:
@@ -124,7 +127,27 @@ class CorpusService:
             analysed += 1
             seq = [str(s.section_type.value if hasattr(s.section_type, "value") else s.section_type) for s in bundle.sections]
             if seq:
-                section_sequences["->".join(seq)] += 1
+                signature = "->".join(seq)
+                section_sequences[signature] += 1
+                section_sequence_docs.setdefault(signature, set()).add(sdid)
+                section_sequence_details.setdefault(
+                    signature,
+                    [
+                        {
+                            "order": order,
+                            "section_type": seq[order],
+                            "title": section.title,
+                            "normalised_title": section.normalised_title,
+                            "level": section.level,
+                        }
+                        for order, section in enumerate(bundle.sections)
+                    ],
+                )
+                title_variations = section_title_variations.setdefault(signature, {})
+                for order, section in enumerate(bundle.sections):
+                    title = str(section.title or section.normalised_title or "").strip()
+                    if title:
+                        title_variations.setdefault(order, Counter())[title] += 1
             for s in seq:
                 section_type_dist[s] += 1
             for st in bundle.styles:
@@ -138,7 +161,14 @@ class CorpusService:
 
         patterns: list[StructurePattern] = []
 
-        def _add(ptype: PatternType, signature: str, support: int, detail: dict[str, Any], label: str | None = None) -> None:
+        def _add(
+            ptype: PatternType,
+            signature: str,
+            support: int,
+            detail: dict[str, Any],
+            label: str | None = None,
+            examples: list[Any] | None = None,
+        ) -> None:
             patterns.append(
                 StructurePattern(
                     pattern_id=ids._digest("pat", corpus_id, ptype.value, signature),
@@ -149,12 +179,33 @@ class CorpusService:
                     support_count=support,
                     document_count=analysed,
                     confidence=round(support / analysed, 4) if analysed else 0.0,
+                    examples=list(examples or []),
                     detail=detail,
                 )
             )
 
         for sig, support in section_sequences.most_common():
-            _add(PatternType.section, sig, support, {"sequence": sig.split("->")}, label="section-sequence")
+            variation_counts = {
+                str(order): dict(counter.most_common())
+                for order, counter in section_title_variations.get(sig, {}).items()
+            }
+            source_document_ids = sorted(section_sequence_docs.get(sig, set()))
+            _add(
+                PatternType.section,
+                sig,
+                support,
+                {
+                    "sequence": sig.split("->"),
+                    "sequence_details": section_sequence_details.get(sig, []),
+                    "source_document_ids": source_document_ids,
+                    "title_variations": variation_counts,
+                },
+                label="section-sequence",
+                examples=[
+                    {"structure_document_id": doc_id}
+                    for doc_id in source_document_ids[:5]
+                ],
+            )
         for cls, support in style_class_dist.most_common():
             _add(PatternType.style, cls, support, {"style_class": cls}, label="style-class")
         for sig, support in layout_dist.most_common():

@@ -41,7 +41,7 @@ def test_structure_webui_page_renders_workflow_controls(service: IndexService) -
     for testid in (
         "struct-extract-btn", "struct-docs-refresh", "struct-outline-btn",
         "corpus-create-btn", "corpus-list-btn", "corpus-analyse-btn", "corpus-patterns-btn",
-        "template-generate-btn", "template-export-btn",
+        "template-generate-btn", "template-export-btn", "template-delete-btn",
     ):
         assert f'data-testid="{testid}"' in html, f"missing control {testid}"
     # the page is reachable from the admin navigation
@@ -56,7 +56,7 @@ def test_structure_webui_script_wires_workflows(service: IndexService) -> None:
     resp = client.get("/admin/ui/app.js")
     assert resp.status_code == 200
     js = resp.text
-    for fn in ("structureExtract", "structureOutline", "corpusCreate", "corpusAnalyse", "corpusPatterns", "templateGenerate", "templateExport", "bootstrapStructure"):
+    for fn in ("structureExtract", "structureOutline", "corpusCreate", "corpusAnalyse", "corpusPatterns", "templateGenerate", "templateExport", "templateDelete", "bootstrapStructure"):
         assert fn in js, f"missing JS handler {fn}"
     # handlers target the structure API
     assert "/api/v1/structure/extract" in js

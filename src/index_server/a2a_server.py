@@ -54,6 +54,7 @@ AGENT_CARD: dict[str, Any] = {
         {"id": "structure_corpus_patterns_get", "name": "Get Corpus Patterns", "description": "Retrieve derived structure patterns for a corpus (W28E-603)"},
         {"id": "structure_template_generate", "name": "Generate Structure Template", "description": "Generate a reusable structure/style template blueprint from corpus patterns (W28E-603)"},
         {"id": "structure_template_export", "name": "Export Structure Template", "description": "Export a structure template as Markdown or JSON (W28E-603)"},
+        {"id": "structure_template_delete", "name": "Delete Structure Template", "description": "Delete a generated structure template through the supported lifecycle path (W28M-1603D)"},
     ],
 }
 

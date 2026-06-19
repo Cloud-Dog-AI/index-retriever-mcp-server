@@ -89,6 +89,10 @@ class TemplateSection(BaseModel):
     level: int = 0
     block_type_signature: list[str] = Field(default_factory=list)
     style_hint: str | None = None
+    support_count: int = 0
+    confidence: float = 0.0
+    source_document_ids: list[str] = Field(default_factory=list)
+    variation_titles: list[str] = Field(default_factory=list)
 
 
 class StructureTemplate(BaseModel):

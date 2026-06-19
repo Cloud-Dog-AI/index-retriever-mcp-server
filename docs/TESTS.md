@@ -66,7 +66,7 @@ python3 -m pytest tests/application --env tests/env-AT -q
 ### UT1.40 tool registry completeness
 - File: `tests/unit/UT1_40/test_ut1_40_tool_registry.py`
 - Purpose:
-  - enforce the exact runtime tool inventory count (`90`),
+  - enforce the exact runtime tool inventory count (`94`),
   - ensure names are unique and the registry contract remains stable.
 - Requirements covered:
   - `FR-16A`
@@ -119,7 +119,7 @@ python3 -m pytest tests/application --env tests/env-AT -q
 | FR-14A (Retrieval output contract) | `tests/system/ST1_15/test_st1_15_e2e_gap_coverage.py` | `test_st_15_retrieval_returns_content_and_source_uri_traceability` | COVERED |
 | FR-16 (Management operations) | `tests/unit/UT1_44/test_ut1_44_admin_config_crud.py` | `test_service_admin_config_crud_and_mcp_parity` | COVERED |
 | FR-16 (Management operations) | `tests/integration/IT1_22/test_it1_22_admin_rest_config_crud.py` | `test_admin_rest_profile_user_group_api_key_lifecycle`, `test_admin_rest_rejects_non_admin_mutation` | COVERED |
-| FR-16A (Tool inventory contract) | `tests/unit/UT1_40/test_ut1_40_tool_registry.py` | UT1_40 suite (90-tool count enforcement) | COVERED |
+| FR-16A (Tool inventory contract) | `tests/unit/UT1_40/test_ut1_40_tool_registry.py` | UT1_40 suite (94-tool count enforcement) | COVERED |
 | R-VDB-01 (All 6 adapters) | `tests/integration/IT2_1/` through `tests/integration/IT2_6/` | IT2_1..IT2_6 suites | COVERED |
 | R-VDB-02 (CRUD/search parity) | `tests/contract/CT1_3/test_ct1_3_backend_parity.py` | CT1_3 suite | COVERED |
 | R-PARSE-01 (Parser provider matrix) | `tests/integration/IT2_7/test_it2_7_deepdoc_parser.py` | IT2_7 suite | COVERED |
@@ -153,7 +153,7 @@ Suites placed under `tests/smoke/access_control_matrix_smoke.py` (T0–T2 backen
 
 | Tier | IDs (representative) | Proves |
 |---|---|---|
-| T0 smoke | `T0-IR-LIFECYCLE`, `T0-IR-INGEST`, `T0-IR-SEARCH`, `T0-IR-SCOPE-DENY`, `T0-IR-TOOLS-COUNT`(==92), `T0-IR-WEBUI-PAGES` | works, no 404, tool inventory == runtime |
+| T0 smoke | `T0-IR-LIFECYCLE`, `T0-IR-INGEST`, `T0-IR-SEARCH`, `T0-IR-SCOPE-DENY`, `T0-IR-TOOLS-COUNT`(==94), `T0-IR-WEBUI-PAGES` | works, no 404, tool inventory == runtime |
 | T1 common-IDAM | `T1-IR-AUTH-401`, `T1-IR-A2A-401`, `T1-IR-WEBUI-401-LOGOUT`, `T1-IR-BASELINE-USER`, `T1-IR-AUDIT-COVERAGE` | anon→401 per surface; baseline user; audit |
 | T2 RBAC-by-role | `T2-IR-ADMINONLY`, `T2-IR-COLLECTION-RBAC`, `T2-IR-NOSECRET`, `T2-IR-PROXY-FORWARD`, `T2-IR-SERVICE-SCOPE`, `T2-IR-JOBS-RBAC` | role gating; no secret to non-admin; proxy forwards principal |
 | T3 business + cascade | `T3-IR-UPLOAD-QUERY`, `T3-IR-REFERENCE/STREAM/DEDUPE`, `T3-IR-PROFILE-CRUD`, `T3-IR-RETENTION`, `T3-IR-SEARCH-SCOPE`, **`T3-IR-CASCADE`**, `T9-IR-PROFILE-LIVE` | UC-01..06 live; **group→collection cascade live (0.5.0-gated)** |

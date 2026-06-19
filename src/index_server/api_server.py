@@ -2200,6 +2200,15 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    def structure_template_delete(template_id: str, request: Request) -> dict[str, Any]:
+        """Delete a generated template through the supported lifecycle path."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        try:
+            return active_service.structure.templates.delete(template_id, actor=identity.user_id, roles=identity.roles)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Template not found: {template_id}") from exc
+
     assets_dir = _ui_assets_dir()
     if path_utils.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="ui-assets")
@@ -2301,6 +2310,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             "structure_corpus_patterns_get": "structure_corpus_patterns_get",
             "structure_template_generate": "structure_template_generate",
             "structure_template_export": "structure_template_export",
+            "structure_template_delete": "structure_template_delete",
         }
         tool_name = tool_map.get(skill_id)
         if tool_name is None:
@@ -2393,6 +2403,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         A2ASkill(id="structure_corpus_patterns_get", name="Get Corpus Patterns", description="Retrieve derived structure patterns for a corpus (W28E-603)"),
         A2ASkill(id="structure_template_generate", name="Generate Structure Template", description="Generate a structure/style template blueprint from corpus patterns (W28E-603)"),
         A2ASkill(id="structure_template_export", name="Export Structure Template", description="Export a structure template as Markdown or JSON (W28E-603)"),
+        A2ASkill(id="structure_template_delete", name="Delete Structure Template", description="Delete a generated structure template through the supported lifecycle path (W28M-1603D)"),
     ]
     app.post(f"{_CANONICAL_A2A_BASE_PATH}/tasks")(a2a_submit_task)
     app.post("/tasks")(a2a_submit_task)
@@ -2555,6 +2566,8 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get(f"{api_base_path}/structure/templates")(structure_template_list)
     app.get(f"{api_base_path}/structure/templates/{{template_id}}")(structure_template_get)
     app.get(f"{api_base_path}/structure/templates/{{template_id}}/export")(structure_template_export)
+    app.delete(f"{api_base_path}/structure/templates/{{template_id}}")(structure_template_delete)
+    app.openapi_schema = None
     app.post(f"{api_base_path}/upload")(upload_ingest)
     app.post(f"{_LEGACY_API_BASE_PATH}/upload", include_in_schema=False)(upload_ingest)
     # W28A-648: Audit log JSONL reader for WebUI DataTable display

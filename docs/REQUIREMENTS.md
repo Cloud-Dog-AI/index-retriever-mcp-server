@@ -17,7 +17,7 @@ surface-coverage: [api, mcp, a2a, webui]
 
 ## Provenance
 - Canonical requirements for index-retriever-mcp-server. Reconciled to runtime by W28A-749 (IDAM Thread-b).
-- Source basis: `defaults.yaml`, the API/Web/MCP/A2A servers, and the runtime tool registry (92 tools — `src/index_tools/tools/registry.py`, enforced by `UT1_40`).
+- Source basis: `defaults.yaml`, the API/Web/MCP/A2A servers, and the runtime tool registry (94 tools — `src/index_tools/tools/registry.py`, enforced by `UT1_40`).
 
 **Version:** 1.1  
 **Date:** 2026-02-28  
@@ -481,7 +481,7 @@ Admin/maintainer tools SHALL include:
 
 ### FR-16A Complete MCP tool inventory contract
 - The documented MCP catalogue SHALL match the actual registered runtime inventory exactly.
-- The current registered tool count SHALL be **92** tools (verified: `src/index_tools/tools/registry.py` runtime build = 92 unique; `UT1_40` asserts `len(tools) == 92`; includes the 21 W28E-603 document-structure tools). Reconciled to runtime by W28A-749.
+- The current registered tool count SHALL be **94** tools (verified: `src/index_tools/tools/registry.py` runtime build = 94 unique; `UT1_40` asserts `len(tools) == 94`; includes the 22 W28E-603/W28M-1603D document-structure tools). Reconciled to runtime by W28M-1603D.
 - Tool documentation SHALL include, for every registered tool:
   - tool name,
   - operator intent/description,
@@ -569,7 +569,7 @@ Admin/maintainer tools SHALL include:
 - `ocr_run`
 - `table_extract`
 
-### 7.7 Complete runtime tool inventory (92 tools)
+### 7.7 Complete runtime tool inventory (94 tools)
 
 | Tool | Purpose | Primary inputs | Expected output |
 |------|---------|----------------|-----------------|

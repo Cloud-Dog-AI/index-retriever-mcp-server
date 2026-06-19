@@ -69,6 +69,9 @@ def test_phase25_mcp_extract_corpus_template(service: IndexService) -> None:
 
     exported = client.post(api_tools_path("structure_template_export"), json={"template_id": tid, "format": "markdown"}, headers=_ADMIN)
     assert exported.status_code == 200 and "Section blueprint" in exported.json()["content"]
+
+    deleted = client.post(api_tools_path("structure_template_delete"), json={"template_id": tid}, headers=_ADMIN)
+    assert deleted.status_code == 200 and deleted.json()["deleted"] is True
 @pytest.mark.IT
 @pytest.mark.mcp
 @pytest.mark.req("FR-007")
@@ -106,6 +109,12 @@ def test_phase25_rest_surface(service: IndexService) -> None:
     assert exp_md.status_code == 200 and exp_md.json()["format"] == "markdown"
     assert exp_js.status_code == 200 and exp_js.json()["format"] == "json"
 
+    reader_delete = client.delete(f"/api/v1/structure/templates/{tid}", headers=_READER)
+    assert reader_delete.status_code == 403
+    deleted = client.delete(f"/api/v1/structure/templates/{tid}", headers=_ADMIN)
+    assert deleted.status_code == 200 and deleted.json()["deleted"] is True
+    assert client.get(f"/api/v1/structure/templates/{tid}", headers=_ADMIN).status_code == 404
+
     # delete corpus
     assert client.delete(f"/api/v1/structure/corpora/{cid}", headers=_ADMIN).status_code == 200
 @pytest.mark.IT
@@ -118,6 +127,28 @@ def test_phase25_rbac_reader_cannot_write(service: IndexService) -> None:
     assert client.post("/api/v1/structure/extract", json={"text": _DOC1, "profile": "default", "collection": "x"}, headers=_READER).status_code == 403
     assert client.post("/api/v1/structure/corpora", json={"name": "n", "profile_id": "default"}, headers=_READER).status_code == 403
     assert client.get("/api/v1/structure/corpora", headers=_READER).status_code == 200
+
+
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
+def test_phase25_openapi_includes_structure_routes(service: IndexService) -> None:
+    client = TestClient(build_api_app(service=service))
+    resp = client.get("/openapi.json")
+    assert resp.status_code == 200, resp.text
+    paths = resp.json()["paths"]
+    expected = {
+        "/api/v1/structure/health",
+        "/api/v1/structure/documents",
+        "/api/v1/structure/extract",
+        "/api/v1/structure/corpora",
+        "/api/v1/structure/corpora/{corpus_id}/analyse",
+        "/api/v1/structure/templates",
+        "/api/v1/structure/templates/{template_id}",
+        "/api/v1/structure/templates/{template_id}/export",
+    }
+    assert expected <= set(paths), f"missing OpenAPI structure paths: {sorted(expected - set(paths))}"
+    assert "delete" in paths["/api/v1/structure/templates/{template_id}"]
 @pytest.mark.IT
 @pytest.mark.mcp
 @pytest.mark.req("FR-007")

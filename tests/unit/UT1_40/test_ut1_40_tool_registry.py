@@ -24,9 +24,9 @@ def test_ut_40_tool_registry_contract_fields() -> None:
     registry = build_default_tool_registry()
     tools = registry.list_tools()
     assert tools
-    # 92 = 90 (W28E-603 baseline) + 2 shared IDAM admin tools landed by W28A-876
-    # on origin/main (admin_rbac/user/group/api-key family). Source is canonical.
-    assert len(tools) == 92
+    # 94 = 90 (W28E-603 baseline) + 2 shared IDAM admin tools landed by W28A-876
+    # + hdro_extract + W28M-1603D structure_template_delete. Source is canonical.
+    assert len(tools) == 94
 
     names = [str(tool["name"]) for tool in tools]
     assert len(names) == len(set(names))

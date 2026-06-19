@@ -101,7 +101,7 @@ See `working/w28a-749/B3-INDEX-RETRIEVER-MATRIX.md` §3 for the full 17-row matr
 | FR-06 | audit coverage | system | all | T1-IR-AUDIT-COVERAGE |
 | FR-07 | jobs CRUD | job-control/maintainer | MCP/API/WebUI | T2-IR-JOBS-RBAC |
 | FR-14 | search/retrieve, stable IDs | viewer/user | all | T3-IR-SEARCH-SCOPE |
-| FR-16A | tool inventory == runtime (92) | any | MCP | T0-IR-TOOLS-COUNT |
+| FR-16A | tool inventory == runtime (94) | any | MCP | T0-IR-TOOLS-COUNT |
 | RULES | connector scope/traversal | any | MCP/API | T0-IR-SCOPE-DENY, T3-IR-CONNECTOR-SCOPE |
 | IDAM-B2 §3.3 | non-admin sees no secret | non-admin | all | T2-IR-NOSECRET |
 | **CASCADE** | **group-admin adds U→G; U reads collection C only** | **group-admin / GROUPUSER** | **all** | **T3-IR-CASCADE** |

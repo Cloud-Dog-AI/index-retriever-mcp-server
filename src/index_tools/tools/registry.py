@@ -203,6 +203,7 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="structure_template_get", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve a generated template by id."),
         ToolSpec(name="structure_template_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List generated templates, optionally filtered by profile or corpus."),
         ToolSpec(name="structure_template_export", input_model=GenericToolInput, output_model=GenericToolOutput, description="Export a template as Markdown or JSON."),
+        ToolSpec(name="structure_template_delete", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a generated structure template through the supported lifecycle path."),
         # -- W28E-603 §25 #6: VDB/chunk linkage --
         ToolSpec(name="structure_link_to_vdb_records", input_model=GenericToolInput, output_model=GenericToolOutput, description="Link a structure document to existing VDB record/chunk ids and source document."),
     ]

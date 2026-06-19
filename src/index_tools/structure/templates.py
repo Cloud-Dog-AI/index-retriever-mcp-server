@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 from uuid import uuid4
 
@@ -56,16 +57,31 @@ class TemplateService:
 
         top = section_patterns[0]
         sequence = list(top.detail.get("sequence", [])) or top.signature.split("->")
+        sequence_details = list(top.detail.get("sequence_details", []))
+        source_document_ids = list(top.detail.get("source_document_ids", []))
+        title_variations = dict(top.detail.get("title_variations", {}))
         sections: list[TemplateSection] = []
         for order, section_type in enumerate(sequence):
+            detail = sequence_details[order] if order < len(sequence_details) and isinstance(sequence_details[order], dict) else {}
+            observed_title = str(detail.get("title") or detail.get("normalised_title") or "").strip()
+            variation_map = title_variations.get(str(order), {})
+            variations = list(variation_map.keys()) if isinstance(variation_map, dict) else []
+            title = observed_title or section_type.replace("_", " ").title()
+            generated_type = section_type
+            if section_type == "unknown" and observed_title:
+                generated_type = _normalise_section_key(observed_title)
             sections.append(
                 TemplateSection(
                     order=order,
-                    section_type=section_type,
-                    title=section_type.replace("_", " ").title(),
-                    level=0 if order == 0 else 1,
+                    section_type=generated_type,
+                    title=title,
+                    level=int(detail.get("level", 0 if order == 0 else 1) or 0),
                     block_type_signature=["heading", "paragraph"],
                     style_hint=f"heading_{0 if order == 0 else 1}",
+                    support_count=top.support_count,
+                    confidence=top.confidence,
+                    source_document_ids=source_document_ids,
+                    variation_titles=variations,
                 )
             )
 
@@ -87,6 +103,10 @@ class TemplateService:
             source_pattern_ids=[p.pattern_id for p in section_patterns[:1]] + [p.pattern_id for p in style_patterns[:8]],
             confidence=top.confidence,
             created_by=actor,
+            metadata={
+                "source_document_ids": source_document_ids,
+                "section_title_variations": title_variations,
+            },
         )
         stored = self.repository.upsert_template(template)
         self._audit(actor=actor, roles=roles, action="generate", target_id=stored.template_id, new_value={"corpus_id": corpus_id, "sections": len(sections)})
@@ -117,6 +137,26 @@ class TemplateService:
             raise ValueError(f"unsupported export format: {format}")
         return TemplateExport(template_id=template_id, format=fmt, content=content).model_dump(mode="json")
 
+    def delete(self, template_id: str, *, actor: str = "service", roles: set[str] | None = None) -> dict[str, Any]:
+        """Delete a generated template through the supported lifecycle path."""
+        existing = self.repository.get_template(template_id)
+        if existing is None:
+            raise KeyError(template_id)
+        deleted = self.repository.delete_template(template_id)
+        self._audit(
+            actor=actor,
+            roles=roles,
+            action="delete",
+            target_id=template_id,
+            old_value={"corpus_id": existing.corpus_id, "name": existing.name},
+        )
+        return {"template_id": template_id, "deleted": bool(deleted), "corpus_id": existing.corpus_id}
+
+
+def _normalise_section_key(title: str) -> str:
+    value = re.sub(r"[^a-z0-9]+", "_", title.strip().lower()).strip("_")
+    return value or "unknown"
+
 
 def _render_markdown(template: StructureTemplate) -> str:
     lines = [f"# {template.name}", "", f"_Generated from corpus `{template.corpus_id}` (confidence {template.confidence})._", "", "## Section blueprint", ""]
@@ -126,6 +166,12 @@ def _render_markdown(template: StructureTemplate) -> str:
         lines.append(f"- blocks: {', '.join(section.block_type_signature)}")
         if section.style_hint:
             lines.append(f"- style: {section.style_hint}")
+        if section.support_count:
+            lines.append(f"- support: {section.support_count}, confidence: {section.confidence}")
+        if section.source_document_ids:
+            lines.append(f"- sources: {', '.join(section.source_document_ids)}")
+        if section.variation_titles:
+            lines.append(f"- title variants: {', '.join(section.variation_titles)}")
         lines.append("")
     dominant = template.style_guide.get("dominant_styles", [])
     if dominant:

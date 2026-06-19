@@ -33,6 +33,7 @@ _STRUCTURE_SKILLS = {
     "structure_corpus_patterns_get",
     "structure_template_generate",
     "structure_template_export",
+    "structure_template_delete",
 }
 @pytest.mark.IT
 @pytest.mark.mcp

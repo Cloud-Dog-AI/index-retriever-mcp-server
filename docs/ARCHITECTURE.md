@@ -21,7 +21,7 @@ doc-conformance-stamp: 2026-06-18T00:00:00Z
 
 ## Provenance
 - Canonical architecture for index-retriever-mcp-server. Role references reconciled to `ROLES-AND-USECASES.md §1` by W28A-749 (IDAM Thread-b).
-- Source basis: `defaults.yaml`, the API/Web/MCP/A2A servers, and the runtime tool registry (92 tools).
+- Source basis: `defaults.yaml`, the API/Web/MCP/A2A servers, and the runtime tool registry (94 tools).
 
 ## 1. Purpose
 

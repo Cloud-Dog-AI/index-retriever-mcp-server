@@ -668,6 +668,12 @@ async function templateExport() {
     setResult("template-result", await requestJson("GET", `/api/v1/structure/templates/${encodeURIComponent(id)}/export?format=${encodeURIComponent(fmt)}`));
   } catch (error) { setResult("template-result", error, true); }
 }
+async function templateDelete() {
+  try {
+    const id = el("template-id").value.trim();
+    setResult("template-result", await requestJson("DELETE", `/api/v1/structure/templates/${encodeURIComponent(id)}`));
+  } catch (error) { setResult("template-result", error, true); }
+}
 function bootstrapStructure() {
   wire("struct-extract-btn", structureExtract);
   wire("struct-docs-refresh", structureListDocs);
@@ -678,6 +684,7 @@ function bootstrapStructure() {
   wire("corpus-patterns-btn", corpusPatterns);
   wire("template-generate-btn", templateGenerate);
   wire("template-export-btn", templateExport);
+  wire("template-delete-btn", templateDelete);
 }
 
 function wire(testId, handler) {
@@ -1114,6 +1121,7 @@ def structure_page() -> str:
   <div class="actions">
     <button data-testid="template-generate-btn" type="button">Generate template</button>
     <button class="secondary" data-testid="template-export-btn" type="button">Export template</button>
+    <button class="danger" data-testid="template-delete-btn" type="button">Delete template</button>
   </div>
   <div class="result" data-testid="template-result" aria-live="polite"></div>
 </section>

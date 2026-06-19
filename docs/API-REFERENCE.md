@@ -90,11 +90,11 @@ Ports (native split-role): API 8074 / Web 8075 / MCP 8076 / A2A 8077.
 `GET /api/config`, `GET /api/status`, `GET /api/logs`, `GET /api/config-events`, `GET /api/audit-log`,
 `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `GET /api-docs`. Full spec: `openapi.json`.
 
-## MCP tool inventory (92 tools)
-The **runtime registry `src/index_tools/tools/registry.py` is the single source of truth** (92 tools, unique;
-`UT1_40` asserts `len(tools) == 93`; 21 are the W28E-603 `structure_*` family and one is the
+## MCP tool inventory (94 tools)
+The **runtime registry `src/index_tools/tools/registry.py` is the single source of truth** (94 tools, unique;
+`UT1_40` asserts `len(tools) == 94`; 22 are the W28E-603/W28M-1603D `structure_*` family and one is the
 W28D-440E5 `hdro_extract` source extractor). FR-16A requires the
-documented catalogue to match runtime exactly — reconciled to 92 by W28A-749. Tool categories:
+documented catalogue to match runtime exactly — reconciled to 94 by W28M-1603D. Tool categories:
 - **ingest/index:** `ingest_text`, `ingest_upload`, `ingest_reference`, `ingest_preview`, `bulk_index`,
   `ingest_stream_{open,event,close}`, `ingest_health`
 - **search/retrieve:** `search`, `search_explain`, `retrieve`, `index_list`, `collection_get`
@@ -107,7 +107,7 @@ documented catalogue to match runtime exactly — reconciled to 92 by W28A-749. 
 - **convert/parse/ocr:** `extract_only`, `ocr_run`, `parsers_list`, `parser_test`, `table_extract`,
   `backend_health_check`, `embedding_health_check`
 - **files:** `file_{upload,download,get,list,delete}`
-- **structure (W28E-603, 21):** `structure_corpus_*`, `structure_document_*`, `structure_template_*`,
+- **structure (W28E-603/W28M-1603D, 22):** `structure_corpus_*`, `structure_document_*`, `structure_template_*`,
   `structure_{extract,health,outline_get,pages_list,sections_list,link_to_vdb_records}`
 - **a2a:** `a2a_config_events`
 

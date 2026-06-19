@@ -158,3 +158,17 @@ class CorpusRepository:
             total = query.count()
             rows = query.order_by(StructureTemplateRow.id.desc()).limit(max(1, limit)).offset(max(0, offset)).all()
             return [StructureTemplate.model_validate(r.payload) for r in rows], total
+
+    def delete_template(self, template_id: str) -> bool:
+        with self._sm().session() as session:
+            exists = (
+                session.query(StructureTemplateRow)
+                .filter(StructureTemplateRow.template_id == template_id)
+                .first()
+                is not None
+            )
+            if exists:
+                session.query(StructureTemplateRow).filter(
+                    StructureTemplateRow.template_id == template_id
+                ).delete(synchronize_session=False)
+        return exists

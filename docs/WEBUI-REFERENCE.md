@@ -97,7 +97,7 @@ demo principals (`admin/read-write/read-only`) are seeded at startup for develop
 | Retention & Delete | full | delete + retention | — (403) | 401 |
 | Jobs | list + cancel + retry + delete | list + cancel + retry | — (403) | 401 |
 | Observability | full audit log | — (403) | — (403) | 401 |
-| MCP Console | all 93 tools | write tools | read tools | 401 |
+| MCP Console | all 94 tools | write tools | read tools | 401 |
 | A2A Console | full | full | read | 401 |
 | API Docs | full | full | full | 401 |
 | Settings | own + all (masked) | own (masked) | own (masked) | 401 |
