@@ -174,6 +174,14 @@ def build_web_app() -> object:
         description="Thin Web surface for index-retriever-mcp-server",
         cors_origins=["*"],
     )
+    # The Web surface must expose the API server's schema/docs, not its own thin
+    # proxy schema. create_app does not expose FastAPI's openapi_url toggles, so
+    # remove the auto routes before the explicit proxy routes are registered.
+    app.routes[:] = [
+        route
+        for route in app.routes
+        if getattr(route, "path", None) not in {"/openapi.json", "/docs", "/redoc"}
+    ]
 
     assets_dir = _ui_assets_dir()
     if path_utils.exists(assets_dir):

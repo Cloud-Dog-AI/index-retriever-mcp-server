@@ -800,6 +800,11 @@ def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch
     assert runtime_config.status_code == 200
     assert '"SESSION_TIMEOUT_MINUTES": 5.5' in runtime_config.text
 
+    openapi = client.get("/openapi.json")
+    assert openapi.status_code == 200
+    assert openapi.json() == {"status": "ok"}
+    assert not any(r.url.path == "/openapi.json" for r in captured_requests)
+
     spa_admin = client.get("/admin/users")
     assert spa_admin.status_code == 200
     assert "id='root'" in spa_admin.text
