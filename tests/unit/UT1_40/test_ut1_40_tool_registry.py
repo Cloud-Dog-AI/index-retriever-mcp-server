@@ -16,11 +16,11 @@ from index_tools.tools.registry import build_default_tool_registry
 import pytest
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-016)
+@pytest.mark.req("FR-016") # W28E-1805A semantic binding
 
 
 def test_ut_40_tool_registry_contract_fields() -> None:
-    # Covers: FR-P002, FR-16A
+    # Covers: FR-P002, FR-016
     registry = build_default_tool_registry()
     tools = registry.list_tools()
     assert tools

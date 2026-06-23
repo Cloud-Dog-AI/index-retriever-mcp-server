@@ -557,7 +557,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
             if req_marker is None or not req_marker.args:
                 failures.append(
                     f"{item.nodeid}: missing @pytest.mark.req('FR-NNN') per PS-REQ-TEST-TRACE §6 "
-                    "(add @pytest.mark.probe to mark as orphan)"
+                    "(use the explicit probe marker only for an approved orphan workflow)"
                 )
     if failures:
         msg = (

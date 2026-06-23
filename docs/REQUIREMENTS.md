@@ -3,11 +3,11 @@ template-id: T-REQ
 template-version: 1.1
 applies-to: docs/REQUIREMENTS.md
 project: index-retriever-mcp-server
-doc-last-updated: 2026-06-12T16:37:04Z
-doc-git-commit: 167f371208d2dbe673d692b181cfb25f78d51cb9
-doc-git-branch: w28a-749-idam
+doc-last-updated: 2026-06-23T00:00:00Z
+doc-git-commit: affbc31376cc03680e72616e4c1db2eefb5d7507
+doc-git-branch: coordinator/20260622-agent-converge/index-retriever-main-merge
 doc-age-policy: indefinite
-doc-conformance-stamp: 2026-06-12T16:37:04Z
+doc-conformance-stamp: 2026-06-23T00:00:00Z
 req-trace-version: 1.0
 req-id-prefixes-used: [SV, BO, BR, FR, UC, CS, NF, R, F]
 surface-coverage: [api, mcp, a2a, webui]
@@ -80,24 +80,24 @@ Primary goals:
 
 ## 4. High-level Use Cases
 
-### UC-01: Upload file, index into profile collection, then query
+### UC-001: Upload file, index into profile collection, then query
 1. `profile_select(profile="default")`
 2. `ingest_upload(profile="default", collection="kb", file=..., dedupe="hash") -> job_id`
 3. `job_wait(job_id)` (or stream status)
 4. `search(profile="default", collection="kb", query="...", top_k=10) -> results`
 
-### UC-02: Index remote reference (S3/WebDAV/Drive) by URI
+### UC-002: Index remote reference (S3/WebDAV/Drive) by URI
 1. `ingest_reference(profile="p1", uri="s3://bucket/key", options={...}) -> job_id`
 2. System fetches, converts, chunks, embeds, indexes.
 3. `job_get(job_id)` returns success + stats (chunks, tokens, time).
 
-### UC-03: Stream chat messages and index in near-real-time
+### UC-003: Stream chat messages and index in near-real-time
 1. Client opens stream endpoint (SSE/WS).
 2. Client sends message events with metadata (`thread_id`, `user_id`, tags).
 3. Server streams acknowledgements; chunk+embed+index pipeline runs asynchronously.
 4. Retrieval can reference `thread_id` to fetch stateful knowledge.
 
-### UC-04: Duplicate detection on re-upload
+### UC-004: Duplicate detection on re-upload
 1. `ingest_upload(..., dedupe="hash+size+mtime")`
 2. Server computes fingerprints (sha256/xxhash, size, mtime) and checks index metadata.
 3. Policy decides:
@@ -105,20 +105,49 @@ Primary goals:
    - replace existing,
    - version as new document with link to prior.
 
-### UC-05: Admin creates a new profile and collection at runtime
+### UC-005: Admin creates a new profile and collection at runtime
 1. `admin_profile_create(...)` with vdb + embedding settings
 2. `admin_collection_create(profile="p2", collection="finance")`
 3. Admin tests with `admin_test_search(...)`
 4. Profile becomes available without restart (config is persisted).
 
-### UC-06: Retention/cleanup job
+### UC-006: Retention/cleanup job
 1. Admin schedules `retention_run(profile="p1", rule="older_than:90d")`
 2. Job removes old data and updates metadata indexes.
 3. Audit log includes removed document IDs and reason.
 
+### UC-007: Admin users and IDAM route management
+1. An admin opens the WebUI security administration surface.
+2. `/idam/users` remains a compatibility route and `/admin/users` is the canonical users route.
+3. User, group, API-key, role, and RBAC operations remain API-backed and RBAC-governed.
+4. Anonymous callers reach login and authenticated callers use the canonical admin route.
+
 ---
 
 ## 5. Functional Requirements (FR)
+
+### 5.0 PS-REQ-TEST-TRACE canonical FR table
+
+| ID | Requirement | Surface | Priority | Since | Last-verified | Use cases | Tests |
+|---|---|---|---|---|---|---|---|
+| `FR-001` | Expose the API, MCP, A2A, and WebUI interfaces with health, route-prefix, auth, and correlation contracts. | `api`, `mcp`, `a2a`, `webui` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-007` | `T-UT-031`, `T-UT-038`, `T-IT-018` |
+| `FR-002` | Preserve core pipeline, configuration, bootstrap, audit, metadata, connector, job, database, and service-internal behavior without platform bypasses. | `internal`, `mcp` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-002`, `UC-004`, `UC-005` | `T-UT-001`, `T-UT-047`, `T-UT-BOOTSTRAP` |
+| `FR-003` | Provide backend contract parity and service branch coverage for VDB, collection, retention, delete, reindex, and environment-resolution behavior. | `internal`, `mcp` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-006` | `T-CT-001`, `T-UT-033` |
+| `FR-004` | Execute application and WebUI workflows for upload, search, retrieve, cross-backend parity, IDAM, and operator CRUD paths. | `a2a`, `webui`, `api` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-005`, `UC-007` | `T-AT-001`, `T-AT-WEBUI-SECURITY` |
+| `FR-005` | Maintain system-level runtime, migration, cleanup, logging, and operational health behaviors across the configured service stack. | `internal`, `api` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-006` | `T-ST-001`, `T-ST-014`, `T-ST-LOG` |
+| `FR-006` | Preserve parser-tier ingest/search performance baselines and parser throughput comparisons for configured corpora. | `internal` | `should` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-002` | `T-PT-001`, `T-PT-003` |
+| `FR-007` | Prove integration-tier backend, parser, metadata, job, OpenAPI, and transport coverage against real configured dependencies. | `api`, `mcp`, `a2a`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-002`, `UC-003`, `UC-006` | `T-IT-001`, `T-IT-020`, `T-IT-W28E603` |
+| `FR-008` | Maintain security and rules-compliance coverage over authentication, authorization, secret hygiene, and negative-flow posture. | `internal`, `api`, `mcp`, `a2a`, `webui` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-007` | `T-QT-SECURITY`, `T-QT-RULES` |
+| `FR-009` | Support conversion, parsing, OCR, table extraction, source extraction, and ingest-preview wrappers through delegated platform components. | `api`, `mcp`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-002` | `T-ST-015`, `T-IT-017`, `T-AT-023` |
+| `FR-010` | Apply configured chunking and canonical metadata enrichment consistently across ingest, search, retrieve, lifecycle, and delete flows. | `api`, `mcp`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-004` | `T-UT-015`, `T-UT-017`, `T-ST-015` |
+| `FR-011` | Detect duplicates using configured hash/size/mtime policy and record dedupe decisions for audit and job result traceability. | `api`, `mcp`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-004` | `T-UT-018`, `T-UT-020`, `T-UT-022` |
+| `FR-012` | Route embedding-provider selection and embedding dimension validation through configured platform/provider registries. | `internal`, `mcp` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-002` | `T-UT-023`, `T-UT-043`, `T-AT-024` |
+| `FR-013` | Route vector backend operations, provider diagnostics, parser/OCR/table preview dispatch, and VDB capability failures through `cloud_dog_vdb` adapters. | `api`, `mcp`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-002`, `UC-005` | `T-UT-024`, `T-UT-036`, `T-UT-037` |
+| `FR-014` | Return stable search and retrieval output with inline content, source traceability, scores, metadata filters, and explain metadata. | `api`, `mcp`, `webui` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001` | `T-UT-025`, `T-ST-015` |
+| `FR-015` | Support stateful and streaming ingestion sessions with ordering keys, event append, close behavior, and closed-session rejection. | `api`, `mcp`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-003` | `T-UT-033`, `T-IT-012` |
+| `FR-016` | Keep the complete MCP tool inventory documented and matching runtime registration exactly, including 94 unique tools and management operations. | `mcp`, `api` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-007` | `T-UT-040`, `T-SMOKE-TOOLS` |
+| `FR-017` | Preserve WebUI/API parity, controlled operation handling, middleware, and handler-path coverage for operator workflows. | `api`, `mcp`, `webui`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-006`, `UC-007` | `T-UT-035`, `T-AT-WEBUI-CRUD` |
+| `FR-018` | Bind the WebUI IDAM/admin route contract, including `/idam/users` and `/admin/users` URL-canonical behavior, to security-admin test design. | `webui`, `api` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-007` | `T-AT-WEBUI-SECURITY` |
 
 ### FR-01 Interfaces: MCP A2A + HTTP API + Admin WebUI (PS-00 P1, PS-20)
 - The system SHALL expose an MCP-compatible A2A tool interface.
@@ -479,7 +508,7 @@ Admin/maintainer tools SHALL include:
 - diagnostics (backend connectivity, embedding provider tests),
 - test search and retrieval tools.
 
-### FR-16A Complete MCP tool inventory contract
+### FR-016 Complete MCP tool inventory contract
 - The documented MCP catalogue SHALL match the actual registered runtime inventory exactly.
 - The current registered tool count SHALL be **94** tools (verified: `src/index_tools/tools/registry.py` runtime build = 94 unique; `UT1_40` asserts `len(tools) == 94`; includes the 22 W28E-603/W28M-1603D document-structure tools). Reconciled to runtime by W28M-1603D.
 - Tool documentation SHALL include, for every registered tool:
@@ -512,6 +541,13 @@ Admin/maintainer tools SHALL include:
 ---
 
 ## 6. Non-Functional Requirements (NFR)
+
+| ID | Requirement | Surface | Priority | Since | Last-verified | Use cases | Tests |
+|---|---|---|---|---|---|---|---|
+| `NF-001` | Reuse required platform packages for configuration, logging, API, IDAM, jobs, DB, LLM, VDB, and storage concerns; bespoke substitutes are forbidden. | `internal`, `api`, `mcp`, `a2a`, `webui` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-005` | `T-QT-PACKAGE`, `T-QT-MIGRATION` |
+| `NF-002` | Keep configuration, logging, audit, Vault, and secret hygiene enforceable; no credential or secret values may be committed or logged. | `internal`, `api`, `mcp`, `a2a`, `webui` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-007` | `T-QT-VAULT`, `T-QT-LOGGING` |
+| `NF-003` | Preserve engineering discipline: no direct environment fallback chains, no forbidden skips in live tiers, no infrastructure mutation in design lanes, and scoped test integrity. | `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-006` | `T-QT-RULES` |
+| `NF-004` | Maintain documentation, requirement, use-case, test-design, scope-map, and coverage traceability under PS-REQ-TEST-TRACE and PS-CLOSEOUT-WARRANTY. | `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-007` | `T-QT-TRACE`, `T-QT-COVERAGE` |
 
 - **Security**: secrets never logged; RBAC enforced; connector access constrained; encrypted-at-rest creds if stored.
 - **Reliability**: idempotent ingestion; retries with backoff; deterministic job results; recoverable failures.
@@ -786,69 +822,30 @@ Mandatory schema per PS-REQ-TEST-TRACE v1.0 §3.4. Every project covers anon-den
 
 | ID | Threat / negative scenario | Surface | Role(s) attempted | Expected | Tests |
 |---|---|---|---|---|---|
-| `CS-001` | Anon attempts data read | `api`, `mcp`, `a2a`, `webui` | `anon` | `401` | (to be bound in Instruction 4 by operator) |
-| `CS-002` | read-only attempts write | `api`, `mcp` | `read-only` | `403` | (to be bound in Instruction 4 by operator) |
-| `CS-003` | Missing required param | `api` | `admin` | `422` | (to be bound in Instruction 4 by operator) |
-| `CS-004` | Wrong-role privileged op | `mcp` | `read-write` | `403` | (to be bound in Instruction 4 by operator) |
+| `CS-001` | Anon attempts data read | `api`, `mcp`, `a2a`, `webui` | `anon` | `401` | `T-UT-031`, `T-QT-SECURITY` |
+| `CS-002` | read-only attempts write | `api`, `mcp` | `read-only` | `403` | `T-UT-031`, `T-IT-021` |
+| `CS-003` | Missing required param | `api` | `admin` | `422` | `T-UT-031` |
+| `CS-004` | Wrong-role privileged op | `mcp` | `read-write` | `403` | `T-UT-042` |
+
+### 5.1 PS-REQ-TEST-TRACE canonical CS table
+
+| ID | Threat / negative scenario | Surface | Role(s) attempted | Expected | Tests |
+|---|---|---|---|---|---|
+| `CS-001` | Anonymous caller attempts protected data read across service surfaces. | `api`, `mcp`, `a2a`, `webui` | `anon` | `401` | `T-UT-031`, `T-QT-SECURITY` |
+| `CS-002` | Read-only caller attempts mutating or privileged write operation. | `api`, `mcp` | `read-only` | `403` | `T-UT-031`, `T-IT-021` |
+| `CS-003` | Caller omits required request parameter on API operation. | `api` | `admin` | `422` | `T-UT-031` |
+| `CS-004` | Caller with wrong role attempts privileged MCP operation. | `mcp` | `read-write` | `403` | `T-UT-042` |
+| `CS-005` | Anonymous caller attempts protected API operation. | `api` | `anon` | `401` | `T-UT-031` |
+| `CS-006` | Anonymous caller attempts protected MCP operation. | `mcp` | `anon` | `401` | `T-UT-042` |
+| `CS-007` | Anonymous caller attempts protected A2A operation. | `a2a` | `anon` | `401` | `T-UT-042` |
+| `CS-008` | Read-only caller attempts protected API write/admin action. | `api` | `read-only` | `403` | `T-UT-031` |
+| `CS-009` | Read-only caller attempts protected MCP write/admin action. | `mcp` | `read-only` | `403` | `T-UT-042` |
+| `CS-010` | Read-only caller attempts protected A2A write/admin action. | `a2a` | `read-only` | `403` | `T-UT-042` |
+| `CS-011` | API request misses a required parameter and receives structured validation. | `api` | `*` | `422` | `T-UT-031` |
+| `CS-012` | MCP request misses a required parameter and receives structured validation. | `mcp` | `*` | `422` | `T-UT-042` |
+| `CS-013` | A2A request misses a required parameter and receives structured validation. | `a2a` | `*` | `422` | `T-UT-042` |
 
 
-<!-- W28C-1710b design-delta additions (2026-06-14T18:01:23Z); SHA chain in working/W28C-1710b/KNOWLEDGE-PRESERVATION-DELTA.md -->
+## 10. Traceability Notes
 
-## PS-REQ-TEST-TRACE schema completion (W28C-1710b)
-
-Per the binding contract (`docs/standards/PS-REQ-TEST-TRACE.md` §2 + §3), every FR-NNN row in this file declares the following schema (default values; operator amends per row in W28C-1711):
-
-```yaml
-surface: ['api', 'mcp', 'a2a']  # programme default for index-retriever-mcp-server
-priority: must  # default; operator amends per FR
-since: 2026-06-14  # carried forward unless older anchor known
-last-verified: 2026-06-14
-tests: []  # populated by W28C-1711 binding
-crud: N/A  # default; operator amends per FR
-```
-
-## Baseline CS-NNN rows (PS-REQ-TEST-TRACE §3.4 — added by W28C-1710b)
-
-Every project MUST have CS-NNN rows for `anon-denied`, `wrong-role-denied`, `missing-param-error` per surface. Programme baseline:
-
-| CS-NNN | Scenario | Surface | Expected | Roles |
-|---|---|---|---|---|
-| `CS-005` | anon-denied | `api` | `401` | `anon` |
-| `CS-006` | anon-denied | `mcp` | `401` | `anon` |
-| `CS-007` | anon-denied | `a2a` | `401` | `anon` |
-| `CS-008` | wrong-role-denied | `api` | `403` | `read-only` |
-| `CS-009` | wrong-role-denied | `mcp` | `403` | `read-only` |
-| `CS-010` | wrong-role-denied | `a2a` | `403` | `read-only` |
-| `CS-011` | missing-param-error | `api` | `422` | `*` |
-| `CS-012` | missing-param-error | `mcp` | `422` | `*` |
-| `CS-013` | missing-param-error | `a2a` | `422` | `*` |
-
-_These CS-NNN rows are pending W28C-1711 test binding. Each row binds to one or more `@pytest.mark.negative` tests with explicit expected denial code._
-
-
-<!-- W28C-1711-R3 forensic: canonical FR-NNN rows derived from legacy R-NNN/FR1.NN test bindings (2026-06-15T15:21:28Z) -->
-
-## Functional Requirements (W28C-1711-R3 canonical-FR expansion)
-
-Per PS-REQ-TEST-TRACE §2: every test req() must reference a backtick-wrapped FR/CS/NF-NNN row. This section adds canonical FR-NNN rows derived from existing legacy R-NNN / FR1.NN bindings + ADD-REQ probe-test functional capabilities. Test bindings rewritten to use these canonical FR-NNN IDs.
-
-| ID | Source (legacy) | Test count | Surface (inferred) | Priority | Description |
-|---|---|---:|---|---|---|
-| `FR-001` | R2 | 17 | `internal` | `should` | Functional capability covered by legacy binding `R2` (W28C-1711-R3 derivation; see new-or-updated-tests.tsv for test list) |
-
-
-<!-- W28C-1711-R3 forensic: ADD-REQ FR rows derived from probe-test clusters (2026-06-15T15:21:28Z) -->
-
-## Functional Requirements (W28C-1711-R3 ADD-REQ derivation)
-
-Per W28C-1711 spec rule: ADD-REQ — create the requirement and bind the test. This section adds FR-NNN rows derived from functional probe-test clusters that had no matching FR in REQUIREMENTS.md. Each row's description is derived from the cluster's test names.
-
-| ID | Cluster | Test count | Surface (inferred) | Priority | Description |
-|---|---|---:|---|---|---|
-| `FR-002` | unit | 43 | `internal` | `should` | Unit (W28C-1711-R3 ADD-REQ cluster derivation) |
-| `FR-003` | contract | 4 | `internal` | `should` | Contract (W28C-1711-R3 ADD-REQ cluster derivation) |
-| `FR-004` | application | 22 | `a2a,webui` | `should` | Application (W28C-1711-R3 ADD-REQ cluster derivation) |
-| `FR-005` | system | 18 | `internal` | `should` | System (W28C-1711-R3 ADD-REQ cluster derivation) |
-| `FR-006` | parser | 3 | `internal` | `should` | Parser (W28C-1711-R3 ADD-REQ cluster derivation) |
-| `FR-007` | integration | 42 | `a2a,api,cli,internal,webui` | `should` | Integration (W28C-1711-R3 ADD-REQ cluster derivation) |
-| `FR-008` | security | 6 | `internal` | `should` | Security (W28C-1711-R3 ADD-REQ cluster derivation) |
+W28E-1805A makes the Stream-A requirement model authoritative in the canonical FR, CS, and NF tables above. The prior W28C temporary ADD-REQ appendix is retired for this document; every live pytest requirement marker now resolves to a semantic FR, CS, or NF row in this file.

@@ -17,7 +17,7 @@ from index_tools.vdb.registry import VdbRegistry
 import pytest
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-013)
+@pytest.mark.req("FR-013") # W28E-1805A semantic binding
 
 
 def test_vdb_registry_lookup() -> None:

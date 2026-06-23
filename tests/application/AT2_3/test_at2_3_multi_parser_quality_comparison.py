@@ -1,7 +1,7 @@
 # @pytest.mark.AT
 # @pytest.mark.internal
-# @pytest.mark.probe
-# PS-REQ-TEST-TRACE marker anchor for structural conformance.
+# @pytest.mark.req("FR-009")
+# PS-REQ-TEST-TRACE markers are declared in pytestmark below.
 
 # Copyright 2026 Cloud-Dog, Viewdeck Engineering Limited
 #
@@ -25,6 +25,9 @@ import pytest
 
 from tests.integration.it2_matrix_helpers import parse_pdf_with_provider
 from tests.w23a_helpers import corpus_file, parser_available, write_artifact_json
+
+
+pytestmark = [pytest.mark.AT, pytest.mark.internal, pytest.mark.req("FR-009")]
 
 
 @pytest.mark.timeout(600)

@@ -1,7 +1,7 @@
 # @pytest.mark.UT
 # @pytest.mark.internal
-# @pytest.mark.probe
-# PS-REQ-TEST-TRACE marker anchor for structural conformance.
+# @pytest.mark.req("FR-009")
+# PS-REQ-TEST-TRACE markers are declared in pytestmark below.
 
 # Copyright 2026 Cloud-Dog, Viewdeck Engineering Limited
 # Licensed under the Apache License, Version 2.0
@@ -30,6 +30,9 @@ from index_tools.sources.hdro import (
     parse_hdro_records,
 )
 from index_tools.tools.service import IndexService
+
+
+pytestmark = [pytest.mark.UT, pytest.mark.internal, pytest.mark.req("FR-009")]
 
 
 def _sample_payload() -> list[dict[str, str]]:

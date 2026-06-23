@@ -1,9 +1,23 @@
+---
+template-id: T-REQ
+template-version: 1.1
+applies-to: docs/REQUIREMENTS.md
+project: index-retriever-mcp-server
+doc-last-updated: 2026-06-23T00:00:00Z
+doc-git-commit: affbc31376cc03680e72616e4c1db2eefb5d7507
+doc-git-branch: coordinator/20260622-agent-converge/index-retriever-main-merge
+doc-age-policy: indefinite
+doc-conformance-stamp: 2026-06-23T00:00:00Z
+req-trace-version: 1.0
+req-id-prefixes-used: [SV, BO, BR, FR, UC, CS, NF, R, F]
+surface-coverage: [api, mcp, a2a, webui]
+---
+
 # Requirements — index-retriever-mcp-server
 
-## W28A-421 Review Status
-- Reviewed for external/shareable publication during W28A-421.
-- Source basis: `defaults.yaml`, 4 server source files, 3 discovered routes/endpoints, and 60 MCP tools.
-- Internal-only absolute paths, environment-specific hosts, and private registries have been removed from this shareable document set.
+## Provenance
+- Canonical requirements for index-retriever-mcp-server. Reconciled to runtime by W28A-749 (IDAM Thread-b).
+- Source basis: `defaults.yaml`, the API/Web/MCP/A2A servers, and the runtime tool registry (94 tools — `src/index_tools/tools/registry.py`, enforced by `UT1_40`).
 
 **Version:** 1.1  
 **Date:** 2026-02-28  
@@ -66,24 +80,24 @@ Primary goals:
 
 ## 4. High-level Use Cases
 
-### UC-01: Upload file, index into profile collection, then query
+### UC-001: Upload file, index into profile collection, then query
 1. `profile_select(profile="default")`
 2. `ingest_upload(profile="default", collection="kb", file=..., dedupe="hash") -> job_id`
 3. `job_wait(job_id)` (or stream status)
 4. `search(profile="default", collection="kb", query="...", top_k=10) -> results`
 
-### UC-02: Index remote reference (S3/WebDAV/Drive) by URI
+### UC-002: Index remote reference (S3/WebDAV/Drive) by URI
 1. `ingest_reference(profile="p1", uri="s3://bucket/key", options={...}) -> job_id`
 2. System fetches, converts, chunks, embeds, indexes.
 3. `job_get(job_id)` returns success + stats (chunks, tokens, time).
 
-### UC-03: Stream chat messages and index in near-real-time
+### UC-003: Stream chat messages and index in near-real-time
 1. Client opens stream endpoint (SSE/WS).
 2. Client sends message events with metadata (`thread_id`, `user_id`, tags).
 3. Server streams acknowledgements; chunk+embed+index pipeline runs asynchronously.
 4. Retrieval can reference `thread_id` to fetch stateful knowledge.
 
-### UC-04: Duplicate detection on re-upload
+### UC-004: Duplicate detection on re-upload
 1. `ingest_upload(..., dedupe="hash+size+mtime")`
 2. Server computes fingerprints (sha256/xxhash, size, mtime) and checks index metadata.
 3. Policy decides:
@@ -91,20 +105,49 @@ Primary goals:
    - replace existing,
    - version as new document with link to prior.
 
-### UC-05: Admin creates a new profile and collection at runtime
+### UC-005: Admin creates a new profile and collection at runtime
 1. `admin_profile_create(...)` with vdb + embedding settings
 2. `admin_collection_create(profile="p2", collection="finance")`
 3. Admin tests with `admin_test_search(...)`
 4. Profile becomes available without restart (config is persisted).
 
-### UC-06: Retention/cleanup job
+### UC-006: Retention/cleanup job
 1. Admin schedules `retention_run(profile="p1", rule="older_than:90d")`
 2. Job removes old data and updates metadata indexes.
 3. Audit log includes removed document IDs and reason.
 
+### UC-007: Admin users and IDAM route management
+1. An admin opens the WebUI security administration surface.
+2. `/idam/users` remains a compatibility route and `/admin/users` is the canonical users route.
+3. User, group, API-key, role, and RBAC operations remain API-backed and RBAC-governed.
+4. Anonymous callers reach login and authenticated callers use the canonical admin route.
+
 ---
 
 ## 5. Functional Requirements (FR)
+
+### 5.0 PS-REQ-TEST-TRACE canonical FR table
+
+| ID | Requirement | Surface | Priority | Since | Last-verified | Use cases | Tests |
+|---|---|---|---|---|---|---|---|
+| `FR-001` | Expose the API, MCP, A2A, and WebUI interfaces with health, route-prefix, auth, and correlation contracts. | `api`, `mcp`, `a2a`, `webui` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-007` | `T-UT-031`, `T-UT-038`, `T-IT-018` |
+| `FR-002` | Preserve core pipeline, configuration, bootstrap, audit, metadata, connector, job, database, and service-internal behavior without platform bypasses. | `internal`, `mcp` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-002`, `UC-004`, `UC-005` | `T-UT-001`, `T-UT-047`, `T-UT-BOOTSTRAP` |
+| `FR-003` | Provide backend contract parity and service branch coverage for VDB, collection, retention, delete, reindex, and environment-resolution behavior. | `internal`, `mcp` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-006` | `T-CT-001`, `T-UT-033` |
+| `FR-004` | Execute application and WebUI workflows for upload, search, retrieve, cross-backend parity, IDAM, and operator CRUD paths. | `a2a`, `webui`, `api` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-005`, `UC-007` | `T-AT-001`, `T-AT-WEBUI-SECURITY` |
+| `FR-005` | Maintain system-level runtime, migration, cleanup, logging, and operational health behaviors across the configured service stack. | `internal`, `api` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-006` | `T-ST-001`, `T-ST-014`, `T-ST-LOG` |
+| `FR-006` | Preserve parser-tier ingest/search performance baselines and parser throughput comparisons for configured corpora. | `internal` | `should` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-002` | `T-PT-001`, `T-PT-003` |
+| `FR-007` | Prove integration-tier backend, parser, metadata, job, OpenAPI, and transport coverage against real configured dependencies. | `api`, `mcp`, `a2a`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-002`, `UC-003`, `UC-006` | `T-IT-001`, `T-IT-020`, `T-IT-W28E603` |
+| `FR-008` | Maintain security and rules-compliance coverage over authentication, authorization, secret hygiene, and negative-flow posture. | `internal`, `api`, `mcp`, `a2a`, `webui` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-007` | `T-QT-SECURITY`, `T-QT-RULES` |
+| `FR-009` | Support conversion, parsing, OCR, table extraction, source extraction, and ingest-preview wrappers through delegated platform components. | `api`, `mcp`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-002` | `T-ST-015`, `T-IT-017`, `T-AT-023` |
+| `FR-010` | Apply configured chunking and canonical metadata enrichment consistently across ingest, search, retrieve, lifecycle, and delete flows. | `api`, `mcp`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-004` | `T-UT-015`, `T-UT-017`, `T-ST-015` |
+| `FR-011` | Detect duplicates using configured hash/size/mtime policy and record dedupe decisions for audit and job result traceability. | `api`, `mcp`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-004` | `T-UT-018`, `T-UT-020`, `T-UT-022` |
+| `FR-012` | Route embedding-provider selection and embedding dimension validation through configured platform/provider registries. | `internal`, `mcp` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-002` | `T-UT-023`, `T-UT-043`, `T-AT-024` |
+| `FR-013` | Route vector backend operations, provider diagnostics, parser/OCR/table preview dispatch, and VDB capability failures through `cloud_dog_vdb` adapters. | `api`, `mcp`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-002`, `UC-005` | `T-UT-024`, `T-UT-036`, `T-UT-037` |
+| `FR-014` | Return stable search and retrieval output with inline content, source traceability, scores, metadata filters, and explain metadata. | `api`, `mcp`, `webui` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001` | `T-UT-025`, `T-ST-015` |
+| `FR-015` | Support stateful and streaming ingestion sessions with ordering keys, event append, close behavior, and closed-session rejection. | `api`, `mcp`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-003` | `T-UT-033`, `T-IT-012` |
+| `FR-016` | Keep the complete MCP tool inventory documented and matching runtime registration exactly, including 94 unique tools and management operations. | `mcp`, `api` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-007` | `T-UT-040`, `T-SMOKE-TOOLS` |
+| `FR-017` | Preserve WebUI/API parity, controlled operation handling, middleware, and handler-path coverage for operator workflows. | `api`, `mcp`, `webui`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-006`, `UC-007` | `T-UT-035`, `T-AT-WEBUI-CRUD` |
+| `FR-018` | Bind the WebUI IDAM/admin route contract, including `/idam/users` and `/admin/users` URL-canonical behavior, to security-admin test design. | `webui`, `api` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-007` | `T-AT-WEBUI-SECURITY` |
 
 ### FR-01 Interfaces: MCP A2A + HTTP API + Admin WebUI (PS-00 P1, PS-20)
 - The system SHALL expose an MCP-compatible A2A tool interface.
@@ -123,7 +166,7 @@ Primary goals:
   - `TEST_MCP_BASE_PATH`
   - `TEST_WEB_BASE_PATH`
   - `TEST_A2A_BASE_PATH`
-- Legacy API path `/app/v1` MAY remain as temporary compatibility alias, but tests and docs SHALL use canonical `/api/v1`.
+- A legacy API alias MAY remain temporarily for backwards compatibility, but tests and docs SHALL use canonical `/api/v1`.
 
 ### FR-01B A2A auth contract parity (W14B-03)
 - API runtime SHALL expose `/a2a` and `/a2a/health`.
@@ -270,6 +313,76 @@ The system SHALL support ingestion of:
 - The delegated preview/ingestion pipeline SHALL default to the recursive chunker when no explicit chunker override is supplied.
 - Overlap behaviour SHALL apply only to the token-overlap strategy; other strategies SHALL preserve their native boundary logic without synthetic overlap insertion.
 
+### FR-10B Canonical metadata uplift contract (W28A-884 Phase 1)
+- The canonical metadata model for `index-retriever-mcp-server` SHALL converge on the `cloud_dog_vdb` metadata contract and SHALL be applied consistently across ingest, retrieval, delete, dedupe, retention, and reindex operations.
+- Status tags in this section mean:
+  - `EXISTING`: already required elsewhere in this document before W28A-884.
+  - `NEW`: introduced normatively by this uplift and not previously required as part of the canonical contract.
+- During migration, compatibility aliases MAY be preserved where already emitted today, but the canonical field names below SHALL become the normative contract.
+
+#### FR-10B.1 Identity and lineage
+- `doc_id` SHALL be returned on retrieval and search results and SHALL become the canonical document identity. `EXISTING`
+- `doc_id` generation SHALL converge on deterministic package-owned computation rather than service-local ad hoc generation. `NEW`
+- `record_id` SHALL identify the stored record written to the backend and SHALL be preserved for package-owned ingest/upsert and delete targeting. `NEW`
+- `chunk_id` SHALL identify the logical chunk within a document and SHALL remain stable across retrieval and delete/filter operations. `EXISTING`
+- `supersedes` SHALL identify the prior `doc_id` or `record_id` replaced by a versioning or dedupe operation. `NEW`
+- `is_latest` SHALL indicate whether a record is the current live version for a source lineage. `NEW`
+
+#### FR-10B.2 Source reference
+- `source_uri` SHALL remain the canonical source locator for traceability, delete targeting, and deterministic identity inputs. `EXISTING`
+- `filename` SHALL remain preserved and returned where derivable from the source reference or uploaded asset. `EXISTING`
+- `mime_type` SHALL remain preserved and returned with ingest and retrieval metadata. `EXISTING`
+- `size_bytes` SHALL become the canonical byte-size field for source payload size. Existing `size` output MAY remain as a temporary compatibility alias during migration. `NEW`
+
+#### FR-10B.3 Integrity
+- `content_hash` SHALL remain preserved as the canonical hash of the indexed content used for dedupe and lineage decisions. `EXISTING`
+- `source_hash` SHALL be added as the canonical hash of the original source payload where available so dedupe and reindex decisions can distinguish source changes from chunking or embedding changes. `NEW`
+
+#### FR-10B.4 Time and lifecycle
+- `created_at` SHALL become a required UTC RFC3339 lifecycle timestamp for the canonical metadata contract. `NEW`
+- `ingested_at` SHALL remain preserved as the ingest-time timestamp surfaced to callers. `EXISTING`
+- `lifecycle_state` SHALL become a required canonical lifecycle field for active, superseded, deleted, or archived records. `NEW`
+- `ttl_days` SHALL be added as the canonical retention-policy field carried with records when retention rules are material to lifecycle processing. `NEW`
+
+#### FR-10B.5 Attribution
+- `app_id` SHALL identify the calling application or integration surface when supplied by the control plane. `NEW`
+- `user_id` SHALL be preserved when user-scoped ingest or stream events are supplied. `EXISTING`
+- `session_id` SHALL be the canonical session or conversation identifier for stateful ingest and retrieval correlation. `NEW`
+- `profile` SHALL remain preserved as the service profile context. `EXISTING`
+- `collection` SHALL remain preserved as the collection/index namespace. `EXISTING`
+
+#### FR-10B.6 Embedding reproducibility
+- `embedding_model` SHALL be preserved with each indexed record to support deterministic rebuild, parity validation, and backend troubleshooting. `NEW`
+- `embedding_dim` SHALL be preserved where known so collection-write and parity checks can verify embedding compatibility. `NEW`
+- `chunker` SHALL be preserved as the canonical chunking strategy or chunker version used to produce the record. `NEW`
+- `token_count` SHALL be preserved where available for sizing, retention, and reproducibility analysis. `NEW`
+
+#### FR-10B.7 Governance
+- `access_tags` SHALL carry portable access-control labels used by metadata filters and policy enforcement. `NEW`
+- `pii_present` SHALL carry a canonical boolean or equivalent flag indicating whether PII was detected or asserted for the record. `NEW`
+
+#### FR-10B.8 Additive provenance
+- `parser` SHALL carry the selected parser provider and version lineage in canonical form. `NEW`
+- `ocr` SHALL carry OCR mode, provider, and decision provenance in canonical form. `NEW`
+- `page` SHALL carry page-level provenance where chunk origin is page-scoped. `NEW`
+- `section` SHALL carry section or heading provenance where extractors provide it. `NEW`
+- `table` SHALL carry table provenance and table-shape references where table extraction contributes to the record. `NEW`
+- `chunk_kind` SHALL distinguish narrative, table, OCR, caption, or other chunk classes where the parser pipeline can determine them. `NEW`
+
+#### FR-10B.9 Boundary rule for metadata ownership
+- `index-retriever-mcp-server` SHALL own transport-level request shaping, caller attribution, profile/collection resolution, and API/MCP response formatting.
+- `cloud_dog_vdb` SHALL own canonical metadata schema definition, validation, deterministic identifier helpers, parser/OCR/table provenance normalization, and backend-portable lifecycle/filter semantics.
+- Service-local metadata shaping that duplicates package-owned canonical rules SHALL be treated as transitional only and SHALL be retired as the package uplift lands.
+
+#### FR-10B.10 Metadata-pack compatibility and management filters
+- The implementation SHALL preserve compatibility with the archived metadata-pack baseline in `cloud-dog-ai-platform-standards/archive/working-2026-05/evidence-dirs/metadata-pack/`.
+- Every ingested record SHALL emit the metadata-pack identity aliases `document_id` and `index_record_id` alongside the active `doc_id` and `record_id` fields until downstream callers have migrated.
+- Every ingested record SHALL emit the metadata-pack management fields `dataset_id`, `collection_id`, `title`, `language`, `status`, `authoritative_source`, `updated_at`, `embedding_dimensions`, `embedding_version`, `index_version`, `pipeline_version`, `chunking_strategy`, `normalisation_version`, `index_family`, `visibility`, `access_scope`, and `retention_class`.
+- Search, retrieve, delete-by-filter, retention, and lifecycle operations SHALL keep `status` aligned with `lifecycle_state` so records can be filtered by active, superseded, deleted, or archived state.
+- Metadata filters SHALL support exact filtering for the metadata-pack mandatory query baseline: `tenant_id`, `dataset_id`, `collection_id`, `document_id`, `chunk_id`, `status`, `language`, `source_type`, `authoritative_source`, `updated_at`, `ingested_at`, `embedding_model`, and `index_version`.
+- Local and backend-backed filtering SHALL support comparison operator objects for time/window filters where the API/MCP caller supplies `gt`, `gte`, `lt`, `lte`, `eq`, `ne`, or `in` forms.
+- Unit and integration tests SHALL prove metadata-pack field emission, retrieve/search round-trip, lifecycle status alignment, and date/operator filtering.
+
 ### FR-11 Deduplication
 - The system SHALL detect duplicates using configurable strategies:
   - size + mtime,
@@ -395,9 +508,9 @@ Admin/maintainer tools SHALL include:
 - diagnostics (backend connectivity, embedding provider tests),
 - test search and retrieval tools.
 
-### FR-16A Complete MCP tool inventory contract
+### FR-016 Complete MCP tool inventory contract
 - The documented MCP catalogue SHALL match the actual registered runtime inventory exactly.
-- The current registered tool count SHALL be **60** tools.
+- The current registered tool count SHALL be **94** tools (verified: `src/index_tools/tools/registry.py` runtime build = 94 unique; `UT1_40` asserts `len(tools) == 94`; includes the 22 W28E-603/W28M-1603D document-structure tools). Reconciled to runtime by W28M-1603D.
 - Tool documentation SHALL include, for every registered tool:
   - tool name,
   - operator intent/description,
@@ -428,6 +541,13 @@ Admin/maintainer tools SHALL include:
 ---
 
 ## 6. Non-Functional Requirements (NFR)
+
+| ID | Requirement | Surface | Priority | Since | Last-verified | Use cases | Tests |
+|---|---|---|---|---|---|---|---|
+| `NF-001` | Reuse required platform packages for configuration, logging, API, IDAM, jobs, DB, LLM, VDB, and storage concerns; bespoke substitutes are forbidden. | `internal`, `api`, `mcp`, `a2a`, `webui` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-005` | `T-QT-PACKAGE`, `T-QT-MIGRATION` |
+| `NF-002` | Keep configuration, logging, audit, Vault, and secret hygiene enforceable; no credential or secret values may be committed or logged. | `internal`, `api`, `mcp`, `a2a`, `webui` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-007` | `T-QT-VAULT`, `T-QT-LOGGING` |
+| `NF-003` | Preserve engineering discipline: no direct environment fallback chains, no forbidden skips in live tiers, no infrastructure mutation in design lanes, and scoped test integrity. | `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-006` | `T-QT-RULES` |
+| `NF-004` | Maintain documentation, requirement, use-case, test-design, scope-map, and coverage traceability under PS-REQ-TEST-TRACE and PS-CLOSEOUT-WARRANTY. | `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-007` | `T-QT-TRACE`, `T-QT-COVERAGE` |
 
 - **Security**: secrets never logged; RBAC enforced; connector access constrained; encrypted-at-rest creds if stored.
 - **Reliability**: idempotent ingestion; retries with backoff; deterministic job results; recoverable failures.
@@ -485,7 +605,7 @@ Admin/maintainer tools SHALL include:
 - `ocr_run`
 - `table_extract`
 
-### 7.7 Complete runtime tool inventory (60 tools)
+### 7.7 Complete runtime tool inventory (94 tools)
 
 | Tool | Purpose | Primary inputs | Expected output |
 |------|---------|----------------|-----------------|
@@ -604,3 +724,128 @@ Profile concept for this project: index and retrieval profiles defining vector b
 | CFG-11 | User, group, and API-key management SHALL be available via MCP, A2A, and WebUI with RBAC. |
 | CFG-12 | All CRUD operations SHALL be audit logged with user identity, action, timestamp, and outcome. |
 | CFG-13 | Only admin users SHALL be able to create, update, and delete index profiles and manage users or groups; read-only access SHALL be available to authorised non-admin users. |
+
+
+## W28A-883 PS-78 Cross-Platform File Handling Addendum
+
+### Verified current state
+
+- The service already supports ingest upload through the API and MCP: `UploadFile` handling in `api_server.py` and the `ingest_upload` tool in the MCP service layer.
+- The WebUI `IngestSearchPage` already uses `FileDropZone` and upload actions for browser-driven ingest.
+- Current file handling is ingest-centric. No standard file inventory, delete, or binary download lifecycle was found.
+
+### Required additions to satisfy PS-78
+
+- Extend the ingest-only contract to the full file lifecycle: `/files/upload`, `/files/upload_base64`, `/files`, `/files/{id}`, `DELETE /files/{id}`, and `/files/{id}/download`.
+- Add standard MCP file upload/download contracts in addition to `ingest_upload`.
+- Add A2A file transfer payloads for document exchange between retrieval agents.
+- Add URI-source intake for `http://`, `https://`, `s3://`, `ftp://`, and `file://` under explicit policy instead of limiting defaults to upload/text.
+- Add WebUI file inventory and download/delete surfaces for uploaded documents and derived artifacts.
+
+### Required PS-78 test plan
+
+- API: upload, list, download, delete, metadata verification.
+- MCP: `ingest_upload`, base64 upload/download, URI-source intake.
+- A2A: send a document reference or base64 payload to another retrieval-capable agent.
+- WebUI: `FileDropZone` upload, inventory view, download, delete.
+- Retrieval flow: upload document, verify searchable ingest, then verify the stored file lifecycle contract independently of retrieval results.
+
+## W28A-906 WebUI Standards Merge Addendum
+
+This addendum merges the 13-section `INDEX-RETRIEVER-E2E-TEST-SPEC.md` UI scope into normative requirements.
+
+Status labels:
+- `EXISTING`: already required elsewhere in this document before W28A-906.
+- `NEW`: made explicit by W28A-906 because the prior requirements did not state the WebUI contract clearly enough.
+
+### a) Profile Configuration — CRUD, VDB Backend Binding, and RBAC
+- `EXISTING`: The WebUI SHALL provide profile CRUD with vector-backend selection/binding and RBAC-governed mutation controls for runtime profiles.
+
+### b) Collection Management — CRUD and Backend-Aware Configuration
+- `EXISTING`: The WebUI SHALL provide collection CRUD with backend-aware collection settings, dimensions/metric controls, metadata/options, and RBAC-governed mutation controls.
+
+### c) Source Configuration — CRUD, Connector Types, and Schedule
+- `EXISTING`: The WebUI SHALL provide source-config CRUD with connector-type selection, profile/collection targeting, URI/reference fields, schedule fields, and RBAC-governed mutation controls.
+
+### d) Ingest — Text, Upload, Reference, Stream, and Metadata Verification
+- `EXISTING`: The WebUI SHALL provide ingest workflows for text, file upload, URI/reference intake, and streaming/session-oriented ingest surfaces backed by the canonical API/tool contracts.
+- `NEW`: The WebUI SHALL expose canonical metadata entry and post-ingest metadata inspection for ingest operations, including the standard metadata fields uplifted in W28A-884 to W28A-887.
+
+### e) Search, Retrieve, and Explain — Semantic and Metadata Filtering
+- `EXISTING`: The WebUI SHALL provide search and retrieve workflows for indexed content, including result paging, result export, and document/record retrieval.
+- `NEW`: The WebUI SHALL provide metadata-filter entry, metadata inspection, and search-explain visibility for search and retrieval workflows.
+
+### f) Retention, Delete, Reindex, and Lifecycle
+- `EXISTING`: The WebUI SHALL provide retention, delete-by-id, delete-by-filter, and reindex controls with explicit confirmation for destructive operations.
+- `NEW`: The WebUI SHALL expose lifecycle-oriented state and filter surfaces needed to operate retention, delete, and reindex workflows safely.
+
+### g) Parser, OCR, and Table Extraction Preview
+- `EXISTING`: The service SHALL expose parser, OCR, ingest-preview, extract-only, and table-extraction capabilities through the API/MCP surface.
+- `NEW`: The WebUI SHALL expose parser, OCR, and table-extraction preview workflows with operator-visible extracted content, structured metadata, and provenance details.
+
+### h) Cross-Backend Verification — Same Content, Multiple VDBs
+- `NEW`: The WebUI SHALL support operator verification that the same content can be ingested, searched, and compared across the supported vector backends: Qdrant, Chroma, OpenSearch, PGVector, and Weaviate.
+
+### i) Jobs — Async Ingest, Sync, and Retention Monitoring
+- `EXISTING`: The WebUI SHALL expose job-listing, job-detail, status, retry, cancel, and export capabilities for ingest, sync, reindex, and retention workflows.
+
+### j) Observability and Audit — Structured Logs and Metrics
+- `EXISTING`: The WebUI SHALL expose operational health, queue state, backend/embedding health, structured logs, audit-log inspection, and related operator metrics.
+
+### k) Dashboard — Operational Health and Metrics
+- `EXISTING`: The WebUI SHALL provide a dashboard surface for operational health, system metrics, quick actions, and recent operator-visible activity.
+
+### l) Canonical Metadata Round-Trip Verification
+- `NEW`: The WebUI SHALL support operator verification of canonical metadata round-trip behavior for ingest, search, retrieve, lifecycle, and delete flows, aligned to the W28A-884 to W28A-887 metadata uplift.
+
+### m) Full Audit Trail Log Verification
+- `NEW`: The WebUI SHALL support operator verification that mutating operations across sections a-l produce corresponding audit trail records with actor, target, action, outcome, correlation/trace information, and timestamps.
+
+### Shared WebUI Standards Expectations Across Sections a-m
+- `NEW`: CRUD-oriented views SHALL use `DataTable` with `EntityDialog` for add/edit/view interactions unless a stricter platform standard supersedes that pairing.
+- `NEW`: Search/filter-oriented views SHALL use `SearchPanel` where free-text or structured filtering is part of the operator workflow.
+- `NEW`: Structured metadata/config/result inspection views SHALL use `JsonExplorer` instead of raw JSON blocks where hierarchical inspection is required.
+- `NEW`: Code/content/result viewers and editors SHALL use `CodeViewer` and `CodeEditor` where extracted text, prompt/config JSON, diff-like content, or preview payloads require governed editor/viewer behavior.
+- `NEW`: API/MCP/A2A documentation surfaces SHALL use `ApiDocsPanel` with tabbed documentation where multiple protocol/reference families are presented together.
+
+## PS-40 / W28A-619 Logging and Audit Requirements
+
+The service MUST use `cloud_dog_logging` as the only application and audit logging implementation. Raw stdlib logging setup, direct `logging.getLogger()` calls, bespoke audit emitters, and print-based operational logging are not compliant except inside the platform logging package itself.
+
+Every auditable event MUST emit a PS-40/NIST AU-3 audit record with: `event_type`, `action`, `timestamp`, `service`, `component`, `service_instance`, `environment`, `source_host`, `source_process`, `source_application`, `source_address` where available, `destination_address` where available, `outcome`, actor identity including user/service/system plus account/process/device identifiers where available, `target`, `process_id`, `affected_files` where relevant, `correlation_id`, `trace_id`, and `request_id`.
+
+Auditable events MUST include authentication and authorisation decisions, user/group/API-key/RBAC changes, profile/collection/source/ingest/search/retrieve/delete/retention/reindex/parser/OCR operations, MCP/A2A/API calls, job lifecycle changes, configuration changes, data access and mutation, denials, failures, and privileged operations. Secrets MUST be redacted before persistence. Tests MUST cover schema fields, event coverage, redaction, append-only audit persistence, retention/integrity, and WebUI observability rendering/filtering.
+
+## 5. Cyber Security & Negative Flows
+
+Mandatory schema per PS-REQ-TEST-TRACE v1.0 §3.4. Every project covers anon-denied, wrong-role-denied, missing-param-error per declared surface. The CS rows below are platform-baseline; project-specific extensions append in §5.1.
+
+| ID | Threat / negative scenario | Surface | Role(s) attempted | Expected | Tests |
+|---|---|---|---|---|---|
+| `CS-001` | Anon attempts data read | `api`, `mcp`, `a2a`, `webui` | `anon` | `401` | `T-UT-031`, `T-QT-SECURITY` |
+| `CS-002` | read-only attempts write | `api`, `mcp` | `read-only` | `403` | `T-UT-031`, `T-IT-021` |
+| `CS-003` | Missing required param | `api` | `admin` | `422` | `T-UT-031` |
+| `CS-004` | Wrong-role privileged op | `mcp` | `read-write` | `403` | `T-UT-042` |
+
+### 5.1 PS-REQ-TEST-TRACE canonical CS table
+
+| ID | Threat / negative scenario | Surface | Role(s) attempted | Expected | Tests |
+|---|---|---|---|---|---|
+| `CS-001` | Anonymous caller attempts protected data read across service surfaces. | `api`, `mcp`, `a2a`, `webui` | `anon` | `401` | `T-UT-031`, `T-QT-SECURITY` |
+| `CS-002` | Read-only caller attempts mutating or privileged write operation. | `api`, `mcp` | `read-only` | `403` | `T-UT-031`, `T-IT-021` |
+| `CS-003` | Caller omits required request parameter on API operation. | `api` | `admin` | `422` | `T-UT-031` |
+| `CS-004` | Caller with wrong role attempts privileged MCP operation. | `mcp` | `read-write` | `403` | `T-UT-042` |
+| `CS-005` | Anonymous caller attempts protected API operation. | `api` | `anon` | `401` | `T-UT-031` |
+| `CS-006` | Anonymous caller attempts protected MCP operation. | `mcp` | `anon` | `401` | `T-UT-042` |
+| `CS-007` | Anonymous caller attempts protected A2A operation. | `a2a` | `anon` | `401` | `T-UT-042` |
+| `CS-008` | Read-only caller attempts protected API write/admin action. | `api` | `read-only` | `403` | `T-UT-031` |
+| `CS-009` | Read-only caller attempts protected MCP write/admin action. | `mcp` | `read-only` | `403` | `T-UT-042` |
+| `CS-010` | Read-only caller attempts protected A2A write/admin action. | `a2a` | `read-only` | `403` | `T-UT-042` |
+| `CS-011` | API request misses a required parameter and receives structured validation. | `api` | `*` | `422` | `T-UT-031` |
+| `CS-012` | MCP request misses a required parameter and receives structured validation. | `mcp` | `*` | `422` | `T-UT-042` |
+| `CS-013` | A2A request misses a required parameter and receives structured validation. | `a2a` | `*` | `422` | `T-UT-042` |
+
+
+## 10. Traceability Notes
+
+W28E-1805A makes the Stream-A requirement model authoritative in the canonical FR, CS, and NF tables above. The prior W28C temporary ADD-REQ appendix is retired for this document; every live pytest requirement marker now resolves to a semantic FR, CS, or NF row in this file.

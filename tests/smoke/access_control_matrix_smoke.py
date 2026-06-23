@@ -44,7 +44,7 @@ WRITER = "valid-writer-token"
 READER = "valid-reader-token"
 A2A_LOCAL = "12345678"
 
-EXPECTED_TOOL_COUNT = 94  # FR-16A; UT1_40 asserts the same runtime value
+EXPECTED_TOOL_COUNT = 94  # FR-016; UT1_40 asserts the same runtime value
 
 
 def _hdr(token: str | None) -> dict[str, str]:
@@ -63,9 +63,9 @@ def _post(client: TestClient, path: str, payload: dict, token: str | None):
 # --- T0 smoke -------------------------------------------------------------------
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.req("FR-16A")
+@pytest.mark.req("FR-016")
 def test_t0_ir_tools_count_runtime_94(service: IndexService) -> None:
-    """T0-IR-TOOLS-COUNT: runtime registry == 94, unique (reconciles FR-16A docs)."""
+    """T0-IR-TOOLS-COUNT: runtime registry == 94, unique (reconciles FR-016 docs)."""
     reg = build_default_tool_registry()
     tools = reg.list_tools()
     names = [t["name"] if isinstance(t, dict) else t.name for t in tools]

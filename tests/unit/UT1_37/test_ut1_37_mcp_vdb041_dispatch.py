@@ -120,7 +120,7 @@ class _ToolService:
         return {"documents": 3}
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-013)
+@pytest.mark.req("FR-013") # W28E-1805A semantic binding
 
 
 def test_required_roles_for_new_wrapper_tools() -> None:
@@ -129,7 +129,7 @@ def test_required_roles_for_new_wrapper_tools() -> None:
     assert mcp_server._required_permission_for_tool("extract_only") == "collection.write"
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-013)
+@pytest.mark.req("FR-013") # W28E-1805A semantic binding
 
 
 def test_execute_tool_dispatches_vdb_wrapper_calls() -> None:
@@ -259,7 +259,7 @@ def test_execute_tool_dispatches_vdb_wrapper_calls() -> None:
     ]
 @pytest.mark.UT
 @pytest.mark.mcp
-@pytest.mark.probe  # W28C-1711-R3.5 invalid-binding archived (FR-013)
+@pytest.mark.req("FR-013") # W28E-1805A semantic binding
 
 
 def test_execute_tool_search_explain_returns_plan_and_scoring_metadata() -> None:

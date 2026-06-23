@@ -17,6 +17,7 @@ import pytest
 @pytest.mark.IT
 @pytest.mark.mcp
 @pytest.mark.req("FR-007")
+@pytest.mark.req("FR-015")
 
 
 def test_streaming_ingest_sse(live_service: LiveIndexRuntime) -> None:

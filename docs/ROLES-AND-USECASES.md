@@ -66,22 +66,37 @@ Unresolved/blank role normalises to `viewer` (`_canonical_role`). Flat-login pro
 
 ## 2. Use-cases (VERBATIM from `REQUIREMENTS.md` §4)
 
-- **UC-01 — Upload file, index into profile collection, then query:** `profile_select(profile="default")` →
+- **UC-001 — Upload file, index into profile collection, then query:** `profile_select(profile="default")` →
   `ingest_upload(profile="default", collection="kb", file=…, dedupe="hash") -> job_id` → `job_wait(job_id)` →
   `search(profile="default", collection="kb", query="…", top_k=10) -> results`.
-- **UC-02 — Index remote reference (S3/WebDAV/Drive) by URI:** `ingest_reference(profile="p1",
+- **UC-002 — Index remote reference (S3/WebDAV/Drive) by URI:** `ingest_reference(profile="p1",
   uri="s3://bucket/key", options={…}) -> job_id`; system fetches, converts, chunks, embeds, indexes;
   `job_get(job_id)` returns success + stats (chunks, tokens, time).
-- **UC-03 — Stream chat messages and index in near-real-time:** client opens a stream endpoint (SSE/WS); sends
+- **UC-003 — Stream chat messages and index in near-real-time:** client opens a stream endpoint (SSE/WS); sends
   message events with metadata (`thread_id`, `user_id`, tags); server streams acknowledgements; the
   chunk+embed+index pipeline runs asynchronously; retrieval can reference `thread_id`.
-- **UC-04 — Duplicate detection on re-upload:** `ingest_upload(…, dedupe="hash+size+mtime")`; server computes
+- **UC-004 — Duplicate detection on re-upload:** `ingest_upload(…, dedupe="hash+size+mtime")`; server computes
   fingerprints and checks index metadata; policy decides skip / replace / version-as-new with link to prior.
-- **UC-05 — Admin creates a new profile and collection at runtime:** `admin_profile_create(…)` →
+- **UC-005 — Admin creates a new profile and collection at runtime:** `admin_profile_create(…)` →
   `admin_collection_create(profile="p2", collection="finance")` → `admin_test_search(…)`; profile becomes
   available without restart (config is persisted).
-- **UC-06 — Retention/cleanup job:** admin schedules `retention_run(profile="p1", rule="older_than:90d")`; job
+- **UC-006 — Retention/cleanup job:** admin schedules `retention_run(profile="p1", rule="older_than:90d")`; job
   removes old data and updates metadata indexes; audit log includes removed document IDs and reason.
+- **UC-007 — Admin users and IDAM route management:** admin opens the security administration surface; `/idam/users`
+  remains a compatibility route and `/admin/users` is the canonical users route; all IDAM operations remain
+  API-backed and RBAC-governed.
+
+### 2.1 Cross-surface UC matrix (W28E-1805A)
+
+| UC | Goal | Roles | API mapping | MCP mapping | A2A mapping | WebUI mapping | Test design rows |
+|---|---|---|---|---|---|---|---|
+| `UC-001` | Upload/index/query content in a profile collection. | `user`, `viewer`, `admin` | `FR-001`, `FR-004`, `FR-010`, `FR-014` | `FR-001`, `FR-009`, `FR-014` | `FR-001`, `FR-007` | `FR-004`, `FR-017` | `T-AT-001`, `T-ST-015`, `T-IT-001` |
+| `UC-002` | Index remote references and source extraction outputs. | `user`, `admin` | `FR-009`, `FR-013` | `FR-009`, `FR-013` | `FR-007` | `FR-017` | `T-IT-017`, `T-ST-015` |
+| `UC-003` | Stream event content into an ordered ingest session. | `user` | `FR-015` | `FR-015` | `FR-007` | `N-A` | `T-IT-012`, `T-UT-033` |
+| `UC-004` | Detect duplicate uploads and apply configured dedupe policy. | `user`, `admin` | `FR-011` | `FR-011` | `N-A` | `FR-017` | `T-UT-018`, `T-UT-020`, `T-UT-022` |
+| `UC-005` | Administer profiles, collections, tools, jobs, and backend health. | `admin`, `maintainer` | `FR-003`, `FR-005`, `FR-016`, `FR-017` | `FR-003`, `FR-016` | `FR-007` | `FR-004`, `FR-017` | `T-UT-040`, `T-IT-020`, `T-AT-WEBUI-SECURITY` |
+| `UC-006` | Run retention, delete, reindex, and cleanup operations with audit. | `admin`, `maintainer` | `FR-003`, `FR-005`, `FR-017` | `FR-003`, `FR-017` | `FR-007` | `FR-017` | `T-UT-033`, `T-ST-014` |
+| `UC-007` | Operate IDAM users/groups/API keys/RBAC and route users through canonical admin URLs. | `admin`, `group-admin`, `user`, `anon` | `FR-001`, `FR-018`, `CS-001`, `CS-002` | `FR-016`, `CS-004` | `CS-007`, `CS-010` | `FR-018`, `FR-004` | `T-AT-WEBUI-SECURITY`, `T-UT-031`, `T-UT-042` |
 
 ---
 
@@ -91,17 +106,17 @@ See `working/w28a-749/B3-INDEX-RETRIEVER-MATRIX.md` §3 for the full 17-row matr
 
 | Req | Action | Role | Surfaces | Test-IDs |
 |---|---|---|---|---|
-| UC-01 | ingest→search | user(write)/viewer(read) | MCP/API/A2A/WebUI | T0-IR-INGEST, T0-IR-SEARCH, T3-IR-UPLOAD-QUERY |
-| UC-02/03/04 | ingest ref / stream / dedupe | user | MCP/API/A2A | T3-IR-REFERENCE/STREAM/DEDUPE |
-| UC-05 | profile+collection CRUD runtime | admin | MCP/API/WebUI | T3-IR-PROFILE-CRUD, T3-IR-COLLECTION-CRUD, T9-IR-PROFILE-LIVE |
-| UC-06 | retention | admin/maintainer | MCP/API/WebUI | T3-IR-RETENTION |
+| UC-001 | ingest→search | user(write)/viewer(read) | MCP/API/A2A/WebUI | T0-IR-INGEST, T0-IR-SEARCH, T3-IR-UPLOAD-QUERY |
+| UC-002/03/04 | ingest ref / stream / dedupe | user | MCP/API/A2A | T3-IR-REFERENCE/STREAM/DEDUPE |
+| UC-005 | profile+collection CRUD runtime | admin | MCP/API/WebUI | T3-IR-PROFILE-CRUD, T3-IR-COLLECTION-CRUD, T9-IR-PROFILE-LIVE |
+| UC-006 | retention | admin/maintainer | MCP/API/WebUI | T3-IR-RETENTION |
 | FR-04 | AuthN gate | ANON→401 | all | T1-IR-AUTH-401 |
 | FR-01B | A2A auth | ANON/service | A2A | T1-IR-A2A-401 |
 | FR-05/16 | RBAC; admin-only admin tools | admin/user/viewer | all | T2-IR-ADMINONLY, T2-IR-COLLECTION-RBAC |
-| FR-06 | audit coverage | system | all | T1-IR-AUDIT-COVERAGE |
-| FR-07 | jobs CRUD | job-control/maintainer | MCP/API/WebUI | T2-IR-JOBS-RBAC |
-| FR-14 | search/retrieve, stable IDs | viewer/user | all | T3-IR-SEARCH-SCOPE |
-| FR-16A | tool inventory == runtime (94) | any | MCP | T0-IR-TOOLS-COUNT |
+| FR-006 | audit coverage | system | all | T1-IR-AUDIT-COVERAGE |
+| FR-007 | jobs CRUD | job-control/maintainer | MCP/API/WebUI | T2-IR-JOBS-RBAC |
+| FR-014 | search/retrieve, stable IDs | viewer/user | all | T3-IR-SEARCH-SCOPE |
+| FR-016 | tool inventory == runtime (94) | any | MCP | T0-IR-TOOLS-COUNT |
 | RULES | connector scope/traversal | any | MCP/API | T0-IR-SCOPE-DENY, T3-IR-CONNECTOR-SCOPE |
 | IDAM-B2 §3.3 | non-admin sees no secret | non-admin | all | T2-IR-NOSECRET |
 | **CASCADE** | **group-admin adds U→G; U reads collection C only** | **group-admin / GROUPUSER** | **all** | **T3-IR-CASCADE** |
@@ -142,18 +157,18 @@ can't write C / can't read D → group-admin removes U → 403, no restart. **He
 ## 5. WebUI page → use-case → role (b-5; no orphan page; WebUI↔API parity)
 
 Every SPA route (verified `cloud-dog-ai-ui-monorepo/apps/index-retriever/src/routes/App.tsx:327-357`) is a
-strict API client (FR-17). Canonical entry `/dashboard`; `/`, `/login`, `*` → `/dashboard`.
+strict API client (FR-017). Canonical entry `/dashboard`; `/`, `/login`, `*` → `/dashboard`.
 
 | Route | Page | Use-case / requirement | Min role | Backing API |
 |---|---|---|---|---|
 | `/dashboard` | DashboardPage | service overview | viewer | `/api/status`, `/api/v1/health` |
-| `/profiles` | ProfileCrudPage | UC-05, FR-03 profile CRUD | admin (write) / viewer (read) | `admin_profile_*`, `profiles_list` |
-| `/collections` | CollectionCrudPage | UC-05, FR-16 collection CRUD | admin (write) / viewer (read) | `admin_collection_*`, `collections_list` |
-| `/source-config` ("File Ingest") | SourceConfigPage | UC-02, FR-08 source config | user (`source.configure`) | `admin_source_config_*`, `source_configs_list` |
-| `/ingest-search` ("Search Retrieve") | IngestSearchPage | UC-01/04, FR-14 ingest+search | user (ingest) / viewer (search) | `ingest_*`, `search`, `retrieve` |
-| `/retention-delete` | RetentionDeletePage | UC-06, FR-16 retention/purge | admin/maintainer | `retention_run`, `delete_by_*`, `reindex_run` |
-| `/jobs` | JobsPageView | FR-07 job control (PS-76) | job-control/maintainer | `job_list/get/cancel/retry`, `queue_status` |
-| `/observability` | ObservabilityPage | FR-06 audit/logs | audit-log/admin | `/api/logs`, `/api/audit-log`, `/api/config-events` |
+| `/profiles` | ProfileCrudPage | UC-005, FR-003 profile CRUD | admin (write) / viewer (read) | `admin_profile_*`, `profiles_list` |
+| `/collections` | CollectionCrudPage | UC-005, FR-016 collection CRUD | admin (write) / viewer (read) | `admin_collection_*`, `collections_list` |
+| `/source-config` ("File Ingest") | SourceConfigPage | UC-002, FR-008 source config | user (`source.configure`) | `admin_source_config_*`, `source_configs_list` |
+| `/ingest-search` ("Search Retrieve") | IngestSearchPage | UC-001/04, FR-014 ingest+search | user (ingest) / viewer (search) | `ingest_*`, `search`, `retrieve` |
+| `/retention-delete` | RetentionDeletePage | UC-006, FR-016 retention/purge | admin/maintainer | `retention_run`, `delete_by_*`, `reindex_run` |
+| `/jobs` | JobsPageView | FR-007 job control (PS-76) | job-control/maintainer | `job_list/get/cancel/retry`, `queue_status` |
+| `/observability` | ObservabilityPage | FR-006 audit/logs | audit-log/admin | `/api/logs`, `/api/audit-log`, `/api/config-events` |
 | `/mcp-console` | McpConsolePage | PS-72 MCP console | user | `/mcp`, `GET /mcp/tools` |
 | `/a2a-console` | A2aConsolePage | PS-72 A2A console | user | `/a2a`, `/a2a/events` |
 | `/api-docs` | ApiDocsPage | PS-74 API docs | viewer | `/api-docs`, `openapi.json` |
@@ -167,23 +182,9 @@ strict API client (FR-17). Canonical entry `/dashboard`; `/`, `/login`, `*` → 
 | `/admin` | →`/idam/users` | legacy gateway | — | redirect |
 
 **No orphan page:** every route maps to a use-case/FR + role above. **Parity:** each page calls only the API
-(FR-17); every admin action is reachable in MCP/API; destructive actions (`/retention-delete`) require explicit
-confirmation (FR-17). The `/idam/*` pages are the shared `@cloud-dog/idam` components (PS-71, W28A-876).
+(FR-017); every admin action is reachable in MCP/API; destructive actions (`/retention-delete`) require explicit
+confirmation (FR-017). The `/idam/*` pages are the shared `@cloud-dog/idam` components (PS-71, W28A-876).
 
+## 6. Stream-A Traceability Note
 
-<!-- W28C-1710b design-delta additions (2026-06-14T18:01:23Z) -->
-
-## Cross-surface UC mappings (W28C-1710b)
-
-Per T-RUC v1.1 + PS-REQ-TEST-TRACE §3.5, every UC-NNN maps to one OR MORE FR-NNN across surfaces.
-
-This service's surface set: **api, mcp, a2a**.
-
-Detailed UC-by-UC operator-review pass + per-FR cross-surface mapping deferred to W28C-1711. The cross-surface declarations are enabled here.
-
-```yaml
-# Schema for every UC-NNN (default; operator amends per UC):
-surfaces: ['api', 'mcp', 'a2a']
-roles: [admin, read-write, read-only, anon]
-FR-mapping: []  # populated by W28C-1711
-```
+W28E-1805A makes the cross-surface UC matrix in section 2.1 authoritative for Stream-A. Each UC maps to one or more canonical FR or CS rows and to a test-design row; Stream-B and Stream-C consume this design without adding implementation or WebUI-E2E work in this lane.

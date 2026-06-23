@@ -1,7 +1,7 @@
 # @pytest.mark.QT
 # @pytest.mark.internal
-# @pytest.mark.probe
-# PS-REQ-TEST-TRACE marker anchor for structural conformance.
+# @pytest.mark.req("NF-003")
+# PS-REQ-TEST-TRACE markers are declared in pytestmark below.
 
 # Copyright 2026 Cloud-Dog, Viewdeck Engineering Limited
 #
@@ -25,6 +25,11 @@ import ast
 import re
 from collections import defaultdict
 from pathlib import Path
+
+import pytest
+
+
+pytestmark = [pytest.mark.QT, pytest.mark.internal, pytest.mark.req("NF-003")]
 
 
 def _rel(project_root: Path, file_path: Path) -> str:

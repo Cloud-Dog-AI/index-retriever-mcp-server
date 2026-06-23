@@ -63,6 +63,7 @@ def test_service_document_reference_and_jobs(service: IndexService, tmp_path) ->
 @pytest.mark.UT
 @pytest.mark.mcp
 @pytest.mark.req("FR-003")
+@pytest.mark.req("FR-015")
 
 
 def test_service_delete_reindex_retention_and_stream_errors(service: IndexService) -> None:
