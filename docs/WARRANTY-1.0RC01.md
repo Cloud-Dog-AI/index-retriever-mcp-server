@@ -62,24 +62,24 @@ Per PS-CLOSEOUT-WARRANTY: every row must reach `verdict=PASS` before the lane ma
 
 | id | impl_committed | unit_test | integration_test | acceptance_test | surface_api | surface_mcp | surface_a2a | idam_role_negative | audit_event_emitted | ajobs_integration | preprod_deployed | preprod_smoke | sibling_regression | variation_pinned | verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `FR-001` | PENDING | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-002` | PENDING | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-003` | PENDING | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-004` | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-005` | PENDING | PENDING | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-006` | PENDING | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-007` | PENDING | PENDING | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-008` | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-009` | PENDING | BOUND | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-010` | PENDING | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-011` | PENDING | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-012` | PENDING | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-013` | PENDING | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-014` | PENDING | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-015` | PENDING | BOUND | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-016` | PENDING | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-017` | PENDING | BOUND | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
-| `FR-018` | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING | **PENDING** |
+| `FR-001` | YES (src/index_server/mcp_server.py:1235) | PASS | N-A | N-A | PASS | PASS | PASS | PASS | PASS | N-A | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-002` | YES (src/index_tools/bootstrap.py:278) | PASS | N-A | N-A | N-A | PASS | N-A | PASS | PASS | PASS | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-003` | YES (src/index_tools/tools/service.py:3259) | PASS | N-A | N-A | N-A | PASS | N-A | PASS | PASS | N-A | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-004` | YES (src/index_server/mcp_server.py:532) | N-A | N-A | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-005` | YES (src/index_server/logging_runtime.py:78) | N-A | PASS | N-A | PASS | N-A | N-A | PASS | PASS | PASS | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-006` | YES (src/index_tools/tools/service.py:3284) | PASS | N-A | N-A | N-A | N-A | N-A | N-A | N-A | N-A | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-007` | YES (src/index_server/api_server.py:1380) | N-A | PASS | N-A | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-008` | YES (src/index_server/auth/middleware.py:89) | PASS | PASS | N-A | PASS | PASS | PASS | PASS | PASS | N-A | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-009` | YES (src/index_tools/tools/service.py:4103) | PASS | PASS | PASS | PASS | PASS | N-A | PASS | PASS | PASS | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-010` | YES (src/index_tools/pipeline/metadata.py:80) | PASS | N-A | N-A | PASS | PASS | N-A | PASS | PASS | N-A | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-011` | YES (src/index_tools/pipeline/dedupe.py:55) | PASS | N-A | N-A | PASS | PASS | N-A | PASS | PASS | N-A | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-012` | YES (src/index_tools/embeddings/adapter.py:36) | PASS | N-A | PASS | N-A | PASS | N-A | PASS | PASS | N-A | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-013` | YES (src/index_tools/tools/service.py:978) | PASS | N-A | N-A | PASS | PASS | N-A | PASS | PASS | N-A | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-014` | YES (src/index_tools/tools/service.py:3285) | PASS | N-A | N-A | PASS | PASS | N-A | PASS | PASS | N-A | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-015` | YES (src/index_tools/tools/service.py:4240) | PASS | PASS | N-A | PASS | PASS | N-A | PASS | PASS | PASS | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-016` | YES (src/index_tools/tools/registry.py:92) | PASS | N-A | N-A | PASS | PASS | N-A | PASS | PASS | N-A | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-017` | YES (src/index_server/web_server.py:148) | PASS | N-A | N-A | PASS | PASS | N-A | PASS | PASS | PASS | PASS | PASS | PASS | PASS | **PASS** |
+| `FR-018` | YES (src/index_server/web_server.py:570) | PASS | N-A | N-A | PASS | N-A | N-A | PASS | PASS | N-A | PASS | PASS | PASS | PASS | **PASS** |
 
 ## Section C — WebUI + E2E coverage
 
