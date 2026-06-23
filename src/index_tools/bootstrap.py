@@ -275,6 +275,7 @@ def apply_seed(
     token_resolver: EnvTokenResolver | None = None,
 ) -> dict[str, int]:
     """Apply the seed to the given ``IndexService``."""
+    # req: FR-002
     summary = {
         "groups_applied": 0,
         "users_applied": 0,

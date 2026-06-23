@@ -809,6 +809,7 @@ class _ServiceBackedBroadcaster:
 
 def build_api_app(service: IndexService | None = None, *, surface_name: str = "api_server") -> Any:
     """Execute build api app."""
+    # req: FR-001
     # Covers: FR-01, FR-01A, FR-17
     init_platform_logging(surface_name)
     runtime_cfg = load_runtime_config(env_files=runtime_env_files(), unresolved_policy="strict")
@@ -1376,6 +1377,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     def call_tool(tool_name: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         """Execute call tool."""
+        # req: FR-007
         # Covers: FR-17
         identity = _auth_or_raise(request, _headers_from_request(request))
         # W28A-749: resource-bearing tools are gated resource-aware inside execute_tool

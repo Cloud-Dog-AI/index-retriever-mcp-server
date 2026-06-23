@@ -89,6 +89,7 @@ class ToolRegistry:
 
 def build_default_tool_registry() -> ToolRegistry:
     """Execute build default tool registry."""
+    # req: FR-016
     registry = ToolRegistry()
     specs: list[ToolSpec] = [
         # -- Profiles --

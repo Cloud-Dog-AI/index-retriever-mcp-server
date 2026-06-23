@@ -3,11 +3,11 @@ template-id: T-RCM
 template-version: 1.0
 applies-to: docs/REQ-COVERAGE.md
 project: index-retriever-mcp-server
-doc-last-updated: 2026-06-23T15:29:01.318751+00:00
-doc-git-commit: affbc31376cc03680e72616e4c1db2eefb5d7507
+doc-last-updated: 2026-06-23T17:41:20.879189+00:00
+doc-git-commit: 4ddf91083165a82194c4ca3c0bdde43e28db5906
 doc-git-branch: coordinator/20260622-agent-converge/index-retriever-main-merge
 doc-age-policy: 30d
-doc-conformance-stamp: 2026-06-23T15:29:01.318751+00:00
+doc-conformance-stamp: 2026-06-23T17:41:20.879189+00:00
 generated-by: scripts/generate-req-coverage.py
 ---
 
@@ -18,9 +18,9 @@ generated-by: scripts/generate-req-coverage.py
 
 ## 1. Latest generation
 
-- **Generated at:** 2026-06-23T15:29:01.318751+00:00
-- **Source REQ commit:** b67f36c
-- **Source TEST commit:** b67f36c
+- **Generated at:** 2026-06-23T17:41:20.879189+00:00
+- **Source REQ commit:** 4ddf910
+- **Source TEST commit:** 4ddf910
 
 ## 2. Coverage summary
 
@@ -54,7 +54,7 @@ Coverage % = 100.0%
 | FR-005 | internal, api | must | tests/system/ST1_13/test_st1_13_no_fallback_backend_identity.py, tests/system/ST1_3/test_st1_3.py, tests/system/ST1_12/test_st1_12.py, tests/system/ST1_2/test_st1_2.py, tests/system/ST1_14/test_st1_14_database_migration.py, tests/system/ST1_14/test_st1_14_database_migration.py, tests/system/ST1_14/test_st1_14_database_migration_multibackend.py, tests/system/ST1_14/test_st1_14_database_migration_multibackend.py, tests/system/ST_IntegrityVerifier/test_integrity_running.py, tests/system/ST_IntegrityVerifier/test_integrity_running.py, tests/system/ST_IntegrityVerifier/test_integrity_running.py, tests/system/ST1_6/test_st1_6.py, tests/system/ST1_8/test_st1_8.py, tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py, tests/system/ST1_5/test_st1_5.py, tests/system/ST1_1/test_st1_1.py, tests/system/ST1_11/test_st1_11.py, tests/system/ST1_10/test_st1_10.py, tests/system/ST_LogRotation/test_rotation_config.py, tests/system/ST_LogRotation/test_rotation_config.py, tests/system/ST1_7/test_st1_7.py, tests/system/ST1_4/test_st1_4.py, tests/system/ST1_9/test_st1_9.py, tests/integration/IT1_21/test_it1_21_collection_rbac.py | — | — | — | COVERED-BOUND |
 | FR-006 | internal | should | tests/unit/UT1_7/test_ut1_7_audit_event_shape.py, tests/parser/PT1_3/test_pt1_3_parser_throughput_comparison.py, tests/parser/PT1_1/test_pt1_1_backend_ingest_baseline.py, tests/parser/PT1_2/test_pt1_2_backend_search_latency.py | — | — | — | COVERED-BOUND |
 | FR-007 | api, mcp, a2a, internal | must | tests/integration/IT1_21/test_it1_21_jobs_migration.py, tests/integration/IT2_5/test_it2_5_weaviate_contract.py, tests/integration/IT2_14/test_it2_14_table_extraction_matrix.py, tests/integration/IT1_11/test_it1_11.py, tests/integration/IT1_5/test_it1_5.py, tests/integration/IT1_14/test_it1_14.py, tests/integration/IT2_2/test_it2_2_qdrant_contract.py, tests/integration/IT2_11/test_it2_11_transformers_parser.py, tests/integration/IT1_1/test_it1_1.py, tests/integration/IT2_3/test_it2_3_opensearch_contract.py, tests/integration/IT1_10/test_it1_10.py, tests/integration/IT1_3/test_it1_3.py, tests/integration/IT1_9/test_it1_9.py, tests/integration/IT2_7/test_it2_7_deepdoc_parser.py, tests/integration/IT2_4/test_it2_4_pgvector_contract.py, tests/integration/IT1_13/test_it1_13.py, tests/integration/IT1_8/test_it1_8.py, tests/integration/IT1_12/test_it1_12.py, tests/integration/IT2_15_DatabaseStartup/test_it2_15_database_startup.py, tests/integration/IT1_22/test_it1_22_admin_rest_config_crud.py, tests/integration/IT1_22/test_it1_22_admin_rest_config_crud.py, tests/integration/IT1_18/test_it1_18_a2a_health_auth_matrix.py, tests/integration/IT2_9/test_it2_9_mineru_parser.py, tests/integration/IT_W28E603_Phase25/test_it_w28e603_phase25.py, tests/integration/IT_W28E603_Phase25/test_it_w28e603_phase25.py, tests/integration/IT_W28E603_Phase25/test_it_w28e603_phase25.py, tests/integration/IT_W28E603_Phase25/test_it_w28e603_phase25.py, tests/integration/IT_W28E603_Phase25/test_it_w28e603_phase25.py, tests/integration/IT_W28E603_Phase25/test_it_w28e603_a2a_skills.py, tests/integration/IT_W28E603_Phase25/test_it_w28e603_a2a_skills.py, tests/integration/IT_W28E603_Phase25/test_it_w28e603_webui.py, tests/integration/IT_W28E603_Phase25/test_it_w28e603_webui.py, tests/integration/IT1_23/test_it1_23_core_metadata.py, tests/integration/IT1_23/test_it1_23_core_metadata.py, tests/integration/IT1_23/test_it1_23_core_metadata.py, tests/integration/IT1_23/test_it1_23_core_metadata.py, tests/integration/IT2_1/test_it2_1_chroma_contract.py, tests/integration/IT1_16/test_it1_16.py, tests/integration/IT1_4/test_it1_4.py, tests/integration/IT_W28E603_StructureTransports/test_it_w28e603_structure_transports.py, tests/integration/IT_W28E603_StructureTransports/test_it_w28e603_structure_transports.py, tests/integration/IT_W28E603_StructureTransports/test_it_w28e603_structure_transports.py, tests/integration/IT_W28E603_StructureTransports/test_it_w28e603_structure_transports.py, tests/integration/IT1_6/test_it1_6.py, tests/integration/IT1_15/test_it1_15.py, tests/integration/IT2_10/test_it2_10_marker_parser.py, tests/integration/IT2_16/test_it2_16_provenance_contract.py, tests/integration/IT2_16/test_it2_16_provenance_contract.py, tests/integration/IT2_16/test_it2_16_provenance_contract.py, tests/integration/IT1_20/test_it1_20_job_management_tools.py, tests/integration/IT2_8/test_it2_8_docling_parser.py, tests/integration/IT1_2/test_it1_2.py, tests/integration/IT2_13/test_it2_13_ocr_provider_matrix.py, tests/integration/IT1_24/test_it1_24_openapi_contract.py, tests/integration/IT1_7/test_it1_7.py, tests/integration/IT2_12/test_it2_12_internal_parser.py, tests/integration/IT1_19/test_it1_19_no_fallback_backend_identity.py, tests/integration/IT2_6/test_it2_6_infinity_contract.py | — | — | — | COVERED-BOUND |
-| FR-008 | internal, api, mcp, a2a, webui | must | tests/security/QT1_6/test_qt1_6.py, tests/security/QT1_1/test_qt1_1.py, tests/security/QT1_2/test_qt1_2.py, tests/security/QT1_4/test_qt1_4.py, tests/security/QT1_3/test_qt1_3.py, tests/security/QT1_5/test_qt1_5.py | — | — | — | COVERED-BOUND |
+| FR-008 | internal, api, mcp, a2a, webui | must | tests/integration/IT1_25_IdamCascade/test_it1_25_idam_role_cascade.py, tests/integration/IT1_25_IdamCascade/test_it1_25_idam_role_cascade.py, tests/security/QT1_6/test_qt1_6.py, tests/security/QT1_1/test_qt1_1.py, tests/security/QT1_2/test_qt1_2.py, tests/security/QT1_4/test_qt1_4.py, tests/security/QT1_3/test_qt1_3.py, tests/security/QT1_5/test_qt1_5.py | — | — | — | COVERED-BOUND |
 | FR-009 | api, mcp, internal | must | tests/unit/UT_W28D440E5/test_hdro_extractor.py, tests/application/AT2_3/test_at2_3_multi_parser_quality_comparison.py, tests/system/ST1_15/test_st1_15_e2e_gap_coverage.py, tests/system/ST1_15/test_st1_15_e2e_gap_coverage.py, tests/system/ST1_15/test_st1_15_e2e_gap_coverage.py, tests/integration/IT_W28D440E5/test_hdro_live.py, tests/integration/IT1_17/test_it1_17.py | — | — | — | COVERED-BOUND |
 | FR-010 | api, mcp, internal | must | tests/unit/UT1_17/test_ut1_17_metadata_enrichment.py, tests/unit/UT1_15/test_ut1_15_chunking_token_strategy.py | — | — | — | COVERED-BOUND |
 | FR-011 | api, mcp, internal | must | tests/unit/UT1_18/test_ut1_18_dedupe_hash_detection.py | — | — | — | COVERED-BOUND |

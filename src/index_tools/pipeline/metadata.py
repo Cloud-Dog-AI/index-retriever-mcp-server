@@ -77,6 +77,7 @@ def build_metadata(
     filename even when the ``upload://`` URI scheme would confuse
     ``mimetypes.guess_type``.
     """
+    # req: FR-010
     # Covers: FR-10, FR-14
     source_uri = normalise_source_uri(source)
     content_text = content.decode("utf-8", errors="replace")

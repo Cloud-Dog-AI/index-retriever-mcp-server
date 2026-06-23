@@ -9,7 +9,7 @@ doc-git-branch: coordinator/20260622-agent-converge/index-retriever-main-merge
 doc-age-policy: 90d
 doc-conformance-stamp: 2026-06-23T00:00:00Z
 req-trace-version: 1.0
-total-tests: 395
+total-tests: 397
 coverage-percent: 100
 ---
 
@@ -22,9 +22,9 @@ coverage-percent: 100
 | `QT` | Yes | 47 | Stream-A design-bound; execute in owning tier gate |
 | `UT` | Yes | 235 | Stream-A design-bound; execute in owning tier gate |
 | `ST` | Yes | 26 | Stream-A design-bound; execute in owning tier gate |
-| `IT` | Yes | 61 | Stream-A design-bound; execute in owning tier gate |
+| `IT` | Yes | 63 | Stream-A design-bound + W28E-1805B IT1.25 IDAM cascade |
 | `AT` | Yes | 26 | Stream-A design-bound; execute in owning tier gate |
-| **Total** | - | **395** | Stream-A catalogue generated from current test markers |
+| **Total** | - | **397** | Stream-A catalogue + W28E-1805B IT1.25 (IDAM role cascade) |
 
 Standard commands:
 
@@ -86,6 +86,7 @@ python3 -m pytest tests/application --env tests/env-AT -q
 | T-IT-IT1-22 | IT | UC-001 | FR-007 | mcp | tests/integration/IT1_22/test_it1_22_admin_rest_config_crud.py (2 test functions) | function-level | tests/env-IT | - | affbc31 |
 | T-IT-IT1-23 | IT | UC-001 | FR-007 | mcp | tests/integration/IT1_23/test_it1_23_core_metadata.py (4 test functions) | function-level | tests/env-IT | - | affbc31 |
 | T-IT-IT1-24 | IT | UC-001 | FR-007 | mcp | tests/integration/IT1_24/test_it1_24_openapi_contract.py (1 test functions) | function-level | tests/env-IT | - | affbc31 |
+| T-IT-IT1-25 | IT | UC-007 | FR-008 | mcp | tests/integration/IT1_25_IdamCascade/test_it1_25_idam_role_cascade.py (2 test functions) | function-level | tests/env-IT | W28E-1805B D5 IDAM cascade | 1805B |
 | T-IT-IT1-3 | IT | UC-001 | FR-007 | mcp | tests/integration/IT1_3/test_it1_3.py (1 test functions) | function-level | tests/env-IT | - | affbc31 |
 | T-IT-IT1-4 | IT | UC-001 | FR-007 | mcp | tests/integration/IT1_4/test_it1_4.py (1 test functions) | function-level | tests/env-IT | - | affbc31 |
 | T-IT-IT1-5 | IT | UC-001 | FR-007 | mcp | tests/integration/IT1_5/test_it1_5.py (1 test functions) | function-level | tests/env-IT | - | affbc31 |

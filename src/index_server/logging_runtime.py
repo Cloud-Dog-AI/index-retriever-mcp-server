@@ -75,6 +75,7 @@ def build_platform_log_config(config: Any, *, surface_name: str) -> dict[str, An
 
 def init_platform_logging(surface_name: str) -> None:
     """Initialise cloud_dog_logging for the requested server surface."""
+    # req: FR-005
     from cloud_dog_config import load_config  # type: ignore
 
     try:

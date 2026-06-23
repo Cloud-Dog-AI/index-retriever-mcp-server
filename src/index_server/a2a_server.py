@@ -61,6 +61,7 @@ AGENT_CARD: dict[str, Any] = {
 
 def build_a2a_app() -> object:
     """Build the A2A server app with agent card endpoint."""
+    # req: FR-001
     app = build_api_app(surface_name="a2a_server")
 
     try:

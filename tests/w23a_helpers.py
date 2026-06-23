@@ -16,9 +16,11 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from cloud_dog_vdb import CollectionSpec, Record, SearchRequest, get_vdb_client
 from cloud_dog_vdb.ingestion import ParserIngestionOptions, build_parser_registry, ingest_document
@@ -333,18 +335,71 @@ def backend_config(provider_id: str) -> dict[str, Any]:
     return merged
 
 
-def backend_available(provider_id: str) -> bool:
-    cfg = backend_config(provider_id)
-    provider = provider_id.strip().lower()
+def _backend_configured(provider: str, cfg: dict[str, Any]) -> bool:
+    """True when the backend has a usable endpoint configured (env/Vault)."""
     if provider == "pgvector":
         return bool(_clean_text(cfg.get("database_uri")))
     return bool(_clean_text(cfg.get("base_url")) or (_clean_text(cfg.get("host")) and cfg.get("port")))
 
 
+def _backend_host_port(provider: str, cfg: dict[str, Any]) -> tuple[str | None, int | None]:
+    """Resolve the (host, port) a configured backend would be reached on."""
+    if provider == "pgvector":
+        uri = _clean_text(cfg.get("database_uri"))
+        if uri:
+            parsed = urlparse(uri)
+            return parsed.hostname, (parsed.port or 5432)
+        return None, None
+    base = _clean_text(cfg.get("base_url"))
+    if base and "://" in base:
+        parsed = urlparse(base)
+        if parsed.hostname:
+            return parsed.hostname, (parsed.port or (443 if parsed.scheme == "https" else 80))
+    host = _clean_text(cfg.get("host"))
+    if host:
+        raw_port = cfg.get("port")
+        try:
+            port = int(raw_port) if raw_port not in ("", None) else None
+        except (TypeError, ValueError):
+            port = None
+        return host, port
+    return None, None
+
+
+def _backend_reachable(provider: str, cfg: dict[str, Any], timeout: float = 3.0) -> bool:
+    """TCP-probe the resolved endpoint so a down optional backend reports unavailable."""
+    host, port = _backend_host_port(provider, cfg)
+    if not host or not port:
+        return False
+    try:
+        with socket.create_connection((host, int(port)), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+def backend_available(provider_id: str) -> bool:
+    # W28E-1805B: an OPTIONAL backend that is configured but whose host is unreachable from
+    # the test host (e.g. opensearch0.app.vpc0.cloud-dog.net:1201 down) must report
+    # unavailable so its contract test SKIPS cleanly instead of hard-failing with ConnectError.
+    # Required providers (INDEX_RETRIEVER_LIVE_REQUIRED_PROVIDERS) are independently enforced
+    # by tests/live_runtime.py preflight(), so reachability gating never masks a required outage.
+    cfg = backend_config(provider_id)
+    provider = provider_id.strip().lower()
+    if not _backend_configured(provider, cfg):
+        return False
+    return _backend_reachable(provider, cfg)
+
+
 def backend_skip_reason(provider_id: str) -> str | None:
     if backend_available(provider_id):
         return None
-    return f"{provider_id} backend not configured via env/Vault"
+    cfg = backend_config(provider_id)
+    provider = provider_id.strip().lower()
+    if not _backend_configured(provider, cfg):
+        return f"{provider_id} backend not configured via env/Vault"
+    host, port = _backend_host_port(provider, cfg)
+    return f"{provider_id} backend configured but unreachable from test host ({host}:{port})"
 
 
 def runtime_backend_store(provider_id: str, timeout_seconds: int = 120) -> dict[str, Any]:

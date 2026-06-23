@@ -102,12 +102,23 @@ def allowlist() -> dict[str, object]:
             # internal reverse-proxy bridge.  The http:// URLs are built
             # from config-resolved host:port, not hardcoded endpoints.
             # (Line numbers track _normalise_api_host + the three base-URL builders;
-            # shifted +17 by the W28A-734-R2 _requires_caller_auth security predicate.)
+            # shifted +17 by the W28A-734-R2 _requires_caller_auth security predicate;
+            # the mcp/a2a builders shifted +2 (168/169 -> 170/171) by the W28E-1805B
+            # # req: FR-001/FR-017 markers added inside build_web_app.)
             "src/index_server/web_server.py:103",
             "src/index_server/web_server.py:104",
             "src/index_server/web_server.py:113",
-            "src/index_server/web_server.py:168",
-            "src/index_server/web_server.py:169",
+            "src/index_server/web_server.py:170",
+            "src/index_server/web_server.py:171",
+            # hdro.py: HDRO_CANONICAL_BASE_URL is the documented non-secret
+            # canonical UNDP HDRO public-API host. It is deliberately pinned
+            # (not config-overridable) because it seeds the anti-SSRF host
+            # allowlist HDRO_ALLOWED_HOSTS; the Vault `url` field is only
+            # trusted when it names an HDRO host. Line 19 is the docstring,
+            # line 36 the constant. (W28E-1805B: bind the W28D-440E4 HDRO
+            # source endpoint that pre-dated this allowlist.)
+            "src/index_tools/sources/hdro.py:19",
+            "src/index_tools/sources/hdro.py:36",
         },
         "os_environ_config_adapter_files": set(),
         "unused_env_keys": set(),

@@ -86,6 +86,7 @@ class AuthMiddleware:
 
     def __init__(self, api_keys: dict[str, set[str]] | None = None) -> None:
         """Initialise the instance state."""
+        # req: FR-008
         if (
             cloud_dog_idam is None
             or APIKeyManager is None

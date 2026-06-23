@@ -33,6 +33,7 @@ class EmbeddingAdapter:
 
     def embed(self, texts: list[str], dimensions: int = 8) -> list[list[float]]:
         """Execute embed."""
+        # req: FR-012
         # Covers: FR-12
         if cloud_dog_llm is not None and hasattr(cloud_dog_llm, "embed"):
             response: Any = cloud_dog_llm.embed(provider=self.provider, model=self.model, inputs=texts)

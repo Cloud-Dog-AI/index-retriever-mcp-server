@@ -52,6 +52,7 @@ class DedupeIndex:
 
     def check_duplicate(self, candidate: DedupeRecord, mode: str) -> DedupeRecord | None:
         """Execute check duplicate."""
+        # req: FR-011
         # Covers: FR-11
         if mode == "size+mtime":
             for existing in self._records.values():

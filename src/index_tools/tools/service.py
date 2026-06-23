@@ -677,6 +677,7 @@ class IndexService:
         server_id: str | None = None,
     ) -> None:
         """Initialise the instance state."""
+        # req: FR-002
         resolved_provider = embedding_provider or _required_env(
             "CLOUD_DOG__INDEX__EMBEDDING__PROVIDER",
             "EMBED_PROVIDER",
@@ -974,6 +975,7 @@ class IndexService:
         return provider or self._default_backend
 
     def _build_vdb_client(self) -> Any:
+        # req: FR-013
         if get_vdb_client is None:
             raise RuntimeError("cloud_dog_vdb is required")
 
@@ -3254,6 +3256,7 @@ class IndexService:
         filters: dict[str, Any] | None = None,
         capability_override: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        # req: FR-003
         # Covers: FR-13A
         checked_filters = dict(filters or {})
         descriptor = self._build_capability_descriptor(profile, capability_override)
@@ -3278,6 +3281,8 @@ class IndexService:
         score_threshold: float = 0.0,
     ) -> list[dict[str, Any]]:
         """Execute search."""
+        # req: FR-006
+        # req: FR-014
         # Covers: FR-14
         planned = self.search_plan(profile=profile, query=query, top_k=top_k, filters=filters)
         requested_filters = dict(filters or {})
@@ -3441,6 +3446,7 @@ class IndexService:
         chunks ingested under different profiles. That caused chroma-profile
         retrieves to surface qdrant-profile records (A117 §10 row 3).
         """
+        # req: FR-014
         record = self._get_document_record(doc_id, profile=profile, collection=collection)
         return {
             "doc_id": record.doc_id,
@@ -4094,6 +4100,7 @@ class IndexService:
         table_json_shape: str = "records",
     ) -> dict[str, Any]:
         """Run preview pipeline through cloud_dog_vdb without persisting project state."""
+        # req: FR-009
         # Covers: FR-P001
         preview = self._run_pipeline_preview(
             source=text.encode("utf-8"),
@@ -4230,6 +4237,7 @@ class IndexService:
 
     def ingest_stream_session_start(self, profile: str, collection: str, ordering_key: str) -> str:
         """Create a stream-ingest session and return its session identifier."""
+        # req: FR-015
         # Covers: FR-15
         session_id = str(uuid4())
         self.stream_sessions[session_id] = StreamSession(

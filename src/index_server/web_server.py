@@ -144,6 +144,8 @@ def _runtime_override_number(config: Any, env_name: str, config_key: str, defaul
 
 def build_web_app() -> object:
     """Build the thin web server app."""
+    # req: FR-001
+    # req: FR-017
     try:
         config = load_config(
             env_files=runtime_env_files(),
@@ -565,6 +567,7 @@ def build_web_app() -> object:
     @app.get("/admin/api-keys")
     @app.get("/admin/rbac")
     async def admin_spa_routes() -> Response:
+        # req: FR-018
         return _spa_index()
 
     @app.api_route("/admin/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])

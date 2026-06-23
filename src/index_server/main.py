@@ -19,6 +19,7 @@ from index_server.api_server import build_api_app
 
 def main() -> object:
     """Bootstrap the API app."""
+    # req: FR-005
     return build_api_app()
 
 

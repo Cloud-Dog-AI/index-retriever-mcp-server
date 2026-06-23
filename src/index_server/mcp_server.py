@@ -529,6 +529,7 @@ def execute_tool(
     identity: AuthResult | None = None,
 ) -> dict[str, Any]:
     """Execute execute tool with PS-40 audit logging."""
+    # req: FR-004
     # Covers: FR-16, FR-13B
     active_registry = registry or build_registry()
     _ = active_registry.get(tool_name)
@@ -1231,6 +1232,7 @@ def execute_tool(
 
 def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | None = None) -> Any:
     """Execute build mcp app."""
+    # req: FR-001
     init_platform_logging("mcp_server")
     if cloud_dog_idam is None:  # pragma: no cover - platform package is mandatory
         raise RuntimeError("cloud_dog_idam is required")
