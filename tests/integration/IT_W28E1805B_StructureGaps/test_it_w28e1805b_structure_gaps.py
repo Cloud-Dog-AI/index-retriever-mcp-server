@@ -58,6 +58,22 @@ def test_extract_analyse_generate_match_end_to_end(service: IndexService) -> Non
     assert doc1["document"]["metadata"]["quality"]["section_completeness"] == 1.0
     assert doc1["document"]["metadata"]["token_count"] > 0
 
+    # GAP C (W28E-1805B): the acting principal is stamped as created_by and the extractor
+    # run carries started_at / completed_at timestamps on the persisted document.
+    assert doc1["document"]["created_by"]  # non-null actor, not "service"
+    assert doc1["extractor_runs"], "extractor run must be persisted"
+    run = doc1["extractor_runs"][0]
+    assert run["started_at"] is not None
+    assert run["completed_at"] is not None
+
+    # retrieving the document via the structure_document_get tool preserves the same provenance
+    fetched = client.post(api_tools_path("structure_document_get"), json={"structure_document_id": id1}, headers=_ADMIN)
+    assert fetched.status_code == 200, fetched.text
+    fetched_body = fetched.json()
+    assert fetched_body["document"]["created_by"] == doc1["document"]["created_by"]
+    assert fetched_body["extractor_runs"][0]["started_at"] is not None
+    assert fetched_body["extractor_runs"][0]["completed_at"] is not None
+
     # 2. corpus analyse -> commonality / variation / distance matrix
     corp = client.post(
         api_tools_path("structure_corpus_create"),

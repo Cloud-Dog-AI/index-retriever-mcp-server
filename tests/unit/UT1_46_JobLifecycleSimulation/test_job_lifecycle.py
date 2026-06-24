@@ -12,7 +12,7 @@ from uuid import uuid4
 
 import pytest
 
-from index_tools.queue.engine import QueueEngine
+from index_tools.queue.engine import JobTerminalStateError, QueueEngine
 from index_tools.queue.models import JobRecord, JobStatus
 
 
@@ -101,6 +101,61 @@ def test_lifecycle_create_queue_cancel(engine: QueueEngine) -> None:
 
     cancelled = engine.cancel(queued.job_id)
     assert cancelled.status == JobStatus.cancelled
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
+
+
+def test_cancel_on_terminal_job_is_rejected(engine: QueueEngine) -> None:
+    """GAP B (W28E-1805B): cancelling a terminal (succeeded/cancelled) job is rejected, not flipped."""
+    record = _make_record()
+    queued = engine.enqueue(record)
+
+    # drive the job to a terminal succeeded state
+    engine.process_available(limit=1)
+    succeeded = engine.get(queued.job_id)
+    assert succeeded.status == JobStatus.succeeded
+
+    # cancelling a succeeded job must be rejected and must NOT flip the status to cancelled
+    with pytest.raises(JobTerminalStateError) as excinfo:
+        engine.cancel(queued.job_id)
+    assert excinfo.value.status == "succeeded"
+    assert engine.get(queued.job_id).status == JobStatus.succeeded
+
+    # an already-cancelled job is likewise terminal for cancellation
+    other = engine.enqueue(_make_record())
+    engine.cancel(other.job_id)
+    assert engine.get(other.job_id).status == JobStatus.cancelled
+    with pytest.raises(JobTerminalStateError):
+        engine.cancel(other.job_id)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
+
+
+def test_enqueue_propagates_request_audit_context(engine: QueueEngine) -> None:
+    """GAP A (W28E-1805B): the request correlation/audit context is persisted onto the JobRecord."""
+    record = JobRecord(
+        job_id=str(uuid4()),
+        profile="default",
+        collection="test",
+        job_type="test.op",
+        status=JobStatus.queued,
+        correlation_id="corr-1805b-abc",
+        trace_id="trace-1805b-xyz",
+        request_ip="203.0.113.7",
+        request_auth_method="api_key",
+        request_auth_identity="writer-1",
+        request_user_agent="pytest-agent",
+    )
+    queued = engine.enqueue(record, actor="writer-1")
+    reloaded = engine.get(queued.job_id)
+    assert reloaded.correlation_id == "corr-1805b-abc"
+    assert reloaded.trace_id == "trace-1805b-xyz"
+    assert reloaded.request_ip == "203.0.113.7"
+    assert reloaded.request_auth_method == "api_key"
+    assert reloaded.request_auth_identity == "writer-1"
+    assert reloaded.request_user_agent == "pytest-agent"
 @pytest.mark.UT
 @pytest.mark.mcp
 @pytest.mark.req("FR-002")

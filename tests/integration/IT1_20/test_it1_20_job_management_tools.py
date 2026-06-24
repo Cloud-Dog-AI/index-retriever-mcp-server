@@ -123,17 +123,24 @@ def test_job_management_tools_contract(service: IndexService) -> None:
     assert isinstance(succeeded_jobs, list)
     assert any(str(item.get("job_id", "")) == job_id for item in succeeded_jobs)
 
+    # GAP A (W28E-1805B): an inline job created through the API carries the request
+    # correlation id into its audit context (non-null on the persisted JobRecord).
+    succeeded_record = next(item for item in succeeded_jobs if str(item.get("job_id", "")) == job_id)
+    assert succeeded_record.get("correlation_id")
+
+    # GAP B (W28E-1805B): cancelling an already-terminal (succeeded) job is rejected — the
+    # record is NOT flipped to cancelled; a clear no-op is returned instead.
     cancelled = _call_tool(client, "job_cancel", {"job_id": job_id}, "valid-admin-token")
+    assert cancelled.get("cancelled") is False
+    assert "terminal" in str(cancelled.get("reason", "")).lower()
     cancelled_job = cancelled.get("job")
     assert isinstance(cancelled_job, dict)
     assert cancelled_job.get("job_id") == job_id
-    assert str(cancelled_job.get("status", "")).lower() == "cancelled"
+    assert str(cancelled_job.get("status", "")).lower() == "succeeded"
 
-    writer_cancelled = _call_tool(client, "job_cancel", {"job_id": job_id}, "valid-writer-token")
-    writer_cancelled_job = writer_cancelled.get("job")
-    assert isinstance(writer_cancelled_job, dict)
-    assert writer_cancelled_job.get("job_id") == job_id
-    assert str(writer_cancelled_job.get("status", "")).lower() == "cancelled"
+    # the job remains succeeded after the rejected cancel (terminal-state integrity)
+    still_succeeded = _call_tool(client, "job_get", {"job_id": job_id}, "valid-admin-token")
+    assert str(still_succeeded.get("job", {}).get("status", "")).lower() == "succeeded"
 
     deleted = _call_tool(client, "job_delete", {"job_id": job_id}, "valid-admin-token")
     assert deleted.get("job_id") == job_id

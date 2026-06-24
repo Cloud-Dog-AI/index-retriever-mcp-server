@@ -22,6 +22,7 @@ default and in tests. The mineru/marker/docling providers reuse the existing clo
 from __future__ import annotations
 
 import re
+from datetime import datetime, timezone
 from hashlib import sha256
 from typing import Any
 
@@ -50,15 +51,51 @@ _MALFORMED_HEADING_RE = re.compile(r"^#{1,}\S")
 _OVERDEEP_HEADING_RE = re.compile(r"^#{7,}")
 
 
+#: Unicode ranges whose code points are themselves whole tokens (CJK ideographs + kana).
+#: A whitespace tokeniser counts a run of un-spaced CJK as a single token, drastically
+#: undercounting Chinese/Japanese text; each such code point is counted individually instead.
+_CJK_RANGES = (
+    (0x4E00, 0x9FFF),  # CJK unified ideographs (Han)
+    (0x3400, 0x4DBF),  # CJK extension A
+    (0xF900, 0xFAFF),  # CJK compatibility ideographs
+    (0x3040, 0x309F),  # Hiragana
+    (0x30A0, 0x30FF),  # Katakana
+)
+
+
+def _is_cjk(char: str) -> bool:
+    """Return whether a single character is a CJK ideograph or kana code point (a token on its own)."""
+    code = ord(char)
+    return any(low <= code <= high for low, high in _CJK_RANGES)
+
+
 def _count_tokens(text: str) -> int:
-    """Count whitespace-delimited tokens in a block of text (reuses the simple split tokeniser)."""
-    return len((text or "").split())
+    """Count tokens in a block of text.
+
+    Whitespace-delimited runs each count as one token, but every CJK ideograph / kana code
+    point counts as a token in its own right (a whitespace tokeniser would collapse an entire
+    un-spaced Chinese sentence into a single token, badly undercounting it).
+    """
+    total = 0
+    for run in (text or "").split():
+        cjk = sum(1 for char in run if _is_cjk(char))
+        if cjk:
+            # CJK code points each count once; any remaining non-CJK content counts as one token.
+            non_cjk = "".join(char for char in run if not _is_cjk(char)).strip()
+            total += cjk + (1 if non_cjk else 0)
+        else:
+            total += 1
+    return total
 
 
 def _section_completeness(sections: list[StructureSection]) -> float:
-    """Fraction of sections that carry a non-empty title (1.0 when there are no sections)."""
+    """Structure-completeness signal: low for a doc with no sections, else fraction of titled sections.
+
+    A structureless document (no headings) carries no structure, so it scores ``0.0`` here rather
+    than being vacuously perfect — the quality score must reflect the absence of structure.
+    """
     if not sections:
-        return 1.0
+        return 0.0
     titled = sum(1 for section in sections if str(section.title or "").strip())
     return round(titled / len(sections), 6)
 
@@ -156,6 +193,7 @@ def normalise_text_to_bundle(
     """
     # req: FR-009
     # req: FR-014
+    started_at = datetime.now(timezone.utc).isoformat()  # noqa: UP017 — extractor run start (design brief §5.2)
     source_hash = sha256((text or "").encode("utf-8")).hexdigest()
     document = StructureDocument(
         profile_id=profile,
@@ -299,6 +337,8 @@ def normalise_text_to_bundle(
         provider=provider,
         version=extractor_version,
         config={"mode": "internal"},
+        started_at=started_at,
+        completed_at=datetime.now(timezone.utc).isoformat(),  # noqa: UP017 — extractor run end (design brief §5.2)
         quality_score=quality_score,
         warnings=list(quality_flags),
     )
@@ -350,8 +390,16 @@ def normalise_ir_to_bundle(
                 metadata={"source_index": index},
             )
         )
+    now = datetime.now(timezone.utc).isoformat()  # noqa: UP017 — vdb-path run is synchronous (design brief §5.2)
     bundle.extractor_runs = [
-        StructureExtractorRun(provider=provider_id, version=version or "1.0", config={"mode": "vdb"}, metadata={"quality": quality})
+        StructureExtractorRun(
+            provider=provider_id,
+            version=version or "1.0",
+            config={"mode": "vdb"},
+            started_at=now,
+            completed_at=now,
+            metadata={"quality": quality},
+        )
     ]
     return bundle
 

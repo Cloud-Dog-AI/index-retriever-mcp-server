@@ -1389,6 +1389,12 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             _require_or_raise(request, identity, "collection.read")
         arguments = dict(payload)
         arguments.setdefault("actor", identity.user_id)
+        # Carry the request audit context into job-creating tools so inline jobs keep the same
+        # correlation/IP/auth-method provenance as the synchronous request (PS-AUDIT job context).
+        arguments.setdefault("_correlation_id", _sync_logging_correlation(request))
+        arguments.setdefault("_request_ip", _request_ip(request))
+        arguments.setdefault("_request_auth_method", getattr(identity, "token_type", None))
+        arguments.setdefault("_request_user_agent", _request_user_agent(request))
         try:
             return execute_tool(
                 service=active_service,

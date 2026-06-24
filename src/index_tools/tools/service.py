@@ -32,7 +32,7 @@ from typing import Any, ClassVar
 from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
-from cloud_dog_logging import get_logger
+from cloud_dog_logging import get_correlation_id, get_logger
 from cloud_dog_vdb.lifecycle.manager import mark_deleted, mark_superseded
 from cloud_dog_vdb.metadata.filters import SCALAR_FILTER_FIELDS, matches_metadata
 from cloud_dog_vdb.metadata.identity import compute_content_hash, normalise_source_uri
@@ -2645,11 +2645,23 @@ class IndexService:
         idempotency_key: str | None = None,
         metadata: dict[str, Any] | None = None,
         created_at: datetime | None = None,
+        correlation_id: str | None = None,
+        trace_id: str | None = None,
+        request_ip: str | None = None,
+        request_auth_method: str | None = None,
+        request_user_agent: str | None = None,
     ) -> str:
-        """Execute ingest text."""
+        """Execute ingest text.
+
+        Propagates the request audit context (correlation/trace ids + request IP / auth method)
+        onto the enqueued :class:`JobRecord` so the inline job carries the same provenance the
+        synchronous request would (PS-AUDIT). ``correlation_id`` defaults to the active platform
+        logging correlation id when the caller does not supply one.
+        """
         # Covers: FR-08, FR-10, FR-14
         if profile not in self.profiles:
             raise ValueError(f"Unknown profile: {profile}")
+        resolved_correlation_id = correlation_id or get_correlation_id()
 
         try:
             self._ensure_backend_collection(profile, collection)
@@ -2673,6 +2685,14 @@ class IndexService:
                 job_type="ingest_text",
                 idempotency_key=request_key,
                 server_id=self.queue.server_id,
+                correlation_id=resolved_correlation_id or None,
+                trace_id=trace_id or None,
+                user_id=actor,
+                request_source=source,
+                request_ip=request_ip or None,
+                request_auth_method=request_auth_method or None,
+                request_auth_identity=actor,
+                request_user_agent=request_user_agent or None,
             ),
             payload={
                 "profile": profile,

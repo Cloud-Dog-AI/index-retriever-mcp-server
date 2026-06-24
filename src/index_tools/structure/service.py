@@ -154,6 +154,10 @@ class StructureService:
         bundle = self._assign_ids(self._coerce_bundle(data))
         if not bundle.document.profile_id or not bundle.document.collection_id:
             raise ValueError("structure document requires profile_id and collection_id")
+        # Stamp the acting principal onto the document so retrieval carries authorship provenance
+        # (design brief §6.1 ``created_by``); an explicit value on the bundle takes precedence.
+        if not bundle.document.created_by and actor and actor != "service":
+            bundle.document.created_by = actor
         stored = self.repository.create_bundle(bundle)
         self._audit(
             actor=actor,

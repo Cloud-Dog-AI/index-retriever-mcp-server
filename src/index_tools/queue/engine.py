@@ -26,6 +26,20 @@ from index_tools.queue.models import JobRecord, JobStatus
 
 class JobCancelledError(RuntimeError):
     """Raised when cooperative job execution observes a cancellation request."""
+
+
+class JobTerminalStateError(RuntimeError):
+    """Raised when cancellation is requested for a job already in a terminal state.
+
+    Carries the current job status so transport adapters can report a precise reason
+    (cloud_dog_jobs models a terminal state as one with no ``cancelled`` transition).
+    """
+
+    def __init__(self, job_id: str, status: str) -> None:
+        """Record the job id and its terminal status on the error."""
+        self.job_id = job_id
+        self.status = status
+        super().__init__(f"job {job_id} is in terminal state '{status}' and cannot be cancelled")
 from sqlalchemy import MetaData, create_engine, delete, select, update
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.schema import CreateTable
@@ -36,6 +50,7 @@ try:
     from cloud_dog_jobs.backends.redis_backend import RedisQueueBackend  # type: ignore
     from cloud_dog_jobs.domain.enums import JobStatus as PlatformJobStatus  # type: ignore
     from cloud_dog_jobs.domain.models import Job  # type: ignore
+    from cloud_dog_jobs.domain.state_machine import JobStateMachine  # type: ignore
     from cloud_dog_jobs.storage.sqlalchemy.models import (  # type: ignore
         build_job_call_logs_table,
         build_job_callbacks_table,
@@ -49,6 +64,7 @@ except ImportError:  # pragma: no cover
     RedisQueueBackend = None  # type: ignore[assignment]
     PlatformJobStatus = None  # type: ignore[assignment]
     Job = None  # type: ignore[assignment]
+    JobStateMachine = None  # type: ignore[assignment]
     build_jobs_table = None  # type: ignore[assignment]
     build_job_call_logs_table = None  # type: ignore[assignment]
     build_job_deliveries_table = None  # type: ignore[assignment]
@@ -149,6 +165,8 @@ class QueueEngine:
         self._retry_max_attempts = 3 if retry_max_attempts is None else int(retry_max_attempts)
         self._retry_backoff_seconds = 5.0 if retry_backoff_seconds is None else float(retry_backoff_seconds)
         self._audit_logger = audit_logger
+        #: Platform job state machine — single source of truth for legal transitions / terminal states.
+        self._state_machine = JobStateMachine()
         self._database_url = self._normalise_database_url(database_url)
         redis_flag = bool(redis_enabled)
         resolved_redis_url = redis_url or ""
@@ -433,6 +451,25 @@ class QueueEngine:
             resources=dict(resources) if resources else {},
         )
         self._backend.enqueue(queued_job)
+        # Persist the request audit context onto the job row's meta so it survives into every
+        # JobRecord read by _adapt_job (correlation/trace/IP/auth-method) — the request-scoped
+        # provenance the audit trail must carry for inline jobs (PS-AUDIT job context).
+        audit_meta = {
+            key: value
+            for key, value in {
+                "correlation_id": job.correlation_id,
+                "trace_id": job.trace_id,
+                "user_id": job.user_id or actor,
+                "request_source": job.request_source or (str(payload_data.get("source", "")) or None),
+                "request_ip": job.request_ip,
+                "request_auth_method": job.request_auth_method,
+                "request_auth_identity": job.request_auth_identity,
+                "request_user_agent": job.request_user_agent,
+            }.items()
+            if value not in {None, ""}
+        }
+        if audit_meta:
+            self._update_sql_job(job.job_id, meta_updates=audit_meta)
         self._transition(
             job.job_id,
             status=JobStatus.validated,
@@ -722,7 +759,16 @@ class QueueEngine:
         return self.get(job_id)
 
     def cancel(self, job_id: str) -> JobRecord:
-        """Cancel a queued or completed job."""
+        """Cancel an in-flight job, rejecting jobs already in a terminal state.
+
+        A succeeded / failed / cancelled / timed-out / dead-lettered / ttl-expired / archived job
+        is terminal: cloud_dog_jobs models no ``cancelled`` transition out of those states, so the
+        request is rejected with :class:`JobTerminalStateError` rather than silently flipping the
+        record to cancelled (PS-75 lifecycle integrity).
+        """
+        current = self.get(job_id)
+        if not self._state_machine.can_transition(current.status.value, JobStatus.cancelled.value, job_type=current.job_type):
+            raise JobTerminalStateError(job_id, current.status.value)
         return self._transition(
             job_id,
             status=JobStatus.cancelled,

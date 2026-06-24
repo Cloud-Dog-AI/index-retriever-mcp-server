@@ -58,6 +58,7 @@ from index_server.logging_runtime import init_platform_logging, shutdown_platfor
 from index_server.runtime_config import resolve_server_binding
 from index_tools.config.loader import runtime_env_files
 from index_tools.db import database_health, initialise_database, shutdown_database
+from index_tools.queue.engine import JobTerminalStateError
 from index_tools.tools.registry import ToolRegistry, build_default_tool_registry
 from index_tools.tools.service import IndexService
 
@@ -861,6 +862,10 @@ def execute_tool(
             actor=str(arguments.get("actor", "mcp")),
             idempotency_key=str(arguments["idempotency_key"]) if arguments.get("idempotency_key") else None,
             metadata=arguments.get("metadata") if isinstance(arguments.get("metadata"), dict) else None,
+            correlation_id=arguments.get("_correlation_id") or None,
+            request_ip=arguments.get("_request_ip") or None,
+            request_auth_method=arguments.get("_request_auth_method") or None,
+            request_user_agent=arguments.get("_request_user_agent") or None,
         )
         job_id = getattr(ingest_result, "job_id", ingest_result)
         return {"job_id": str(job_id), "status": "queued"}
@@ -1054,14 +1059,25 @@ def execute_tool(
         return {"jobs": jobs, "count": len(jobs)}
     if tool_name == "job_cancel":
         _ = _enforce_job_owner(service, str(arguments["job_id"]), active_auth, active_identity, actor_id)
-        cancelled = service.job_cancel(str(arguments["job_id"]))
+        try:
+            cancelled = service.job_cancel(str(arguments["job_id"]))
+        except JobTerminalStateError as exc:
+            # A terminal job (succeeded/failed/cancelled/…) is not cancellable: report a clear
+            # no-op instead of flipping the record (PS-75 lifecycle integrity).
+            job = _normalise_job_payload(service.job_get(str(arguments["job_id"])))
+            return {
+                "job": job,
+                "status": exc.status,
+                "cancelled": False,
+                "reason": f"job is in terminal state '{exc.status}' and cannot be cancelled",
+            }
         if isinstance(cancelled, bool):
             if not cancelled:
                 raise ValueError("Job cancellation rejected by queue backend")
             job = {"job_id": str(arguments["job_id"]), "status": "cancelled"}
         else:
             job = _normalise_job_payload(cancelled)
-        return {"job": job, "status": "cancelled"}
+        return {"job": job, "status": "cancelled", "cancelled": True}
     if tool_name == "job_retry":
         retry_fn = getattr(service, "job_retry", None)
         if not callable(retry_fn):

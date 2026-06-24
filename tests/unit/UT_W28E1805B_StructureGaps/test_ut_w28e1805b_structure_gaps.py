@@ -164,10 +164,71 @@ def test_internal_extract_token_counts() -> None:
     bundle = normalise_text_to_bundle(_DOC_EN, profile="p", collection="c")
     for block in bundle.blocks:
         assert "token_count" in block.metadata
+        # latin-only blocks: token_count matches the plain whitespace tokeniser
         assert block.metadata["token_count"] == len(block.text.split())
     document_total = bundle.document.metadata["token_count"]
     assert document_total == sum(b.metadata["token_count"] for b in bundle.blocks)
     assert document_total > 0
+
+
+# -- GAP D1 (W28E-1805B): structureless document scores low on structure quality ----
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-009")
+@pytest.mark.req("FR-014")
+def test_structureless_document_scores_low_structure_quality() -> None:
+    plain = "This is a plain paragraph with no headings at all.\n\nAnother plain paragraph follows here."
+    bundle = normalise_text_to_bundle(plain, profile="p", collection="c")
+    doc = bundle.document
+    # no sections -> section_completeness must NOT be a vacuous 1.0
+    assert bundle.sections == []
+    assert doc.metadata["quality"]["section_completeness"] == 0.0
+    # a structureless doc must score strictly below a well-formed, fully-structured doc
+    structured = normalise_text_to_bundle(_DOC_EN, profile="p", collection="c")
+    assert doc.quality_score < structured.document.quality_score
+    assert structured.document.quality_score == 1.0
+
+
+# -- GAP D2 (W28E-1805B): CJK token counting counts code points individually --------
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-014")
+def test_cjk_token_count_counts_codepoints() -> None:
+    # a standalone Chinese paragraph (heading on its own line, blank line, then body)
+    zh_doc = "# 介绍\n\n这是一个用于测试的中文文档段落内容示例。\n"
+    bundle = normalise_text_to_bundle(zh_doc, profile="p", collection="c")
+    body = next(b for b in bundle.blocks if b.block_type.value == "paragraph")
+    cjk_run = body.text  # un-spaced Chinese: a whitespace tokeniser would see a single token
+    han_chars = sum(1 for ch in cjk_run if "一" <= ch <= "鿿")
+    assert han_chars >= 8
+    # improved tokeniser counts each Han code point rather than collapsing the run to 1
+    assert body.metadata["token_count"] >= han_chars
+    assert body.metadata["token_count"] > len(cjk_run.split())
+    # a mixed CJK + latin run counts each Han char plus one token for the latin remainder
+    mixed = normalise_text_to_bundle("# T\n\nabc中文def\n", profile="p", collection="c")
+    mixed_body = next(b for b in mixed.blocks if b.block_type.value == "paragraph")
+    assert mixed_body.metadata["token_count"] == 3  # 中, 文, + "abcdef" remainder
+
+
+# -- GAP C (W28E-1805B): created_by + extractor run timestamps populated ------------
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-009")
+def test_extract_populates_created_by_and_run_timestamps(service) -> None:
+    svc, _ = service
+    result = svc.extract_text(
+        _DOC_EN, profile="default", collection="docs", source_filename="c1.md",
+        actor="alice", roles={"admin"},
+    )
+    sdid = result["document"]["structure_document_id"]
+    # retrieve the persisted bundle and assert authorship + run timestamps round-trip
+    bundle = svc.get(sdid)
+    assert bundle["document"]["created_by"] == "alice"
+    assert bundle["extractor_runs"], "extractor run must be persisted"
+    run = bundle["extractor_runs"][0]
+    assert run["started_at"] is not None
+    assert run["completed_at"] is not None
+    assert run["completed_at"] >= run["started_at"]
 
 
 # -- GAP 2: structural distance + commonality/variation ------------------------
