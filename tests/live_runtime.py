@@ -1077,7 +1077,16 @@ class LiveIndexRuntime:
         dedupe_policy: str = "skip",
         stale_after_days: int | None = None,
         indexing_signature: str | None = None,
+        correlation_id: str | None = None,
+        trace_id: str | None = None,
+        request_ip: str | None = None,
+        request_auth_method: str | None = None,
+        request_user_agent: str | None = None,
     ) -> LiveRecord:
+        # W28E-1805B: accept the PS-AUDIT request-context kwargs the API/MCP dispatch now forwards
+        # (execute_tool ingest_text branch). The live test runtime models the data plane, not the
+        # JobRecord audit row, so these are accepted for signature parity and not otherwise used.
+        _ = (correlation_id, trace_id, request_ip, request_auth_method, request_user_agent)
         if dedupe_policy not in {"skip", "replace", "version"}:
             raise ValueError(f"Unsupported dedupe policy: {dedupe_policy}")
 
