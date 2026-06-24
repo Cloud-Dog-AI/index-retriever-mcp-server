@@ -14,10 +14,11 @@
 
 from __future__ import annotations
 
+import inspect
+import json
 import os
 from collections.abc import Callable
 from contextlib import asynccontextmanager
-import json
 from typing import Any
 
 from cloud_dog_api_kit import (  # type: ignore
@@ -336,6 +337,21 @@ def list_tool_names(registry: ToolRegistry) -> list[str]:
 def build_registry() -> ToolRegistry:
     """Execute build registry."""
     return build_default_tool_registry()
+
+
+def _call_with_supported_kwargs(fn: Callable[..., Any], **kwargs: Any) -> Any:
+    """Call a runtime hook without passing kwargs that its implementation cannot accept."""
+    try:
+        signature = inspect.signature(fn)
+    except (TypeError, ValueError):
+        return fn(**kwargs)
+
+    parameters = signature.parameters
+    if any(parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in parameters.values()):
+        return fn(**kwargs)
+
+    supported = {key: value for key, value in kwargs.items() if key in parameters}
+    return fn(**supported)
 
 
 def _normalise_job_payload(job: Any) -> dict[str, Any]:
@@ -842,19 +858,25 @@ def execute_tool(
             source = str(record.get("source") or arguments.get("source") or f"bulk://{collection}/{index + 1}")
             metadata = record.get("metadata") if isinstance(record.get("metadata"), dict) else None
             job_ids.append(
-                service.ingest_text(
+                _call_with_supported_kwargs(
+                    service.ingest_text,
                     profile=profile,
                     collection=collection,
                     text=text,
                     source=source,
                     actor=str(arguments.get("actor", "mcp")),
                     metadata=metadata,
+                    correlation_id=arguments.get("_correlation_id") or None,
+                    request_ip=arguments.get("_request_ip") or None,
+                    request_auth_method=arguments.get("_request_auth_method") or None,
+                    request_user_agent=arguments.get("_request_user_agent") or None,
                 )
             )
         return {"job_id": job_ids[0], "job_ids": job_ids, "status": "queued", "count": len(job_ids)}
     if tool_name == "ingest_text":
         _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
-        ingest_result = service.ingest_text(
+        ingest_result = _call_with_supported_kwargs(
+            service.ingest_text,
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
             text=str(arguments["text"]),
