@@ -33,6 +33,7 @@ from index_tools.structure.corpus_models import (
     StructurePattern,
 )
 from index_tools.structure.corpus_repository import CorpusRepository
+from index_tools.structure.distance import structural_distance
 from index_tools.structure.repository import StructureRepository
 
 
@@ -118,6 +119,7 @@ class CorpusService:
         section_sequence_details: dict[str, list[dict[str, Any]]] = {}
         section_sequence_docs: dict[str, set[str]] = {}
         section_title_variations: dict[str, dict[int, Counter[str]]] = {}
+        document_sequences: list[tuple[str, list[str]]] = []
         analysed = 0
 
         for sdid in corpus.document_ids:
@@ -126,6 +128,7 @@ class CorpusService:
                 continue
             analysed += 1
             seq = [str(s.section_type.value if hasattr(s.section_type, "value") else s.section_type) for s in bundle.sections]
+            document_sequences.append((sdid, seq))
             if seq:
                 signature = "->".join(seq)
                 section_sequences[signature] += 1
@@ -213,14 +216,25 @@ class CorpusService:
         for sig, support in table_shape_dist.most_common():
             _add(PatternType.table, sig, support, {"table_shape": sig}, label="table-shape")
 
+        dominant = section_sequences.most_common(1)
+        # -- structural commonality / variation / pairwise distance (design brief §10.3) --
+        commonality_score, variation_score, mean_pairwise_distance, distance_matrix = _score_structure(
+            document_sequences=document_sequences,
+            dominant_support=dominant[0][1] if dominant else 0,
+            document_count=analysed,
+            distinct_signatures=len(section_sequences),
+        )
+
         self.repository.replace_patterns(corpus_id, patterns)
         # mark corpus analysed
         corpus.status = "analysed"
         corpus.metadata["last_analysis_pattern_count"] = len(patterns)
+        corpus.metadata["commonality_score"] = commonality_score
+        corpus.metadata["variation_score"] = variation_score
+        corpus.metadata["mean_pairwise_distance"] = mean_pairwise_distance
         self.repository.upsert_corpus(corpus)
         self._audit(actor=actor, roles=roles, action="analyse", target_id=corpus_id, new_value={"patterns": len(patterns), "documents": analysed})
 
-        dominant = section_sequences.most_common(1)
         report = CorpusReport(
             corpus_id=corpus_id,
             document_count=analysed,
@@ -230,6 +244,10 @@ class CorpusService:
             block_type_distribution=dict(block_type_dist),
             dominant_section_sequence=dominant[0][0].split("->") if dominant else [],
             patterns=patterns,
+            commonality_score=commonality_score,
+            variation_score=variation_score,
+            mean_pairwise_distance=mean_pairwise_distance,
+            distance_matrix=distance_matrix,
         )
         return report.model_dump(mode="json")
 
@@ -238,3 +256,36 @@ class CorpusService:
             raise KeyError(corpus_id)
         patterns = self.repository.list_patterns(corpus_id, pattern_type=pattern_type)
         return {"corpus_id": corpus_id, "patterns": [p.model_dump(mode="json") for p in patterns], "count": len(patterns)}
+
+
+def _score_structure(
+    *,
+    document_sequences: list[tuple[str, list[str]]],
+    dominant_support: int,
+    document_count: int,
+    distinct_signatures: int,
+) -> tuple[float, float, float, list[dict[str, Any]]]:
+    """Compute commonality/variation scores and the pairwise structural-distance matrix (§10.3).
+
+    ``commonality_score`` is the support of the dominant section-sequence over the document
+    count; ``variation_score`` is its complement (``1 - commonality``). The distance matrix
+    holds the normalised structural distance for every unordered document pair, and
+    ``mean_pairwise_distance`` is their mean (``0.0`` when fewer than two documents).
+    Returns ``(commonality_score, variation_score, mean_pairwise_distance, distance_matrix)``.
+    """
+    # req: FR-009
+    commonality_score = round(dominant_support / document_count, 6) if document_count else 0.0
+    variation_score = round(1.0 - commonality_score, 6)
+
+    distance_matrix: list[dict[str, Any]] = []
+    distances: list[float] = []
+    for i in range(len(document_sequences)):
+        sdid_a, seq_a = document_sequences[i]
+        for j in range(i + 1, len(document_sequences)):
+            sdid_b, seq_b = document_sequences[j]
+            distance = structural_distance(seq_a, seq_b)
+            distances.append(distance)
+            distance_matrix.append({"a": sdid_a, "b": sdid_b, "distance": distance})
+
+    mean_pairwise_distance = round(sum(distances) / len(distances), 6) if distances else 0.0
+    return commonality_score, variation_score, mean_pairwise_distance, distance_matrix

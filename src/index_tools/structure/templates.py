@@ -28,14 +28,23 @@ from index_tools.structure.corpus_models import (
     TemplateSection,
 )
 from index_tools.structure.corpus_repository import CorpusRepository
+from index_tools.structure.distance import structural_distance
+from index_tools.structure.repository import StructureRepository
 
 
 class TemplateService:
     """Generate, store, and export structure/style templates from corpus patterns (transport-neutral)."""
 
-    def __init__(self, *, repository: CorpusRepository | None = None, audit_logger: Any | None = None) -> None:
-        """Bind the corpus repository (corpus + patterns + templates) and optional audit logger."""
+    def __init__(
+        self,
+        *,
+        repository: CorpusRepository | None = None,
+        structure_repository: StructureRepository | None = None,
+        audit_logger: Any | None = None,
+    ) -> None:
+        """Bind the corpus repository (corpus + patterns + templates), structure store, and audit logger."""
         self.repository = repository or CorpusRepository()
+        self.structures = structure_repository or StructureRepository()
         self.audit_logger = audit_logger
 
     def _audit(self, *, actor: str, roles: set[str] | None, action: str, target_id: str, **details: Any) -> None:
@@ -136,6 +145,55 @@ class TemplateService:
         else:
             raise ValueError(f"unsupported export format: {format}")
         return TemplateExport(template_id=template_id, format=fmt, content=content).model_dump(mode="json")
+
+    def match(self, template_id: str, structure_document_id: str) -> dict[str, Any]:
+        """Score how well a document's structure matches a generated template (§11; §25 #10).
+
+        Compares the document's ordered section-type sequence against the template's section
+        blueprint. ``match_score`` is ``1 - structural_distance`` between the two type sequences
+        (1.0 == identical structure). The per-section breakdown reports which template section
+        types were ``matched`` in order, which template sections are ``missing`` from the
+        document, and which document section types are ``extra`` (not in the template).
+        """
+        # req: FR-014
+        template = self.repository.get_template(template_id)
+        if template is None:
+            raise KeyError(template_id)
+        bundle = self.structures.get_bundle(structure_document_id)
+        if bundle is None:
+            raise KeyError(structure_document_id)
+
+        template_types = [str(section.section_type) for section in template.sections]
+        document_types = [
+            str(section.section_type.value if hasattr(section.section_type, "value") else section.section_type)
+            for section in bundle.sections
+        ]
+
+        match_score = round(1.0 - structural_distance(template_types, document_types), 6)
+
+        # Order-preserving alignment: greedily walk the document, matching the next expected
+        # template section type. Unconsumed template types are missing; the rest are extra.
+        matched: list[dict[str, Any]] = []
+        remaining_document = list(document_types)
+        missing: list[dict[str, Any]] = []
+        for order, expected_type in enumerate(template_types):
+            if expected_type in remaining_document:
+                remaining_document.remove(expected_type)
+                matched.append({"order": order, "section_type": expected_type})
+            else:
+                missing.append({"order": order, "section_type": expected_type})
+        extra = [{"section_type": section_type} for section_type in remaining_document]
+
+        return {
+            "template_id": template_id,
+            "structure_document_id": structure_document_id,
+            "match_score": match_score,
+            "template_section_count": len(template_types),
+            "document_section_count": len(document_types),
+            "matched": matched,
+            "missing": missing,
+            "extra": extra,
+        }
 
     def delete(self, template_id: str, *, actor: str = "service", roles: set[str] | None = None) -> dict[str, Any]:
         """Delete a generated template through the supported lifecycle path."""

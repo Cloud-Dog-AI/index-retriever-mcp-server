@@ -77,6 +77,10 @@ class CorpusReport(BaseModel):
     block_type_distribution: dict[str, int] = Field(default_factory=dict)
     dominant_section_sequence: list[str] = Field(default_factory=list)
     patterns: list[StructurePattern] = Field(default_factory=list)
+    commonality_score: float = 0.0
+    variation_score: float = 0.0
+    mean_pairwise_distance: float = 0.0
+    distance_matrix: list[dict[str, Any]] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 

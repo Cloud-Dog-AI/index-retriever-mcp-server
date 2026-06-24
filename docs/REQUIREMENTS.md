@@ -17,7 +17,7 @@ surface-coverage: [api, mcp, a2a, webui]
 
 ## Provenance
 - Canonical requirements for index-retriever-mcp-server. Reconciled to runtime by W28A-749 (IDAM Thread-b).
-- Source basis: `defaults.yaml`, the API/Web/MCP/A2A servers, and the runtime tool registry (94 tools — `src/index_tools/tools/registry.py`, enforced by `UT1_40`).
+- Source basis: `defaults.yaml`, the API/Web/MCP/A2A servers, and the runtime tool registry (95 tools — `src/index_tools/tools/registry.py`, enforced by `UT1_40`).
 
 **Version:** 1.1  
 **Date:** 2026-02-28  
@@ -145,7 +145,7 @@ Primary goals:
 | `FR-013` | Route vector backend operations, provider diagnostics, parser/OCR/table preview dispatch, and VDB capability failures through `cloud_dog_vdb` adapters. | `api`, `mcp`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001`, `UC-002`, `UC-005` | `T-UT-024`, `T-UT-036`, `T-UT-037` |
 | `FR-014` | Return stable search and retrieval output with inline content, source traceability, scores, metadata filters, and explain metadata. | `api`, `mcp`, `webui` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-001` | `T-UT-025`, `T-ST-015` |
 | `FR-015` | Support stateful and streaming ingestion sessions with ordering keys, event append, close behavior, and closed-session rejection. | `api`, `mcp`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-003` | `T-UT-033`, `T-IT-012` |
-| `FR-016` | Keep the complete MCP tool inventory documented and matching runtime registration exactly, including 94 unique tools and management operations. | `mcp`, `api` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-007` | `T-UT-040`, `T-SMOKE-TOOLS` |
+| `FR-016` | Keep the complete MCP tool inventory documented and matching runtime registration exactly, including 95 unique tools and management operations. | `mcp`, `api` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-007` | `T-UT-040`, `T-SMOKE-TOOLS` |
 | `FR-017` | Preserve WebUI/API parity, controlled operation handling, middleware, and handler-path coverage for operator workflows. | `api`, `mcp`, `webui`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-006`, `UC-007` | `T-UT-035`, `T-AT-WEBUI-CRUD` |
 | `FR-018` | Bind the WebUI IDAM/admin route contract, including `/idam/users` and `/admin/users` URL-canonical behavior, to security-admin test design. | `webui`, `api` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-007` | `T-AT-WEBUI-SECURITY` |
 
@@ -510,7 +510,7 @@ Admin/maintainer tools SHALL include:
 
 ### FR-016 Complete MCP tool inventory contract
 - The documented MCP catalogue SHALL match the actual registered runtime inventory exactly.
-- The current registered tool count SHALL be **94** tools (verified: `src/index_tools/tools/registry.py` runtime build = 94 unique; `UT1_40` asserts `len(tools) == 94`; includes the 22 W28E-603/W28M-1603D document-structure tools). Reconciled to runtime by W28M-1603D.
+- The current registered tool count SHALL be **95** tools (verified: `src/index_tools/tools/registry.py` runtime build = 95 unique; `UT1_40` asserts `len(tools) == 95`; includes the 23 W28E-603/W28M-1603D/W28E-1805B document-structure tools, the most recent being `structure_template_match`). Reconciled to runtime by W28M-1603D; extended to 95 by W28E-1805B (`structure_template_match`).
 - Tool documentation SHALL include, for every registered tool:
   - tool name,
   - operator intent/description,
@@ -605,7 +605,7 @@ Admin/maintainer tools SHALL include:
 - `ocr_run`
 - `table_extract`
 
-### 7.7 Complete runtime tool inventory (94 tools)
+### 7.7 Complete runtime tool inventory (95 tools)
 
 | Tool | Purpose | Primary inputs | Expected output |
 |------|---------|----------------|-----------------|
@@ -669,6 +669,7 @@ Admin/maintainer tools SHALL include:
 | `reindex_run` | Reindex a collection/profile. | `profile`, `collection`, reindex options | status/job payload |
 | `backend_health_check` | Check VDB backend health. | optional provider context | backend health payload |
 | `embedding_health_check` | Check embedding provider health. | optional provider/model context | embedding health payload |
+| `structure_template_match` | Score how well a structure document matches a generated template. | `template_id`, `structure_document_id` | match payload (`match_score`, matched/missing/extra sections) |
 
 ---
 

@@ -2202,6 +2202,18 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    def structure_template_match(template_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        """Score how well a structure document matches a generated template (RBAC: collection.read)."""
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        structure_document_id = str(payload.get("structure_document_id", "")).strip()
+        if not structure_document_id:
+            raise HTTPException(status_code=400, detail="structure_document_id is required")
+        try:
+            return active_service.structure.templates.match(template_id, structure_document_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Template or document not found: {exc}") from exc
+
     def structure_template_delete(template_id: str, request: Request) -> dict[str, Any]:
         """Delete a generated template through the supported lifecycle path."""
         identity = _auth_or_raise(request, _headers_from_request(request))
@@ -2312,6 +2324,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             "structure_corpus_patterns_get": "structure_corpus_patterns_get",
             "structure_template_generate": "structure_template_generate",
             "structure_template_export": "structure_template_export",
+            "structure_template_match": "structure_template_match",
             "structure_template_delete": "structure_template_delete",
         }
         tool_name = tool_map.get(skill_id)
@@ -2568,6 +2581,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get(f"{api_base_path}/structure/templates")(structure_template_list)
     app.get(f"{api_base_path}/structure/templates/{{template_id}}")(structure_template_get)
     app.get(f"{api_base_path}/structure/templates/{{template_id}}/export")(structure_template_export)
+    app.post(f"{api_base_path}/structure/templates/{{template_id}}/match")(structure_template_match)
     app.delete(f"{api_base_path}/structure/templates/{{template_id}}")(structure_template_delete)
     app.openapi_schema = None
     app.post(f"{api_base_path}/upload")(upload_ingest)

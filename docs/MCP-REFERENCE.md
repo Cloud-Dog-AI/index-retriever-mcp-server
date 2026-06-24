@@ -24,7 +24,7 @@ doc-conformance-stamp: 2026-06-18T00:00:00Z
 
 > **Template version:** T-MCP v1.0 — MCP tool surface (JSON-RPC 2.0 at `/mcp`).
 
-Tool count: **93** — all verified as string literals in `src/index_tools/tools/registry.py`.
+Tool count: **94** — all verified as string literals in `src/index_tools/tools/registry.py`.
 
 ## 1. Auth model
 
@@ -1758,6 +1758,22 @@ curl -X POST https://<host>/mcp \
   {"type":"object","properties":{"status":{"type":"string"}}}
   ```
 - **Errors:** `401`, `403`, `404` template not found.
+
+---
+
+### 2.92a `structure_template_match`
+
+- **Description:** Score how well a structure document matches a generated template, with a matched/missing/extra section breakdown.
+- **RBAC:** `collection.read` (viewer / read-only or above)
+- **Input schema:**
+  ```json
+  {"type":"object","properties":{"template_id":{"type":"string"},"structure_document_id":{"type":"string"}},"required":["template_id","structure_document_id"]}
+  ```
+- **Output schema:**
+  ```json
+  {"type":"object","properties":{"template_id":{"type":"string"},"structure_document_id":{"type":"string"},"match_score":{"type":"number"},"matched":{"type":"array"},"missing":{"type":"array"},"extra":{"type":"array"}}}
+  ```
+- **Errors:** `401`, `403`, `404` template or document not found.
 
 ---
 

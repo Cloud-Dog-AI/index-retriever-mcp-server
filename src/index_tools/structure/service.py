@@ -281,7 +281,7 @@ class StructureService:
         if self._templates is None:
             from index_tools.structure.templates import TemplateService
 
-            self._templates = TemplateService(audit_logger=self.audit_logger)
+            self._templates = TemplateService(structure_repository=self.repository, audit_logger=self.audit_logger)
         return self._templates
 
     def extract_text(self, text: str, *, profile: str, collection: str, source_uri: str | None = None,

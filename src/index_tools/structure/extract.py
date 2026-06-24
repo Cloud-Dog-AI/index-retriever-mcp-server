@@ -25,6 +25,7 @@ import re
 from hashlib import sha256
 from typing import Any
 
+from index_tools.structure.language import detect_scripts
 from index_tools.structure.models import (
     BlockType,
     SectionType,
@@ -43,6 +44,73 @@ SUPPORTED_PROVIDERS = ("internal", "mineru", "marker_mcp", "docling")
 
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 _MD_TABLE_ROW_RE = re.compile(r"^\s*\|.*\|\s*$")
+#: Heading line with at least one '#' but no space before the title (malformed markdown heading).
+_MALFORMED_HEADING_RE = re.compile(r"^#{1,}\S")
+#: Heading deeper than the six markdown levels (e.g. '#######') — malformed input.
+_OVERDEEP_HEADING_RE = re.compile(r"^#{7,}")
+
+
+def _count_tokens(text: str) -> int:
+    """Count whitespace-delimited tokens in a block of text (reuses the simple split tokeniser)."""
+    return len((text or "").split())
+
+
+def _section_completeness(sections: list[StructureSection]) -> float:
+    """Fraction of sections that carry a non-empty title (1.0 when there are no sections)."""
+    if not sections:
+        return 1.0
+    titled = sum(1 for section in sections if str(section.title or "").strip())
+    return round(titled / len(sections), 6)
+
+
+def _heading_consistency(sections: list[StructureSection]) -> float:
+    """Fraction of level transitions that do not skip a heading level (monotonic, no gaps)."""
+    if len(sections) < 2:
+        return 1.0
+    transitions = 0
+    consistent = 0
+    previous = sections[0].level
+    for section in sections[1:]:
+        transitions += 1
+        # A descent of more than one level (e.g. h1 -> h3) is a gap; same/shallower is fine.
+        if section.level - previous <= 1:
+            consistent += 1
+        previous = section.level
+    return round(consistent / transitions, 6) if transitions else 1.0
+
+
+def _compute_quality(
+    *,
+    sections: list[StructureSection],
+    blocks: list[StructureBlock],
+    malformed_flags: list[str],
+) -> tuple[float, dict[str, Any], list[str]]:
+    """Compute the internal-path document quality score, quality detail, and quality flags (§9.1).
+
+    Combines four real signals: section-title completeness, heading-level consistency,
+    block coverage (fraction of non-empty blocks), and a malformed-input penalty.
+    Returns ``(quality_score, quality_detail, quality_flags)``.
+    """
+    # req: FR-009
+    section_completeness = _section_completeness(sections)
+    heading_consistency = _heading_consistency(sections)
+    if blocks:
+        non_empty = sum(1 for block in blocks if str(block.text or "").strip())
+        block_coverage = round(non_empty / len(blocks), 6)
+    else:
+        block_coverage = 0.0
+    unique_flags = sorted(set(malformed_flags))
+    # Each distinct malformed signal applies a fixed penalty, capped so the score stays in [0, 1].
+    penalty = min(0.5, 0.25 * len(unique_flags))
+    base = (section_completeness + heading_consistency + block_coverage) / 3.0
+    quality_score = round(max(0.0, min(1.0, base - penalty)), 6)
+    quality_detail = {
+        "section_completeness": section_completeness,
+        "heading_consistency": heading_consistency,
+        "block_coverage": block_coverage,
+        "malformed_flags": unique_flags,
+    }
+    return quality_score, quality_detail, unique_flags
 _SECTION_KEYWORDS = {
     "introduction": SectionType.introduction,
     "scope": SectionType.scope,
@@ -80,7 +148,14 @@ def normalise_text_to_bundle(
     provider: str = "internal",
     extractor_version: str = "1.0",
 ) -> StructureBundle:
-    """Markdown-aware deterministic normalisation of plain text into a canonical bundle."""
+    """Markdown-aware deterministic normalisation of plain text into a canonical bundle.
+
+    Populates the canonical output enrichment fields on the document: ``language_hints``
+    (Unicode-script heuristic), ``quality_score`` + ``metadata['quality']`` (real structure
+    signals), and per-block / document ``token_count`` (design brief §9.1).
+    """
+    # req: FR-009
+    # req: FR-014
     source_hash = sha256((text or "").encode("utf-8")).hexdigest()
     document = StructureDocument(
         profile_id=profile,
@@ -103,6 +178,7 @@ def normalise_text_to_bundle(
     order = 0
     current_section: StructureSection | None = None
     table_buffer: list[str] = []
+    malformed_flags: list[str] = []
 
     def _flush_table() -> None:
         nonlocal order
@@ -122,13 +198,15 @@ def normalise_text_to_bundle(
                     extraction_method=provider,
                 )
             )
+            table_text = "\n".join(table_buffer)
             blocks.append(
                 StructureBlock(
                     page_id="",
                     section_id=current_section.section_id if current_section else None,
                     block_type=BlockType.table,
-                    text="\n".join(table_buffer),
+                    text=table_text,
                     reading_order_index=order,
+                    metadata={"token_count": _count_tokens(table_text)},
                 )
             )
             order += 1
@@ -149,7 +227,13 @@ def normalise_text_to_bundle(
         if not stripped or all(_MD_TABLE_ROW_RE.match(line) for line in stripped.splitlines()):
             continue
 
-        heading = _HEADING_RE.match(stripped.splitlines()[0]) if stripped else None
+        first_line = stripped.splitlines()[0] if stripped else ""
+        heading = _HEADING_RE.match(first_line) if stripped else None
+        if heading is None and first_line:
+            if _OVERDEEP_HEADING_RE.match(first_line):
+                malformed_flags.append("overdeep_heading")
+            elif _MALFORMED_HEADING_RE.match(first_line):
+                malformed_flags.append("heading_without_space")
         if heading:
             level = len(heading.group(1)) - 1
             title = heading.group(2).strip()
@@ -171,6 +255,7 @@ def normalise_text_to_bundle(
                     text=title,
                     reading_order_index=order,
                     style_id=None,
+                    metadata={"token_count": _count_tokens(title)},
                 )
             )
             order += 1
@@ -187,6 +272,7 @@ def normalise_text_to_bundle(
                 block_type=BlockType.paragraph,
                 text=stripped,
                 reading_order_index=order,
+                metadata={"token_count": _count_tokens(stripped)},
             )
         )
         order += 1
@@ -197,7 +283,25 @@ def normalise_text_to_bundle(
     if table_buffer:
         _flush_table()
 
-    run = StructureExtractorRun(provider=provider, version=extractor_version, config={"mode": "internal"})
+    # -- output enrichment (design brief §9.1): language hints, quality, token counts --
+    document.language_hints = detect_scripts(text)
+    quality_score, quality_detail, quality_flags = _compute_quality(
+        sections=sections, blocks=blocks, malformed_flags=malformed_flags
+    )
+    document.quality_score = quality_score
+    document.metadata["quality"] = quality_detail
+    document_token_count = sum(int(block.metadata.get("token_count", 0) or 0) for block in blocks)
+    document.metadata["token_count"] = document_token_count
+    if quality_flags:
+        document.metadata["quality_flags"] = quality_flags
+
+    run = StructureExtractorRun(
+        provider=provider,
+        version=extractor_version,
+        config={"mode": "internal"},
+        quality_score=quality_score,
+        warnings=list(quality_flags),
+    )
     return StructureBundle(
         document=document,
         pages=[page],

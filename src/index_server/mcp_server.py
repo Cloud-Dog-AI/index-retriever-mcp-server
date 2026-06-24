@@ -259,6 +259,7 @@ def _required_permission_for_tool(tool_name: str) -> str:
         "structure_template_get",
         "structure_template_list",
         "structure_template_export",
+        "structure_template_match",
     }:
         return "collection.read"
     if tool_name in {
@@ -1211,6 +1212,11 @@ def execute_tool(
         return service.structure.templates.list(profile_id=arguments.get("profile") or arguments.get("profile_id"), corpus_id=arguments.get("corpus_id"), limit=int(arguments.get("limit", 50)), offset=int(arguments.get("offset", 0)))
     if tool_name == "structure_template_export":
         return service.structure.templates.export(str(arguments["template_id"]), format=str(arguments.get("format", "markdown")))
+    if tool_name == "structure_template_match":
+        return service.structure.templates.match(
+            str(arguments["template_id"]),
+            str(arguments["structure_document_id"]),
+        )
     if tool_name == "structure_template_delete":
         return service.structure.templates.delete(
             str(arguments["template_id"]),
