@@ -1891,6 +1891,186 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             )
         }
 
+    def _idam_permissions_catalog() -> list[str]:
+        permissions: set[str] = {
+            "admin",
+            "collection.read",
+            "collection.write",
+            "config.read",
+            "idam.audit.read",
+            "idam.groups.read",
+            "idam.groups.write",
+            "idam.rbac.read",
+            "idam.rbac.write",
+            "idam.roles.read",
+            "idam.roles.write",
+            "idam.users.read",
+            "idam.users.write",
+            "jobs.control",
+            "jobs.read",
+            "logs.read",
+            "logs.read.all",
+            "resources:read",
+            "resources:write",
+            "webui.access",
+        }
+        for role in active_service.roles_list():
+            raw_permissions = role.get("permissions") if isinstance(role, dict) else None
+            if isinstance(raw_permissions, list):
+                permissions.update(str(permission) for permission in raw_permissions)
+        return sorted(permission for permission in permissions if permission)
+
+    def idam_admin_permissions(request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        return {"permissions": _idam_permissions_catalog()}
+
+    def _idam_resource_registry_payload() -> dict[str, Any]:
+        collection_resources: list[str] = []
+        profile_resources: list[str] = []
+        for profile in active_service.profiles_list():
+            profile_resources.append(str(profile))
+            for collection in active_service.collections_list(str(profile)):
+                collection_resources.append(f"{profile}:{collection}")
+        return {
+            "resource_types": [
+                {
+                    "type": "system",
+                    "label": "System",
+                    "permissions": ["read", "write", "admin"],
+                    "resources": ["system"],
+                },
+                {
+                    "type": "collection",
+                    "label": "Collection",
+                    "permissions": ["collection.read", "collection.write"],
+                    "resources": sorted(set(collection_resources)) or ["default:w12_documents"],
+                    "list_endpoint": "/api/v1/tools/collections_list",
+                },
+                {
+                    "type": "index_profile",
+                    "label": "Index Profile",
+                    "permissions": ["collection.read", "collection.write"],
+                    "resources": sorted(set(profile_resources)) or ["default"],
+                    "list_endpoint": "/api/v1/tools/profiles_list",
+                },
+            ]
+        }
+
+    def idam_resource_registry(request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        return _idam_resource_registry_payload()
+
+    def _idam_binding_id(binding: dict[str, Any]) -> str:
+        return "|".join(
+            str(binding.get(key, ""))
+            for key in ("subject_type", "subject", "resource_type", "resource", "permission")
+        )
+
+    def _idam_binding_view(binding: dict[str, Any]) -> dict[str, Any]:
+        subject_type = str(binding.get("subject_type") or binding.get("entity_type") or "user")
+        subject = str(binding.get("subject") or binding.get("entity_id") or "")
+        resource_type = str(binding.get("resource_type") or "system")
+        resource = str(binding.get("resource") or binding.get("resource_id") or "system")
+        permission = str(binding.get("permission") or binding.get("role") or "read")
+        view = {
+            **binding,
+            "subject_type": subject_type,
+            "subject": subject,
+            "resource_type": resource_type,
+            "resource": resource,
+            "permission": permission,
+            "granted_by": str(binding.get("granted_by") or "system"),
+            "granted_at": binding.get("granted_at") or binding.get("created_at"),
+        }
+        view["id"] = str(binding.get("binding_id") or _idam_binding_id(view))
+        return view
+
+    def _idam_binding_rows() -> list[dict[str, Any]]:
+        return [_idam_binding_view(binding) for binding in active_service.rbac_bindings_list()]
+
+    def _idam_binding_by_id(binding_id: str) -> dict[str, Any]:
+        for binding in _idam_binding_rows():
+            if str(binding.get("id")) == binding_id:
+                return binding
+        raise HTTPException(status_code=404, detail=f"RBAC binding not found: {binding_id}")
+
+    def idam_rbac_bindings_list(request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        return {"bindings": _idam_binding_rows()}
+
+    def idam_rbac_bindings_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        subject_type = str(payload.get("subject_type") or payload.get("entity_type") or "user")
+        subject = str(payload.get("subject") or payload.get("entity_id") or "")
+        resource_type = str(payload.get("resource_type") or "system")
+        resource = str(payload.get("resource") or payload.get("resource_id") or "system")
+        permission = str(payload.get("permission") or payload.get("role") or "read")
+        if not subject:
+            raise HTTPException(status_code=400, detail="subject is required")
+        try:
+            binding = active_service.admin_rbac_bind(
+                entity_type=subject_type,
+                entity_id=subject,
+                role="" if resource_type else permission,
+                roles=identity.roles,
+                actor=identity.user_id,
+                resource_type=resource_type,
+                resource_id=resource,
+                permission=permission,
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"RBAC subject not found: {subject}") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"binding": _idam_binding_view(binding)}
+
+    def idam_rbac_bindings_update(binding_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        current = _idam_binding_by_id(binding_id)
+        next_permission = str(payload.get("permission") or current.get("permission") or "read")
+        active_service.admin_rbac_unbind(
+            entity_type=str(current["subject_type"]),
+            entity_id=str(current["subject"]),
+            role=str(current.get("role") or ""),
+            roles=identity.roles,
+            actor=identity.user_id,
+            resource_type=str(current["resource_type"]),
+            resource_id=str(current["resource"]),
+            permission=str(current["permission"]),
+        )
+        updated = active_service.admin_rbac_bind(
+            entity_type=str(current["subject_type"]),
+            entity_id=str(current["subject"]),
+            role="" if current.get("resource_type") else next_permission,
+            roles=identity.roles,
+            actor=identity.user_id,
+            resource_type=str(current["resource_type"]),
+            resource_id=str(current["resource"]),
+            permission=next_permission,
+        )
+        return {"binding": _idam_binding_view(updated)}
+
+    def idam_rbac_bindings_delete(binding_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "admin")
+        current = _idam_binding_by_id(binding_id)
+        removed = active_service.admin_rbac_unbind(
+            entity_type=str(current["subject_type"]),
+            entity_id=str(current["subject"]),
+            role=str(current.get("role") or ""),
+            roles=identity.roles,
+            actor=identity.user_id,
+            resource_type=str(current["resource_type"]),
+            resource_id=str(current["resource"]),
+            permission=str(current["permission"]),
+        )
+        return {"binding": _idam_binding_view(removed), "status": "ok"}
+
     async def upload_ingest(
         request: Request,
         profile: str = Form(...),
@@ -2516,6 +2696,56 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                 methods=[_method],
                 include_in_schema=False,
             )
+
+    _idam_compact_routes = [
+        ("GET", "/users", admin_users_list),
+        ("GET", "/groups", admin_groups_list),
+        ("GET", "/api-keys", admin_api_keys_list),
+    ]
+    for _prefix in ("/v1", "/api/v1"):
+        for _method, _suffix, _handler in _idam_compact_routes:
+            app.add_api_route(
+                f"{_prefix}{_suffix}",
+                _handler,
+                methods=[_method],
+                include_in_schema=False,
+            )
+        app.add_api_route(
+            f"{_prefix}/admin/permissions",
+            idam_admin_permissions,
+            methods=["GET"],
+            include_in_schema=False,
+        )
+        app.add_api_route(
+            f"{_prefix}/idam/v1/resource-registry",
+            idam_resource_registry,
+            methods=["GET"],
+            include_in_schema=False,
+        )
+        app.add_api_route(
+            f"{_prefix}/idam/v1/rbac-bindings",
+            idam_rbac_bindings_list,
+            methods=["GET"],
+            include_in_schema=False,
+        )
+        app.add_api_route(
+            f"{_prefix}/idam/v1/rbac-bindings",
+            idam_rbac_bindings_create,
+            methods=["POST"],
+            include_in_schema=False,
+        )
+        app.add_api_route(
+            f"{_prefix}/idam/v1/rbac-bindings/{{binding_id}}",
+            idam_rbac_bindings_update,
+            methods=["PUT"],
+            include_in_schema=False,
+        )
+        app.add_api_route(
+            f"{_prefix}/idam/v1/rbac-bindings/{{binding_id}}",
+            idam_rbac_bindings_delete,
+            methods=["DELETE"],
+            include_in_schema=False,
+        )
     # W28A-876: mount the canonical SHARED cloud_dog_idam idam_v1_router (resource-registry +
     # rbac-bindings) at the same dual prefixes the admin pages use, so the RBAC page resolves
     # /v1/idam/v1/* and /api/v1/idam/v1/*. ONE estate-wide implementation.

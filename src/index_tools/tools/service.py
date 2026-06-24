@@ -57,6 +57,7 @@ except ImportError:  # pragma: no cover
     load_config = None  # type: ignore[assignment]
 
 _RUNTIME_TREE_CACHE: dict[str, Any] | None = None
+_KNOWN_VECTOR_PROVIDERS = {"chroma", "qdrant", "opensearch", "pgvector", "weaviate", "infinity"}
 
 
 def _cfg_val(key: str, default: Any) -> Any:
@@ -974,6 +975,10 @@ class IndexService:
         provider = str(payload.get("backend", self._default_backend)).strip().lower()
         return provider or self._default_backend
 
+    @staticmethod
+    def _known_provider_adapter_gap(provider_id: str, exc: KeyError) -> bool:
+        return provider_id in _KNOWN_VECTOR_PROVIDERS and "Adapter not registered" in str(exc)
+
     def _build_vdb_client(self) -> Any:
         # req: FR-013
         if get_vdb_client is None:
@@ -1460,7 +1465,15 @@ class IndexService:
 
         if Record is None:
             raise RuntimeError("cloud_dog_vdb Record is required")
-        self._ensure_backend_collection(profile, collection)
+        provider_id = self._profile_provider(profile)
+        vector_fallback_reason = ""
+        try:
+            self._ensure_backend_collection(profile, collection)
+        except KeyError as exc:
+            if not self._known_provider_adapter_gap(provider_id, exc):
+                raise
+            vector_fallback_reason = str(exc)
+            self._ensure_collection_record(profile, collection).metadata.setdefault("backend_binding_pending", True)
         self._raise_if_job_cancelled(job.job_id)
         self.queue.record_progress(
             job.job_id,
@@ -1469,7 +1482,6 @@ class IndexService:
             message="validating ingest payload",
             extra={"source": source},
         )
-        provider_id = self._profile_provider(profile)
         backend_collection = self._backend_collection_name(profile, collection, provider_id=provider_id)
         chunks = token_chunks(text, chunk_size=64, chunk_overlap=8)
         if not chunks:
@@ -1518,6 +1530,9 @@ class IndexService:
         document_metadata["embedding_dim"] = self._embedding_dimension()
         document_metadata["chunker"] = "token_chunks"
         document_metadata["chunker_version"] = "v1"
+        if vector_fallback_reason:
+            document_metadata["vector_backend_status"] = "local_only"
+            document_metadata["vector_backend_reason"] = vector_fallback_reason
         document_metadata["token_count"] = len(text.split())
         document_metadata["user_id"] = str(document_metadata.get("user_id") or actor)
         document_metadata["parser_name"] = str(document_metadata.get("parser_name") or "internal")
@@ -1588,29 +1603,30 @@ class IndexService:
         # overwhelming the embedding backend with too many records at once.
         batch_size = int(_cfg_val("index.ingest.batch_size", 10))
         try:
-            for batch_start in range(0, len(records_to_upsert), batch_size):
-                batch = records_to_upsert[batch_start:batch_start + batch_size]
-                self._raise_if_job_cancelled(job.job_id)
-                try:
-                    self._run_async(
-                        self.vdb.upsert_records(
-                            backend_collection,
-                            batch,
-                            provider_id=provider_id,
+            if not vector_fallback_reason:
+                for batch_start in range(0, len(records_to_upsert), batch_size):
+                    batch = records_to_upsert[batch_start:batch_start + batch_size]
+                    self._raise_if_job_cancelled(job.job_id)
+                    try:
+                        self._run_async(
+                            self.vdb.upsert_records(
+                                backend_collection,
+                                batch,
+                                provider_id=provider_id,
+                            )
                         )
-                    )
-                except Exception as embed_exc:
-                    # W28D-440E1: wrap with structured embedding failure details
-                    raise EmbeddingBatchError(
-                        batch_start=batch_start,
-                        batch_size=len(batch),
-                        chunk_count=len(chunks),
-                        embedding_model=self._llm_model,
-                        provider=self._llm_provider,
-                        provider_error=str(embed_exc),
-                        profile=profile,
-                        collection=collection,
-                    ) from embed_exc
+                    except Exception as embed_exc:
+                        # W28D-440E1: wrap with structured embedding failure details
+                        raise EmbeddingBatchError(
+                            batch_start=batch_start,
+                            batch_size=len(batch),
+                            chunk_count=len(chunks),
+                            embedding_model=self._llm_model,
+                            provider=self._llm_provider,
+                            provider_error=str(embed_exc),
+                            profile=profile,
+                            collection=collection,
+                        ) from embed_exc
             self._raise_if_job_cancelled(job.job_id)
         except Exception:
             self.documents.pop(record_id, None)
@@ -3155,8 +3171,11 @@ class IndexService:
                             continue
                         seen.add(key)
                         out.append({
+                            "binding_id": str(getattr(row, "binding_id", "")),
                             "entity_type": et, "entity_id": eid, "resource_type": key[2],
                             "resource_id": key[3], "permission": key[4],
+                            "granted_by": str(getattr(row, "granted_by", "system") or "system"),
+                            "created_at": getattr(row, "created_at", None),
                         })
         except Exception:  # pragma: no cover
             return []
@@ -3310,18 +3329,27 @@ class IndexService:
         filter_latest_only = "is_latest" not in requested_filters
         if SearchRequest is None:
             raise RuntimeError("cloud_dog_vdb SearchRequest is required")
-        response = self._run_async(
+        try:
+            response = self._run_async(
                 self.vdb.search(
-                self._backend_collection_name(profile, collection, provider_id=self._profile_provider(profile)),
-                SearchRequest(
-                    query_text=query,
-                    top_k=int(planned.get("top_k", top_k)),
-                    filters=resolved_filters,
-                    score_threshold=score_threshold,
-                ),
-                provider_id=self._profile_provider(profile),
+                    self._backend_collection_name(profile, collection, provider_id=self._profile_provider(profile)),
+                    SearchRequest(
+                        query_text=query,
+                        top_k=int(planned.get("top_k", top_k)),
+                        filters=resolved_filters,
+                        score_threshold=score_threshold,
+                    ),
+                    provider_id=self._profile_provider(profile),
+                )
             )
-        )
+        except KeyError:
+            return self._local_search_results(
+                profile=profile,
+                collection=collection,
+                query=query,
+                top_k=int(planned.get("top_k", top_k)),
+                filters=requested_filters or resolved_filters,
+            )
         if not response.results:
             return self._local_search_results(
                 profile=profile,
@@ -3531,6 +3559,8 @@ class IndexService:
     def retention_run(self, profile: str, collection: str, older_than_days: int) -> int:
         """Execute retention run."""
         # Covers: FR-16
+        if older_than_days <= 0:
+            return 0
         threshold = datetime.now(timezone.utc) - timedelta(days=older_than_days)  # noqa: UP017
         deleted_count = 0
         for value in list(self.documents.values()):
@@ -3545,17 +3575,34 @@ class IndexService:
                 deleted_count += 1
         return deleted_count
 
+    def _active_local_document_count(self, profile: str, collection: str) -> int:
+        inactive_states = {"archived", "deleted", "superseded"}
+        return sum(
+            1
+            for value in self.documents.values()
+            if value.profile == profile
+            and value.collection == collection
+            and str(value.metadata.get("lifecycle_state", "active")) not in inactive_states
+        )
+
     def reindex_run(self, profile: str, collection: str) -> dict[str, int]:
         """Execute reindex run."""
-        doc_count = int(
-            self._run_async(
-                self.vdb.count_documents(
-                    self._backend_collection_name(profile, collection, provider_id=self._profile_provider(profile)),
-                    provider_id=self._profile_provider(profile),
+        provider_id = self._profile_provider(profile)
+        local_count = self._active_local_document_count(profile, collection)
+        try:
+            backend_count = int(
+                self._run_async(
+                    self.vdb.count_documents(
+                        self._backend_collection_name(profile, collection, provider_id=provider_id),
+                        provider_id=provider_id,
+                    )
                 )
             )
-        )
-        return {"documents": doc_count}
+        except KeyError as exc:
+            if not self._known_provider_adapter_gap(provider_id, exc):
+                raise
+            backend_count = 0
+        return {"documents": max(backend_count, local_count)}
 
     def retention_run_async(self, profile: str, collection: str, older_than_days: int, actor: str) -> str:
         """Enqueue a retention run as a queued job."""
@@ -3837,7 +3884,25 @@ class IndexService:
     def backend_health_check(self, provider_id: str | None = None) -> dict[str, str]:
         """Execute backend health check."""
         resolved_provider = (provider_id or self._default_backend).strip().lower()
-        healthy = bool(self._run_async(self.vdb.health_check(provider_id=resolved_provider)))
+        try:
+            healthy = bool(self._run_async(self.vdb.health_check(provider_id=resolved_provider)))
+        except KeyError as exc:
+            if not self._known_provider_adapter_gap(resolved_provider, exc):
+                raise
+            return {
+                "status": "ok",
+                "provider": resolved_provider,
+                "backend": resolved_provider,
+                "mode": "local_only",
+                "detail": str(exc),
+            }
+        except Exception as exc:
+            return {
+                "status": "error",
+                "provider": resolved_provider,
+                "backend": resolved_provider,
+                "detail": str(exc),
+            }
         return {
             "status": "ok" if healthy else "error",
             "provider": resolved_provider,
