@@ -53,8 +53,13 @@ def test_service_document_reference_and_jobs(service: IndexService, tmp_path) ->
     assert service.job_wait(job_id).job_id == job_id
     assert len(service.job_list()) >= 1
 
-    cancelled = service.job_cancel(job_id)
-    assert cancelled.status is JobStatus.cancelled
+    # W28E-1805B GAP-B: cancelling a job already in a terminal state (the job_wait above
+    # left it succeeded) is rejected, not silently flipped to cancelled.
+    from index_tools.queue.engine import JobTerminalStateError
+
+    with pytest.raises(JobTerminalStateError):
+        service.job_cancel(job_id)
+    assert service.job_get(job_id).status is JobStatus.succeeded
 
     failed = service.job_get(job_id)
     failed.status = JobStatus.failed
