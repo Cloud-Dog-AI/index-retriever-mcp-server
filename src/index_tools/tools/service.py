@@ -3382,7 +3382,24 @@ class IndexService:
                     metadata=metadata,
                 )
             )
-        return output[: max(1, int(planned.get("top_k", top_k)))]
+        result_limit = max(1, int(planned.get("top_k", top_k)))
+        if len(output) < result_limit:
+            seen_record_ids = {str(row.get("record_id") or row.get("doc_id") or "") for row in output}
+            for row in self._local_search_results(
+                profile=profile,
+                collection=collection,
+                query=query,
+                top_k=result_limit,
+                filters=requested_filters or resolved_filters,
+            ):
+                row_record_id = str(row.get("record_id") or row.get("doc_id") or "")
+                if row_record_id in seen_record_ids:
+                    continue
+                output.append(row)
+                seen_record_ids.add(row_record_id)
+                if len(output) >= result_limit:
+                    break
+        return output[:result_limit]
 
     @staticmethod
     def _metadata_matches_filters(metadata: dict[str, Any], filters: dict[str, Any]) -> bool:

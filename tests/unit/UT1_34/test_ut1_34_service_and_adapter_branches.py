@@ -239,6 +239,54 @@ def test_service_search_falls_back_to_local_documents_when_vdb_returns_empty(
 @pytest.mark.req("FR-002")
 
 
+def test_service_search_backfills_local_matches_when_vdb_returns_partial(
+    monkeypatch: pytest.MonkeyPatch, service: IndexService
+) -> None:
+    token = "partial_upload_token"
+    collection = "search_partial_backfill"
+    service.ingest_text(
+        "default",
+        collection,
+        f"{token} plain text coverage payload",
+        f"file://w28a-908a/{token}-text.txt",
+        actor="writer",
+    )
+    service.ingest_upload(
+        "default",
+        collection,
+        f"{token}-upload.pdf",
+        f"%PDF-1.4\n{token} upload pdf coverage\n%%EOF\n".encode(),
+        actor="writer",
+    )
+    text_record = next(
+        record
+        for record in service.documents.values()
+        if record.collection == collection and str(record.source).startswith("file://")
+    )
+
+    async def _partial_search(*_args, **_kwargs):
+        return SimpleNamespace(
+            results=[
+                SimpleNamespace(
+                    id=text_record.record_id,
+                    score=0.42,
+                    payload={"content": text_record.text, "metadata": dict(text_record.metadata)},
+                )
+            ]
+        )
+
+    monkeypatch.setattr(service.vdb, "search", _partial_search)
+
+    rows = service.search("default", collection, f"{token} upload pdf coverage", top_k=5)
+
+    assert any(str(row["source_uri"]) == f"upload://{token}-upload.pdf" for row in rows)
+
+
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
+
+
 def test_ingest_uses_backend_collection_name_for_upsert(
     monkeypatch: pytest.MonkeyPatch, service: IndexService
 ) -> None:

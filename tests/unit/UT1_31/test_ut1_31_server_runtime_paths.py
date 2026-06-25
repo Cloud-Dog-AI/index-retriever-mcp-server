@@ -853,12 +853,12 @@ def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch
 @pytest.mark.req("FR-001")
 
 
-def test_web_tool_proxy_cookie_role_gates_service_key(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_web_tool_proxy_cookie_role_gates_api_forward(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     class DummyConfig:
         def get(self, key: str, default: object = None) -> object:
             values = {
                 "index.ui.auth_mode": "cookie",
-                "test.api_key": "service-admin-key",
+                "index.auth.api_keys": "reader-key:reader,service-admin-key:admin",
             }
             return values.get(key, default)
 
@@ -882,10 +882,22 @@ def test_web_tool_proxy_cookie_role_gates_service_key(monkeypatch: pytest.Monkey
         }[name],
     )
 
-    captured_mcp_requests: list[httpx.Request] = []
+    captured_api_tool_requests: list[httpx.Request] = []
 
     def _upstream_handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/auth/me":
+            cookie = request.headers.get("cookie", "")
+            if "signed-admin-cookie" in cookie:
+                return httpx.Response(
+                    200,
+                    json={
+                        "user": {
+                            "id": "admin-user",
+                            "roles": ["admin"],
+                            "permissions": ["*"],
+                        }
+                    },
+                )
             if request.headers.get("cookie"):
                 return httpx.Response(
                     200,
@@ -898,12 +910,17 @@ def test_web_tool_proxy_cookie_role_gates_service_key(monkeypatch: pytest.Monkey
                     },
                 )
             return httpx.Response(401, json={"detail": "Authentication failed"})
-        if request.url.path == "/mcp":
-            captured_mcp_requests.append(request)
-            return httpx.Response(
-                200,
-                json={"result": {"structuredContent": {"job_id": "should-not-run"}}},
-            )
+        if request.url.path == "/api/v1/tools/ingest_text":
+            captured_api_tool_requests.append(request)
+            cookie = request.headers.get("cookie", "")
+            if "signed-admin-cookie" in cookie:
+                return httpx.Response(200, json={"job_id": "should-not-run"})
+            if cookie:
+                return httpx.Response(
+                    403,
+                    json={"detail": "Authorisation failed for tool 'ingest_text'"},
+                )
+            return httpx.Response(401, json={"detail": "Authentication failed"})
         return httpx.Response(404, json={"detail": "unexpected path"})
 
     _mock_transport = httpx.MockTransport(_upstream_handler)
@@ -928,7 +945,8 @@ def test_web_tool_proxy_cookie_role_gates_service_key(monkeypatch: pytest.Monkey
 
     assert anon_write.status_code == 401
     assert anon_write.json() == {"detail": "Authentication failed"}
-    assert captured_mcp_requests == []
+    assert len(captured_api_tool_requests) == 1
+    assert not captured_api_tool_requests[-1].headers.get("x-api-key")
 
     client.cookies.set("index_web_session", "signed-read-only-cookie")
     read_only_write = client.post(
@@ -944,7 +962,24 @@ def test_web_tool_proxy_cookie_role_gates_service_key(monkeypatch: pytest.Monkey
 
     assert read_only_write.status_code == 403
     assert read_only_write.json() == {"detail": "Authorisation failed for tool 'ingest_text'"}
-    assert captured_mcp_requests == []
+    assert len(captured_api_tool_requests) == 2
+    assert captured_api_tool_requests[-1].headers.get("x-api-key") == "valid-admin-token"
+
+    client.cookies.set("index_web_session", "signed-admin-cookie")
+    admin_write = client.post(
+        "/api/v1/tools/ingest_text",
+        json={
+            "profile": "default",
+            "collection": "ut_public_web_proxy",
+            "text": "admin cookie forwards to the api tool surface",
+            "source": "file://unit/public-web-proxy-admin.txt",
+        },
+    )
+
+    assert admin_write.status_code == 200
+    assert admin_write.json() == {"job_id": "should-not-run"}
+    assert len(captured_api_tool_requests) == 3
+    assert not captured_api_tool_requests[-1].headers.get("x-api-key")
 @pytest.mark.UT
 @pytest.mark.mcp
 @pytest.mark.req("FR-001")

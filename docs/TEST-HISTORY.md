@@ -9,8 +9,8 @@ template-last-updated: 2026-06-12
 template-owner: platform-standards
 
 project: index-retriever-mcp-server
-doc-last-updated: 2026-06-12
-doc-git-commit: 5cba8eb76245a4d7ba5af6f0b3b765199a6f6ee6
+doc-last-updated: 2026-06-25T08:00:14Z
+doc-git-commit: W28E-1805C-closeout
 doc-git-branch: main
 doc-source-shas: []
 doc-age-policy: indefinite
@@ -22,6 +22,11 @@ doc-conformance-stamp: 2026-06-12T12:00:00Z
 > **Template version:** T-TSH v1.0 — appended to by `scripts/update-test-state.py`. Roll-archive to `archive/test-history/<YYYY-MM>.md` when >500 lines.
 
 ## Runs (most recent first)
+
+### 2026-06-25T08:50:39+01:00
+- Commit: `W28E-1805C-closeout` (main)
+- Totals: 76 / P 76 / F 0 / S 0
+- Delta: local Docker WebUI/E2E send-back correction; full clean-container run green.
 
 ### 2026-06-17T11:09:46.029469+00:00
 - Commit: `722fe3ec37069c901bde5b9fbdf6d6825fbbdcc6` (W28C-1714-100pct-fix)

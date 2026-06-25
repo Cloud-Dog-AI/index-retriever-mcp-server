@@ -3,11 +3,11 @@ template-id: T-RCM
 template-version: 1.0
 applies-to: docs/REQ-COVERAGE.md
 project: index-retriever-mcp-server
-doc-last-updated: 2026-06-24T07:20:27.358410+00:00
-doc-git-commit: fdce519e11721109b6c06949e298a84a3fef1110
-doc-git-branch: coordinator/20260622-agent-converge/index-retriever-main-merge
+doc-last-updated: 2026-06-25T08:00:14Z
+doc-git-commit: W28E-1805C-closeout
+doc-git-branch: main
 doc-age-policy: 30d
-doc-conformance-stamp: 2026-06-24T07:20:27.358410+00:00
+doc-conformance-stamp: 2026-06-25T08:00:14Z
 generated-by: scripts/generate-req-coverage.py
 ---
 
@@ -21,6 +21,7 @@ generated-by: scripts/generate-req-coverage.py
 - **Generated at:** 2026-06-24T07:20:27.358410+00:00
 - **Source REQ commit:** fdce519
 - **Source TEST commit:** 52568c3
+- **W28E-1805C closeout replay:** 76/76 WebUI/E2E tests passed on 2026-06-25 against rebuilt local Docker image `sha256:08a38c1ef8c13580a696cb7ed79db4dbd5a468cf1e690d99b59d3e3b7d691d7e`.
 
 ## 2. Coverage summary
 

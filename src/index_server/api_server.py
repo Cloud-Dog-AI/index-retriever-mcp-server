@@ -2439,9 +2439,24 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         checks={"db": _db_probe, "vdb": _vdb_probe, "embedding": _embedding_probe},
     )
     app.include_router(_hr)
-    app.router.routes = [r for r in app.router.routes if getattr(r, "path", None) != "/status"]
+    app.router.routes = [
+        r
+        for r in app.router.routes
+        if getattr(r, "path", None) != "/status"
+        and getattr(r, "path_format", None) != "/status"
+    ]
     app.get("/status")(status)
     app.get("/api/status")(status)
+    status_routes = [
+        r
+        for r in app.router.routes
+        if getattr(r, "path", None) in {"/status", "/api/status"}
+    ]
+    app.router.routes = status_routes + [
+        r
+        for r in app.router.routes
+        if getattr(r, "path", None) not in {"/status", "/api/status"}
+    ]
     app.get("/api/logs")(logs)
     app.get("/api/config-events")(config_events)
     app.get(f"{api_base_path}/health")(health)

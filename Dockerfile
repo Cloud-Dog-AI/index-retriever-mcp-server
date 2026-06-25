@@ -26,14 +26,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install platform packages from public Gitea PyPI per §3.2.0.
-ARG PYPI_URL=https://gitea.cloud-dog.net/api/packages/Cloud-Dog-External/pypi/simple
+# Install platform packages from the approved internal PyPI boundary.
+ARG PYPI_URL=https://pypi.cloud-dog.net/simple/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
-    PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
-      --extra-index-url ${PYPI_URL} \
-      --trusted-host gitea.cloud-dog.net \
-      --trusted-host pypi.org \
-      --trusted-host files.pythonhosted.org \
+    PIP_NO_INPUT=1 PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
+      --trusted-host pypi.cloud-dog.net \
       cloud-dog-config \
       cloud-dog-logging \
       cloud-dog-api-kit==0.13.0 \
@@ -47,18 +44,14 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
 COPY REQUIREMENTS.txt pyproject.toml README.md ./
 COPY src/ ./src/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
-    PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
-      --trusted-host gitea.cloud-dog.net \
-      --trusted-host pypi.org \
-      --trusted-host files.pythonhosted.org \
+    PIP_NO_INPUT=1 PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
+      --trusted-host pypi.cloud-dog.net \
       -r REQUIREMENTS.txt
 COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
-    pip install --no-cache-dir \
+    PIP_NO_INPUT=1 pip install --no-cache-dir \
       --no-deps \
-      --trusted-host gitea.cloud-dog.net \
-      --trusted-host pypi.org \
-      --trusted-host files.pythonhosted.org \
+      --trusted-host pypi.cloud-dog.net \
       .
 
 # ── Final ────────────────────────────────────────────────────────

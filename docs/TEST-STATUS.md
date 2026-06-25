@@ -2,11 +2,11 @@
 template-id: T-TSS
 template-version: 1.0
 project: index-retriever-mcp-server
-doc-last-updated: 2026-06-17T11:09:46.029469+00:00
-doc-git-commit: 722fe3ec37069c901bde5b9fbdf6d6825fbbdcc6
-doc-git-branch: W28C-1714-100pct-fix
+doc-last-updated: 2026-06-25T08:00:14Z
+doc-git-commit: W28E-1805C-closeout
+doc-git-branch: main
 doc-age-policy: 30d
-doc-conformance-stamp: 2026-06-17T11:09:46.029469+00:00
+doc-conformance-stamp: 2026-06-25T08:00:14Z
 ---
 
 # index-retriever-mcp-server — TEST-STATUS
@@ -15,9 +15,11 @@ doc-conformance-stamp: 2026-06-17T11:09:46.029469+00:00
 
 ## 1. Latest run
 
-- **Run timestamp:** 2026-06-17T11:09:46.029469+00:00
-- **Commit:** `722fe3ec37069c901bde5b9fbdf6d6825fbbdcc6` (`W28C-1714-100pct-fix`)
-- **Totals:** 22 tests | 22 passed | 0 failed | 0 skipped
+- **Run timestamp:** 2026-06-25T08:50:39+01:00
+- **Commit:** `W28E-1805C-closeout` (`main`)
+- **Totals:** 76 WebUI/E2E tests | 76 passed | 0 failed | 0 skipped
+- **Local Docker image:** `sha256:08a38c1ef8c13580a696cb7ed79db4dbd5a468cf1e690d99b59d3e3b7d691d7e`
+- **Raw evidence:** `working/evidence/W28E-1805C/current/logs/local-docker-webui-playwright-search-backfill-full-clean.log`
 
 ## 2. Per-test status
 
@@ -49,3 +51,10 @@ doc-conformance-stamp: 2026-06-17T11:09:46.029469+00:00
 ## 3. Failures (detail)
 
 _None._
+
+## 4. W28E-1805C Closeout Addendum
+
+- Service unit regression: `tests/unit/UT1_34/test_ut1_34_service_and_adapter_branches.py::test_service_search_backfills_local_matches_when_vdb_returns_partial` passed.
+- WebUI/API state regression: `tests/unit/UT1_31/test_ut1_31_server_runtime_paths.py::test_web_tool_proxy_cookie_role_gates_api_forward` passed.
+- Local Docker readiness: `document_count=0`, API/auth/Web/MCP/A2A all returned `200` before full E2E.
+- Full browser E2E: 76/76 passed against the rebuilt local image.

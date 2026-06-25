@@ -229,4 +229,11 @@ Use the tier commands above with the committed `tests/env-*` overlays. Live tier
 
 ## 6. Project-specific notes
 
-W28E-1805A replaces residual archived design anchors with semantic requirement bindings. No Stream-B functionality, preprod deploy, or WebUI/E2E implementation is included in this Stream-A catalogue.
+W28E-1805A replaces residual archived design anchors with semantic requirement bindings. W28E-1805C closes the Stream-C WebUI/E2E local Docker path with a clean 76/76 browser suite against `cloud-dog/index-retriever-mcp-server:w28e-1805c-local`.
+
+W28E-1805C raw closeout artefacts:
+
+- Unit search backfill: `working/evidence/W28E-1805C/current/logs/service-unit-search-local-backfill-env.log`.
+- Unit Web tool proxy: `working/evidence/W28E-1805C/current/logs/service-unit-web-tool-proxy-api-forward-env-rerun.log`.
+- Local Docker build: `working/evidence/W28E-1805C/current/logs/local-docker-build-search-backfill-vault-simple.log`.
+- Full WebUI/E2E: `working/evidence/W28E-1805C/current/logs/local-docker-webui-playwright-search-backfill-full-clean.log`.

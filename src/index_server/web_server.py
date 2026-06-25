@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 
 from typing import Any
@@ -75,6 +76,20 @@ def _requires_caller_auth(proxy_path: str) -> bool:
     return bool(_CALLER_AUTH_PREFIX_RE.match(path)) or path == "/me"
 
 
+def _first_role_mapped_api_key(raw: Any, role: str) -> str:
+    """Return the first configured API key explicitly mapped to ``role``."""
+    wanted = str(role or "").strip().lower()
+    for entry in str(raw or "").split(","):
+        token = entry.strip()
+        if not token or ":" not in token:
+            continue
+        key, roles_csv = token.split(":", 1)
+        roles = {item.strip().lower() for item in roles_csv.split("|") if item.strip()}
+        if wanted in roles:
+            return key.strip()
+    return ""
+
+
 def _project_root_dir() -> str:
     """Resolve the repository root for runtime assets."""
     current = path_utils.resolve_path(__file__)
@@ -112,13 +127,40 @@ class _ProxyConfigBridge:
         api_binding = resolve_server_binding("api_server")
         self.api_base_url = f"http://{_normalise_api_host(api_binding.host)}:{int(api_binding.port)}"
 
+    def _configured_service_api_key(self, default: Any = None) -> Any:
+        for key in (
+            "api_server.api_key",
+            "test.api_key",
+            "auth.admin_token",
+            "index.auth.admin_api_key",
+        ):
+            value = self._config.get(key)
+            if value:
+                return value
+
+        value = os.environ.get("CLOUD_DOG__INDEX__AUTH__ADMIN_API_KEY", "").strip()
+        if value:
+            return value
+
+        mapped_keys = self._config.get("index.auth.api_keys") or os.environ.get("CLOUD_DOG__INDEX__AUTH__API_KEYS", "")
+        mapped_admin = _first_role_mapped_api_key(mapped_keys, "admin")
+        if mapped_admin:
+            return mapped_admin
+
+        for env_name in ("TEST_A2A_API_KEY",):
+            value = os.environ.get(env_name, "").strip()
+            if value:
+                return value
+
+        return default
+
     def get(self, key: str, default: Any = None) -> Any:
         if key in {"web_server.api_base_url", "api_server.base_url"}:
             return self.api_base_url
         if key == "web_server.verify_tls":
             return False
         if key == "api_server.api_key":
-            return self._config.get("api_server.api_key") or self._config.get("test.api_key") or self._config.get("auth.admin_token") or default
+            return self._configured_service_api_key(default)
         value = self._config.get(key)
         return default if value is None else value
 
@@ -451,58 +493,14 @@ def build_web_app() -> object:
 
     @app.api_route("/api/v1/tools/{tool_name}", methods=["POST"])
     async def api_tool_proxy(tool_name: str, request: Request) -> Response:
-        """Route tool calls to the MCP server which owns the live IndexService state."""
-        body = await request.body()
-        tool_args: dict = {}
-        if body:
-            try:
-                tool_args = json.loads(body)
-            except json.JSONDecodeError:
-                pass
-        jsonrpc_payload = {
-            "jsonrpc": "2.0",
-            "id": "web-tool-proxy",
-            "method": "tools/call",
-            "params": {"name": tool_name, "arguments": tool_args},
-        }
-        session_payload = await _caller_session_payload(request)
-        if (
-            session_payload is None
-            and not request.headers.get("authorization")
-            and not request.headers.get("x-api-key")
-        ):
-            return JSONResponse(status_code=401, content={"detail": "Authentication failed"})
-        if session_payload is not None:
-            from index_server.mcp_server import _required_permission_for_tool
+        """Route WebUI tool calls through the API server authority.
 
-            permission = _required_permission_for_tool(tool_name)
-            if not _caller_payload_has_permission(session_payload, permission):
-                return JSONResponse(
-                    status_code=403,
-                    content={"detail": f"Authorisation failed for tool '{tool_name}'"},
-                )
-        allow_service_key = session_payload is not None or await _service_key_allowed(request)
-        async with httpx.AsyncClient(base_url=mcp_base_url, verify=False, timeout=60) as client:
-            resp = await client.post(
-                "/mcp",
-                json=jsonrpc_payload,
-                headers=_mcp_proxy_headers(
-                    request,
-                    allow_service_key=allow_service_key,
-                    ignore_caller_credentials=session_payload is not None,
-                ),
-            )
-        try:
-            rpc_result = resp.json()
-            structured = rpc_result.get("result", {}).get("structuredContent")
-            if structured is not None:
-                return Response(content=json.dumps(structured), media_type="application/json")
-            content_items = rpc_result.get("result", {}).get("content", [])
-            if content_items and isinstance(content_items[0], dict) and content_items[0].get("text"):
-                return Response(content=content_items[0]["text"], media_type="application/json")
-        except Exception:
-            pass
-        return Response(content=resp.content, status_code=resp.status_code, media_type="application/json")
+        The API server owns the REST admin endpoints used by WebUI/E2E seed
+        flows and exposes the same tool surface with caller-aware auth. Keeping
+        Web tool calls on that surface prevents API/MCP process state splits
+        while MCP-console-specific routes below still exercise MCP directly.
+        """
+        return await _proxy_request(f"/api/v1/tools/{tool_name}", request)
 
     @app.api_route("/api/v1/tools", methods=["GET"])
     async def api_tools_list(request: Request) -> Response:

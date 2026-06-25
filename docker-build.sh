@@ -20,10 +20,10 @@
 # Variant selector (PS-97 v1.1 §1.1.3):
 #   --variant public  (default) builds Dockerfile.public for publication.
 #                     Default index is the public PyPI (pypi.org). Override the
-#                     index for an internal/Gitea boundary build via PYPI_URL.
+#                     index for an approved package boundary via PYPI_URL.
 #   --variant dev     builds Dockerfile (internal/dev) when present in a
-#                     developer checkout. Default index is the internal Gitea
-#                     public index.
+#                     developer checkout. Default index is the approved internal
+#                     PyPI boundary.
 #
 # Usage:
 #   docker-build.sh [VERSION] [--variant dev|public]
@@ -79,8 +79,8 @@ CERT_ARG=""
 PIP_CONF=".pip.conf.build"
 
 # ── Publication tag isolation (W28A-831) ──────────────────────────
-# PUBLICATION_TAG_SUFFIX appends an isolation suffix (e.g. gitea-test,
-# github-test) so publication test images never collide with dev/
+# PUBLICATION_TAG_SUFFIX appends an isolation suffix (e.g. boundary-test,
+# public-test) so publication test images never collide with dev/
 # release tags. Empty (the default) leaves behaviour unchanged.
 PUBLICATION_TAG_SUFFIX="${PUBLICATION_TAG_SUFFIX:-}"
 if [[ -n "${PUBLICATION_TAG_SUFFIX}" ]]; then
@@ -111,9 +111,7 @@ echo "=========================================="
 # ── PyPI Configuration ───────────────────────────────────────────
 # Variant-specific default index (PS-97 §3.3 single-index; never --extra-index-url):
 #   public -> pypi.org (override PYPI_URL for any other boundary index)
-#   dev    -> INTERNAL_PYPI_URL supplied by the developer environment
-# This published script hardcodes no internal host. Internal/Gitea builds set
-# PYPI_URL (or INTERNAL_PYPI_URL) from their environment.
+#   dev    -> internal PyPI, overrideable with INTERNAL_PYPI_URL/PYPI_URL
 if [[ -n "${PYPI_URL:-}" ]]; then
   : # honour caller override
 elif [[ "${VARIANT}" == "public" ]]; then
@@ -121,12 +119,18 @@ elif [[ "${VARIANT}" == "public" ]]; then
 elif [[ -n "${INTERNAL_PYPI_URL:-}" ]]; then
   PYPI_URL="${INTERNAL_PYPI_URL}"
 else
-  echo "ERROR: --variant dev requires PYPI_URL (or INTERNAL_PYPI_URL) to be set" >&2
-  exit 2
+  PYPI_URL="https://pypi.cloud-dog.net/simple/"
 fi
 PYPI_USERNAME="${PYPI_USERNAME:-}"
 PYPI_PASSWORD="${PYPI_PASSWORD:-}"
 PYPI_HOST="$(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${PYPI_URL}').hostname or 'pypi.org')")"
+
+if [[ "${VARIANT}" == "dev" && "${PYPI_HOST}" == "pypi.cloud-dog.net" ]]; then
+  if [[ -z "${PYPI_USERNAME}" || -z "${PYPI_PASSWORD}" ]]; then
+    echo "ERROR: --variant dev requires PYPI_USERNAME and PYPI_PASSWORD for pypi.cloud-dog.net" >&2
+    exit 2
+  fi
+fi
 
 if [[ -n "${PYPI_USERNAME}" ]] && [[ -n "${PYPI_PASSWORD}" ]]; then
   cat > "${PIP_CONF}" << EOF
