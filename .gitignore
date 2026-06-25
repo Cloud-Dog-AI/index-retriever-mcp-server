@@ -64,3 +64,7 @@ node_modules
 tmp-w28a847-api-nohup.log
 working/w28a-*-screenshots/
 node_modules/
+docker-env.local
+*.env.resolved
+**/.session_secret
+working/w28a-101-staged-secret-scan.log
