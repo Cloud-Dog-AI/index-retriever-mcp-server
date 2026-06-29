@@ -237,3 +237,33 @@ W28E-1805C raw closeout artefacts:
 - Unit Web tool proxy: `working/evidence/W28E-1805C/current/logs/service-unit-web-tool-proxy-api-forward-env-rerun.log`.
 - Local Docker build: `working/evidence/W28E-1805C/current/logs/local-docker-build-search-backfill-vault-simple.log`.
 - Full WebUI/E2E: `working/evidence/W28E-1805C/current/logs/local-docker-webui-playwright-search-backfill-full-clean.log`.
+
+
+<!-- W28E-1854 PS-PREPROD-DEPLOY-SMOKE rollout (2026-06-29) -->
+
+## W28E-1854 — PS-PREPROD-DEPLOY-SMOKE (preprod deployment smoke)
+
+Binding standard: `cloud-dog-ai-platform-standards/docs/standards/PS-PREPROD-DEPLOY-SMOKE.md`
+(PDS-001..PDS-013 + sibling sentinels). Lesson origin: AGENT-LESSONS §6.157 — a
+deployed service can answer health checks while its WebUI login flow crashes blank
+post-login. Health-only / route-only / local-only proof is NOT acceptance; this
+gate runs a real browser AFTER the final deployed digest is live.
+
+- **Smoke command (service entry point):**
+  `E2E_WEB_PASSWORD="<approved preprod admin password>" bash tests/smoke/run-preprod-deploy-smoke.sh`
+- **SSOT spec:** `cloud-dog-ai-ui-monorepo/apps/index-retriever/tests/e2e/preprod-deploy-smoke.spec.ts`
+- **Dedicated Playwright config (no local webServer):** `cloud-dog-ai-ui-monorepo/apps/index-retriever/playwright.preprod-smoke.config.ts`
+- **Required config keys (no hardcoded secrets):** `E2E_BASE_URL`
+  (default `https://indexretriever0.cloud-dog.net`), `E2E_WEB_USERNAME` (default `admin`),
+  `E2E_WEB_PASSWORD` / `CLOUD_DOG_WEB_LOGIN_PASSWORD` (approved preprod env / Vault
+  `cloud_dog_ai/config:dev.services.indexretriever0.web_password`).
+- **Expected auth mode:** cookie session login at canonical `/login`
+  (`/ui/login` → 308 → `/login`); anonymous `/auth/me` → 401 or `{user:null}` (no principal leak).
+- **Canonical page inventory (PDS-009):** `/`, `/admin/users`, `/admin/groups`, `/admin/api-keys`, `/admin/roles`, `/admin/rbac`, `/api-docs`, `/mcp-console`, `/a2a-console`, `/jobs`, `/settings`.
+- **Service-specific page inventory (PDS-010, hard-navigated — the crash-class guard):** `/collections`, `/ingest-search`, `/structure/documents`, `/observability`.
+- **Cleanliness bar (PDS-012):** zero uncaught page errors, zero fatal console
+  errors, zero 5xx, zero unexpected 4xx (shared `@cloud-dog/idam` best-effort
+  capability probes are the only tolerated 4xx; the crash discriminator
+  pageerror + blank `#root` + 5xx is asserted with zero tolerance).
+- **Evidence output location:** `working/preprod-deploy-smoke/` (gitignored test
+  output: JUnit `preprod-deploy-smoke.junit.xml`, HTML report, traces, screenshots).
