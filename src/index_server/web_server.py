@@ -28,7 +28,7 @@ from cloud_dog_config import load_config  # type: ignore
 from cloud_dog_storage import path_utils
 import httpx
 from fastapi import HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from index_server.admin_ui import collections_page
@@ -601,6 +601,15 @@ def build_web_app() -> object:
     @app.get("/collections")
     async def collections_ui() -> HTMLResponse:
         return HTMLResponse(content=collections_page())
+
+    @app.get("/jobs")
+    async def jobs_legacy_alias(request: Request) -> Response:
+        # PS-WEBUI-URL-CANONICAL WURL-002 / PS-76 JW13.1: legacy /jobs -> canonical
+        # /system/jobs as a deterministic HTTP 308, preserving query string (WURL-010).
+        target = "/system/jobs"
+        if request.url.query:
+            target = f"{target}?{request.url.query}"
+        return RedirectResponse(target, status_code=308)
 
     @app.get("/{path:path}")
     async def spa_fallback(path: str) -> Response:
