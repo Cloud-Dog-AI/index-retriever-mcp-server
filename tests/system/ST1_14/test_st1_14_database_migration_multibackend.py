@@ -97,7 +97,7 @@ def test_st_db_04_schema_versioning_simulation() -> None:
     baseline_revision = _current_revision(runtime)
     assert baseline_revision
 
-    _, temp_migration = _write_temp_migration(script_location, baseline_revision)
+    temp_revision, temp_migration = _write_temp_migration(script_location, baseline_revision)
     try:
         runtime.migration_runner.upgrade("head")
         inspector = inspect(runtime.engine)
@@ -112,6 +112,8 @@ def test_st_db_04_schema_versioning_simulation() -> None:
         inspector = inspect(runtime.engine)
         assert "_test_version_check" not in inspector.get_table_names()
     finally:
+        if temp_migration.exists() and _current_revision(runtime) == temp_revision:
+            runtime.migration_runner.downgrade(baseline_revision)
         if temp_migration.exists():
             temp_migration.unlink()
         runtime.migration_runner.upgrade("head")
