@@ -60,6 +60,28 @@ _SPA_ADMIN_PATHS = {
     "admin/rbac",
 }
 
+_LEGACY_WEBUI_REDIRECTS = {
+    "/ui/login": "/login",
+    "/audit": "/audit-log",
+    "/logs": "/audit-log",
+    "/idam/users": "/admin/users",
+    "/idam/groups": "/admin/groups",
+    "/idam/api-keys": "/admin/api-keys",
+    "/idam/roles": "/admin/roles",
+    "/idam/rbac": "/admin/rbac",
+    "/api-keys": "/admin/api-keys",
+    "/apikeys": "/admin/api-keys",
+    "/rbac": "/admin/rbac",
+    "/api-docs": "/developer/api-docs",
+    "/docs": "/developer/api-docs",
+    "/openapi": "/developer/api-docs",
+    "/mcp-console": "/developer/mcp-console",
+    "/a2a-console": "/developer/a2a-console",
+    "/jobs": "/system/jobs",
+    "/settings": "/system/settings",
+    "/about": "/system/about",
+}
+
 # W28A-734-R2 SECURITY: paths whose authorisation MUST come from the caller's own
 # session cookie or presented api-key/bearer. The web tier forwards them verbatim
 # and NEVER injects the service api_key, so the api server enforces 401 for an
@@ -184,6 +206,15 @@ def _runtime_override_number(config: Any, env_name: str, config_key: str, defaul
     return int(value) if value.is_integer() else value
 
 
+def _redirect_with_request_parts(request: Request, target_path: str) -> RedirectResponse:
+    target = target_path
+    if request.url.query:
+        target = f"{target}?{request.url.query}"
+    if request.url.fragment:
+        target = f"{target}#{request.url.fragment}"
+    return RedirectResponse(target, status_code=308)
+
+
 def build_web_app() -> object:
     """Build the thin web server app."""
     # req: FR-001
@@ -230,6 +261,14 @@ def build_web_app() -> object:
     assets_dir = _ui_assets_dir()
     if path_utils.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="ui-assets")
+
+    @app.middleware("http")
+    async def canonical_webui_redirects(request: Request, call_next):
+        if request.method in ("GET", "HEAD"):
+            target = _LEGACY_WEBUI_REDIRECTS.get(request.url.path)
+            if target is not None:
+                return _redirect_with_request_parts(request, target)
+        return await call_next(request)
 
     def _runtime_config_response() -> Response:
         payload = {
