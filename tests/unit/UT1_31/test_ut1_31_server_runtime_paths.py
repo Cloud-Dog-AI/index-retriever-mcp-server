@@ -79,6 +79,15 @@ def test_api_app_routes_cover_auth_and_errors(monkeypatch: pytest.MonkeyPatch, s
     canonical_mcp = client.get("/developer/mcp-console")
     assert canonical_mcp.status_code == 200
 
+    # W28E-1844 / PS-WEBUI-URL-CANONICAL WURL-DEV-A2A: the public api_server SPA front
+    # must 308 legacy /a2a-console -> canonical /developer/a2a-console (query preserved).
+    legacy_a2a = client.get("/a2a-console?skill=ping", follow_redirects=False)
+    assert legacy_a2a.status_code == 308
+    assert legacy_a2a.headers["location"] == "/developer/a2a-console?skill=ping"
+
+    canonical_a2a = client.get("/developer/a2a-console")
+    assert canonical_a2a.status_code == 200
+
     anon_me = client.get("/auth/me")
     assert anon_me.status_code == 401
     assert "admin" not in anon_me.text

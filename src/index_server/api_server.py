@@ -102,6 +102,11 @@ _SPA_RESERVED_SEGMENTS = {
 
 _LEGACY_WEBUI_REDIRECTS = {
     "/mcp-console": "/developer/mcp-console",
+    # W28E-1844 / PS-72 §11 / PS-WEBUI-URL-CANONICAL §12 (WURL-DEV-A2A): the public
+    # api_server SPA front must 308 the legacy /a2a-console -> canonical
+    # /developer/a2a-console, matching web_server's map (which is on the internal
+    # web port only). Without this the edge-served /a2a-console returned HTTP 200.
+    "/a2a-console": "/developer/a2a-console",
 }
 
 
