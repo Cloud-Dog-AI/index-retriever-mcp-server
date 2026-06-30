@@ -651,7 +651,10 @@ def build_web_app() -> object:
         return RedirectResponse(target, status_code=308)
 
     @app.get("/{path:path}")
-    async def spa_fallback(path: str) -> Response:
+    async def spa_fallback(path: str, request: Request) -> Response:
+        redirect_target = _LEGACY_WEBUI_REDIRECTS.get(f"/{path.strip('/')}")
+        if redirect_target is not None:
+            return _redirect_with_request_parts(request, redirect_target)
         if path in _SPA_ADMIN_PATHS:
             return _spa_index()
         first_segment = path.split("/", 1)[0]

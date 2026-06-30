@@ -72,6 +72,13 @@ def test_api_app_routes_cover_auth_and_errors(monkeypatch: pytest.MonkeyPatch, s
     assert "API_BASE_URL" in runtime_config.text
     assert '"AUTH_MODE": "cookie"' in runtime_config.text
 
+    legacy_mcp = client.get("/mcp-console?tool=index_list", follow_redirects=False)
+    assert legacy_mcp.status_code == 308
+    assert legacy_mcp.headers["location"] == "/developer/mcp-console?tool=index_list"
+
+    canonical_mcp = client.get("/developer/mcp-console")
+    assert canonical_mcp.status_code == 200
+
     anon_me = client.get("/auth/me")
     assert anon_me.status_code == 401
     assert "admin" not in anon_me.text
@@ -808,6 +815,14 @@ def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch
     spa_admin = client.get("/admin/users")
     assert spa_admin.status_code == 200
     assert "id='root'" in spa_admin.text
+
+    legacy_mcp = client.get("/mcp-console?tool=index_list", follow_redirects=False)
+    assert legacy_mcp.status_code == 308
+    assert legacy_mcp.headers["location"] == "/developer/mcp-console?tool=index_list"
+
+    canonical_mcp = client.get("/developer/mcp-console")
+    assert canonical_mcp.status_code == 200
+    assert "id='root'" in canonical_mcp.text
 
     collections_ui = client.get("/collections")
     assert collections_ui.status_code == 200

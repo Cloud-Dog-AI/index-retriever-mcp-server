@@ -63,7 +63,7 @@ del _os_early
 from fastapi import File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 try:
     import psutil
@@ -99,6 +99,16 @@ _SPA_RESERVED_SEGMENTS = {
     "docs",
     "openapi.json",
 }
+
+_LEGACY_WEBUI_REDIRECTS = {
+    "/mcp-console": "/developer/mcp-console",
+}
+
+
+def _redirect_with_query(request: Request, target_path: str) -> RedirectResponse:
+    query = str(request.url.query or "")
+    target = f"{target_path}?{query}" if query else target_path
+    return RedirectResponse(url=target, status_code=308)
 
 
 def _project_root_dir() -> str:
@@ -1360,8 +1370,11 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 </html>"""
         return HTMLResponse(content=body)
 
-    def spa_fallback(path: str) -> Response:
+    def spa_fallback(path: str, request: Request) -> Response:
         """Serve the SPA entrypoint for client-routed paths."""
+        redirect_target = _LEGACY_WEBUI_REDIRECTS.get(f"/{path.strip('/')}")
+        if redirect_target is not None:
+            return _redirect_with_query(request, redirect_target)
         first_segment = path.split("/", 1)[0]
         if first_segment in _SPA_RESERVED_SEGMENTS:
             raise HTTPException(status_code=404, detail="Not found")
