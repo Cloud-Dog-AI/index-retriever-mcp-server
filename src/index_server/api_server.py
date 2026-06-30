@@ -107,6 +107,7 @@ _LEGACY_WEBUI_REDIRECTS = {
     # /developer/a2a-console, matching web_server's map (which is on the internal
     # web port only). Without this the edge-served /a2a-console returned HTTP 200.
     "/a2a-console": "/developer/a2a-console",
+    "/ingest-search": "/search",
 }
 
 

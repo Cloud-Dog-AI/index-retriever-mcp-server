@@ -77,6 +77,7 @@ _LEGACY_WEBUI_REDIRECTS = {
     "/openapi": "/developer/api-docs",
     "/mcp-console": "/developer/mcp-console",
     "/a2a-console": "/developer/a2a-console",
+    "/ingest-search": "/search",
     "/jobs": "/system/jobs",
     "/settings": "/system/settings",
     "/about": "/system/about",
