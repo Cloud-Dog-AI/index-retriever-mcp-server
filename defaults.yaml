@@ -62,6 +62,26 @@ queue:
     enabled: false
     url: "${REDIS_URL:redis://127.0.0.1:6379/0}"
 
+outbound:
+  discovery:
+    ttl_seconds: 300
+  mcp:
+    path: "/mcp"
+    timeout_seconds: 30
+    failure_threshold: 3
+    reset_seconds: 60
+  a2a:
+    tasks_path: "/a2a/tasks"
+    timeout_seconds: 30
+    failure_threshold: 3
+    reset_seconds: 60
+  services:
+    search-mcp:
+      credential_config_key: "dev.services.searchmcp0.api_key"
+      credential_header: "X-API-Key"
+      mcp_path: "/mcp"
+      tasks_path: "/a2a/tasks"
+
 profiles:
   default:
     enabled: true

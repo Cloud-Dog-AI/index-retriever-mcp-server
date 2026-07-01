@@ -20,7 +20,7 @@ from typing import Any
 from cloud_dog_storage import path_utils
 from cloud_dog_logging.audit_logger import AuditLogger as PlatformAuditLogger
 from cloud_dog_logging.audit_schema import Actor, AuditEvent, Target
-from cloud_dog_logging.correlation import get_correlation_id, set_service_name
+from cloud_dog_logging.correlation import get_correlation_id, set_correlation_id, set_service_name
 from cloud_dog_logging.sinks.file_sink import FileSink
 
 try:
@@ -242,6 +242,63 @@ class AuditLogger:
             server_id=self.server_id,
             **details,
         )
+
+    def log_external_call(
+        self,
+        *,
+        actor: str,
+        action: str,
+        target_service: str,
+        destination_address: str,
+        component: str,
+        outcome: str,
+        correlation_id: str,
+        duration_ms: int,
+        parameters: dict[str, Any] | None = None,
+        error: str = "",
+    ) -> None:
+        """Write a PS-AUDIT-LOG external.call audit event."""
+        self._bind_context()
+        previous_correlation = get_correlation_id()
+        try:
+            if correlation_id:
+                set_correlation_id(correlation_id)
+            details = {
+                "server_id": self.server_id,
+                "destination_address": destination_address,
+                "parameters": redact_payload(parameters or {}),
+            }
+            if error:
+                details["error"] = {"message": str(error)[:500]}
+            try:
+                event = AuditEvent(
+                    event_type="external.call",
+                    actor=self._actor(actor, roles=["service"], actor_type="service"),
+                    action=action,
+                    outcome=outcome,
+                    correlation_id=correlation_id or get_correlation_id(),
+                    service=self.service_name,
+                    service_instance=self.server_id,
+                    environment=self.environment,
+                    component=component,
+                    target=self._target("service", target_service, target_name=target_service),
+                    destination_address=destination_address,
+                    details=details,
+                    duration_ms=duration_ms,
+                )
+            except TypeError:
+                event = self.build_event(
+                    event_type="external.call",
+                    actor=self._actor(actor, roles=["service"], actor_type="service"),
+                    action=action,
+                    outcome=outcome,
+                    target=self._target("service", target_service, target_name=target_service),
+                    details=details,
+                    duration_ms=duration_ms,
+                )
+            self.write_event(event)
+        finally:
+            set_correlation_id(previous_correlation)
 
     def build_event(
         self,

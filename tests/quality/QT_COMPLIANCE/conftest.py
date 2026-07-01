@@ -105,11 +105,11 @@ def allowlist() -> dict[str, object]:
             # shifted +17 by the W28A-734-R2 _requires_caller_auth security predicate;
             # the mcp/a2a builders shifted +2 (168/169 -> 170/171) by the W28E-1805B
             # # req: FR-001/FR-017 markers added inside build_web_app.)
-            "src/index_server/web_server.py:103",
-            "src/index_server/web_server.py:104",
-            "src/index_server/web_server.py:113",
-            "src/index_server/web_server.py:170",
-            "src/index_server/web_server.py:171",
+            "src/index_server/web_server.py:141",
+            "src/index_server/web_server.py:142",
+            "src/index_server/web_server.py:151",
+            "src/index_server/web_server.py:244",
+            "src/index_server/web_server.py:245",
             # hdro.py: HDRO_CANONICAL_BASE_URL is the documented non-secret
             # canonical UNDP HDRO public-API host. It is deliberately pinned
             # (not config-overridable) because it seeds the anti-SSRF host

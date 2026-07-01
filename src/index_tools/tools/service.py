@@ -43,6 +43,9 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 
 from index_tools.audit.logger import AuditLogger
 from index_tools.embeddings.adapter import EmbeddingAdapter
+from index_tools.outbound.a2a_client import OutboundA2AClient
+from index_tools.outbound.mcp_client import OutboundMCPClient
+from index_tools.pipeline.enrich import EnrichStepConfig, apply_enrich_steps, enrich_steps_from_metadata
 from index_tools.pipeline.chunking import token_chunks
 from index_tools.pipeline.metadata import build_metadata
 from index_tools.queue.engine import JobCancelledError, QueueEngine
@@ -804,6 +807,8 @@ class IndexService:
         self._idam_api_key_refs: dict[str, str] = {}
         self._idam_auth: Any | None = None
         self.a2a_events: list[ConfigEventRecord] = []
+        self._outbound_mcp_client_factory = OutboundMCPClient
+        self._outbound_a2a_client_factory = OutboundA2AClient
         self.queue.register_handler("ingest_text", self._process_ingest_text_job)
         self.queue.register_handler("retention_run", self._process_retention_job)
         self.queue.register_handler("reindex_run", self._process_reindex_job)
@@ -1538,6 +1543,15 @@ class IndexService:
         document_metadata["parser_name"] = str(document_metadata.get("parser_name") or "internal")
         document_metadata["parser_provider"] = str(document_metadata.get("parser_provider") or "internal")
         document_metadata.setdefault("indexing_signature", self._llm_model)
+        document_metadata = self._apply_ingest_enrichment(
+            profile=profile,
+            collection=collection,
+            source_uri=source_uri,
+            text=text,
+            document_metadata=document_metadata,
+            caller_metadata=metadata if isinstance(metadata, dict) else None,
+            correlation_id=job.correlation_id,
+        )
         document_metadata = _apply_metadata_pack_aliases(document_metadata)
         metadata_errors = validate_metadata(document_metadata)
         if metadata_errors:
@@ -1653,6 +1667,69 @@ class IndexService:
             metadata=audit_metadata,
             chunk_count=len(chunks),
         )
+
+    def _apply_ingest_enrichment(
+        self,
+        *,
+        profile: str,
+        collection: str,
+        source_uri: str,
+        text: str,
+        document_metadata: dict[str, Any],
+        caller_metadata: dict[str, Any] | None,
+        correlation_id: str | None,
+    ) -> dict[str, Any]:
+        """Apply configured outbound enrichers before vector upsert."""
+        source_metadata = self._matching_source_enrichment_metadata(
+            profile=profile,
+            collection=collection,
+            source_uri=source_uri,
+        )
+        steps = enrich_steps_from_metadata(source_metadata, caller_metadata)
+        if not steps:
+            return document_metadata
+
+        document = {
+            "text": text,
+            "content": text,
+            "title": document_metadata.get("title") or document_metadata.get("filename") or source_uri,
+            "metadata": dict(document_metadata),
+        }
+
+        def _client_factory(step: EnrichStepConfig) -> Any:
+            transport = step.transport.strip().lower()
+            if transport == "a2a":
+                return self._outbound_a2a_client_factory(step.service, audit_logger=self.audit_logger)
+            return self._outbound_mcp_client_factory(step.service, audit_logger=self.audit_logger)
+
+        enriched = self._run_async(
+            apply_enrich_steps(
+                document,
+                steps,
+                _client_factory,
+                correlation_id=correlation_id,
+            )
+        )
+        enriched_metadata = enriched.get("metadata")
+        return dict(enriched_metadata) if isinstance(enriched_metadata, dict) else document_metadata
+
+    def _matching_source_enrichment_metadata(
+        self,
+        *,
+        profile: str,
+        collection: str,
+        source_uri: str,
+    ) -> dict[str, Any]:
+        """Return source-config metadata for the current ingest source, if any."""
+        for record in self.source_configs.values():
+            if not record.enabled:
+                continue
+            if record.profile != profile or record.collection != collection:
+                continue
+            if record.uri and record.uri not in {source_uri, normalise_source_uri(source_uri)}:
+                continue
+            return dict(record.metadata)
+        return {}
 
     def _raise_if_job_cancelled(self, job_id: str) -> None:
         """Abort cooperative job execution when the queue state is cancelled."""
