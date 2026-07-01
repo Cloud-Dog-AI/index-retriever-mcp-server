@@ -82,6 +82,20 @@ outbound:
       mcp_path: "/mcp"
       tasks_path: "/a2a/tasks"
 
+dev:
+  services:
+    indexretriever:
+      default_pipelines:
+        search_mcp_enrich:
+          enabled: false
+          profiles: []
+          collections: []
+          source_uri_globs: []
+          pipeline:
+            - enrich: search-mcp.enrich(query=$doc.title, depth=quick)
+              transport: a2a
+              required: false
+
 profiles:
   default:
     enabled: true

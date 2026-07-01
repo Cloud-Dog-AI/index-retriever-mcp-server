@@ -313,6 +313,81 @@ def _merge_document_metadata(
     return document_metadata
 
 
+def _as_text_set(value: Any) -> set[str]:
+    if value is None:
+        return set()
+    if isinstance(value, str):
+        return {item.strip() for item in value.split(",") if item.strip()}
+    if isinstance(value, (list, tuple, set)):
+        return {str(item).strip() for item in value if str(item).strip()}
+    text = str(value).strip()
+    return {text} if text else set()
+
+
+def _default_pipeline_entries(raw: Any) -> list[dict[str, Any]]:
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        return [dict(item) for item in raw if isinstance(item, dict)]
+    if not isinstance(raw, dict):
+        return []
+    if any(key in raw for key in ("pipeline", "enrich", "enrichers", "steps")):
+        return [dict(raw)]
+    entries: list[dict[str, Any]] = []
+    for name, value in raw.items():
+        if not isinstance(value, dict):
+            continue
+        entry = dict(value)
+        entry.setdefault("name", str(name))
+        entries.append(entry)
+    return entries
+
+
+def _default_enrichment_metadata_blocks(
+    *,
+    profile: str,
+    collection: str,
+    source_uri: str,
+    config_value: Any | None = None,
+) -> list[dict[str, Any]]:
+    """Return enabled operator-default pipeline metadata for this ingest."""
+    raw = (
+        config_value
+        if config_value is not None
+        else _cfg_val("dev.services.indexretriever.default_pipelines", None)
+    )
+    blocks: list[dict[str, Any]] = []
+    for entry in _default_pipeline_entries(raw):
+        if entry.get("enabled", False) is not True:
+            continue
+        profiles = _as_text_set(
+            entry.get("profiles") or entry.get("tenant_ids") or entry.get("tenants")
+        )
+        if profiles and profile not in profiles:
+            continue
+        collections = _as_text_set(entry.get("collections"))
+        if collections and collection not in collections:
+            continue
+        source_patterns = _as_text_set(
+            entry.get("source_uri_globs") or entry.get("source_uri_patterns")
+        )
+        if source_patterns and not any(fnmatch.fnmatch(source_uri, pattern) for pattern in source_patterns):
+            continue
+        metadata = entry.get("metadata")
+        if isinstance(metadata, dict):
+            blocks.append(dict(metadata))
+            continue
+        block: dict[str, Any] = {}
+        for key in ("pipeline", "enrich", "enrichers"):
+            if key in entry:
+                block[key] = entry[key]
+        if "steps" in entry and "pipeline" not in block:
+            block["pipeline"] = entry["steps"]
+        if block:
+            blocks.append(block)
+    return blocks
+
+
 def _apply_metadata_pack_aliases(metadata: dict[str, Any]) -> dict[str, Any]:
     """Mirror the archived metadata-pack field names onto the active contract."""
     doc_id = str(metadata.get("doc_id", ""))
@@ -1685,7 +1760,16 @@ class IndexService:
             collection=collection,
             source_uri=source_uri,
         )
-        steps = enrich_steps_from_metadata(source_metadata, caller_metadata)
+        default_metadata_blocks = _default_enrichment_metadata_blocks(
+            profile=profile,
+            collection=collection,
+            source_uri=source_uri,
+        )
+        steps = enrich_steps_from_metadata(
+            *default_metadata_blocks,
+            source_metadata,
+            caller_metadata,
+        )
         if not steps:
             return document_metadata
 

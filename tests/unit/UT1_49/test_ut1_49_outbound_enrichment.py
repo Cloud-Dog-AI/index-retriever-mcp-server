@@ -27,6 +27,7 @@ from index_tools.pipeline.enrich import (
     enrich_steps_from_metadata,
     parse_enrich_spec,
 )
+from index_tools.tools.service import _default_enrichment_metadata_blocks
 
 pytestmark = [pytest.mark.UT, pytest.mark.mcp, pytest.mark.req("FR-002")]
 
@@ -107,6 +108,43 @@ def test_source_metadata_builds_enrich_steps() -> None:
     assert len(steps) == 1
     assert steps[0].transport == "a2a"
     assert steps[0].service == "search-mcp"
+
+
+def test_default_pipeline_config_is_opt_in_and_filterable() -> None:
+    config = {
+        "search_mcp_enrich": {
+            "enabled": True,
+            "profiles": ["research-tenant"],
+            "collections": ["briefings"],
+            "source_uri_globs": ["https://docs.example/**"],
+            "pipeline": [
+                {"enrich": "search-mcp.enrich(query=$doc.title, depth=quick)", "transport": "a2a"}
+            ],
+        },
+        "disabled_default": {
+            "enabled": False,
+            "pipeline": [{"enrich": "search-mcp.enrich(query=$doc.title, depth=quick)"}],
+        },
+    }
+
+    blocks = _default_enrichment_metadata_blocks(
+        profile="research-tenant",
+        collection="briefings",
+        source_uri="https://docs.example/cloud-dog.md",
+        config_value=config,
+    )
+    steps = enrich_steps_from_metadata(*blocks)
+
+    assert len(steps) == 1
+    assert steps[0].service == "search-mcp"
+    assert steps[0].tool == "enrich"
+    assert steps[0].transport == "a2a"
+    assert not _default_enrichment_metadata_blocks(
+        profile="other",
+        collection="briefings",
+        source_uri="https://docs.example/cloud-dog.md",
+        config_value=config,
+    )
 
 
 @pytest.mark.asyncio
