@@ -11,7 +11,7 @@
 # Select via: docker-build.sh --variant public  (the default)
 #
 # NOTE: the Cloud-Dog platform packages (cloud-dog-config, cloud-dog-logging,
-# cloud-dog-api-kit, cloud-dog-idam, cloud-dog-db, cloud-dog-jobs,
+# cloud-dog-cache, cloud-dog-api-kit, cloud-dog-idam, cloud-dog-db, cloud-dog-jobs,
 # cloud-dog-storage, cloud-dog-llm, cloud-dog-vdb) MUST be available on the
 # active public index (e.g. pypi.org, or built from the GitHub-mirrored source
 # per PS-97 §3.3) before this Dockerfile can build successfully end-to-end. That
@@ -51,6 +51,7 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     pip install --no-cache-dir \
       cloud-dog-config \
       cloud-dog-logging \
+      "cloud-dog-cache>=0.2.0" \
       "cloud-dog-api-kit==0.13.0" \
       "cloud-dog-idam>=0.5.2,<0.6" \
       cloud-dog-db \
