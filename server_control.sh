@@ -196,7 +196,7 @@ start_server() {
     return 1
   fi
   port="$(resolve_server_port "${name}")"
-  if [[ -n "${port}" ]] && ! wait_for_server_port "${name}" "${port}" 45 "127.0.0.1"; then
+  if [[ -n "${port}" ]] && ! wait_for_server_port "${name}" "${port}" 180 "127.0.0.1"; then
     echo "${name}: failed to bind port ${port} (see ${log_file})" >&2
     rm -f "${pid_file}"
     return 1
