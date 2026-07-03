@@ -64,6 +64,11 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     if [ -z "${INDEX_URL}" ]; then echo "ERROR: no index-url in pip.conf secret" >&2; exit 3; fi && \
     PIP_NO_INPUT=1 pip install --no-cache-dir \
       --index-url "${INDEX_URL}" \
+      --trusted-host pypi.cloud-dog.net \
+      hatchling && \
+    PIP_NO_INPUT=1 pip install --no-cache-dir \
+      --index-url "${INDEX_URL}" \
+      --no-build-isolation \
       --no-deps \
       --trusted-host pypi.cloud-dog.net \
       .
