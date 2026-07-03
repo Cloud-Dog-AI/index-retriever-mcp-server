@@ -27,31 +27,43 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install platform packages from the approved internal PyPI boundary.
-ARG PYPI_URL=https://pypi.cloud-dog.net/simple/
+# Install platform packages from the approved package boundary. Read the
+# BuildKit pip secret inside this RUN so credentials never become build args.
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
+    set -e; \
+    INDEX_URL="$(sed -n 's/^[[:space:]]*index-url[[:space:]]*=[[:space:]]*//p' /etc/pip.conf | head -n1)" && \
+    if [ -z "${INDEX_URL}" ]; then echo "ERROR: no index-url in pip.conf secret" >&2; exit 3; fi && \
     PIP_NO_INPUT=1 PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
+      --index-url "${INDEX_URL}" \
       --trusted-host pypi.cloud-dog.net \
       cloud-dog-config \
       cloud-dog-logging \
       "cloud-dog-cache>=0.2.0" \
       cloud-dog-api-kit==0.13.0 \
-      "cloud_dog_idam>=0.5.2,<0.6" \
+      "cloud-dog-idam>=0.5.2,<0.6" \
       cloud-dog-db \
       cloud-dog-jobs==0.4.1 \
       cloud-dog-storage \
       cloud-dog-llm==0.3.1 \
-      cloud-dog-vdb>=0.5.4
+      "cloud-dog-vdb>=0.5.4"
 
 COPY REQUIREMENTS.txt pyproject.toml README.md ./
 COPY src/ ./src/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
+    set -e; \
+    INDEX_URL="$(sed -n 's/^[[:space:]]*index-url[[:space:]]*=[[:space:]]*//p' /etc/pip.conf | head -n1)" && \
+    if [ -z "${INDEX_URL}" ]; then echo "ERROR: no index-url in pip.conf secret" >&2; exit 3; fi && \
     PIP_NO_INPUT=1 PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
+      --index-url "${INDEX_URL}" \
       --trusted-host pypi.cloud-dog.net \
       -r REQUIREMENTS.txt
 COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
+    set -e; \
+    INDEX_URL="$(sed -n 's/^[[:space:]]*index-url[[:space:]]*=[[:space:]]*//p' /etc/pip.conf | head -n1)" && \
+    if [ -z "${INDEX_URL}" ]; then echo "ERROR: no index-url in pip.conf secret" >&2; exit 3; fi && \
     PIP_NO_INPUT=1 pip install --no-cache-dir \
+      --index-url "${INDEX_URL}" \
       --no-deps \
       --trusted-host pypi.cloud-dog.net \
       .
