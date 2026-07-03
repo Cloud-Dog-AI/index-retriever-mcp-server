@@ -13,7 +13,7 @@ authors = [
 ]
 dependencies = [
     # Platform packages (from internal PyPI)
-    "cloud_dog_config==0.3.3",
+    "cloud_dog_config==0.3.4",
     "cloud_dog_logging>=0.3.3",
     "cloud_dog_cache>=0.2.1",
     "cloud_dog_api_kit==0.13.0",

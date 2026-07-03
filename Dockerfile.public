@@ -49,15 +49,15 @@ COPY REQUIREMENTS.txt pyproject.toml README.md ./
 COPY src/ ./src/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     pip install --no-cache-dir \
-      cloud-dog-config \
+      "cloud-dog-config==0.3.4" \
       cloud-dog-logging \
       "cloud-dog-cache>=0.2.0" \
       "cloud-dog-api-kit==0.13.0" \
-      "cloud-dog-idam>=0.5.2,<0.6" \
+      "cloud-dog-idam==0.5.3" \
       cloud-dog-db \
       "cloud-dog-jobs==0.4.1" \
       cloud-dog-storage \
-      "cloud-dog-llm==0.3.1" \
+      "cloud-dog-llm==0.4.0" \
       "cloud-dog-vdb>=0.5.4"
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     pip install --no-cache-dir -r REQUIREMENTS.txt

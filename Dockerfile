@@ -32,15 +32,15 @@ ARG PYPI_URL=https://pypi.cloud-dog.net/simple/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     PIP_NO_INPUT=1 PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
       --trusted-host pypi.cloud-dog.net \
-      cloud-dog-config \
+      "cloud-dog-config==0.3.4" \
       cloud-dog-logging \
       "cloud-dog-cache>=0.2.0" \
       cloud-dog-api-kit==0.13.0 \
-      "cloud_dog_idam>=0.5.2,<0.6" \
+      "cloud-dog-idam==0.5.3" \
       cloud-dog-db \
       cloud-dog-jobs==0.4.1 \
       cloud-dog-storage \
-      cloud-dog-llm==0.3.1 \
+      cloud-dog-llm==0.4.0 \
       cloud-dog-vdb>=0.5.4
 
 COPY REQUIREMENTS.txt pyproject.toml README.md ./
