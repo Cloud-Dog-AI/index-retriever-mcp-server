@@ -1186,6 +1186,16 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         _sync_logging_correlation(request)
         return {k.lower(): v for k, v in request.headers.items()}
 
+    @app.middleware("http")
+    async def _admin_collections_auth_before_validation(request: Request, call_next):
+        if request.method == "POST" and request.url.path == "/admin/collections":
+            try:
+                identity = _auth_or_raise(request, _headers_from_request(request))
+                _require_or_raise(request, identity, "admin")
+            except HTTPException as exc:
+                return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+        return await call_next(request)
+
     def health(request: Request = None) -> dict[str, Any]:
         """Execute health."""
         correlation_id = _sync_logging_correlation(request) if request is not None else get_logging_correlation_id()
