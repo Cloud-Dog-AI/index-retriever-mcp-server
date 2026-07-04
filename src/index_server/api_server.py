@@ -1206,6 +1206,15 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                 return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
         return await call_next(request)
 
+    async def _json_object_or_raise(request: Request) -> dict[str, Any]:
+        try:
+            payload = await request.json()
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=422, detail="Invalid JSON body") from exc
+        if not isinstance(payload, dict):
+            raise HTTPException(status_code=422, detail="JSON object body required")
+        return payload
+
     def health(request: Request = None) -> dict[str, Any]:
         """Execute health."""
         correlation_id = _sync_logging_correlation(request) if request is not None else get_logging_correlation_id()
@@ -1790,9 +1799,10 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         ]
         return {"collections": collections}
 
-    def admin_collections_create(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+    async def admin_collections_create(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "admin")
+        payload = await _json_object_or_raise(request)
         profile = str(payload.get("profile", "default"))
         collection = str(payload["collection"])
         active_service.admin_collection_create(

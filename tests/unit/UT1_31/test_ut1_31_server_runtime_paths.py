@@ -92,6 +92,23 @@ def test_api_app_routes_cover_auth_and_errors(monkeypatch: pytest.MonkeyPatch, s
     assert anon_me.status_code == 401
     assert "admin" not in anon_me.text
 
+    for label, kwargs in (
+        ("empty", {"content": b"", "headers": {"content-type": "application/json"}}),
+        ("broken-json", {"content": b"{", "headers": {"content-type": "application/json"}}),
+        ("wrong-type", {"json": []}),
+    ):
+        anon_collection_create = client.post("/admin/collections", **kwargs)
+        assert anon_collection_create.status_code == 401, (
+            f"anonymous {label} body must be rejected before request validation"
+        )
+
+    read_only_collection_create = client.post(
+        "/admin/collections",
+        headers={"x-api-key": "valid-reader-token", "content-type": "application/json"},
+        content=b"{",
+    )
+    assert read_only_collection_create.status_code == 403
+
     read_only_me = client.get("/auth/me", headers={"x-api-key": "valid-reader-token"})
     assert read_only_me.status_code == 200
     assert read_only_me.json()["user"]["roles"] == ["read-only"]
