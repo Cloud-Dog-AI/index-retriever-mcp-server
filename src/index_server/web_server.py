@@ -601,11 +601,18 @@ def build_web_app() -> object:
 
     @app.get("/admin")
     @app.get("/admin/users")
+    @app.get("/admin/roles")
     @app.get("/admin/groups")
     @app.get("/admin/api-keys")
     @app.get("/admin/rbac")
     async def admin_spa_routes() -> Response:
         # req: FR-018
+        # PDS-009: /admin/roles MUST serve the SPA index shell for a browser HTML
+        # navigation, exactly like /admin/users. Without this explicit route it fell
+        # through to the /admin/{path:path} JSON proxy below (registered before the
+        # SPA fallback), so the roles admin page returned application/json (roles data
+        # when authed, 401 when not) instead of the SPA — blank #root in the WebUI.
+        # The roles page still fetches its DATA from /api/v1/admin/roles (JSON, 401 anon).
         return _spa_index()
 
     @app.api_route("/admin/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])

@@ -825,6 +825,14 @@ def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch
     assert spa_admin.status_code == 200
     assert "id='root'" in spa_admin.text
 
+    # PDS-009: a browser HTML navigation to /admin/roles (where /idam/roles 308s to)
+    # MUST serve the SPA index shell — 200 text/html with #root — exactly like
+    # /admin/users, NOT the /admin/{path} JSON proxy that previously shadowed it.
+    spa_roles = client.get("/admin/roles")
+    assert spa_roles.status_code == 200
+    assert spa_roles.headers["content-type"].startswith("text/html")
+    assert "id='root'" in spa_roles.text
+
     legacy_mcp = client.get("/mcp-console?tool=index_list", follow_redirects=False)
     assert legacy_mcp.status_code == 308
     assert legacy_mcp.headers["location"] == "/developer/mcp-console?tool=index_list"
@@ -859,7 +867,10 @@ def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch
     # The same exposure on proxied DATA endpoints (/api/* incl. /api/v1/admin/*),
     # NOT covered by the old bc610d8 carve-out, is now closed: unauth => 401, no
     # injected key. (GET /admin/<page> is a public SPA HTML shell, not a data hop.)
-    unsafe_data_paths = ("/api/config", "/api/v1/admin/users")
+    # PDS-009: the roles DATA endpoint the SPA roles page fetches (/api/v1/admin/roles)
+    # stays a verbatim caller-auth proxy — unauthenticated => 401, no injected key —
+    # so serving the SPA shell at /admin/roles does NOT weaken data auth.
+    unsafe_data_paths = ("/api/config", "/api/v1/admin/users", "/api/v1/admin/roles")
     for unsafe_path in unsafe_data_paths:
         resp = client.get(unsafe_path)
         assert resp.status_code == 401, f"{unsafe_path}: {resp.status_code}"
