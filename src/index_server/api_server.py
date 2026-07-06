@@ -2034,7 +2034,15 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "admin")
         subject_type = str(payload.get("subject_type") or payload.get("entity_type") or "user")
-        subject = str(payload.get("subject") or payload.get("entity_id") or "")
+        # W28E-1859 ST-6: the shipped @cloud-dog/idam WebUI sends `subject_id`/`resource_id`
+        # (rbacBindingPayload), while older callers use `subject`/`entity_id`/`resource`.
+        # Accept all spellings so the WebUI "Created binding" flow does not 400.
+        subject = str(
+            payload.get("subject")
+            or payload.get("subject_id")
+            or payload.get("entity_id")
+            or ""
+        )
         resource_type = str(payload.get("resource_type") or "system")
         resource = str(payload.get("resource") or payload.get("resource_id") or "system")
         permission = str(payload.get("permission") or payload.get("role") or "read")
@@ -2786,6 +2794,39 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         )
         app.add_api_route(
             f"{_prefix}/idam/v1/rbac-bindings/{{binding_id}}",
+            idam_rbac_bindings_delete,
+            methods=["DELETE"],
+            include_in_schema=False,
+        )
+        # W28E-1859 ST-6: the shipped @cloud-dog/idam WebUI (IdamRbacPage) calls the
+        # canonical slash spelling `/idam/v1/rbac/bindings` (idam-canonical-model-map.md),
+        # not the hyphen `rbac-bindings` alias registered above. The shared
+        # cloud_dog_idam idam_v1_router that would serve the slash create route is
+        # mounted best-effort below and does NOT expose a working POST here (its GET
+        # answers 200 but POST/PUT/DELETE resolve to 405 Method Not Allowed), so the
+        # SecurityAdmin RBAC "Created binding" flow silently fails. Bind the same
+        # local handlers to the slash spelling so the WebUI create/update/delete
+        # contract works regardless of the shared-router mount outcome.
+        app.add_api_route(
+            f"{_prefix}/idam/v1/rbac/bindings",
+            idam_rbac_bindings_list,
+            methods=["GET"],
+            include_in_schema=False,
+        )
+        app.add_api_route(
+            f"{_prefix}/idam/v1/rbac/bindings",
+            idam_rbac_bindings_create,
+            methods=["POST"],
+            include_in_schema=False,
+        )
+        app.add_api_route(
+            f"{_prefix}/idam/v1/rbac/bindings/{{binding_id}}",
+            idam_rbac_bindings_update,
+            methods=["PUT"],
+            include_in_schema=False,
+        )
+        app.add_api_route(
+            f"{_prefix}/idam/v1/rbac/bindings/{{binding_id}}",
             idam_rbac_bindings_delete,
             methods=["DELETE"],
             include_in_schema=False,
