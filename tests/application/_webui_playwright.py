@@ -177,6 +177,16 @@ def _warm_collection_admin_flow(api_url: str) -> None:
 
 def _restart_runtime_for_webui() -> None:
     env = os.environ.copy()
+    # The WebUI runtime launched here via server_control.sh is a standalone,
+    # production-style process — it is NOT executing under pytest. Leaking the
+    # parent pytest's PYTEST_CURRENT_TEST into the child forces
+    # api_server._maybe_disable_timeout_middleware() down its "in pytest"
+    # branch, which materialises the middleware stack early; the subsequent
+    # @app.middleware("http") auth-before-validation registration (W28R-3001)
+    # then raises "Cannot add middleware after an application has started" and
+    # the API server never binds. Strip the marker so the child boots exactly
+    # like the deployed dev-tier runtime.
+    env.pop('PYTEST_CURRENT_TEST', None)
     web_username, web_password = _web_login_credentials()
     api_port = _read_port('CLOUD_DOG__API_SERVER__PORT', 8074)
     api_base_url = f'http://127.0.0.1:{api_port}'
