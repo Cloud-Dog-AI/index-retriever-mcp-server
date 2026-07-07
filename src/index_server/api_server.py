@@ -1328,10 +1328,6 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         """Serve the collection inventory page."""
         return HTMLResponse(content=collections_page(_collection_inventory_snapshot()))
 
-    def collections_ui() -> HTMLResponse:
-        """Serve the user-facing collection inventory route."""
-        return HTMLResponse(content=collections_page(_collection_inventory_snapshot()))
-
     def admin_ui_security() -> HTMLResponse:
         """Serve the legacy security management page."""
         return HTMLResponse(content=security_page())
@@ -2670,7 +2666,6 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get("/admin/ui")(admin_ui_root)
     app.get("/admin/ui/profiles")(admin_ui_profiles)
     app.get("/admin/ui/collections")(admin_ui_collections)
-    app.get("/collections")(collections_ui)
     app.get("/admin/ui/security")(admin_ui_security)
     app.get("/admin/ui/structure")(admin_ui_structure)
     app.get("/admin/ui/app.js")(admin_ui_app_js)

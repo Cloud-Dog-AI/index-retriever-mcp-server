@@ -31,7 +31,6 @@ from fastapi import HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from index_server.admin_ui import collections_page
 from index_tools.config.loader import runtime_env_files, secret_backend_kwarg
 from index_server.runtime_config import resolve_server_binding
 
@@ -644,10 +643,6 @@ def build_web_app() -> object:
     @app.get("/")
     async def spa_root() -> Response:
         return _spa_index()
-
-    @app.get("/collections")
-    async def collections_ui() -> HTMLResponse:
-        return HTMLResponse(content=collections_page())
 
     @app.get("/jobs")
     async def jobs_legacy_alias(request: Request) -> Response:

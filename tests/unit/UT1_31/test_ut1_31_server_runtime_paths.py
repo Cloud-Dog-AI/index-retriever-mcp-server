@@ -173,11 +173,15 @@ def test_api_app_routes_cover_auth_and_errors(monkeypatch: pytest.MonkeyPatch, s
     assert 'data-testid="collections-table-body"' in legacy_collections.text
     assert "ut_visible_collection" in legacy_collections.text
 
+    # IR-COLL-SHADOW (W28E-1863): a hard GET of /collections must serve the SPA
+    # shell, NOT the legacy server-rendered "Collection inventory" page that
+    # previously shadowed the SPA CollectionCrudPage. The legacy inventory stays
+    # reachable only at /admin/ui/collections (asserted above).
     collections_route = client.get("/collections")
     assert collections_route.status_code == 200
-    assert "Collection inventory" in collections_route.text
-    assert "/admin/collections" in collections_route.text
-    assert "ut_visible_collection" in collections_route.text
+    assert 'id="root"' in collections_route.text
+    assert "Collection inventory" not in collections_route.text
+    assert 'data-testid="collections-table-body"' not in collections_route.text
 
     legacy_security = client.get("/admin/ui/security")
     assert legacy_security.status_code == 200
@@ -841,10 +845,17 @@ def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch
     assert canonical_mcp.status_code == 200
     assert "id='root'" in canonical_mcp.text
 
+    # IR-COLL-SHADOW (W28E-1863): a browser HTML navigation to /collections MUST
+    # serve the SPA index shell (200 text/html with #root), exactly like the other
+    # SPA routes. Previously the web tier registered a concrete /collections route
+    # that served the legacy server-rendered "Collection inventory" page, shadowing
+    # the SPA CollectionCrudPage and creating an /admin/ui/* navigation dead-end.
     collections_ui = client.get("/collections")
     assert collections_ui.status_code == 200
-    assert "Collection inventory" in collections_ui.text
-    assert 'data-testid="collections-table-body"' in collections_ui.text
+    assert collections_ui.headers["content-type"].startswith("text/html")
+    assert "id='root'" in collections_ui.text
+    assert "Collection inventory" not in collections_ui.text
+    assert 'data-testid="collections-table-body"' not in collections_ui.text
 
     # Proxied admin endpoint, UNAUTHENTICATED, is forwarded verbatim and denied 401.
     proxied_admin = client.get("/admin/profiles")
