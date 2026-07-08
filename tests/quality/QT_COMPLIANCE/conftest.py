@@ -101,15 +101,17 @@ def allowlist() -> dict[str, object]:
             # addresses (0.0.0.0, ::) into a routable loopback for the
             # internal reverse-proxy bridge.  The http:// URLs are built
             # from config-resolved host:port, not hardcoded endpoints.
-            # (Line numbers track _normalise_api_host + the three base-URL builders;
-            # shifted +17 by the W28A-734-R2 _requires_caller_auth security predicate;
-            # the mcp/a2a builders shifted +2 (168/169 -> 170/171) by the W28E-1805B
-            # # req: FR-001/FR-017 markers added inside build_web_app.)
-            "src/index_server/web_server.py:141",
-            "src/index_server/web_server.py:142",
-            "src/index_server/web_server.py:151",
-            "src/index_server/web_server.py:244",
-            "src/index_server/web_server.py:245",
+            # (Line numbers track _normalise_api_host + the three base-URL builders.
+            # W28E-1863 WS-A-EVIDENCE re-anchored these to the current positions after
+            # the RULES §1.4.1 _env_first() config-boundary helper was added ahead of
+            # _normalise_api_host, shifting the api/mcp/a2a base-URL builders down.
+            # The allowlisted CONTENT (the same loopback + config-derived http:// base
+            # URLs) is unchanged — only the line offsets moved.)
+            "src/index_server/web_server.py:144",
+            "src/index_server/web_server.py:145",
+            "src/index_server/web_server.py:182",
+            "src/index_server/web_server.py:343",
+            "src/index_server/web_server.py:344",
             # hdro.py: HDRO_CANONICAL_BASE_URL is the documented non-secret
             # canonical UNDP HDRO public-API host. It is deliberately pinned
             # (not config-overridable) because it seeds the anti-SSRF host

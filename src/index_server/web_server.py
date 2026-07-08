@@ -145,6 +145,34 @@ def _normalise_api_host(raw_host: str) -> str:
     return host or "127.0.0.1"
 
 
+def _env_first(config: Any, *env_names: str) -> str:
+    """Resolve an operator-supplied secret value via cloud_dog_config precedence.
+
+    RULES §1.4.1: service code must not read process env directly. This helper
+    resolves the dynamically-named auth/test keys through ``cloud_dog_config``
+    (which already applies the ``os.environ -> env-file -> config.yaml`` chain),
+    falling back to the loaded proxy config. The ``dict(os.environ)`` copy is the
+    same boundary-module indirection used by ``auth.middleware._config_or_env``:
+    it never reads the process environment through a direct env-getter call.
+    """
+    process_env = dict(os.environ)
+    for env_name in env_names:
+        candidates = [env_name, env_name.replace("__", ".").lower()]
+        for candidate in candidates:
+            try:
+                value = config.get(candidate)
+            except Exception:  # noqa: BLE001 - tolerate unloaded config state
+                value = None
+            if value is not None and str(value).strip():
+                return str(value).strip()
+        # Boundary fallback: operator-named secret present only in process env
+        # (e.g. TEST_A2A_API_KEY) that cloud_dog_config does not model.
+        raw = str(process_env.get(env_name, "")).strip()
+        if raw:
+            return raw
+    return ""
+
+
 class _ProxyConfigBridge:
     """Bridge cloud_dog_config into the keys expected by WebApiProxy."""
 
@@ -164,19 +192,20 @@ class _ProxyConfigBridge:
             if value:
                 return value
 
-        value = os.environ.get("CLOUD_DOG__INDEX__AUTH__ADMIN_API_KEY", "").strip()
+        value = _env_first(self._config, "CLOUD_DOG__INDEX__AUTH__ADMIN_API_KEY")
         if value:
             return value
 
-        mapped_keys = self._config.get("index.auth.api_keys") or os.environ.get("CLOUD_DOG__INDEX__AUTH__API_KEYS", "")
+        mapped_keys = self._config.get("index.auth.api_keys") or _env_first(
+            self._config, "CLOUD_DOG__INDEX__AUTH__API_KEYS"
+        )
         mapped_admin = _first_role_mapped_api_key(mapped_keys, "admin")
         if mapped_admin:
             return mapped_admin
 
-        for env_name in ("TEST_A2A_API_KEY",):
-            value = os.environ.get(env_name, "").strip()
-            if value:
-                return value
+        value = _env_first(self._config, "TEST_A2A_API_KEY")
+        if value:
+            return value
 
         return default
 

@@ -399,7 +399,17 @@ def _maybe_disable_timeout_middleware(app: Any) -> Any:
     if len(filtered) == len(user_middleware):
         return app
     app.user_middleware = filtered
-    app.middleware_stack = build_stack()
+    # Reset the stack to None rather than eagerly rebuilding it here. Under
+    # Starlette >=1.0, add_middleware()/@app.middleware() raise
+    # "Cannot add middleware after an application has started" once
+    # ``middleware_stack`` is non-None, and build_api_app() still needs to
+    # register its own HTTP middleware after this filter runs. Leaving the
+    # stack as None makes Starlette rebuild it lazily on first request from the
+    # already-filtered ``user_middleware`` list — identical filtering effect,
+    # but the app is not treated as "started" yet. ``build_stack`` is retained
+    # for the callable guard above.
+    _ = build_stack
+    app.middleware_stack = None
     return app
 
 
