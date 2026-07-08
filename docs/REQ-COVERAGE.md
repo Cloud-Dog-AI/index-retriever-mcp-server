@@ -2,23 +2,23 @@
 template-id: T-RCM
 template-version: 1.0
 applies-to: docs/REQ-COVERAGE.md
-project: 
-doc-last-updated: 2026-07-08T17:47:38.379825+00:00
-doc-git-commit: 1e6d699518547f59459d67a640d0e308694a15c6
-doc-git-branch: w28e-1863-wsa-index-retriever-evidence
+project: regenall-index-retriever-mcp-server
+doc-last-updated: 2026-07-08T18:27:19.841697+00:00
+doc-git-commit: 65c22505e40b3b407af34e401b81a95a290a894a
+doc-git-branch: HEAD
 doc-age-policy: 30d
-doc-conformance-stamp: 2026-07-08T17:47:38.379825+00:00
+doc-conformance-stamp: 2026-07-08T18:27:19.841697+00:00
 generated-by: scripts/generate-req-coverage.py
 ---
 
-#  — REQ-COVERAGE
+# regenall-index-retriever-mcp-server — REQ-COVERAGE
 
 > **Template version:** T-RCM v1.0 — script-generated, do not hand-edit.
-> Re-generate via: `scripts/generate-req-coverage.py `
+> Re-generate via: `scripts/generate-req-coverage.py regenall-index-retriever-mcp-server`
 
 ## 1. Latest generation
 
-- **Generated at:** 2026-07-08T17:47:38.379825+00:00
+- **Generated at:** 2026-07-08T18:27:19.841697+00:00
 - **Source REQ commit:** fdce519
 - **Source TEST commit:** ab2e8da
 
