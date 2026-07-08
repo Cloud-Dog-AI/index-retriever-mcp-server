@@ -1,0 +1,8 @@
+....                                                                     [100%]
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests/application/AT_WEBUI_CollectionCrud/test_webui_collection_crud.py::test_webui_collection_crud
+PASSED tests/application/AT_WEBUI_CollectionEdit/test_webui_collection_edit.py::test_webui_collection_edit
+PASSED tests/application/AT_WEBUI_ProfileCrud/test_webui_profile_crud.py::test_webui_profile_crud
+PASSED tests/application/AT_WEBUI_SourceConfig/test_webui_source_config.py::test_webui_source_config
+4 passed in 195.89s (0:03:15)

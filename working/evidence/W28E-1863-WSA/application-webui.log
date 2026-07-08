@@ -1,0 +1,12 @@
+...                                                                      [100%]
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests/application/AT_WEBUI_AuthDashboard/test_webui_auth_dashboard.py::test_webui_auth_dashboard
+PASSED tests/application/AT_WEBUI_CwTestidContract/test_webui_cw_testid_contract.py::test_webui_cw_testid_contract_in_shipped_bundle
+PASSED tests/application/AT_WEBUI_CwTestidContract/test_webui_cw_testid_contract.py::test_webui_cw_t1_dashboard_get_by_test_id
+3 passed in 73.10s (0:01:13)
+PASSED tests/application/AT_WEBUI_CollectionCrud/test_webui_collection_crud.py::test_webui_collection_crud
+PASSED tests/application/AT_WEBUI_CollectionEdit/test_webui_collection_edit.py::test_webui_collection_edit
+PASSED tests/application/AT_WEBUI_ProfileCrud/test_webui_profile_crud.py::test_webui_profile_crud
+PASSED tests/application/AT_WEBUI_SourceConfig/test_webui_source_config.py::test_webui_source_config
+PASSED tests/application/AT_WEBUI_SecurityAdmin/test_webui_security_admin.py::test_webui_security_admin

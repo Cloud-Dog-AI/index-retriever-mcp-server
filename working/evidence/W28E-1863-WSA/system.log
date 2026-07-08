@@ -1,0 +1,45 @@
+..........................ss                                             [100%]
+==================================== PASSES ====================================
+_________________________ test_profile_create_persist __________________________
+---------------------------- Captured stdout setup -----------------------------
+[live-runtime] embedding_base_url=https://llm2.cloud-dog.net
+[live-runtime] chroma_url=https://chroma.cloud-dog.net
+[live-runtime] qdrant_url=https://qdrant.cloud-dog.net
+[live-runtime] opensearch_url=http://opensearch0.app.vpc0.cloud-dog.net:1201
+[live-runtime] pgvector_database_uri=[configured]
+[live-runtime] weaviate_url=https://weaviate.cloud-dog.net
+[live-runtime] infinity_url=http://infinity0.app.vpc0.cloud-dog.net:8080
+[live-runtime] provider=chroma health=True
+[live-runtime] provider=chroma write_probe=True detail=ok
+[live-runtime] provider=qdrant health=True
+[live-runtime] provider=qdrant write_probe=True detail=ok
+=========================== short test summary info ============================
+PASSED tests/system/ST1_1/test_st1_1.py::test_profile_create_persist
+PASSED tests/system/ST1_10/test_st1_10.py::test_retention_cleanup
+PASSED tests/system/ST1_11/test_st1_11.py::test_job_enqueue_execute
+PASSED tests/system/ST1_12/test_st1_12.py::test_audit_log_persistence
+PASSED tests/system/ST1_13/test_st1_13_no_fallback_backend_identity.py::test_no_fallback_backend_identity_st
+PASSED tests/system/ST1_14/test_st1_14_database_migration.py::test_st_db_01_migration_upgrade_on_fresh_sqlite
+PASSED tests/system/ST1_14/test_st1_14_database_migration.py::test_st_db_02_crud_via_session_manager
+PASSED tests/system/ST1_14/test_st1_14_database_migration_multibackend.py::test_st_db_03_migration_lifecycle_upgrade_downgrade_upgrade
+PASSED tests/system/ST1_14/test_st1_14_database_migration_multibackend.py::test_st_db_04_schema_versioning_simulation
+PASSED tests/system/ST1_15/test_st1_15_e2e_gap_coverage.py::test_st_15_chunking_strategies_ingest_expected_boundaries
+PASSED tests/system/ST1_15/test_st1_15_e2e_gap_coverage.py::test_st_15_local_ocr_provider_extracts_non_empty_text
+PASSED tests/system/ST1_15/test_st1_15_e2e_gap_coverage.py::test_st_15_retrieval_returns_content_and_source_uri_traceability
+PASSED tests/system/ST1_2/test_st1_2.py::test_collection_create_delete
+PASSED tests/system/ST1_3/test_st1_3.py::test_ingest_upload_pipeline
+PASSED tests/system/ST1_4/test_st1_4.py::test_ingest_text_pipeline
+PASSED tests/system/ST1_5/test_st1_5.py::test_ingest_reference_pipeline
+PASSED tests/system/ST1_6/test_st1_6.py::test_search_top_k
+PASSED tests/system/ST1_7/test_st1_7.py::test_search_metadata_filter
+PASSED tests/system/ST1_8/test_st1_8.py::test_delete_by_id
+PASSED tests/system/ST1_9/test_st1_9.py::test_delete_by_filter
+PASSED tests/system/ST_IntegrityVerifier/test_integrity_running.py::test_integrity_verifier_starts_with_server
+PASSED tests/system/ST_IntegrityVerifier/test_integrity_running.py::test_integrity_log_file_populated
+PASSED tests/system/ST_IntegrityVerifier/test_integrity_running.py::test_integrity_record_fields
+PASSED tests/system/ST_LogRotation/test_rotation_config.py::test_rotation_handler_configured
+PASSED tests/system/ST_LogRotation/test_rotation_config.py::test_rotation_parameters_from_config
+PASSED tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py::test_structure_backend_matrix_round_trip[sqlite]
+SKIPPED [1] tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py:130: postgresql backend not configured (set W28E603_MATRIX_POSTGRESQL_URL to a disposable test DB URL, or run with --env tests/env-DB-postgresql and a Vault token)
+SKIPPED [1] tests/system/ST_W28E603_StructureBackendMatrix/test_st_w28e603_structure_backend_matrix.py:130: mysql backend not configured (set W28E603_MATRIX_MYSQL_URL to a disposable test DB URL, or run with --env tests/env-DB-mysql and a Vault token)
+26 passed, 2 skipped in 66.99s (0:01:06)
