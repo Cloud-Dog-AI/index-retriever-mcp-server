@@ -78,6 +78,15 @@ FROM python:3.12-slim
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 LABEL org.opencontainers.image.vendor="Cloud-Dog, Viewdeck Engineering Limited"
 
+# W28E-1863 fix-wave-c (WSC-014): build-identity provenance. docker-build.sh passes
+# SOURCE_COMMIT (git HEAD), SOURCE_BRANCH, and BUILD_DATE.
+ARG SOURCE_COMMIT=unknown
+ARG SOURCE_BRANCH=unknown
+ARG BUILD_DATE=""
+LABEL org.opencontainers.image.revision="${SOURCE_COMMIT}"
+LABEL org.opencontainers.image.ref.name="${SOURCE_BRANCH}"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+
 ARG HTTP_PROXY HTTPS_PROXY NO_PROXY http_proxy https_proxy no_proxy
 ENV HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY} NO_PROXY=${NO_PROXY} \
     http_proxy=${http_proxy} https_proxy=${https_proxy} no_proxy=${no_proxy}
@@ -129,6 +138,14 @@ ENV PYTHONUNBUFFERED=1 \
     CLOUD_DOG__INDEX__EMBEDDING__PROVIDER=ollama \
     CLOUD_DOG__INDEX__EMBEDDING__MODEL=nomic-embed-text \
     CLOUD_DOG__INDEX__DB__URL=sqlite+aiosqlite:////app/data/index_retriever.db
+
+# W28E-1863 fix-wave-c (WSC-014): surface build identity to the RUNTIME so the web
+# tier's _build_identity() + runtime-config.js (read config-routed via
+# cloud_dog_config, RULES §1.4.1) can populate /version + GIT_COMMIT/BUILD_DATE for
+# the WebUI About page. These are the keys the runtime-config already reads.
+ENV CLOUD_DOG__INDEX__UI__GIT_COMMIT=${SOURCE_COMMIT} \
+    CLOUD_DOG__INDEX__UI__SOURCE_BRANCH=${SOURCE_BRANCH} \
+    CLOUD_DOG__INDEX__UI__BUILD_DATE=${BUILD_DATE}
 
 EXPOSE 8080 8081 8082 8083 8686 8687
 

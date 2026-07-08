@@ -48,6 +48,10 @@ _SPA_RESERVED_SEGMENTS = {
     "redoc",
     "webapi",
     "status",
+    # W28E-1863 fix-wave-c (WSC-014): /version is an explicit web-tier build-identity
+    # route served BEFORE the SPA catch-all — reserve it so the catch-all cannot
+    # shadow it with the SPA shell / a 404.
+    "version",
 }
 
 _SPA_ADMIN_PATHS = {
@@ -204,6 +208,73 @@ def _runtime_override_number(config: Any, env_name: str, config_key: str, defaul
     except (TypeError, ValueError):
         value = float(default)
     return int(value) if value.is_integer() else value
+
+
+def _git_head_commit() -> str:
+    """Best-effort git HEAD for dev/source runs (empty string if unavailable).
+
+    Mirrors the deployed file-mcp ``_git_head_commit`` reference (commit ``a282f7f``)
+    so a local/source run still populates the WebUI About page when no container
+    build-identity ENV is present.
+    """
+    try:
+        import subprocess
+        from pathlib import Path
+
+        repo_root = Path(__file__).resolve().parents[2]
+        out = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+        if out.returncode == 0:
+            return out.stdout.strip()
+    except Exception:  # noqa: BLE001 - build identity must never crash a request
+        return ""
+    return ""
+
+
+def _build_identity(config: Any) -> dict[str, str]:
+    """Return build/deploy identity for WSC-014 / PS-30 UI-R7.3.
+
+    Source of truth is the container build: ``docker-build.sh`` stamps the image
+    OCI ``org.opencontainers.image.revision`` label AND injects the matching runtime
+    ENV. index-retriever's runtime-config.js already surfaces the SAME values as
+    ``GIT_COMMIT`` / ``BUILD_DATE`` (config-routed via ``index.ui.git_commit`` /
+    ``index.ui.build_date`` — env keys ``CLOUD_DOG__INDEX__UI__GIT_COMMIT`` /
+    ``CLOUD_DOG__INDEX__UI__BUILD_DATE``, read through cloud_dog_config, NOT direct
+    os.environ — RULES §1.4.1). For a dev/source run (no container ENV)
+    ``source_commit`` falls back to the working-tree git HEAD so the About page is
+    still populated locally. W28E-1863 fix-wave-c.
+    """
+    commit = _runtime_override(
+        config, "CLOUD_DOG__INDEX__UI__GIT_COMMIT", "index.ui.git_commit"
+    )
+    if not commit or commit == "unknown":
+        commit = _git_head_commit()
+    build_date = _runtime_override(
+        config, "CLOUD_DOG__INDEX__UI__BUILD_DATE", "index.ui.build_date"
+    )
+    branch = _runtime_override(
+        config, "CLOUD_DOG__INDEX__UI__SOURCE_BRANCH", "index.ui.source_branch"
+    )
+    if branch == "unknown":
+        branch = ""
+    digest = _runtime_override(
+        config, "CLOUD_DOG__INDEX__UI__CONTAINER_DIGEST", "index.ui.container_digest"
+    )
+    env_name = _runtime_override(
+        config, "CLOUD_DOG_ENVIRONMENT", "service.environment"
+    )
+    return {
+        "source_commit": commit,
+        "source_branch": branch,
+        "build_date": build_date,
+        "container_digest": digest,
+        "environment": env_name,
+    }
 
 
 def _redirect_with_request_parts(request: Request, target_path: str) -> RedirectResponse:
@@ -518,6 +589,33 @@ def build_web_app() -> object:
                 "api_base_url": api_base_url,
                 "mcp_base_url": mcp_base_url,
                 "a2a_base_url": a2a_base_url,
+            }
+        )
+
+    @app.get("/version")
+    async def version_info() -> JSONResponse:
+        # W28E-1863 fix-wave-c (WSC-014 / PS-30 UI-R7.3): expose source commit +
+        # build date + deployment identity, not just version, so the WebUI About
+        # page can render build provenance (adopts the file-mcp/search-mcp/chart-mcp
+        # pattern). Registered before the SPA catch-all + reserved in
+        # _SPA_RESERVED_SEGMENTS so the fallback can never shadow it. The same
+        # values already flow to runtime-config.js as GIT_COMMIT/BUILD_DATE.
+        _build = _build_identity(config)
+        _app_version = _runtime_override(
+            config, "CLOUD_DOG__INDEX__UI__APP_VERSION", "index.ui.app_version", "dev"
+        )
+        return JSONResponse(
+            {
+                "service": "index-retriever-mcp-server",
+                "version": _app_version,
+                "appVersion": _app_version,
+                "source_commit": _build["source_commit"],
+                "source_branch": _build["source_branch"],
+                "build_date": _build["build_date"],
+                "container_digest": _build["container_digest"],
+                "environment": _build["environment"],
+                # legacy field name any VersionInfo consumer may already read
+                "commit": _build["source_commit"],
             }
         )
 

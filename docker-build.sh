@@ -173,6 +173,12 @@ fi
 _PBP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 "${_PBP_DIR}/scripts/publish-before-pin-guard.sh" "${_PBP_DIR}" || exit $?
 _PBP_REV="$(git -C "${_PBP_DIR}" rev-parse HEAD 2>/dev/null || echo unknown)"
+# W28E-1863 fix-wave-c (WSC-014): propagate build identity to the image so the
+# Dockerfile can stamp OCI labels + runtime ENV for _build_identity(). SOURCE_COMMIT
+# reuses _PBP_REV so the runtime /version source_commit == the OCI revision label.
+SOURCE_COMMIT="${_PBP_REV}"
+SOURCE_BRANCH="$(git -C "${_PBP_DIR}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 DOCKER_BUILDKIT=1 docker buildx build \
   --label "org.opencontainers.image.revision=${_PBP_REV}" \
@@ -188,6 +194,9 @@ DOCKER_BUILDKIT=1 docker buildx build \
   --build-arg http_proxy="${http_proxy:-}" \
   --build-arg https_proxy="${https_proxy:-}" \
   --build-arg no_proxy="${no_proxy:-}" \
+  --build-arg SOURCE_COMMIT="${SOURCE_COMMIT}" \
+  --build-arg SOURCE_BRANCH="${SOURCE_BRANCH}" \
+  --build-arg BUILD_DATE="${BUILD_DATE}" \
   -t "${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}" \
   . 2>&1 | tee docker-build.log
 
