@@ -25,6 +25,10 @@ export PYTHONPATH="${SCRIPT_DIR}/src:${PYTHONPATH:-}"
 PYTHON_BIN="${SCRIPT_DIR}/.venv/bin/python"
 
 resolve_python_bin() {
+  if [[ -n "${GUARD_PYTHON:-}" && -x "${GUARD_PYTHON}" ]]; then
+    printf '%s\n' "${GUARD_PYTHON}"
+    return
+  fi
   local candidate="${SCRIPT_DIR}/.venv/bin/python"
   if [[ -x "${candidate}" ]]; then
     if "${candidate}" - <<'PY' >/dev/null 2>&1

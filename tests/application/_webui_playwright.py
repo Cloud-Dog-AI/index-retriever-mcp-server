@@ -23,7 +23,7 @@ NODE_PATH = os.pathsep.join(
         str(MONOREPO_APP / 'node_modules'),
     ]
 )
-PROJECT_ROOT = Path('/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server')
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SERVER_CONTROL = PROJECT_ROOT / 'server_control.sh'
 _RUNTIME_BOOT_LOCK = Lock()
 _TEST_API_KEYS = 'test-api-key,valid-reader-token:reader,valid-writer-token:writer,valid-admin-token:admin'
