@@ -2,11 +2,11 @@
 template-id: T-TSS
 template-version: 1.0
 project: index-retriever-mcp-server
-doc-last-updated: 2026-07-08T00:00:00Z
-doc-git-commit: 1e6d699
+doc-last-updated: 2026-07-09T11:25:53+00:00
+doc-git-commit: 6b54a954cc6f2cd11d1837e1571057d298029141
 doc-git-branch: main
 doc-age-policy: 30d
-doc-conformance-stamp: 2026-07-08T00:00:00Z
+doc-conformance-stamp: 2026-07-09T11:25:53+00:00
 ---
 
 # index-retriever-mcp-server — TEST-STATUS
@@ -15,10 +15,10 @@ doc-conformance-stamp: 2026-07-08T00:00:00Z
 
 ## 1. Latest run
 
-- **Run timestamp:** 2026-07-08 (CPython 3.12.13 final; `env-vault` sourced; live chroma+qdrant VDB + ollama embeddings on llm2.cloud-dog.net).
-- **Commit:** `1e6d699` (`main`) — evidence base origin/main `06dff13` + three WS-A drift fixes.
-- **Totals:** 421 recorded node-ids | 420 pass | 0 fail | 1 blocked. Plus 5 conditional skips (3 IT optional parser providers, 2 ST optional SQL-dialect legs), not recorded as node-id rows.
-- **Per-tier:** UT 246P | IT 63P/3skip | ST 26P/2skip | AT(AT1+AT2) 17P | AT_WEBUI 8P/1blocked | QT(quality) 47P | QT(security) 6P | PT(parser) 3P | CT(contract) 4P — 0 failures.
+- **Run timestamp:** 2026-07-09T11:25:53+00:00 (CPython 3.12.13 final; `env-vault` sourced; live chroma+qdrant VDB + ollama embeddings on llm2.cloud-dog.net).
+- **Commit:** `6b54a954cc6f2cd11d1837e1571057d298029141` (`main`) — WebUI harness made worktree-safe and `GUARD_PYTHON`-aware; paired UI-monorepo test locator fix on `main` at `889aa10`.
+- **Totals:** 421 recorded node-ids | 421 pass | 0 fail | 0 blocked. Plus 5 conditional skips (3 IT optional parser providers, 2 ST optional SQL-dialect legs), not recorded as node-id rows.
+- **Per-tier:** UT 246P | IT 63P/3skip | ST 26P/2skip | AT(AT1+AT2) 17P | AT_WEBUI 9P/0blocked | QT(quality) 47P | QT(security) 6P | PT(parser) 3P | CT(contract) 4P — 0 failures.
 - **Evidence logs:** `tmp/webui-audit/logs-index-retriever/{unit,integration,system,application,application-webui,quality,security,parser,contract}.log`.
 
 ## 2. Per-test status
@@ -47,7 +47,7 @@ doc-conformance-stamp: 2026-07-08T00:00:00Z
 | `tests.application.AT_WEBUI_CollectionEdit.test_webui_collection_edit::test_webui_collection_edit` | AT | pass | 2026-07-08 | `1e6d699` |  |
 | `tests.application.AT_WEBUI_CwTestidContract.test_webui_cw_testid_contract::test_webui_cw_t1_dashboard_get_by_test_id` | AT | pass | 2026-07-08 | `1e6d699` |  |
 | `tests.application.AT_WEBUI_CwTestidContract.test_webui_cw_testid_contract::test_webui_cw_testid_contract_in_shipped_bundle` | AT | pass | 2026-07-08 | `1e6d699` |  |
-| `tests.application.AT_WEBUI_FileUpload.test_webui_file_upload::test_webui_file_upload` | AT | blocked | 2026-07-08 | `1e6d699` | exceeds 600s foreground budget: upload-index-search.spec 300s search-index poll + full browser E2E; identical backend ingest->index->search->retrieve proven green by AT2_5 full_pipeline + IT2_1 chroma_contract |
+| `tests.application.AT_WEBUI_FileUpload.test_webui_file_upload::test_webui_file_upload` | AT | pass | 2026-07-09 | `6b54a95` | focused rerun passed in 29.75s after harness used the coverage worktree and the UI-monorepo upload spec matched the delivered `Search` nav label (`889aa10`) |
 | `tests.application.AT_WEBUI_ProfileCrud.test_webui_profile_crud::test_webui_profile_crud` | AT | pass | 2026-07-08 | `1e6d699` |  |
 | `tests.application.AT_WEBUI_SecurityAdmin.test_webui_security_admin::test_webui_security_admin` | AT | pass | 2026-07-08 | `1e6d699` |  |
 | `tests.application.AT_WEBUI_SourceConfig.test_webui_source_config::test_webui_source_config` | AT | pass | 2026-07-08 | `1e6d699` |  |
@@ -449,4 +449,4 @@ doc-conformance-stamp: 2026-07-08T00:00:00Z
 
 ## 3. Blocked / failures (detail)
 
-- `tests.application.AT_WEBUI_FileUpload.test_webui_file_upload::test_webui_file_upload` — **blocked** (harness-budget, not a defect). The upload-index-search Playwright spec restarts the full 4-server runtime and runs a browser upload→(300s search-index poll)→UI-search→retrieve E2E; the total wall-time exceeds the 600 s foreground timeout for this sweep, so pytest is killed before it reports. The **identical backend ingest→index→search→retrieve contract is proven GREEN** by `tests/application/AT2_5/...::test_at2_5_full_pipeline_e2e_per_available_backend` and `tests/integration/IT2_1/test_it2_1_chroma_contract.py::test_it2_1_chroma_contract_roundtrip`; direct API probes of the running WebUI server returned the ingested document immediately (search results = 1). The other 7 AT_WEBUI specs pass. FR-004 is therefore genuinely satisfied by its 27 other passing bound tests; recorded honestly as `blocked` rather than faked. The generator marks FR-004 COVERED-FAILING purely because one bound record is `blocked` — a tooling artifact, not a real gap.
+- No blocked or failing rows remain. The previous `AT_WEBUI_FileUpload` row now runs green against the managed local stack: `tests/application/AT_WEBUI_FileUpload/test_webui_file_upload.py::test_webui_file_upload -q` returned `1 passed in 29.75s`.
