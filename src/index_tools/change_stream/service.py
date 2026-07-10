@@ -41,7 +41,7 @@ import contextlib
 import threading
 import uuid
 from collections.abc import Callable, Mapping
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from cloud_dog_api_kit.change_stream import (
@@ -71,7 +71,7 @@ _SOURCE_TYPE = "vdb_collection"
 
 
 def _utc_now() -> datetime:
-    return datetime.now(UTC)
+    return datetime.now(timezone.utc)
 
 
 class WatchService:
