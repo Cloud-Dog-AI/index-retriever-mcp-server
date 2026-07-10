@@ -471,6 +471,7 @@ class StructureExtractor:
 def _parse_via_vdb(data: bytes, *, filename: str, mime_type: str, provider: str, parser_services: dict[str, Any] | None, options: dict[str, Any] | None) -> Any:
     """Parse bytes through the existing cloud_dog_vdb parser registry for a named provider."""
     import asyncio
+    import threading
 
     try:
         # cloud_dog_vdb >= 0.5 exposes build_parser_registry from the pipeline module.
@@ -495,4 +496,26 @@ def _parse_via_vdb(data: bytes, *, filename: str, mime_type: str, provider: str,
         asyncio.get_running_loop()
     except RuntimeError:
         return asyncio.run(_run())
-    raise RuntimeError("extract_bytes for live providers must be called outside a running event loop")
+
+    # Called from inside a running event loop (the MCP/REST server dispatches tool
+    # handlers within the server loop). Run the live-provider parse on a dedicated
+    # thread with its own loop so a real PDF is parsed in-server (W28M-1626 — the
+    # previous ``raise`` here meant the file/bytes path never worked in the server).
+    result: dict[str, Any] = {}
+
+    def _runner() -> None:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result["value"] = loop.run_until_complete(_run())
+        except BaseException as exc:  # noqa: BLE001 - re-raised on the calling thread
+            result["error"] = exc
+        finally:
+            loop.close()
+
+    thread = threading.Thread(target=_runner, daemon=True)
+    thread.start()
+    thread.join()
+    if "error" in result:
+        raise result["error"]
+    return result.get("value")

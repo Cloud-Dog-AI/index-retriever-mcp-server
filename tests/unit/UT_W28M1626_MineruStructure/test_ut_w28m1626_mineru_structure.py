@@ -137,6 +137,38 @@ def test_extract_file_mineru_uses_config_default_endpoint(monkeypatch, structure
 @pytest.mark.UT
 @pytest.mark.mcp
 @pytest.mark.req("FR-007")
+def test_parse_via_vdb_runs_inside_running_event_loop(monkeypatch) -> None:
+    """The live-provider parse must succeed when invoked from inside a running event
+    loop — the MCP/REST server dispatches tool handlers within the server loop, and
+    the previous code raised 'must be called outside a running event loop' there."""
+    from index_tools.structure import extract as ex
+
+    class _FakeParser:
+        async def parse_bytes(self, data, **kwargs):  # noqa: ANN001, ANN003
+            return {"ir": "ok", "bytes": len(data)}
+
+    class _FakeRegistry:
+        def get(self, provider_id):  # noqa: ANN001
+            return _FakeParser() if provider_id == "mineru" else None
+
+    monkeypatch.setattr(vdb_pipeline, "build_parser_registry", lambda services=None: _FakeRegistry())
+
+    import asyncio
+
+    async def _call():
+        # sync _parse_via_vdb invoked from within a running loop
+        return ex._parse_via_vdb(
+            b"abc", filename="f.pdf", mime_type="application/pdf",
+            provider="mineru", parser_services={"mineru": {"base_url": "https://m/"}}, options=None,
+        )
+
+    ir = asyncio.run(_call())
+    assert ir == {"ir": "ok", "bytes": 3}
+
+
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
 def test_extract_file_internal_persists_structure(structure_service) -> None:
     """The internal provider path decodes bytes as (markdown) text and persists a bundle."""
     result = structure_service.extract_file(
