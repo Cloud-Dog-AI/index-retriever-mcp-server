@@ -123,6 +123,30 @@ class _ToolService:
 @pytest.mark.req("FR-013") # W28E-1805A semantic binding
 
 
+class _SearchBackendErrorService(_ToolService):
+    def search(
+        self,
+        profile: str,
+        collection: str,
+        query: str,
+        top_k: int,
+        filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        self.calls.append(
+            (
+                "search",
+                {
+                    "profile": profile,
+                    "collection": collection,
+                    "query": query,
+                    "top_k": top_k,
+                    "filters": dict(filters or {}),
+                },
+            )
+        )
+        raise KeyError("Adapter not registered: chroma")
+
+
 def test_required_roles_for_new_wrapper_tools() -> None:
     assert mcp_server._required_permission_for_tool("parsers_list") == "collection.read"
     assert mcp_server._required_permission_for_tool("parser_test") == "source.configure"
@@ -260,6 +284,24 @@ def test_execute_tool_dispatches_vdb_wrapper_calls() -> None:
 @pytest.mark.UT
 @pytest.mark.mcp
 @pytest.mark.req("FR-013") # W28E-1805A semantic binding
+
+
+def test_execute_tool_search_backend_keyerror_returns_backend_error() -> None:
+    service = _SearchBackendErrorService()
+    registry = SimpleNamespace(get=lambda _name: None)
+
+    result = mcp_server.execute_tool(
+        service,  # type: ignore[arg-type]
+        "search",
+        {"profile": "default", "collection": "docs", "query": "alpha", "top_k": 3},
+        registry=registry,  # type: ignore[arg-type]
+        identity_roles={"reader"},
+    )
+
+    assert result["results"] == []
+    assert result["status"] == "backend_error"
+    assert "Adapter not registered: chroma" in result["error"]
+    assert [name for name, _payload in service.calls] == ["search"]
 
 
 def test_execute_tool_search_explain_returns_plan_and_scoring_metadata() -> None:

@@ -57,6 +57,7 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
       --index-url "${INDEX_URL}" \
       --trusted-host pypi.cloud-dog.net \
       -r REQUIREMENTS.txt
+COPY docs/ ./docs/
 COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     set -e; \
@@ -113,6 +114,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 COPY REQUIREMENTS.txt pyproject.toml README.md ./
 COPY src/ ./src/
+COPY docs/ ./docs/
 COPY ui/ ./ui/
 COPY database/ ./database/
 COPY defaults.yaml server_control.sh docker-entrypoint.sh healthcheck.sh ./

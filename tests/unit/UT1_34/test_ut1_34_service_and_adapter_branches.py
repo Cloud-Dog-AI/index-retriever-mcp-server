@@ -287,6 +287,57 @@ def test_service_search_backfills_local_matches_when_vdb_returns_partial(
 @pytest.mark.req("FR-002")
 
 
+def test_service_search_merges_local_documents_when_vdb_returns_partial(
+    monkeypatch: pytest.MonkeyPatch, service: IndexService
+) -> None:
+    service.ingest_text(
+        "default",
+        "search_partial_merge",
+        "vector backend row",
+        "api://search-partial-vector",
+        actor="writer",
+        metadata={"tenant": "alpha"},
+    )
+    service.ingest_text(
+        "default",
+        "search_partial_merge",
+        "shared upload pdf coverage",
+        "upload://shared-upload.pdf",
+        actor="writer",
+        metadata={"tenant": "alpha"},
+    )
+    records = [
+        record
+        for record in service.documents.values()
+        if record.profile == "default" and record.collection == "search_partial_merge"
+    ]
+    vector_record = next(record for record in records if record.source == "api://search-partial-vector")
+
+    async def _partial_search(*_args, **_kwargs):
+        return SimpleNamespace(
+            results=[
+                SimpleNamespace(
+                    id=vector_record.record_id,
+                    payload={"metadata": dict(vector_record.metadata), "content": vector_record.text},
+                    score=0.83,
+                )
+            ]
+        )
+
+    monkeypatch.setattr(service.vdb, "search", _partial_search)
+
+    rows = service.search(
+        "default",
+        "search_partial_merge",
+        "shared upload pdf coverage",
+        top_k=5,
+        filters={"tenant": "alpha"},
+    )
+
+    assert any(row["record_id"] == vector_record.record_id for row in rows)
+    assert any(row["source_uri"] == "upload://shared-upload.pdf" for row in rows)
+
+
 def test_ingest_uses_backend_collection_name_for_upsert(
     monkeypatch: pytest.MonkeyPatch, service: IndexService
 ) -> None:
