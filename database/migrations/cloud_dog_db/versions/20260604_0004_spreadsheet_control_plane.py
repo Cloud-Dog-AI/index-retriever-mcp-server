@@ -1,7 +1,7 @@
 """W28E-604 spreadsheet indexing control plane (Excel requirements §14)
 
-Revision ID: 20260604_0002
-Revises: 20260305_0001
+Revision ID: 20260604_0004
+Revises: 20260604_0003
 Create Date: 2026-06-04 00:00:00
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "20260604_0002"
-down_revision = "20260305_0001"
+revision = "20260604_0004"
+down_revision = "20260604_0003"
 branch_labels = None
 depends_on = None
 

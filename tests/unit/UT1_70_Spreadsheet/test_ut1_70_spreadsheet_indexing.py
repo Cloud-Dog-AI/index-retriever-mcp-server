@@ -51,6 +51,8 @@ EXPECTED_TABLES = {
     "ss_index_errors",
 }
 
+pytestmark = [pytest.mark.UT, pytest.mark.internal, pytest.mark.req("FR-002")]
+
 
 @pytest.fixture
 def db_runtime(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[object]:
