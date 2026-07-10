@@ -464,6 +464,17 @@ _INDEX_A2A_SKILLS: tuple[dict[str, str], ...] = (
     {"id": "source_config_get", "name": "Get Source Config", "description": "Read a connector source configuration"},
     {"id": "source_config_update", "name": "Update Source Config", "description": "Update a connector source configuration"},
     {"id": "source_config_delete", "name": "Delete Source Config", "description": "Delete a connector source configuration"},
+    # W28E-1870-A PS-102 change-streaming (CSTREAM-IR-001..010) — VDB change-watch skills.
+    {"id": "index_watch_create", "name": "Create VDB Change-Watch", "description": "Create a VDB profile/collection change-watch with criteria (PS-102 CSTREAM-IR-001/002)"},
+    {"id": "index_watch_list", "name": "List Change-Watches", "description": "List the caller's VDB change-watches for the current tenant/profile"},
+    {"id": "index_watch_status", "name": "Change-Watch Status", "description": "Return a change-watch status (state, journal depth, cursors, in-flight, throttle)"},
+    {"id": "index_watch_get_batch", "name": "Get Change Batch", "description": "Retrieve a bounded batch of VDB change events since a cursor with the next cursor (backpressure-aware)"},
+    {"id": "index_watch_ack", "name": "Ack Change Batch", "description": "Acknowledge change-watch progress up to a cursor, releasing an in-flight batch slot"},
+    {"id": "index_watch_recover", "name": "Recover Change-Watch", "description": "Re-enquire a safe resume cursor for a change-watch without a replay storm"},
+    {"id": "index_watch_pause", "name": "Pause Change-Watch", "description": "Pause a change-watch (retains cursor + journal within retention)"},
+    {"id": "index_watch_resume", "name": "Resume Change-Watch", "description": "Resume a paused change-watch"},
+    {"id": "index_watch_delete", "name": "Delete Change-Watch", "description": "Delete a change-watch and its journal"},
+    {"id": "index_watch_test_event", "name": "Inject Test Change Event", "description": "Inject a deterministic synthetic change event into a watch's journal (test-mode, no external mutation)"},
 )
 
 
@@ -3185,6 +3196,17 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             "structure_template_export": "structure_template_export",
             "structure_template_match": "structure_template_match",
             "structure_template_delete": "structure_template_delete",
+            # W28E-1870-A PS-102 change-streaming (CSTREAM-IR-001..010) — watch skills → MCP tools (1:1).
+            "index_watch_create": "index_watch_create",
+            "index_watch_list": "index_watch_list",
+            "index_watch_status": "index_watch_status",
+            "index_watch_get_batch": "index_watch_get_batch",
+            "index_watch_ack": "index_watch_ack",
+            "index_watch_recover": "index_watch_recover",
+            "index_watch_pause": "index_watch_pause",
+            "index_watch_resume": "index_watch_resume",
+            "index_watch_delete": "index_watch_delete",
+            "index_watch_test_event": "index_watch_test_event",
         }
         tool_name = tool_map.get(skill_id)
         if tool_name is None:
@@ -3278,6 +3300,17 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         A2ASkill(id="structure_template_generate", name="Generate Structure Template", description="Generate a structure/style template blueprint from corpus patterns (W28E-603)"),
         A2ASkill(id="structure_template_export", name="Export Structure Template", description="Export a structure template as Markdown or JSON (W28E-603)"),
         A2ASkill(id="structure_template_delete", name="Delete Structure Template", description="Delete a generated structure template through the supported lifecycle path (W28M-1603D)"),
+        # W28E-1870-A PS-102 change-streaming (CSTREAM-IR-001..010) — VDB change-watch skills advertised on the edge card.
+        A2ASkill(id="index_watch_create", name="Create VDB Change-Watch", description="Create a VDB profile/collection change-watch with criteria (PS-102 CSTREAM-IR-001/002)"),
+        A2ASkill(id="index_watch_list", name="List Change-Watches", description="List the caller's VDB change-watches for the current tenant/profile"),
+        A2ASkill(id="index_watch_status", name="Change-Watch Status", description="Return a change-watch status (state, journal depth, cursors, in-flight, throttle)"),
+        A2ASkill(id="index_watch_get_batch", name="Get Change Batch", description="Retrieve a bounded batch of VDB change events since a cursor with the next cursor (backpressure-aware)"),
+        A2ASkill(id="index_watch_ack", name="Ack Change Batch", description="Acknowledge change-watch progress up to a cursor, releasing an in-flight batch slot"),
+        A2ASkill(id="index_watch_recover", name="Recover Change-Watch", description="Re-enquire a safe resume cursor for a change-watch without a replay storm"),
+        A2ASkill(id="index_watch_pause", name="Pause Change-Watch", description="Pause a change-watch (retains cursor + journal within retention)"),
+        A2ASkill(id="index_watch_resume", name="Resume Change-Watch", description="Resume a paused change-watch"),
+        A2ASkill(id="index_watch_delete", name="Delete Change-Watch", description="Delete a change-watch and its journal"),
+        A2ASkill(id="index_watch_test_event", name="Inject Test Change Event", description="Inject a deterministic synthetic change event into a watch's journal (test-mode, no external mutation)"),
     ]
     app.post(f"{_CANONICAL_A2A_BASE_PATH}/tasks")(a2a_submit_task)
     app.post("/tasks")(a2a_submit_task)
