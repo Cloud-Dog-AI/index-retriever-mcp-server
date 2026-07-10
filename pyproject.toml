@@ -22,7 +22,7 @@ dependencies = [
     "cloud_dog_db>=0.1.0",
     "cloud_dog_storage>=0.1.1",
     "cloud_dog_llm==0.4.0",
-    "cloud_dog_vdb>=0.5.4",
+    "cloud_dog_vdb>=0.5.5",
     # Core runtime
     "pydantic>=2.7,<3.0",
     "pydantic-settings>=2.2,<3.0",
@@ -58,7 +58,7 @@ postgres = ["asyncpg>=0.29,<1.0"]
 redis = ["redis>=5.0,<6.0"]
 pandoc = ["pypandoc>=1.13,<2.0"]
 pdf = ["pdfminer.six>=20231228"]
-office = ["python-docx>=1.1,<2.0", "openpyxl>=3.1,<4.0"]
+office = ["python-docx>=1.1,<2.0", "openpyxl>=3.1,<4.0", "odfpy>=1.4,<2.0"]
 llamaindex = [
     "llama-index-core>=0.11,<0.12",
     "llama-index-readers-file>=0.2,<0.3",
