@@ -489,6 +489,22 @@ def test_resolve_seed_path_returns_explicit_nonexistent_as_is(
 @pytest.mark.req("FR-002")
 
 
+def test_resolve_seed_path_uses_repo_default_when_present(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from index_tools import bootstrap as bootstrap_mod
+
+    monkeypatch.setattr(bootstrap_mod, "_cfg_get", lambda key, default="": "")
+    container_default = Path("/app/config/bootstrap-seed.yaml")
+    repo_default = Path(bootstrap_mod.__file__).resolve().parents[2] / "config" / "bootstrap-seed.yaml"
+    expected = container_default if container_default.is_file() else repo_default
+    assert expected.is_file()
+    assert resolve_seed_path() == str(expected)
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
+
+
 def test_maybe_apply_bootstrap_seed_no_path_returns_none(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -61,17 +61,19 @@ _SPA_ADMIN_PATHS = {
     "admin/groups",
     "admin/api-keys",
     "admin/rbac",
+    # PS-71 canonical IDAM WebUI routes. /admin/* remains the legacy alias set.
+    "idam",
+    "idam/users",
+    "idam/groups",
+    "idam/api-keys",
+    "idam/rbac",
 }
 
 _LEGACY_WEBUI_REDIRECTS = {
     "/ui/login": "/login",
     "/audit": "/audit-log",
     "/logs": "/audit-log",
-    "/idam/users": "/admin/users",
-    "/idam/groups": "/admin/groups",
-    "/idam/api-keys": "/admin/api-keys",
     "/idam/roles": "/admin/roles",
-    "/idam/rbac": "/admin/rbac",
     "/api-keys": "/admin/api-keys",
     "/apikeys": "/admin/api-keys",
     "/rbac": "/admin/rbac",
@@ -731,6 +733,11 @@ def build_web_app() -> object:
     @app.get("/admin/groups")
     @app.get("/admin/api-keys")
     @app.get("/admin/rbac")
+    @app.get("/idam")
+    @app.get("/idam/users")
+    @app.get("/idam/groups")
+    @app.get("/idam/api-keys")
+    @app.get("/idam/rbac")
     async def admin_spa_routes() -> Response:
         # req: FR-018
         # PDS-009: /admin/roles MUST serve the SPA index shell for a browser HTML

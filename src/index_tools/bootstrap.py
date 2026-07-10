@@ -421,6 +421,9 @@ def resolve_seed_path() -> str | None:
     container_default = "/app/config/bootstrap-seed.yaml"
     if Path(container_default).is_file():
         return container_default
+    repo_default = Path(__file__).resolve().parents[2] / "config" / "bootstrap-seed.yaml"
+    if repo_default.is_file():
+        return str(repo_default)
     return None
 
 

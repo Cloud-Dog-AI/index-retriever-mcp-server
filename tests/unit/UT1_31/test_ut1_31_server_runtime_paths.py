@@ -846,6 +846,12 @@ def test_web_runtime_config_and_spa_admin_routes(monkeypatch: pytest.MonkeyPatch
     assert spa_admin.status_code == 200
     assert "id='root'" in spa_admin.text
 
+    for path in ("/idam", "/idam/users", "/idam/groups", "/idam/api-keys", "/idam/rbac"):
+        idam_page = client.get(path)
+        assert idam_page.status_code == 200
+        assert idam_page.headers["content-type"].startswith("text/html")
+        assert "id='root'" in idam_page.text
+
     # PDS-009: a browser HTML navigation to /admin/roles (where /idam/roles 308s to)
     # MUST serve the SPA index shell — 200 text/html with #root — exactly like
     # /admin/users, NOT the /admin/{path} JSON proxy that previously shadowed it.
