@@ -949,6 +949,125 @@ class IndexService:
             self._structure_service = existing
         return existing
 
+    @property
+    def watch_service(self) -> Any:
+        """Lazy VDB change-watch adapter (W28E-1870-A, PS-102 §4.5).
+
+        Consumes the common ``cloud_dog_api_kit.change_stream`` foundation: builds a
+        ``WatchCoordinator`` with a durable ``SqlJournal`` (this service's
+        ``cloud_dog_db`` engine), live fan-out via the service's
+        ``cloud_dog_api_kit.a2a.events`` broadcaster, and audit via the shared
+        ``AuditLogger``. Constructed on first access and cached so the same watch
+        surface is shared within a process.
+        """
+        existing = getattr(self, "_watch_service", None)
+        if existing is None:
+            from index_tools.change_stream import WatchService, make_audit_sink
+
+            engine = self._resolve_watch_journal_engine()
+            broadcaster = self._resolve_watch_broadcaster()
+            existing = WatchService(
+                engine=engine,
+                broadcaster=broadcaster,
+                audit_sink=make_audit_sink(self.audit_logger),
+                broadcast_scheduler=self._schedule_watch_broadcast,
+            )
+            self._watch_service = existing
+        return existing
+
+    def _resolve_watch_journal_engine(self) -> Any | None:
+        """Return the ``cloud_dog_db`` sync engine for the durable watch journal.
+
+        Falls back to ``None`` (bounded in-memory journal) when the DB runtime is
+        not available (unit tests / embedded mode), so change-watch never blocks
+        service startup on a database.
+        """
+        try:
+            from index_tools.db import initialise_database
+
+            return initialise_database().session_manager.engine
+        except Exception:  # pragma: no cover - no DB runtime in this tier
+            return None
+
+    def _resolve_watch_broadcaster(self) -> Any | None:
+        """Return an ``a2a.events`` broadcaster for live change fan-out, or None.
+
+        Reuses the platform ``InMemoryEventBroadcaster`` (PS-102 §9 reuse); when
+        unavailable the watch journal + pull-batch retrieval still function.
+        """
+        try:
+            from cloud_dog_api_kit.a2a.events import InMemoryEventBroadcaster
+
+            existing = getattr(self, "_watch_broadcaster", None)
+            if existing is None:
+                existing = InMemoryEventBroadcaster()
+                self._watch_broadcaster = existing
+            return existing
+        except Exception:  # pragma: no cover - broadcaster surface unavailable
+            return None
+
+    def _schedule_watch_broadcast(self, coro: Any) -> None:
+        """Schedule the (async) live-broadcast publish on the service loop thread.
+
+        The change-emit path is synchronous; the broadcaster ``publish`` is async.
+        Scheduling on the dedicated service loop keeps emit nonblocking (CSTREAM-002)
+        and never busy-waits.
+        """
+        try:
+            self._ensure_loop_thread()
+            asyncio.run_coroutine_threadsafe(coro, self._loop)
+        except Exception:  # pragma: no cover - loop unavailable; drop live frame
+            try:
+                coro.close()
+            except Exception:
+                pass
+
+    def _emit_change_watch(
+        self,
+        *,
+        action: str,
+        collection: str,
+        object_ref: str,
+        tenant_id: str,
+        object_version: str = "",
+        source_uri: str = "",
+        title: str = "",
+        language: str = "",
+        doc_id: str = "",
+        chunk_id: str = "",
+        text: str = "",
+        metadata: dict[str, Any] | None = None,
+        actor: str | None = None,
+        correlation_id: str | None = None,
+        summary: str = "",
+    ) -> None:
+        """Fan an observed VDB mutation into matching live change-watches.
+
+        Best-effort: change capture must never break the mutating request path, so
+        any adapter error is swallowed (the mutation already succeeded). The watch
+        service itself only emits to live watches whose criteria match.
+        """
+        try:
+            self.watch_service.observe_change(
+                tenant_id=tenant_id,
+                collection=collection,
+                action=action,
+                object_ref=object_ref,
+                object_version=object_version,
+                source_uri=source_uri,
+                title=title,
+                language=language,
+                doc_id=doc_id,
+                chunk_id=chunk_id,
+                text=text,
+                metadata=metadata,
+                actor=actor,
+                correlation_id=correlation_id,
+                summary=summary,
+            )
+        except Exception:  # pragma: no cover - capture is non-fatal
+            logger.debug("change-watch emit skipped", action=action, collection=collection)
+
     def close(self) -> None:
         """Stop service-owned background workers."""
         if self._closed:
@@ -1751,6 +1870,57 @@ class IndexService:
             metadata=audit_metadata,
             chunk_count=len(chunks),
         )
+        # W28E-1870-A: fan document ingest (and any supersede) into matching
+        # change-watches (CSTREAM-IR-001). The watch tenant scope is the VDB
+        # profile, matching ``document_metadata["tenant_id"] = profile``.
+        watch_metadata = {
+            "collection": collection,
+            "doc_id": doc_id,
+            "chunk_id": record_id,
+            "source_uri": source_uri,
+            "title": str(document_metadata.get("title", "")),
+            "language": str(document_metadata.get("language", "")),
+            "embedding_model": self._llm_model,
+            "lifecycle_state": "active",
+        }
+        self._emit_change_watch(
+            action="ingested",
+            collection=collection,
+            object_ref=doc_id,
+            tenant_id=profile,
+            object_version=record_id,
+            source_uri=source_uri,
+            title=str(document_metadata.get("title", "")),
+            language=str(document_metadata.get("language", "")),
+            doc_id=doc_id,
+            chunk_id=record_id,
+            text=text,
+            metadata=watch_metadata,
+            actor=actor,
+            correlation_id=job.correlation_id,
+            summary=f"ingested {doc_id} into {profile}:{collection}",
+        )
+        for superseded_id in superseded_record_ids:
+            self._emit_change_watch(
+                action="chunk_changed",
+                collection=collection,
+                object_ref=superseded_id,
+                tenant_id=profile,
+                object_version=record_id,
+                source_uri=source_uri,
+                doc_id=doc_id,
+                chunk_id=superseded_id,
+                metadata={
+                    "collection": collection,
+                    "doc_id": doc_id,
+                    "chunk_id": superseded_id,
+                    "source_uri": source_uri,
+                    "lifecycle_state": "superseded",
+                },
+                actor=actor,
+                correlation_id=job.correlation_id,
+                summary=f"superseded {superseded_id} by {record_id}",
+            )
 
     def _apply_ingest_enrichment(
         self,
@@ -2714,6 +2884,17 @@ class IndexService:
             actor=actor,
             payload=self._collection_payload(record),
         )
+        # W28E-1870-A: fan collection-create into matching change-watches (CSTREAM-IR-001).
+        self._emit_change_watch(
+            action="collection_changed",
+            collection=collection,
+            object_ref=collection_key,
+            tenant_id=profile,
+            object_version="created",
+            metadata={"collection": collection, "lifecycle_state": "active"},
+            actor=actor,
+            summary=f"collection created {collection_key}",
+        )
 
     def admin_collection_update(
         self,
@@ -2801,6 +2982,17 @@ class IndexService:
             action="deleted",
             actor=actor,
             payload={"profile": profile, "collection": collection},
+        )
+        # W28E-1870-A: fan collection-delete into matching change-watches (CSTREAM-IR-001).
+        self._emit_change_watch(
+            action="collection_changed",
+            collection=collection,
+            object_ref=collection_key,
+            tenant_id=profile,
+            object_version="deleted",
+            metadata={"collection": collection, "lifecycle_state": "deleted"},
+            actor=actor,
+            summary=f"collection deleted {collection_key}",
         )
 
     def set_collection_roles(self, profile: str, collection: str, roles: set[str], allowed_roles: set[str]) -> None:
@@ -3824,7 +4016,36 @@ class IndexService:
         if record is not None and record.profile == profile and record.collection == collection:
             record.metadata.update(mark_deleted(record.metadata))
             _apply_metadata_pack_aliases(record.metadata)
+            # W28E-1870-A: fan document delete into matching change-watches (CSTREAM-IR-001).
+            self._emit_change_watch(
+                action="deleted",
+                collection=collection,
+                object_ref=str(record.doc_id or doc_id),
+                tenant_id=profile,
+                object_version=record_id,
+                source_uri=str(record.metadata.get("source_uri", record.source)),
+                title=str(record.metadata.get("title", "")),
+                doc_id=str(record.doc_id or doc_id),
+                chunk_id=record_id,
+                metadata={
+                    "collection": collection,
+                    "doc_id": str(record.doc_id or doc_id),
+                    "source_uri": str(record.metadata.get("source_uri", record.source)),
+                    "lifecycle_state": "deleted",
+                },
+                summary=f"deleted {record.doc_id or doc_id} from {profile}:{collection}",
+            )
             return True
+        if deleted:
+            self._emit_change_watch(
+                action="deleted",
+                collection=collection,
+                object_ref=str(doc_id),
+                tenant_id=profile,
+                object_version=record_id,
+                metadata={"collection": collection, "doc_id": str(doc_id), "lifecycle_state": "deleted"},
+                summary=f"deleted {doc_id} from {profile}:{collection}",
+            )
         return deleted
 
     def delete_by_filter(self, profile: str, collection: str, filters: dict[str, Any]) -> int:
@@ -3849,6 +4070,25 @@ class IndexService:
         for value in matched_records:
             value.metadata.update(mark_deleted(value.metadata))
             _apply_metadata_pack_aliases(value.metadata)
+            # W28E-1870-A: fan each filtered delete into matching change-watches (CSTREAM-IR-001).
+            self._emit_change_watch(
+                action="deleted",
+                collection=collection,
+                object_ref=str(value.doc_id),
+                tenant_id=profile,
+                object_version=str(value.record_id or value.doc_id),
+                source_uri=str(value.metadata.get("source_uri", value.source)),
+                title=str(value.metadata.get("title", "")),
+                doc_id=str(value.doc_id),
+                chunk_id=str(value.record_id or value.doc_id),
+                metadata={
+                    "collection": collection,
+                    "doc_id": str(value.doc_id),
+                    "source_uri": str(value.metadata.get("source_uri", value.source)),
+                    "lifecycle_state": "deleted",
+                },
+                summary=f"deleted-by-filter {value.doc_id} from {profile}:{collection}",
+            )
         return max(deleted, len(matched_records))
 
     def retention_run(self, profile: str, collection: str, older_than_days: int) -> int:

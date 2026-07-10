@@ -44,7 +44,7 @@ WRITER = "valid-writer-token"
 READER = "valid-reader-token"
 A2A_LOCAL = "12345678"
 
-EXPECTED_TOOL_COUNT = 95  # FR-016; UT1_40 asserts the same runtime value
+EXPECTED_TOOL_COUNT = 109  # FR-016; UT1_40 asserts the same runtime value (99 mainline + 10 W28E-1870-A index_watch_* tools)
 
 
 def _hdr(token: str | None) -> dict[str, str]:

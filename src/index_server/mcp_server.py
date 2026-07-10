@@ -202,6 +202,14 @@ def _required_permission_for_tool(tool_name: str) -> str:
         return "admin"
     if tool_name.startswith("ingest_") or tool_name in {"bulk_index", "bulk_ingest"}:
         return "collection.write"
+    # W28E-1870-A VDB change-watch (PS-102 §7 RBAC): read verbs need collection.read,
+    # mutating lifecycle verbs (create/pause/resume/delete/test) need collection.write.
+    if tool_name in {"index_watch_list", "index_watch_status", "index_watch_get_batch",
+                     "index_watch_ack", "index_watch_recover"}:
+        return "collection.read"
+    if tool_name in {"index_watch_create", "index_watch_pause", "index_watch_resume",
+                     "index_watch_delete", "index_watch_test_event"}:
+        return "collection.write"
     if tool_name in {"parsers_list"}:
         return "collection.read"
     if tool_name in {"parser_test", "ocr_run", "table_extract"}:
@@ -631,6 +639,88 @@ def _enforce_collection_permission(
     allowed_canonical = {_canonical_role(role) for role in allowed}
     if not (identity_roles & allowed_canonical):
         raise PermissionError(f"Authorisation failed for collection '{collection}'")
+
+
+def _watch_tenant(arguments: dict[str, Any]) -> str:
+    """Resolve the change-watch tenant scope from tool arguments (VDB profile)."""
+    return str(arguments.get("tenant_id") or arguments.get("profile") or "default")
+
+
+def _dispatch_index_watch(
+    service: IndexService, tool_name: str, arguments: dict[str, Any]
+) -> dict[str, Any]:
+    """Dispatch the ``index_watch_*`` MCP tool family onto the watch adapter.
+
+    RBAC is already enforced upstream by ``_enforce_tool_permission``; tenant/profile
+    ownership is enforced inside :class:`WatchService`. Common change-stream errors
+    surface as ``ValueError`` so the transport maps them to a 400/validation error.
+    """
+    from cloud_dog_api_kit.change_stream.errors import ChangeStreamError
+
+    ws = service.watch_service
+    tenant = _watch_tenant(arguments)
+    actor = str(arguments.get("actor", "mcp"))
+    try:
+        if tool_name == "index_watch_create":
+            return ws.create_watch(
+                profile_id=str(arguments.get("profile") or arguments.get("profile_id") or "default"),
+                tenant_id=tenant,
+                actor=actor,
+                criteria=arguments.get("criteria") if isinstance(arguments.get("criteria"), dict) else None,
+                max_batch=int(arguments.get("max_batch", 100)),
+                max_inflight=int(arguments.get("max_inflight", 4)),
+                journal_max=int(arguments.get("journal_max", 1000)),
+                journal_ttl_seconds=(
+                    float(arguments["journal_ttl_seconds"])
+                    if arguments.get("journal_ttl_seconds") not in (None, "")
+                    else None
+                ),
+            )
+        if tool_name == "index_watch_list":
+            return {"watches": ws.list_watches(tenant_id=tenant)}
+        if tool_name == "index_watch_status":
+            return ws.get_status(str(arguments["watch_id"]), tenant_id=tenant)
+        if tool_name == "index_watch_get_batch":
+            return ws.get_batch(
+                str(arguments["watch_id"]),
+                tenant_id=tenant,
+                since_cursor=arguments.get("since_cursor") or None,
+                max_batch=int(arguments["max_batch"]) if arguments.get("max_batch") else None,
+            )
+        if tool_name == "index_watch_ack":
+            return ws.ack(str(arguments["watch_id"]), tenant_id=tenant, ack_cursor=str(arguments["ack_cursor"]))
+        if tool_name == "index_watch_recover":
+            return ws.recover(
+                str(arguments["watch_id"]), tenant_id=tenant, since_cursor=arguments.get("since_cursor") or None
+            )
+        if tool_name == "index_watch_pause":
+            return ws.pause(str(arguments["watch_id"]), tenant_id=tenant)
+        if tool_name == "index_watch_resume":
+            return ws.resume(str(arguments["watch_id"]), tenant_id=tenant)
+        if tool_name == "index_watch_delete":
+            return ws.delete(str(arguments["watch_id"]), tenant_id=tenant)
+        if tool_name == "index_watch_test_event":
+            extra = {
+                k: v
+                for k, v in arguments.items()
+                if k not in {"watch_id", "tenant_id", "profile", "profile_id", "actor",
+                             "action", "object_ref", "_correlation_id", "_request_ip",
+                             "_request_auth_method", "_request_user_agent"}
+            }
+            return ws.test_event(
+                str(arguments["watch_id"]),
+                tenant_id=tenant,
+                action=str(arguments.get("action", "created")),
+                object_ref=str(arguments.get("object_ref", "test")),
+                **extra,
+            )
+    except ChangeStreamError as exc:
+        # Surface the stable machine code + recovery hint through the ValueError
+        # path so REST/MCP return a 400 with a deterministic error body.
+        raise ValueError(json.dumps(exc.to_dict())) from exc
+    except KeyError as exc:
+        raise ValueError(f"missing required argument: {exc}") from exc
+    raise KeyError(tool_name)
 
 
 def execute_tool(
@@ -1449,6 +1539,9 @@ def execute_tool(
             actor=str(arguments.get("actor", "mcp")),
             roles=set(identity_roles or set()),
         )
+    # W28E-1870-A VDB change-watch MCP tools (PS-102 §5.3 / CSTREAM-IR-001/002).
+    if tool_name.startswith("index_watch_"):
+        return _dispatch_index_watch(service, tool_name, arguments)
     return {"status": "ok"}
 
 

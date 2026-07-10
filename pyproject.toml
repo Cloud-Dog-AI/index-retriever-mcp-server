@@ -16,7 +16,9 @@ dependencies = [
     "cloud_dog_config==0.3.4",
     "cloud_dog_logging>=0.3.3",
     "cloud_dog_cache>=0.2.0",
-    "cloud_dog_api_kit==0.13.1",
+    # W28E-1870-A: change-stream foundation (PS-102). ``change-stream-db`` extra
+    # pulls the SqlJournal deps (already satisfied by cloud_dog_db + SQLAlchemy below).
+    "cloud_dog_api_kit[change-stream-db]>=0.14.0",
     "cloud_dog_idam==0.5.3",
     "cloud_dog_jobs==0.4.1",
     "cloud_dog_db>=0.1.0",

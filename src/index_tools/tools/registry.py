@@ -213,6 +213,17 @@ def build_default_tool_registry() -> ToolRegistry:
         ToolSpec(name="structure_template_delete", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a generated structure template through the supported lifecycle path."),
         # -- W28E-603 §25 #6: VDB/chunk linkage --
         ToolSpec(name="structure_link_to_vdb_records", input_model=GenericToolInput, output_model=GenericToolOutput, description="Link a structure document to existing VDB record/chunk ids and source document."),
+        # -- W28E-1870-A VDB change-watch (PS-102 §5.3 / CSTREAM-IR-001/002) --
+        ToolSpec(name="index_watch_create", input_model=GenericToolInput, output_model=GenericToolOutput, description="Create a VDB change-watch over a profile/collection with criteria (collection, source URI/domain, title, metadata keys, language, extracted-text glob/regex, action). Returns the watch id and status."),
+        ToolSpec(name="index_watch_list", input_model=GenericToolInput, output_model=GenericToolOutput, description="List the caller's VDB change-watches for the current tenant/profile."),
+        ToolSpec(name="index_watch_status", input_model=GenericToolInput, output_model=GenericToolOutput, description="Return a change-watch status (state, journal depth, cursors, in-flight, throttle)."),
+        ToolSpec(name="index_watch_get_batch", input_model=GenericToolInput, output_model=GenericToolOutput, description="Retrieve a bounded batch of change events for a watch since a cursor, with the next cursor. Respects max_batch and backpressure."),
+        ToolSpec(name="index_watch_ack", input_model=GenericToolInput, output_model=GenericToolOutput, description="Acknowledge progress on a change-watch up to a cursor, releasing an in-flight batch slot."),
+        ToolSpec(name="index_watch_recover", input_model=GenericToolInput, output_model=GenericToolOutput, description="Re-enquire a safe resume cursor for a change-watch without a replay storm."),
+        ToolSpec(name="index_watch_pause", input_model=GenericToolInput, output_model=GenericToolOutput, description="Pause a change-watch; it retains its cursor and journal within retention."),
+        ToolSpec(name="index_watch_resume", input_model=GenericToolInput, output_model=GenericToolOutput, description="Resume a paused change-watch."),
+        ToolSpec(name="index_watch_delete", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a change-watch and its journal."),
+        ToolSpec(name="index_watch_test_event", input_model=GenericToolInput, output_model=GenericToolOutput, description="Inject a deterministic synthetic change event into a watch's journal (test-mode, no external backend mutation)."),
     ]
     for spec in specs:
         registry.register(spec)

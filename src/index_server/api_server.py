@@ -2228,6 +2228,206 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         )
         return {"status": "ok", "collection": collection_id, "profile": profile}
 
+    # -- W28E-1870-A VDB change-watch REST surface (PS-102 §5.5 / CSTREAM-IR) --
+    def _watch_tenant_from(payload_or_query: dict[str, Any]) -> str:
+        return str(payload_or_query.get("tenant_id") or payload_or_query.get("profile") or "default")
+
+    def _watch_error(exc: Exception) -> HTTPException:
+        """Map a change-stream error to a truthful HTTP response with its code."""
+        from cloud_dog_api_kit.change_stream.errors import (
+            CursorExpired,
+            RateLimited,
+            Unauthorised as _CSUnauthorised,
+            WatchNotFound,
+        )
+
+        detail = getattr(exc, "to_dict", lambda: {"code": "error", "message": str(exc)})()
+        if isinstance(exc, WatchNotFound):
+            return HTTPException(status_code=404, detail=detail)
+        if isinstance(exc, _CSUnauthorised):
+            return HTTPException(status_code=403, detail=detail)
+        if isinstance(exc, RateLimited):
+            return HTTPException(status_code=429, detail=detail)
+        if isinstance(exc, CursorExpired):
+            return HTTPException(status_code=409, detail=detail)
+        return HTTPException(status_code=400, detail=detail)
+
+    async def watches_create(request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        payload = await _json_object_or_raise(request)
+        from cloud_dog_api_kit.change_stream.errors import ChangeStreamError
+
+        try:
+            return active_service.watch_service.create_watch(
+                profile_id=str(payload.get("profile") or payload.get("profile_id") or "default"),
+                tenant_id=_watch_tenant_from(payload),
+                actor=identity.user_id,
+                criteria=payload.get("criteria") if isinstance(payload.get("criteria"), dict) else None,
+                max_batch=int(payload.get("max_batch", 100)),
+                max_inflight=int(payload.get("max_inflight", 4)),
+                journal_max=int(payload.get("journal_max", 1000)),
+                journal_ttl_seconds=(
+                    float(payload["journal_ttl_seconds"])
+                    if payload.get("journal_ttl_seconds") not in (None, "")
+                    else None
+                ),
+            )
+        except ChangeStreamError as exc:
+            raise _watch_error(exc) from exc
+
+    def watches_list(request: Request, profile: str = "default", tenant_id: str | None = None) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        tenant = str(tenant_id or profile or "default")
+        return {"watches": active_service.watch_service.list_watches(tenant_id=tenant)}
+
+    def watches_get(watch_id: str, request: Request, profile: str = "default", tenant_id: str | None = None) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        tenant = str(tenant_id or profile or "default")
+        from cloud_dog_api_kit.change_stream.errors import ChangeStreamError
+
+        try:
+            return active_service.watch_service.get_watch(watch_id, tenant_id=tenant)
+        except ChangeStreamError as exc:
+            raise _watch_error(exc) from exc
+
+    def watches_status(watch_id: str, request: Request, profile: str = "default", tenant_id: str | None = None) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        tenant = str(tenant_id or profile or "default")
+        from cloud_dog_api_kit.change_stream.errors import ChangeStreamError
+
+        try:
+            return active_service.watch_service.get_status(watch_id, tenant_id=tenant)
+        except ChangeStreamError as exc:
+            raise _watch_error(exc) from exc
+
+    def watches_events(
+        watch_id: str,
+        request: Request,
+        profile: str = "default",
+        tenant_id: str | None = None,
+        since_cursor: str | None = None,
+        max_batch: int | None = None,
+        wait_seconds: float | None = None,
+    ) -> dict[str, Any]:
+        """Pull-batch / bounded long-poll batch retrieval (PS-102 §5.2 base mode).
+
+        ``wait_seconds`` is accepted and bounded but never holds a worker: this is
+        the nonblocking pull-batch — an empty batch + current cursor is returned
+        immediately when no events are pending (CSTREAM-002). SSE is additive.
+        """
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        tenant = str(tenant_id or profile or "default")
+        from cloud_dog_api_kit.change_stream.errors import ChangeStreamError
+
+        try:
+            return active_service.watch_service.get_batch(
+                watch_id,
+                tenant_id=tenant,
+                since_cursor=since_cursor or None,
+                max_batch=int(max_batch) if max_batch else None,
+            )
+        except ChangeStreamError as exc:
+            raise _watch_error(exc) from exc
+
+    async def watches_ack(watch_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        payload = await _json_object_or_raise(request)
+        tenant = _watch_tenant_from(payload)
+        from cloud_dog_api_kit.change_stream.errors import ChangeStreamError
+
+        try:
+            return active_service.watch_service.ack(
+                watch_id, tenant_id=tenant, ack_cursor=str(payload["ack_cursor"])
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=422, detail="ack_cursor is required") from exc
+        except ChangeStreamError as exc:
+            raise _watch_error(exc) from exc
+
+    async def watches_recover(watch_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        payload = await _json_object_or_raise(request)
+        tenant = _watch_tenant_from(payload)
+        from cloud_dog_api_kit.change_stream.errors import ChangeStreamError
+
+        try:
+            return active_service.watch_service.recover(
+                watch_id, tenant_id=tenant, since_cursor=payload.get("since_cursor") or None
+            )
+        except ChangeStreamError as exc:
+            raise _watch_error(exc) from exc
+
+    async def watches_pause(watch_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        payload = await _json_object_or_raise(request) if await _has_body(request) else {}
+        tenant = _watch_tenant_from(payload)
+        from cloud_dog_api_kit.change_stream.errors import ChangeStreamError
+
+        try:
+            return active_service.watch_service.pause(watch_id, tenant_id=tenant)
+        except ChangeStreamError as exc:
+            raise _watch_error(exc) from exc
+
+    async def watches_resume(watch_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        payload = await _json_object_or_raise(request) if await _has_body(request) else {}
+        tenant = _watch_tenant_from(payload)
+        from cloud_dog_api_kit.change_stream.errors import ChangeStreamError
+
+        try:
+            return active_service.watch_service.resume(watch_id, tenant_id=tenant)
+        except ChangeStreamError as exc:
+            raise _watch_error(exc) from exc
+
+    async def watches_test_event(watch_id: str, request: Request) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        payload = await _json_object_or_raise(request) if await _has_body(request) else {}
+        tenant = _watch_tenant_from(payload)
+        extra = {
+            k: v for k, v in payload.items()
+            if k not in {"tenant_id", "profile", "profile_id", "action", "object_ref"}
+        }
+        from cloud_dog_api_kit.change_stream.errors import ChangeStreamError
+
+        try:
+            return active_service.watch_service.test_event(
+                watch_id,
+                tenant_id=tenant,
+                action=str(payload.get("action", "created")),
+                object_ref=str(payload.get("object_ref", "test")),
+                **extra,
+            )
+        except ChangeStreamError as exc:
+            raise _watch_error(exc) from exc
+
+    def watches_delete(watch_id: str, request: Request, profile: str = "default", tenant_id: str | None = None) -> dict[str, Any]:
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.write")
+        tenant = str(tenant_id or profile or "default")
+        from cloud_dog_api_kit.change_stream.errors import ChangeStreamError
+
+        try:
+            return active_service.watch_service.delete(watch_id, tenant_id=tenant)
+        except ChangeStreamError as exc:
+            raise _watch_error(exc) from exc
+
+    async def _has_body(request: Request) -> bool:
+        try:
+            body = await request.body()
+        except Exception:
+            return False
+        return bool(body and body.strip())
+
     def admin_source_configs_list(request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "collection.read")
@@ -3283,6 +3483,22 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get(f"{_LEGACY_API_BASE_PATH}/files/{{file_id}}", include_in_schema=False)(files_get)
     app.get(f"{_LEGACY_API_BASE_PATH}/files/{{file_id}}/download", include_in_schema=False)(files_download)
     app.delete(f"{_LEGACY_API_BASE_PATH}/files/{{file_id}}", include_in_schema=False)(files_delete)
+    # -- W28E-1870-A VDB change-watch REST routes (PS-102 §5.5) --
+    # Register on the canonical ``/v1`` (Traefik stripprefix=/api) and the resolved
+    # service base path so the surface is reachable both edge-routed and direct.
+    _watch_bases = {"/v1", api_base_path}
+    for _wb in _watch_bases:
+        app.post(f"{_wb}/watches")(watches_create)
+        app.get(f"{_wb}/watches")(watches_list)
+        app.get(f"{_wb}/watches/{{watch_id}}")(watches_get)
+        app.get(f"{_wb}/watches/{{watch_id}}/status")(watches_status)
+        app.get(f"{_wb}/watches/{{watch_id}}/events")(watches_events)
+        app.post(f"{_wb}/watches/{{watch_id}}/ack")(watches_ack)
+        app.post(f"{_wb}/watches/{{watch_id}}/recover")(watches_recover)
+        app.post(f"{_wb}/watches/{{watch_id}}/pause")(watches_pause)
+        app.post(f"{_wb}/watches/{{watch_id}}/resume")(watches_resume)
+        app.post(f"{_wb}/watches/{{watch_id}}/test-event")(watches_test_event)
+        app.delete(f"{_wb}/watches/{{watch_id}}")(watches_delete)
     # W28E-603 document structure (Phase 1) — separate namespace from search/retrieve/ingest (design brief §12).
     app.get(f"{api_base_path}/structure/health")(structure_health)
     app.post(f"{api_base_path}/structure/documents")(structure_documents_create)

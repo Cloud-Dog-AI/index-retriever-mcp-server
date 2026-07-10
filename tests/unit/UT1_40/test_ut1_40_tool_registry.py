@@ -24,8 +24,9 @@ def test_ut_40_tool_registry_contract_fields() -> None:
     registry = build_default_tool_registry()
     tools = registry.list_tools()
     assert tools
-    # 98 = current 95-tool mainline catalogue + 3 W28D-322 stock-client ingest tools.
-    assert len(tools) == 98
+    # 109 = 99-tool mainline catalogue (incl. W28D-322 stock ingest + spreadsheet)
+    # + 10 W28E-1870-A VDB change-watch tools (index_watch_*).
+    assert len(tools) == 109
 
     names = [str(tool["name"]) for tool in tools]
     assert len(names) == len(set(names))
