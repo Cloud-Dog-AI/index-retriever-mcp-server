@@ -1,0 +1,32 @@
+# W28E-604 raw test log
+# cwd: /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt/packages/backend/platform-vdb
+# cmd: .venv/bin/python -m pytest tests/unit/UT4.8_SpreadsheetPhase2 --env tests/env-UT -v -p no:cacheprovider
+# date(UTC): 2026-06-04T11:51:20Z
+# ----------------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.0.3, pluggy-1.6.0 -- /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt/packages/backend/platform-vdb/.venv/bin/python
+rootdir: /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt/packages/backend/platform-vdb
+configfile: pyproject.toml
+plugins: respx-0.23.1, anyio-4.13.0, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=auto, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 17 items
+
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_formats.py::test_workbook_to_json_is_serialisable PASSED [  5%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_formats.py::test_records_to_jsonl_one_line_per_record PASSED [ 11%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_formats.py::test_table_to_csv_header_and_rows PASSED [ 17%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_formats.py::test_table_to_parquet_roundtrip PASSED [ 23%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_formula.py::test_formula_records_emitted PASSED [ 29%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_formula.py::test_formula_extraction_can_be_disabled PASSED [ 35%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_formula.py::test_classify_formula_families PASSED [ 41%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_pivot.py::test_pivot_from_openpyxl_definition_maps_fields PASSED [ 47%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_pivot.py::test_pipeline_emits_pivot_record PASSED [ 52%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_pivot.py::test_pivot_extraction_off_disables_records PASSED [ 58%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_query.py::test_query_by_table PASSED [ 64%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_query.py::test_query_column_projection PASSED [ 70%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_query.py::test_query_where_predicate PASSED [ 76%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_query.py::test_query_row_interval PASSED [ 82%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_query.py::test_query_missing_columns_warn PASSED [ 88%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_query.py::test_query_by_named_range PASSED [ 94%]
+tests/unit/UT4.8_SpreadsheetPhase2/test_ss_query.py::test_query_by_object_type_sheet PASSED [100%]
+
+============================== 17 passed in 0.99s ==============================

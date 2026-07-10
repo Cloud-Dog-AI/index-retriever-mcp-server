@@ -1,0 +1,20 @@
+# W28E-604 raw test log
+# cwd: /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt/packages/backend/platform-vdb
+# cmd: .venv/bin/python -m pytest tests/unit/UT4.3_SpreadsheetDetect --env tests/env-UT -v -p no:cacheprovider
+# date(UTC): 2026-06-04T11:51:22Z
+# ----------------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.0.3, pluggy-1.6.0 -- /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt/packages/backend/platform-vdb/.venv/bin/python
+rootdir: /opt/iac/Development/cloud-dog-ai/working/w28e604-vdb-wt/packages/backend/platform-vdb
+configfile: pyproject.toml
+plugins: respx-0.23.1, anyio-4.13.0, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=auto, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 5 items
+
+tests/unit/UT4.3_SpreadsheetDetect/test_ss_detect.py::test_detect_single_dataset_region PASSED [ 20%]
+tests/unit/UT4.3_SpreadsheetDetect/test_ss_detect.py::test_detect_two_blocks_separated_by_blank_row PASSED [ 40%]
+tests/unit/UT4.3_SpreadsheetDetect/test_ss_detect.py::test_notes_block_excluded PASSED [ 60%]
+tests/unit/UT4.3_SpreadsheetDetect/test_ss_detect.py::test_report_grid_with_title_above PASSED [ 80%]
+tests/unit/UT4.3_SpreadsheetDetect/test_ss_detect.py::test_decorative_tiny_block PASSED [100%]
+
+============================== 5 passed in 0.25s ===============================

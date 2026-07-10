@@ -2920,10 +2920,24 @@ class IndexService:
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Ingest uploaded browser file content through the same runtime path as text ingest."""
+        from index_tools.spreadsheet import is_spreadsheet
+
         source_uri = f"upload://{filename}"
         payload = dict(metadata or {})
         payload.setdefault("filename", filename)
         payload.setdefault("mime_type", _infer_mime_type(filename))
+        # W28E-604: spreadsheets are indexed structurally (multi-granularity), not
+        # decoded as UTF-8 text. Other formats keep the existing text path.
+        if is_spreadsheet(filename):
+            return self.index_spreadsheet(
+                profile=profile,
+                collection=collection,
+                filename=filename,
+                content=content,
+                actor=actor,
+                source_uri=source_uri,
+                metadata=payload,
+            )
         job_id = self.ingest_text(
             profile=profile,
             collection=collection,
@@ -2937,6 +2951,96 @@ class IndexService:
             "filename": filename,
             "source": source_uri,
         }
+
+    def index_spreadsheet(
+        self,
+        *,
+        profile: str,
+        collection: str,
+        filename: str,
+        content: bytes,
+        actor: str,
+        source_uri: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Index an Excel/ODS workbook structurally (W28E-604).
+
+        Extraction lives in ``cloud_dog_vdb.spreadsheet``; this drives backend
+        upsert/delete through the existing VDB client and records the §14 SQL
+        control plane via ``cloud_dog_db`` (degrading to stateless if the DB is
+        unavailable).
+        """
+        from index_tools.spreadsheet import SpreadsheetIndexer, build_spreadsheet_config
+
+        source = source_uri or f"upload://{filename}"
+        provider_id = self._profile_provider(profile)
+        backend_collection = self._ensure_backend_collection(profile, collection)
+
+        base_metadata: dict[str, Any] = {
+            "profile": profile,
+            "collection": collection,
+            "tenant_id": profile,
+            "namespace": f"{profile}:{collection}",
+        }
+        for key, value in dict(metadata or {}).items():
+            base_metadata.setdefault(key, value)
+
+        def _upsert(records: list[Any]) -> None:
+            self._run_async(self.vdb.upsert_records(backend_collection, records, provider_id=provider_id))
+
+        def _delete(keys: list[str]) -> None:
+            for key in keys:
+                try:
+                    self._run_async(self.vdb.delete_record(backend_collection, key, provider_id=provider_id))
+                except Exception:  # noqa: BLE001 - stale deletion is best-effort
+                    continue
+
+        indexer = SpreadsheetIndexer(session_manager=self._spreadsheet_session_manager())
+        result = indexer.index(
+            content,
+            file_name=filename,
+            source_uri=source,
+            upsert=_upsert,
+            delete=_delete,
+            backend_name=provider_id,
+            tenant_id=profile,
+            config=build_spreadsheet_config(self._spreadsheet_config_overrides()),
+            base_metadata=base_metadata,
+        )
+
+        self.audit_logger.log_ingest(
+            actor=actor,
+            profile=profile,
+            collection=collection,
+            job_id=str(result.job_id or ""),
+            source=source,
+            metadata={"filename": filename, "object_counts": result.object_counts, "status": result.status},
+            chunk_count=result.upserted,
+        )
+        return {
+            "job_id": result.job_id,
+            "filename": filename,
+            "source": source,
+            "status": result.status,
+            "object_counts": result.object_counts,
+            "upserted": result.upserted,
+            "deleted": result.deleted,
+            "warnings": result.warnings,
+        }
+
+    def _spreadsheet_session_manager(self) -> Any | None:
+        """Return the cloud_dog_db session manager, or None if the DB is unavailable."""
+        try:
+            from index_tools.db.runtime import initialise_database
+
+            return initialise_database().session_manager
+        except Exception:  # noqa: BLE001 - control plane is optional; indexing still proceeds
+            return None
+
+    def _spreadsheet_config_overrides(self) -> dict[str, Any]:
+        """Resolve spreadsheet controls from the runtime config tree (§5.15)."""
+        overrides = _nested_mapping(self._runtime_tree, "index", "spreadsheet")
+        return dict(overrides) if isinstance(overrides, dict) else {}
 
     def source_configs_list(self) -> list[dict[str, Any]]:
         """Return all saved source configuration entries."""

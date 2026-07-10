@@ -394,3 +394,29 @@ cross-service / deploy-chain and apply to any index-retriever runtime lane):
   deployed service. Verify the real container (`docker -H tcp://server0… ps -a` — note the name is the FQDN, e.g.
   `dbmcpserver0.app.vpc0.cloud-dog.net`) and the live `/health` before touching anything. Never redeploy a
   healthy service owned by another lane to "fix" a non-problem.
+## W28E-604 Excel/Spreadsheet Indexing — Evidence Closeout (2026-06-04)
+
+> Multiple auditor sendbacks on this lane were ALL packaging/evidence, never code. The code (cloud_dog_vdb/spreadsheet + IR §14 control plane, 239+198 tests) passed throughout; the failures were claiming "done" before the *canonical* evidence gate actually passed. Capture so it never repeats.
+
+### The acceptance gate is the CANONICAL validator — not a hand-rolled one
+- The gate is `cloud-dog-ai-platform-standards/scripts/final-evidence-validator.sh <LANE_ID> <EVIDENCE_PATH> <REPO...>`. Run it after final freeze/commit/push/tag; it must print `FINAL_EVIDENCE_VALIDATOR: PASS failures=0`. A bespoke validator passing is NOT acceptance — run the canonical one and paste its full output. Do not return `HAVE_ALL_REQUIREMENTS_BEEN_MET: YES` before it passes.
+
+### Evidence must be committed AND reachable from the lane tag
+- Evidence in a scratch dir outside the repo is un-auditable → auditor replays the tag, finds nothing, rules RUNNING/premature-tag. Commit under `working/evidence/<LANE>/` (`working/` is gitignored here — `git add -f`).
+- Split into `current/` (final passing only) + `historical/`. Point `EVIDENCE_PATH` at `current/`.
+- The `*-final-*` tag (and `EVIDENCE_TAG`/`FINAL_PROOF_TAG`) MUST peel to the branch tip that holds the final evidence. **A tag on pre-final work = stale = sendback.** After ANY post-tag fix commit, re-cut EVERY tag onto the new tip and prove from a FRESH `git ls-remote`: `tag^{} == HEAD == origin/<branch> == origin tag(peeled)`. Auditors that fetch stale will mis-flag a fixed tag — answer with the fresh ls-remote proof.
+
+### Canonical validator's exact requirements (each was a real FAIL)
+- Commit the RAW pytest logs under `current/raw/`; point each requirements-map `artefact_path` at its committed log (a test NAME is not proof). `CHECKSUMS.sha256` must cover the validator output + every raw log; `sha256sum -c` clean — verify it from a bundle extracted out of the tag (`git archive '<tag>^{commit}' <path> | tar -x`), not the worktree.
+- `requirements-map.tsv`: every row's last column == PASS (no GATED/NO; drop non-requirements like preprod for a LOCAL-ONLY lane); ≥5 populated tab fields; include `EV.*` evidence-requirement + close-gate rows.
+- `touched-paths-manifest.tsv` header EXACTLY `path\trepo\treason\tcreated_or_modified_by_lane\tcommit_hash`; `external-dirty-ledger.tsv` header EXACTLY `path\trepo\tstatus\tsuspected_owner_lane\twhy_external_to_this_lane`.
+- `scoped-clean-proof.txt` must contain the LITERAL substrings `git status --short --`, `git diff --name-only --`, `git diff --cached --name-only --` (do NOT use `git -C <path>` — it breaks the match) and show no dirty lines.
+- `EVIDENCE_TAG`/`FINAL_PROOF_TAG` names must CONTAIN the lane id (`W28E-604`); lowercase `w28e604-...` fails the case-sensitive check. Need a file with `HAVE_ALL_REQUIREMENTS_BEEN_MET: YES` and a `CLOSE GATE`; no `CONDITIONAL_YES`/`PASS_WITH_WARNINGS`/`SCOPED_PASS...`/`YES / NO` strings anywhere; no `FAIL` in `current/raw/*`.
+- Each touched repo: `git rev-parse HEAD` == `git ls-remote origin refs/heads/<branch>`; repo-wide dirty files are OK only if listed in `external-dirty-ledger.tsv` (the validator reads it).
+
+### Git traps that bit this lane
+- `git rm --ignore-unmatch <list>` silently aborts the WHOLE removal if any one listed file has uncommitted edits → flat duplicates survive next to `current/` and dirty the repo. Use `git rm -f`, or commit/clean edits first.
+- A concurrent process kept rewriting another lane's instruction (`working/instructions/W28D-324-*.md`) inside the isolated worktree. It's EXTERNAL to this lane → `git checkout --` it and record it in `external-dirty-ledger.tsv`; the canonical validator then classifies it as an external warning (not a failure).
+
+### Deploy scope
+- W28E-604 is LOCAL ONLY (§6.78.3); preprod is NOT a requirements-map row. It ships to `indexretriever0` only via **W28E-618** (merge 603/604/614 → index-retriever `main` as one build). 604 is acceptance-ready but not "shipped" until 618 smokes green. Do not fake a standalone preprod deploy or run `terraform apply` blind.
