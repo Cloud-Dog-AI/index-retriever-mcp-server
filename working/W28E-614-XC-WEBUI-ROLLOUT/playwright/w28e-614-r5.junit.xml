@@ -1,0 +1,1141 @@
+<testsuites id="" name="" tests="37" failures="13" skipped="0" errors="0" time="397.659123">
+<testsuite name="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" timestamp="2026-06-04T08:43:19.595Z" hostname="chromium" tests="14" failures="0" skipped="0" time="0.377" errors="0">
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-101 selectable + Export bulk actions baked into bundle" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.008">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-103 role=&apos;link&apos; applied to first identifier columns" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.004">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-104 admin rows link to /diagnostics-audit?&lt;key&gt;=&lt;value&gt;" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.006">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-110 /admin/roles route + policies endpoint baked" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.006">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-110 /admin/roles SPA route responds 200 (live)" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.151">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-120 ApiDocs four-tab structure baked" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.017">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-130 single MCP Console widget (shared @cloud-dog/ui McpConsole)" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.004">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-131 A2A Console two-panel shared widget" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.005">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-140 JsonExplorer shared headers Path/Type/Value baked into bundle" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.004">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-150 WorkedExamplePopup Copy-curl button label baked into bundle" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.002">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-160 getRowId stable keys for poll-stable rendering (source attestation)" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.005">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-170 RelativeTime helper sourced from shared package (live observability)" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.083">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-180 single-source status cluster (no body-level health widget classes)" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.005">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › XC-009 Settings page shipped via W28A-805 PS-73 v2 (live route + Card)" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.077">
+</testcase>
+</testsuite>
+<testsuite name="e2e/w28e-614/w28e-614-cx-rows.spec.ts" timestamp="2026-06-04T08:43:19.595Z" hostname="chromium" tests="9" failures="9" skipped="0" time="300.073" errors="0">
+<testcase name="CX-101 select rows + bulk Export downloads a JSON blob (Users table)" classname="e2e/w28e-614/w28e-614-cx-rows.spec.ts" time="33.403">
+<failure message="w28e-614-cx-rows.spec.ts:14:1 CX-101 select rows + bulk Export downloads a JSON blob (Users table)" type="FAILURE">
+<![CDATA[  [chromium] › e2e/w28e-614/w28e-614-cx-rows.spec.ts:14:1 › CX-101 select rows + bulk Export downloads a JSON blob (Users table) 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-6e260-ds-a-JSON-blob-Users-table--chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-6e260-ds-a-JSON-blob-Users-table--chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-6e260-ds-a-JSON-blob-Users-table--chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-6e260-ds-a-JSON-blob-Users-table--chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-6e260-ds-a-JSON-blob-Users-table--chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/e2e-w28e-614-w28e-614-cx-r-6e260-ds-a-JSON-blob-Users-table--chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-6e260-ds-a-JSON-blob-Users-table--chromium/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-6e260-ds-a-JSON-blob-Users-table--chromium/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-6e260-ds-a-JSON-blob-Users-table--chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-6e260-ds-a-JSON-blob-Users-table--chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-6e260-ds-a-JSON-blob-Users-table--chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="CX-102 row-level actions use shared ghost-style buttons with leading icon" classname="e2e/w28e-614/w28e-614-cx-rows.spec.ts" time="33.197">
+<failure message="w28e-614-cx-rows.spec.ts:36:1 CX-102 row-level actions use shared ghost-style buttons with leading icon" type="FAILURE">
+<![CDATA[  [chromium] › e2e/w28e-614/w28e-614-cx-rows.spec.ts:36:1 › CX-102 row-level actions use shared ghost-style buttons with leading icon 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-f18ef-e-buttons-with-leading-icon-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-f18ef-e-buttons-with-leading-icon-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-f18ef-e-buttons-with-leading-icon-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-f18ef-e-buttons-with-leading-icon-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-f18ef-e-buttons-with-leading-icon-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/e2e-w28e-614-w28e-614-cx-r-f18ef-e-buttons-with-leading-icon-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-f18ef-e-buttons-with-leading-icon-chromium/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-f18ef-e-buttons-with-leading-icon-chromium/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-f18ef-e-buttons-with-leading-icon-chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-f18ef-e-buttons-with-leading-icon-chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-f18ef-e-buttons-with-leading-icon-chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="CX-103 first identifier column is a Link with role=&apos;link&apos; on Users table" classname="e2e/w28e-614/w28e-614-cx-rows.spec.ts" time="33.22">
+<failure message="w28e-614-cx-rows.spec.ts:59:1 CX-103 first identifier column is a Link with role=&apos;link&apos; on Users table" type="FAILURE">
+<![CDATA[  [chromium] › e2e/w28e-614/w28e-614-cx-rows.spec.ts:59:1 › CX-103 first identifier column is a Link with role='link' on Users table 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-5266d-th-role-link-on-Users-table-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-5266d-th-role-link-on-Users-table-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-5266d-th-role-link-on-Users-table-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-5266d-th-role-link-on-Users-table-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-5266d-th-role-link-on-Users-table-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/e2e-w28e-614-w28e-614-cx-r-5266d-th-role-link-on-Users-table-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5266d-th-role-link-on-Users-table-chromium/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5266d-th-role-link-on-Users-table-chromium/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5266d-th-role-link-on-Users-table-chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5266d-th-role-link-on-Users-table-chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5266d-th-role-link-on-Users-table-chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="CX-104 admin row Log action links to /diagnostics-audit?&lt;key&gt;=&lt;value&gt;" classname="e2e/w28e-614/w28e-614-cx-rows.spec.ts" time="33.433">
+<failure message="w28e-614-cx-rows.spec.ts:68:1 CX-104 admin row Log action links to /diagnostics-audit?&lt;key&gt;=&lt;value&gt;" type="FAILURE">
+<![CDATA[  [chromium] › e2e/w28e-614/w28e-614-cx-rows.spec.ts:68:1 › CX-104 admin row Log action links to /diagnostics-audit?<key>=<value> 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-5d45b-iagnostics-audit-key-value--chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-5d45b-iagnostics-audit-key-value--chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-5d45b-iagnostics-audit-key-value--chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-5d45b-iagnostics-audit-key-value--chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-5d45b-iagnostics-audit-key-value--chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/e2e-w28e-614-w28e-614-cx-r-5d45b-iagnostics-audit-key-value--chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5d45b-iagnostics-audit-key-value--chromium/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5d45b-iagnostics-audit-key-value--chromium/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5d45b-iagnostics-audit-key-value--chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5d45b-iagnostics-audit-key-value--chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5d45b-iagnostics-audit-key-value--chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="CX-130 MCP Console renders single tool catalogue; click expands detail panel" classname="e2e/w28e-614/w28e-614-cx-rows.spec.ts" time="33.201">
+<failure message="w28e-614-cx-rows.spec.ts:86:1 CX-130 MCP Console renders single tool catalogue; click expands detail panel" type="FAILURE">
+<![CDATA[  [chromium] › e2e/w28e-614/w28e-614-cx-rows.spec.ts:86:1 › CX-130 MCP Console renders single tool catalogue; click expands detail panel 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-7094a--click-expands-detail-panel-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-7094a--click-expands-detail-panel-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-7094a--click-expands-detail-panel-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-7094a--click-expands-detail-panel-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-7094a--click-expands-detail-panel-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/e2e-w28e-614-w28e-614-cx-r-7094a--click-expands-detail-panel-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-7094a--click-expands-detail-panel-chromium/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-7094a--click-expands-detail-panel-chromium/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-7094a--click-expands-detail-panel-chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-7094a--click-expands-detail-panel-chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-7094a--click-expands-detail-panel-chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="CX-131 A2A Console is two-panel; skill click pre-fills task topic" classname="e2e/w28e-614/w28e-614-cx-rows.spec.ts" time="33.369">
+<failure message="w28e-614-cx-rows.spec.ts:109:1 CX-131 A2A Console is two-panel; skill click pre-fills task topic" type="FAILURE">
+<![CDATA[  [chromium] › e2e/w28e-614/w28e-614-cx-rows.spec.ts:109:1 › CX-131 A2A Console is two-panel; skill click pre-fills task topic 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-6774b--click-pre-fills-task-topic-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-6774b--click-pre-fills-task-topic-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-6774b--click-pre-fills-task-topic-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-6774b--click-pre-fills-task-topic-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-6774b--click-pre-fills-task-topic-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/e2e-w28e-614-w28e-614-cx-r-6774b--click-pre-fills-task-topic-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-6774b--click-pre-fills-task-topic-chromium/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-6774b--click-pre-fills-task-topic-chromium/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-6774b--click-pre-fills-task-topic-chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-6774b--click-pre-fills-task-topic-chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-6774b--click-pre-fills-task-topic-chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="CX-150 WorkedExamplePopup opens from an API Docs MCP tool with Copy curl" classname="e2e/w28e-614/w28e-614-cx-rows.spec.ts" time="33.242">
+<failure message="w28e-614-cx-rows.spec.ts:126:1 CX-150 WorkedExamplePopup opens from an API Docs MCP tool with Copy curl" type="FAILURE">
+<![CDATA[  [chromium] › e2e/w28e-614/w28e-614-cx-rows.spec.ts:126:1 › CX-150 WorkedExamplePopup opens from an API Docs MCP tool with Copy curl 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-9af8c-ocs-MCP-tool-with-Copy-curl-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-9af8c-ocs-MCP-tool-with-Copy-curl-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-9af8c-ocs-MCP-tool-with-Copy-curl-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-9af8c-ocs-MCP-tool-with-Copy-curl-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-9af8c-ocs-MCP-tool-with-Copy-curl-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/e2e-w28e-614-w28e-614-cx-r-9af8c-ocs-MCP-tool-with-Copy-curl-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-9af8c-ocs-MCP-tool-with-Copy-curl-chromium/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-9af8c-ocs-MCP-tool-with-Copy-curl-chromium/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-9af8c-ocs-MCP-tool-with-Copy-curl-chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-9af8c-ocs-MCP-tool-with-Copy-curl-chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-9af8c-ocs-MCP-tool-with-Copy-curl-chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="CX-160 polled Dashboard preserves scroll position across a poll cycle" classname="e2e/w28e-614/w28e-614-cx-rows.spec.ts" time="33.585">
+<failure message="w28e-614-cx-rows.spec.ts:143:1 CX-160 polled Dashboard preserves scroll position across a poll cycle" type="FAILURE">
+<![CDATA[  [chromium] › e2e/w28e-614/w28e-614-cx-rows.spec.ts:143:1 › CX-160 polled Dashboard preserves scroll position across a poll cycle 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-e3eeb-osition-across-a-poll-cycle-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-e3eeb-osition-across-a-poll-cycle-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-e3eeb-osition-across-a-poll-cycle-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-e3eeb-osition-across-a-poll-cycle-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-e3eeb-osition-across-a-poll-cycle-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/e2e-w28e-614-w28e-614-cx-r-e3eeb-osition-across-a-poll-cycle-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-e3eeb-osition-across-a-poll-cycle-chromium/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-e3eeb-osition-across-a-poll-cycle-chromium/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-e3eeb-osition-across-a-poll-cycle-chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-e3eeb-osition-across-a-poll-cycle-chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-e3eeb-osition-across-a-poll-cycle-chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="CX-180 service-status cluster appears exactly once and only in the top-right header" classname="e2e/w28e-614/w28e-614-cx-rows.spec.ts" time="33.423">
+<failure message="w28e-614-cx-rows.spec.ts:157:1 CX-180 service-status cluster appears exactly once and only in the top-right header" type="FAILURE">
+<![CDATA[  [chromium] › e2e/w28e-614/w28e-614-cx-rows.spec.ts:157:1 › CX-180 service-status cluster appears exactly once and only in the top-right header 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-5fcbe-nly-in-the-top-right-header-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-5fcbe-nly-in-the-top-right-header-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "missing"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+       at fixtures.ts:92
+
+      90 |       const usernameField = page.getByRole("textbox", { name: /^username$/i });
+      91 |
+    > 92 |       await expect
+         |       ^
+      93 |         .poll(async () => {
+      94 |           if (await apiKeyField.isVisible().catch(() => false)) return "api_key";
+      95 |           if (await usernameField.isVisible().catch(() => false)) return "cookie";
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:92:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/fixtures.ts:117:7
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:11:3
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-5fcbe-nly-in-the-top-right-header-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-cx-r-5fcbe-nly-in-the-top-right-header-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-cx-r-5fcbe-nly-in-the-top-right-header-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/e2e-w28e-614-w28e-614-cx-r-5fcbe-nly-in-the-top-right-header-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5fcbe-nly-in-the-top-right-header-chromium/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5fcbe-nly-in-the-top-right-header-chromium/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5fcbe-nly-in-the-top-right-header-chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5fcbe-nly-in-the-top-right-header-chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-cx-r-5fcbe-nly-in-the-top-right-header-chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" timestamp="2026-06-04T08:43:19.595Z" hostname="chromium" tests="9" failures="4" skipped="0" time="23.915" errors="0">
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › chat-client (chatclient0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="2.441">
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › db-mcp (dbmcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="3.128">
+<failure message="w28e-614-estate-smoke.spec.ts:57:5 db-mcp (dbmcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" type="FAILURE">
+<![CDATA[  [chromium] › e2e/w28e-614/w28e-614-estate-smoke.spec.ts:57:5 › W28E-614 §0B preprod estate WebUI browser smoke › db-mcp (dbmcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors 
+
+    Error: db-mcp must have no unexpected fatal console errors
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 6
+
+    - Array []
+    + Array [
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 405 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    + ]
+
+      60 |       expect(result.status, `${service} root must return 200`).toBe(200);
+      61 |       expect(result.shellRendered, `${service} SPA shell must mount #root`).toBe(true);
+    > 62 |       expect(result.fatalConsoleErrors, `${service} must have no unexpected fatal console errors`).toEqual([]);
+         |                                                                                                    ^
+      63 |       // Network 5xx during the load are a hard fail; 4xx like 401 on /webapi
+      64 |       // probes is expected for unauthenticated visits and not asserted here.
+      65 |       expect(result.networkFailures, `${service} must have no 5xx network failures during load`).toEqual([]);
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:62:100
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-esta-afdb3-ell-no-fatal-console-errors-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-esta-afdb3-ell-no-fatal-console-errors-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: db-mcp must have no unexpected fatal console errors
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 6
+
+    - Array []
+    + Array [
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 405 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    + ]
+
+      60 |       expect(result.status, `${service} root must return 200`).toBe(200);
+      61 |       expect(result.shellRendered, `${service} SPA shell must mount #root`).toBe(true);
+    > 62 |       expect(result.fatalConsoleErrors, `${service} must have no unexpected fatal console errors`).toEqual([]);
+         |                                                                                                    ^
+      63 |       // Network 5xx during the load are a hard fail; 4xx like 401 on /webapi
+      64 |       // probes is expected for unauthenticated visits and not asserted here.
+      65 |       expect(result.networkFailures, `${service} must have no 5xx network failures during load`).toEqual([]);
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:62:100
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-esta-afdb3-ell-no-fatal-console-errors-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-esta-afdb3-ell-no-fatal-console-errors-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-esta-afdb3-ell-no-fatal-console-errors-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/e2e-w28e-614-w28e-614-esta-afdb3-ell-no-fatal-console-errors-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-afdb3-ell-no-fatal-console-errors-chromium/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-afdb3-ell-no-fatal-console-errors-chromium/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-afdb3-ell-no-fatal-console-errors-chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-afdb3-ell-no-fatal-console-errors-chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-afdb3-ell-no-fatal-console-errors-chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › expert-agent (expertagent0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="1.048">
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › file-mcp (filemcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="4.731">
+<failure message="w28e-614-estate-smoke.spec.ts:57:5 file-mcp (filemcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" type="FAILURE">
+<![CDATA[  [chromium] › e2e/w28e-614/w28e-614-estate-smoke.spec.ts:57:5 › W28E-614 §0B preprod estate WebUI browser smoke › file-mcp (filemcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors 
+
+    Error: file-mcp must have no unexpected fatal console errors
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 5
+
+    - Array []
+    + Array [
+    +   "Failed to load resource: the server responded with a status of 405 ()",
+    +   "Failed to load resource: the server responded with a status of 405 ()",
+    +   "Failed to load resource: the server responded with a status of 405 ()",
+    + ]
+
+      60 |       expect(result.status, `${service} root must return 200`).toBe(200);
+      61 |       expect(result.shellRendered, `${service} SPA shell must mount #root`).toBe(true);
+    > 62 |       expect(result.fatalConsoleErrors, `${service} must have no unexpected fatal console errors`).toEqual([]);
+         |                                                                                                    ^
+      63 |       // Network 5xx during the load are a hard fail; 4xx like 401 on /webapi
+      64 |       // probes is expected for unauthenticated visits and not asserted here.
+      65 |       expect(result.networkFailures, `${service} must have no 5xx network failures during load`).toEqual([]);
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:62:100
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-esta-5d2db-ell-no-fatal-console-errors-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-esta-5d2db-ell-no-fatal-console-errors-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: file-mcp must have no unexpected fatal console errors
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 5
+
+    - Array []
+    + Array [
+    +   "Failed to load resource: the server responded with a status of 405 ()",
+    +   "Failed to load resource: the server responded with a status of 405 ()",
+    +   "Failed to load resource: the server responded with a status of 405 ()",
+    + ]
+
+      60 |       expect(result.status, `${service} root must return 200`).toBe(200);
+      61 |       expect(result.shellRendered, `${service} SPA shell must mount #root`).toBe(true);
+    > 62 |       expect(result.fatalConsoleErrors, `${service} must have no unexpected fatal console errors`).toEqual([]);
+         |                                                                                                    ^
+      63 |       // Network 5xx during the load are a hard fail; 4xx like 401 on /webapi
+      64 |       // probes is expected for unauthenticated visits and not asserted here.
+      65 |       expect(result.networkFailures, `${service} must have no 5xx network failures during load`).toEqual([]);
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:62:100
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-esta-5d2db-ell-no-fatal-console-errors-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-esta-5d2db-ell-no-fatal-console-errors-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-esta-5d2db-ell-no-fatal-console-errors-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/e2e-w28e-614-w28e-614-esta-5d2db-ell-no-fatal-console-errors-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-5d2db-ell-no-fatal-console-errors-chromium/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-5d2db-ell-no-fatal-console-errors-chromium/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-5d2db-ell-no-fatal-console-errors-chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-5d2db-ell-no-fatal-console-errors-chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-5d2db-ell-no-fatal-console-errors-chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › git-mcp (gitmcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="1.043">
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › imap-mcp (imapmcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="4.824">
+<failure message="w28e-614-estate-smoke.spec.ts:57:5 imap-mcp (imapmcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" type="FAILURE">
+<![CDATA[  [chromium] › e2e/w28e-614/w28e-614-estate-smoke.spec.ts:57:5 › W28E-614 §0B preprod estate WebUI browser smoke › imap-mcp (imapmcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors 
+
+    Error: imap-mcp must have no unexpected fatal console errors
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 4
+
+    - Array []
+    + Array [
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    + ]
+
+      60 |       expect(result.status, `${service} root must return 200`).toBe(200);
+      61 |       expect(result.shellRendered, `${service} SPA shell must mount #root`).toBe(true);
+    > 62 |       expect(result.fatalConsoleErrors, `${service} must have no unexpected fatal console errors`).toEqual([]);
+         |                                                                                                    ^
+      63 |       // Network 5xx during the load are a hard fail; 4xx like 401 on /webapi
+      64 |       // probes is expected for unauthenticated visits and not asserted here.
+      65 |       expect(result.networkFailures, `${service} must have no 5xx network failures during load`).toEqual([]);
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:62:100
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-esta-b5e93-ell-no-fatal-console-errors-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-esta-b5e93-ell-no-fatal-console-errors-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: imap-mcp must have no unexpected fatal console errors
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 4
+
+    - Array []
+    + Array [
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    + ]
+
+      60 |       expect(result.status, `${service} root must return 200`).toBe(200);
+      61 |       expect(result.shellRendered, `${service} SPA shell must mount #root`).toBe(true);
+    > 62 |       expect(result.fatalConsoleErrors, `${service} must have no unexpected fatal console errors`).toEqual([]);
+         |                                                                                                    ^
+      63 |       // Network 5xx during the load are a hard fail; 4xx like 401 on /webapi
+      64 |       // probes is expected for unauthenticated visits and not asserted here.
+      65 |       expect(result.networkFailures, `${service} must have no 5xx network failures during load`).toEqual([]);
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:62:100
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-esta-b5e93-ell-no-fatal-console-errors-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-esta-b5e93-ell-no-fatal-console-errors-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-esta-b5e93-ell-no-fatal-console-errors-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/e2e-w28e-614-w28e-614-esta-b5e93-ell-no-fatal-console-errors-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-b5e93-ell-no-fatal-console-errors-chromium/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-b5e93-ell-no-fatal-console-errors-chromium/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-b5e93-ell-no-fatal-console-errors-chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-b5e93-ell-no-fatal-console-errors-chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-b5e93-ell-no-fatal-console-errors-chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › index-retriever (indexretriever0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="1.516">
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › notification-agent (notificationagent0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="2.028">
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › sql-agent (sqlagent0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="3.156">
+<failure message="w28e-614-estate-smoke.spec.ts:57:5 sql-agent (sqlagent0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" type="FAILURE">
+<![CDATA[  [chromium] › e2e/w28e-614/w28e-614-estate-smoke.spec.ts:57:5 › W28E-614 §0B preprod estate WebUI browser smoke › sql-agent (sqlagent0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors 
+
+    Error: sql-agent must have no unexpected fatal console errors
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 8
+
+    - Array []
+    + Array [
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 401 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    + ]
+
+      60 |       expect(result.status, `${service} root must return 200`).toBe(200);
+      61 |       expect(result.shellRendered, `${service} SPA shell must mount #root`).toBe(true);
+    > 62 |       expect(result.fatalConsoleErrors, `${service} must have no unexpected fatal console errors`).toEqual([]);
+         |                                                                                                    ^
+      63 |       // Network 5xx during the load are a hard fail; 4xx like 401 on /webapi
+      64 |       // probes is expected for unauthenticated visits and not asserted here.
+      65 |       expect(result.networkFailures, `${service} must have no 5xx network failures during load`).toEqual([]);
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:62:100
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-esta-bb4d7-ell-no-fatal-console-errors-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-esta-bb4d7-ell-no-fatal-console-errors-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: sql-agent must have no unexpected fatal console errors
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 8
+
+    - Array []
+    + Array [
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 401 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    +   "Failed to load resource: the server responded with a status of 404 ()",
+    + ]
+
+      60 |       expect(result.status, `${service} root must return 200`).toBe(200);
+      61 |       expect(result.shellRendered, `${service} SPA shell must mount #root`).toBe(true);
+    > 62 |       expect(result.fatalConsoleErrors, `${service} must have no unexpected fatal console errors`).toEqual([]);
+         |                                                                                                    ^
+      63 |       // Network 5xx during the load are a hard fail; 4xx like 401 on /webapi
+      64 |       // probes is expected for unauthenticated visits and not asserted here.
+      65 |       expect(result.networkFailures, `${service} must have no 5xx network failures during load`).toEqual([]);
+        at /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:62:100
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-esta-bb4d7-ell-no-fatal-console-errors-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../test-results/e2e-w28e-614-w28e-614-esta-bb4d7-ell-no-fatal-console-errors-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../test-results/e2e-w28e-614-w28e-614-esta-bb4d7-ell-no-fatal-console-errors-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace ../test-results/e2e-w28e-614-w28e-614-esta-bb4d7-ell-no-fatal-console-errors-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-bb4d7-ell-no-fatal-console-errors-chromium/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-bb4d7-ell-no-fatal-console-errors-chromium/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-bb4d7-ell-no-fatal-console-errors-chromium-retry1/video.webm]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-bb4d7-ell-no-fatal-console-errors-chromium-retry1/error-context.md]]
+
+[[ATTACHMENT|../../../../w28e-614-ui/apps/index-retriever/test-results/e2e-w28e-614-w28e-614-esta-bb4d7-ell-no-fatal-console-errors-chromium-retry1/trace.zip]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="e2e/w28e-614/w28e-614-xc-cx.spec.ts" timestamp="2026-06-04T08:43:19.595Z" hostname="chromium" tests="5" failures="0" skipped="0" time="1.306" errors="0">
+<testcase name="W28E-614 XC/CX cross-cutting WebUI smoke › XC-001 /version returns JSON with version key" classname="e2e/w28e-614/w28e-614-xc-cx.spec.ts" time="0.14">
+</testcase>
+<testcase name="W28E-614 XC/CX cross-cutting WebUI smoke › XC-003 sidebar About opens modal (no TopBar duplicate)" classname="e2e/w28e-614/w28e-614-xc-cx.spec.ts" time="0.76">
+</testcase>
+<testcase name="W28E-614 XC/CX cross-cutting WebUI smoke › XC-005 Audit-and-Log sidebar label present in served bundle" classname="e2e/w28e-614/w28e-614-xc-cx.spec.ts" time="0.293">
+</testcase>
+<testcase name="W28E-614 XC/CX cross-cutting WebUI smoke › XC-005 /diagnostics-audit SPA route responds 200" classname="e2e/w28e-614/w28e-614-xc-cx.spec.ts" time="0.077">
+</testcase>
+<testcase name="W28E-614 XC/CX cross-cutting WebUI smoke › XC-010 reindex_run + bulk_ingest exposed via MCP tools/list" classname="e2e/w28e-614/w28e-614-xc-cx.spec.ts" time="0.036">
+</testcase>
+</testsuite>
+</testsuites>

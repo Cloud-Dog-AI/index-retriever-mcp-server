@@ -1,0 +1,21 @@
+# CX-101 selectable + bulkAction (final)
+Generated: 2026-06-04T08:53:13+01:00
+
+$ grep -rn 'selectable' apps/index-retriever/src/ | wc -l
+18
+$ grep -rn 'bulkAction' apps/index-retriever/src/ | wc -l
+19
+
+## per-file
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/AuditLogPage.tsx DT=1 sel=1 ba=1
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/SourceConfigPage.tsx DT=1 sel=1 ba=1
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/ProfileCrudPage.tsx DT=1 sel=1 ba=1
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/DashboardPage.tsx DT=1 sel=1 ba=1
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/ApiDocsPage.tsx DT=2 sel=2 ba=2
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/IngestSearchPage.tsx DT=2 sel=2 ba=2
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/ObservabilityPage.tsx DT=1 sel=1 ba=1
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/SecurityAdminSections.tsx DT=5 sel=5 ba=5
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/AdminRolesPage.tsx DT=1 sel=1 ba=1
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/RetentionDeletePage.tsx DT=1 sel=1 ba=1
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/JobsPageView.tsx DT=1 sel=1 ba=2
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/CollectionCrudPage.tsx DT=1 sel=1 ba=1

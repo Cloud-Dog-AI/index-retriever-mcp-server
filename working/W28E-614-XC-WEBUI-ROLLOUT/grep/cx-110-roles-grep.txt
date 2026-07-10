@@ -1,0 +1,9 @@
+# CX-110 Roles page + policies endpoint
+Generated: 2026-06-04T08:53:13+01:00
+
+$ grep -rn 'AdminRolesPage\|/admin/roles\|/api/v1/admin/policies' apps/index-retriever/src/
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/routes/App.tsx:72:import { AdminRolesPage } from "../views/AdminRolesPage";
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/routes/App.tsx:245:        { label: "Roles", path: "/admin/roles", icon: navIcon(Shield) },
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/routes/App.tsx:332:            <Route path="/admin/roles" element={<AdminRolesPage />} />
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/AdminRolesPage.tsx:23:const POLICIES_PATH = "/api/v1/admin/policies";
+/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/AdminRolesPage.tsx:65:export function AdminRolesPage() {

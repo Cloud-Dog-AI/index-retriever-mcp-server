@@ -1,0 +1,20 @@
+path	repo	reason	created_or_modified_by_lane	commit_hash
+src/index_server/api_server.py	index-retriever-mcp-server	CX-110 backend wiring — new /api/v1/admin/policies (GET + PUT) endpoints	yes	pending-r2
+src/index_server/web_server.py	index-retriever-mcp-server	XC-001 /version JSON endpoint; CX-110/XC-005 admin_spa_routes additions	yes	2992839
+src/index_server/mcp_server.py	index-retriever-mcp-server	XC-010 async_mode shim on reindex_run + new bulk_ingest tool handler	yes	b2a49ea
+src/index_tools/tools/registry.py	index-retriever-mcp-server	XC-010 bulk_ingest ToolSpec + async_mode descriptions	yes	b2a49ea
+ui/dist/	index-retriever-mcp-server	SPA bundle synced from monorepo build (index-CW7yzgJb.js — all XC/CX rows + CX-101 export on Users/Groups/APIKeys + CX-131 two-panel A2A)	yes	pending-r2
+working/W28E-614-XC-WEBUI-ROLLOUT/	index-retriever-mcp-server	full closeout evidence package (logs, grep, playwright, smoke, closeout artefacts)	yes	pending-r2
+apps/index-retriever/src/routes/App.tsx	cloud-dog-ai-ui-monorepo	XC-001/003/005 navigation; CX-110 /admin/roles route + Roles sidebar; XC-005 Audit & Log	yes	89b1814
+apps/index-retriever/src/views/A2aConsolePage.tsx	cloud-dog-ai-ui-monorepo	CX-131 two-panel refactor: left agent card + skills list, right shared A2aConsole with initialTopic prefill	yes	pending-r2
+apps/index-retriever/src/views/AdminRolesPage.tsx	cloud-dog-ai-ui-monorepo	CX-110 role policies page; MultiSelect permissions from live /api/v1/admin/policies	yes	89b1814
+apps/index-retriever/src/views/ApiDocsPage.tsx	cloud-dog-ai-ui-monorepo	CX-150 WorkedExamplePopup wired with Copy curl button on MCP/A2A tabs	yes	89b1814
+apps/index-retriever/src/views/AuditLogPage.tsx	cloud-dog-ai-ui-monorepo	XC-005 /diagnostics-audit page; CX-101 Export bulk action; CX-104 prefilter parsing	yes	89b1814
+apps/index-retriever/src/views/DashboardPage.tsx	cloud-dog-ai-ui-monorepo	CX-101/170/180 alignment (status cluster shell-only; relative time)	yes	89b1814
+apps/index-retriever/src/views/IngestSearchPage.tsx	cloud-dog-ai-ui-monorepo	CX-101 selectable/Export	yes	89b1814
+apps/index-retriever/src/views/ObservabilityPage.tsx	cloud-dog-ai-ui-monorepo	CX-101/170 alignment	yes	89b1814
+apps/index-retriever/src/views/SecurityAdminSections.tsx	cloud-dog-ai-ui-monorepo	CX-101 Export bulk action on Users/Groups/APIKeys (in addition to Delete/Revoke); CX-102/103/104 Link first col + per-row Log link	yes	pending-r2
+apps/index-retriever/tests/e2e/w28e-614/w28e-614-xc-cx.spec.ts	cloud-dog-ai-ui-monorepo	W28E-614 primary XC Playwright spec (live preprod)	yes	93141d2
+apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts	cloud-dog-ai-ui-monorepo	W28E-614 CX bundle-attestation Playwright spec	yes	bdc8889
+apps/index-retriever/tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts	cloud-dog-ai-ui-monorepo	NEW row-specific CX-101/102/103/104/130/131/150/160/180 Playwright (SENDBACK fix)	yes	pending-r2
+apps/index-retriever/tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts	cloud-dog-ai-ui-monorepo	§0B preprod estate WebUI Chromium smoke	yes	bdc8889

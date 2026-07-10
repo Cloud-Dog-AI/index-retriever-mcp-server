@@ -1,0 +1,64 @@
+<testsuites id="" name="" tests="28" failures="0" skipped="0" errors="0" time="14.418268000000001">
+<testsuite name="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" timestamp="2026-06-04T07:53:57.717Z" hostname="chromium" tests="14" failures="0" skipped="0" time="0.369" errors="0">
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-101 selectable + Export bulk actions baked into bundle" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.009">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-103 role=&apos;link&apos; applied to first identifier columns" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.005">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-104 admin rows link to /diagnostics-audit?&lt;key&gt;=&lt;value&gt;" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.006">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-110 /admin/roles route + policies endpoint baked" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.007">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-110 /admin/roles SPA route responds 200 (live)" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.153">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-120 ApiDocs four-tab structure baked" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.009">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-130 single MCP Console widget (shared @cloud-dog/ui McpConsole)" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.005">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-131 A2A Console two-panel shared widget" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.003">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-140 JsonExplorer shared headers Path/Type/Value baked into bundle" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.004">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-150 WorkedExamplePopup Copy-curl button label baked into bundle" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.002">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-160 getRowId stable keys for poll-stable rendering (source attestation)" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.006">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-170 RelativeTime helper sourced from shared package (live observability)" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.077">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › CX-180 single-source status cluster (no body-level health widget classes)" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.005">
+</testcase>
+<testcase name="W28E-614 CX coverage (bundle-attestation against live preprod) › XC-009 Settings page shipped via W28A-805 PS-73 v2 (live route + Card)" classname="e2e/w28e-614/w28e-614-cx-coverage.spec.ts" time="0.078">
+</testcase>
+</testsuite>
+<testsuite name="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" timestamp="2026-06-04T07:53:57.717Z" hostname="chromium" tests="9" failures="0" skipped="0" time="9.671" errors="0">
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › chat-client (chatclient0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="1.286">
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › db-mcp (dbmcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="1.211">
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › expert-agent (expertagent0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="0.936">
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › file-mcp (filemcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="1.156">
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › git-mcp (gitmcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="0.918">
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › imap-mcp (imapmcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="1.209">
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › index-retriever (indexretriever0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="1.129">
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › notification-agent (notificationagent0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="0.918">
+</testcase>
+<testcase name="W28E-614 §0B preprod estate WebUI browser smoke › sql-agent (sqlagent0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors" classname="e2e/w28e-614/w28e-614-estate-smoke.spec.ts" time="0.908">
+</testcase>
+</testsuite>
+<testsuite name="e2e/w28e-614/w28e-614-xc-cx.spec.ts" timestamp="2026-06-04T07:53:57.717Z" hostname="chromium" tests="5" failures="0" skipped="0" time="1.104" errors="0">
+<testcase name="W28E-614 XC/CX cross-cutting WebUI smoke › XC-001 /version returns JSON with version key" classname="e2e/w28e-614/w28e-614-xc-cx.spec.ts" time="0.021">
+</testcase>
+<testcase name="W28E-614 XC/CX cross-cutting WebUI smoke › XC-003 sidebar About opens modal (no TopBar duplicate)" classname="e2e/w28e-614/w28e-614-xc-cx.spec.ts" time="0.7">
+</testcase>
+<testcase name="W28E-614 XC/CX cross-cutting WebUI smoke › XC-005 Audit-and-Log sidebar label present in served bundle" classname="e2e/w28e-614/w28e-614-xc-cx.spec.ts" time="0.275">
+</testcase>
+<testcase name="W28E-614 XC/CX cross-cutting WebUI smoke › XC-005 /diagnostics-audit SPA route responds 200" classname="e2e/w28e-614/w28e-614-xc-cx.spec.ts" time="0.076">
+</testcase>
+<testcase name="W28E-614 XC/CX cross-cutting WebUI smoke › XC-010 reindex_run + bulk_ingest exposed via MCP tools/list" classname="e2e/w28e-614/w28e-614-xc-cx.spec.ts" time="0.032">
+</testcase>
+</testsuite>
+</testsuites>

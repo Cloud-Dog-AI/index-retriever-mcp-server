@@ -1,0 +1,41 @@
+
+Running 37 tests using 2 workers
+
+[1A[2K[1/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:35:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › CX-101 selectable + Export bulk actions baked into bundle
+[1A[2K[2/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:14:1 › CX-101 select rows + bulk Export downloads a JSON blob (Users table)
+[1A[2K[3/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:45:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › CX-103 role='link' applied to first identifier columns
+[1A[2K[4/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:50:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › CX-104 admin rows link to /diagnostics-audit?<key>=<value>
+[1A[2K[5/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:55:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › CX-110 /admin/roles route + policies endpoint baked
+[1A[2K[6/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:60:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › CX-110 /admin/roles SPA route responds 200 (live)
+[1A[2K[7/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:67:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › CX-120 ApiDocs four-tab structure baked
+[1A[2K[8/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:74:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › CX-130 single MCP Console widget (shared @cloud-dog/ui McpConsole)
+[1A[2K[9/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:79:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › CX-131 A2A Console two-panel shared widget
+[1A[2K[10/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:84:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › CX-140 JsonExplorer shared headers Path/Type/Value baked into bundle
+[1A[2K[11/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:92:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › CX-150 WorkedExamplePopup Copy-curl button label baked into bundle
+[1A[2K[12/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:96:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › CX-160 getRowId stable keys for poll-stable rendering (source attestation)
+[1A[2K[13/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:105:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › CX-170 RelativeTime helper sourced from shared package (live observability)
+[1A[2K[14/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:114:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › CX-180 single-source status cluster (no body-level health widget classes)
+[1A[2K[15/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-coverage.spec.ts:122:3 › W28E-614 CX coverage (bundle-attestation against live preprod) › XC-009 Settings page shipped via W28A-805 PS-73 v2 (live route + Card)
+[1A[2K[16/37] [chromium] › tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:63:5 › W28E-614 §0B preprod estate WebUI browser smoke › chat-client (chatclient0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors
+[1A[2K[17/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:36:1 › CX-102 row-level actions use shared ghost-style buttons with leading icon
+[1A[2K[18/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:59:1 › CX-103 first identifier column is a Link with role='link' on Users table
+[1A[2K[19/37] [chromium] › tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:63:5 › W28E-614 §0B preprod estate WebUI browser smoke › db-mcp (dbmcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors
+[1A[2K[20/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:72:1 › CX-104 admin row Log action links to /diagnostics-audit?<key>=<value>
+[1A[2K[21/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:90:1 › CX-130 MCP Console renders single tool catalogue; click expands detail panel
+[1A[2K[22/37] [chromium] › tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:63:5 › W28E-614 §0B preprod estate WebUI browser smoke › expert-agent (expertagent0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors
+[1A[2K[23/37] [chromium] › tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:63:5 › W28E-614 §0B preprod estate WebUI browser smoke › file-mcp (filemcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors
+[1A[2K[24/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:113:1 › CX-131 A2A Console is two-panel; skill click pre-fills task topic
+[1A[2K[25/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:130:1 › CX-150 WorkedExamplePopup opens from an API Docs MCP tool with Copy curl
+[1A[2K[26/37] [chromium] › tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:63:5 › W28E-614 §0B preprod estate WebUI browser smoke › git-mcp (gitmcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors
+[1A[2K[27/37] [chromium] › tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:63:5 › W28E-614 §0B preprod estate WebUI browser smoke › imap-mcp (imapmcpserver0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors
+[1A[2K[28/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:151:1 › CX-160 polled Dashboard preserves scroll position across a poll cycle
+[1A[2K[29/37] [chromium] › tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:63:5 › W28E-614 §0B preprod estate WebUI browser smoke › index-retriever (indexretriever0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors
+[1A[2K[30/37] [chromium] › tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:63:5 › W28E-614 §0B preprod estate WebUI browser smoke › notification-agent (notificationagent0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors
+[1A[2K[31/37] [chromium] › tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts:63:5 › W28E-614 §0B preprod estate WebUI browser smoke › sql-agent (sqlagent0.cloud-dog.net) — browser smoke 200 + shell + no fatal console errors
+[1A[2K[32/37] [chromium] › tests/e2e/w28e-614/w28e-614-xc-cx.spec.ts:15:3 › W28E-614 XC/CX cross-cutting WebUI smoke › XC-001 /version returns JSON with version key
+[1A[2K[33/37] [chromium] › tests/e2e/w28e-614/w28e-614-xc-cx.spec.ts:23:3 › W28E-614 XC/CX cross-cutting WebUI smoke › XC-003 sidebar About opens modal (no TopBar duplicate)
+[1A[2K[34/37] [chromium] › tests/e2e/w28e-614/w28e-614-xc-cx.spec.ts:32:3 › W28E-614 XC/CX cross-cutting WebUI smoke › XC-005 Audit-and-Log sidebar label present in served bundle
+[1A[2K[35/37] [chromium] › tests/e2e/w28e-614/w28e-614-xc-cx.spec.ts:50:3 › W28E-614 XC/CX cross-cutting WebUI smoke › XC-005 /diagnostics-audit SPA route responds 200
+[1A[2K[36/37] [chromium] › tests/e2e/w28e-614/w28e-614-xc-cx.spec.ts:58:3 › W28E-614 XC/CX cross-cutting WebUI smoke › XC-010 reindex_run + bulk_ingest exposed via MCP tools/list
+[1A[2K[37/37] [chromium] › tests/e2e/w28e-614/w28e-614-cx-rows.spec.ts:165:1 › CX-180 service-status cluster appears exactly once with no body duplicates
+[1A[2K  37 passed (54.4s)

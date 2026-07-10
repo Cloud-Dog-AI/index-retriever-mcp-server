@@ -1,0 +1,25 @@
+W28E-614 scoped clean proof — backend repo index-retriever-mcp-server + UI monorepo cloud-dog-ai-ui-monorepo
+Lane scope:
+  service: src/index_server/, src/index_tools/, ui/dist/, working/W28E-614-XC-WEBUI-ROLLOUT/
+  ui:      apps/index-retriever/
+
+Service worktree: /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-svc
+Branch:           w28e-614-index-retriever-xc
+
+$ git status --short -- src/index_server src/index_tools ui/dist working/W28E-614-XC-WEBUI-ROLLOUT
+(end status — empty == clean)
+
+$ git diff --name-only -- src/index_server src/index_tools ui/dist working/W28E-614-XC-WEBUI-ROLLOUT
+(end diff — empty == clean)
+
+$ git diff --cached --name-only -- src/index_server src/index_tools ui/dist working/W28E-614-XC-WEBUI-ROLLOUT
+(end cached diff — empty == clean)
+
+UI worktree: /opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui
+Branch:      w28e-614-index-retriever-ui
+
+$ git status --short -- apps/index-retriever
+(end — empty == clean; test-results/ gitignored)
+
+$ git diff --name-only -- apps/index-retriever
+(end diff — empty == clean)

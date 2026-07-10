@@ -1,0 +1,737 @@
+==========================================
+Docker Build: cloud-dog/index-retriever-mcp-server:latest
+==========================================
+pip.conf generated with authenticated PyPI access.
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 4.91kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.12-slim
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 366B done
+#3 DONE 0.0s
+
+#4 [builder  1/10] FROM docker.io/library/python:3.12-slim
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 42.08kB 0.0s done
+#5 DONE 0.0s
+
+#6 [builder  2/10] RUN if [ -n "./custom-ca.crt" ] && [ -f "./custom-ca.crt" ]; then       cp "./custom-ca.crt" /usr/local/share/ca-certificates/custom-ca.crt &&       update-ca-certificates;     fi
+#6 CACHED
+
+#7 [builder  3/10] WORKDIR /app
+#7 CACHED
+
+#8 [builder  4/10] RUN apt-get update && apt-get install -y --no-install-recommends     gcc     libxml2-dev     libxmlsec1-dev     libxmlsec1-openssl     libxslt1-dev     pkg-config     zlib1g-dev     && rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [builder  5/10] RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf     PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir       --extra-index-url https://pypi.cloud-dog.net/simple       --trusted-host pypi.cloud-dog.net       --trusted-host pypi.org       --trusted-host files.pythonhosted.org       cloud-dog-config       cloud-dog-logging       cloud-dog-api-kit==0.13.0       cloud-dog-idam       cloud-dog-db       cloud-dog-jobs==0.4.0       cloud-dog-storage       cloud-dog-llm==0.3.0       cloud-dog-vdb>=0.5.4
+#9 CACHED
+
+#10 [builder  6/10] COPY REQUIREMENTS.txt pyproject.toml README.md ./
+#10 CACHED
+
+#11 [builder  7/10] COPY src/ ./src/
+#11 DONE 0.1s
+
+#12 [builder  8/10] RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf     PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir       --trusted-host pypi.cloud-dog.net       --trusted-host pypi.org       --trusted-host files.pythonhosted.org       -r REQUIREMENTS.txt
+#12 0.799 Looking in indexes: https://pypi.org/simple, https://admin:****@pypi.cloud-dog.net/simple/
+#12 0.803 Requirement already satisfied: pydantic<3.0,>=2.7 in /usr/local/lib/python3.12/site-packages (from -r REQUIREMENTS.txt (line 2)) (2.13.4)
+#12 0.991 Collecting pydantic-settings<3.0,>=2.2 (from -r REQUIREMENTS.txt (line 3))
+#12 1.023   Downloading pydantic_settings-2.14.1-py3-none-any.whl.metadata (3.4 kB)
+#12 1.153 Collecting python-dotenv<2.0,>=1.0 (from -r REQUIREMENTS.txt (line 4))
+#12 1.161   Downloading python_dotenv-1.2.2-py3-none-any.whl.metadata (27 kB)
+#12 1.171 Requirement already satisfied: PyYAML<7.0,>=6.0.1 in /usr/local/lib/python3.12/site-packages (from -r REQUIREMENTS.txt (line 5)) (6.0.3)
+#12 1.665 Collecting ruamel.yaml<1.0,>=0.18.6 (from -r REQUIREMENTS.txt (line 6))
+#12 1.672   Downloading ruamel_yaml-0.19.1-py3-none-any.whl.metadata (16 kB)
+#12 1.679 Requirement already satisfied: typing-extensions<5.0,>=4.10 in /usr/local/lib/python3.12/site-packages (from -r REQUIREMENTS.txt (line 7)) (4.15.0)
+#12 1.679 Requirement already satisfied: fastapi<1.0,>=0.112 in /usr/local/lib/python3.12/site-packages (from -r REQUIREMENTS.txt (line 10)) (0.136.3)
+#12 1.860 Collecting uvicorn<1.0,>=0.30 (from uvicorn[standard]<1.0,>=0.30->-r REQUIREMENTS.txt (line 11))
+#12 1.867   Downloading uvicorn-0.49.0-py3-none-any.whl.metadata (6.7 kB)
+#12 1.877 Requirement already satisfied: httpx<1.0,>=0.27 in /usr/local/lib/python3.12/site-packages (from -r REQUIREMENTS.txt (line 12)) (0.28.1)
+#12 1.988 Collecting python-multipart<1.0,>=0.0.9 (from -r REQUIREMENTS.txt (line 13))
+#12 1.996   Downloading python_multipart-0.0.30-py3-none-any.whl.metadata (2.1 kB)
+#12 2.136 Collecting sse-starlette<3.0,>=2.1 (from -r REQUIREMENTS.txt (line 14))
+#12 2.143   Downloading sse_starlette-2.4.1-py3-none-any.whl.metadata (10 kB)
+#12 2.459 Collecting websockets<13.0,>=12.0 (from -r REQUIREMENTS.txt (line 15))
+#12 2.466   Downloading websockets-12.0-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.6 kB)
+#12 2.580 Collecting python-jose<4.0,>=3.3 (from python-jose[cryptography]<4.0,>=3.3->-r REQUIREMENTS.txt (line 18))
+#12 2.586   Downloading python_jose-3.5.0-py2.py3-none-any.whl.metadata (5.5 kB)
+#12 2.692 Collecting passlib<2.0,>=1.7.4 (from passlib[bcrypt]<2.0,>=1.7.4->-r REQUIREMENTS.txt (line 19))
+#12 2.699   Downloading passlib-1.7.4-py2.py3-none-any.whl.metadata (1.7 kB)
+#12 2.949 Collecting casbin<2.0,>=1.35 (from -r REQUIREMENTS.txt (line 20))
+#12 2.956   Downloading casbin-1.43.0-py3-none-any.whl.metadata (19 kB)
+#12 3.092 Collecting authlib<2.0,>=1.3 (from -r REQUIREMENTS.txt (line 21))
+#12 3.099   Downloading authlib-1.7.2-py2.py3-none-any.whl.metadata (10 kB)
+#12 3.224 Collecting ldap3<3.0,>=2.9 (from -r REQUIREMENTS.txt (line 22))
+#12 3.232   Downloading ldap3-2.9.1-py2.py3-none-any.whl.metadata (5.4 kB)
+#12 3.425 Collecting python3-saml<2.0,>=1.16 (from -r REQUIREMENTS.txt (line 23))
+#12 3.432   Downloading python3_saml-1.16.0-py3-none-any.whl.metadata (1.3 kB)
+#12 3.564 Collecting xmlsec<1.4,>=1.3.14 (from -r REQUIREMENTS.txt (line 24))
+#12 3.574   Downloading xmlsec-1.3.17.tar.gz (115 kB)
+#12 3.636   Installing build dependencies: started
+#12 146.5   Installing build dependencies: still running...
+#12 223.6   Installing build dependencies: still running...
+#12 236.3   Installing build dependencies: finished with status 'done'
+#12 236.3   Getting requirements to build wheel: started
+#12 236.6   Getting requirements to build wheel: finished with status 'done'
+#12 236.6   Preparing metadata (pyproject.toml): started
+#12 237.0   Preparing metadata (pyproject.toml): finished with status 'done'
+#12 237.2 Collecting structlog<25.0,>=24.2 (from -r REQUIREMENTS.txt (line 27))
+#12 237.2   Downloading structlog-24.4.0-py3-none-any.whl.metadata (7.3 kB)
+#12 237.4 Collecting rich<14.0,>=13.7 (from -r REQUIREMENTS.txt (line 28))
+#12 237.4   Downloading rich-13.9.4-py3-none-any.whl.metadata (18 kB)
+#12 237.4 Requirement already satisfied: SQLAlchemy<3.0,>=2.0.30 in /usr/local/lib/python3.12/site-packages (from -r REQUIREMENTS.txt (line 31)) (2.0.50)
+#12 237.4 Requirement already satisfied: alembic<2.0,>=1.13 in /usr/local/lib/python3.12/site-packages (from -r REQUIREMENTS.txt (line 32)) (1.18.4)
+#12 237.6 Collecting asyncpg<1.0,>=0.29 (from -r REQUIREMENTS.txt (line 33))
+#12 237.6   Downloading asyncpg-0.31.0-cp312-cp312-manylinux_2_28_x86_64.whl.metadata (4.4 kB)
+#12 237.7 Collecting aiosqlite<1.0,>=0.20 (from -r REQUIREMENTS.txt (line 34))
+#12 237.7   Downloading aiosqlite-0.22.1-py3-none-any.whl.metadata (4.3 kB)
+#12 237.9 Collecting filelock<4.0,>=3.15 (from -r REQUIREMENTS.txt (line 35))
+#12 237.9   Downloading filelock-3.29.1-py3-none-any.whl.metadata (2.0 kB)
+#12 238.0 Collecting tenacity<9.0,>=8.2 (from -r REQUIREMENTS.txt (line 38))
+#12 238.0   Downloading tenacity-8.5.0-py3-none-any.whl.metadata (1.2 kB)
+#12 238.2 Collecting redis<6.0,>=5.0 (from -r REQUIREMENTS.txt (line 39))
+#12 238.2   Downloading redis-5.3.1-py3-none-any.whl.metadata (9.2 kB)
+#12 238.5 Collecting llama-index-core<0.12,>=0.11 (from -r REQUIREMENTS.txt (line 42))
+#12 238.5   Downloading llama_index_core-0.11.23-py3-none-any.whl.metadata (2.5 kB)
+#12 238.8 Collecting llama-index-readers-file<0.3,>=0.2 (from -r REQUIREMENTS.txt (line 43))
+#12 238.8   Downloading llama_index_readers_file-0.2.2-py3-none-any.whl.metadata (5.4 kB)
+#12 239.0 Collecting llama-index-embeddings-openai<0.3,>=0.2 (from -r REQUIREMENTS.txt (line 44))
+#12 239.0   Downloading llama_index_embeddings_openai-0.2.5-py3-none-any.whl.metadata (686 bytes)
+#12 239.2 Collecting llama-index-llms-openai<0.3,>=0.2 (from -r REQUIREMENTS.txt (line 45))
+#12 239.2   Downloading llama_index_llms_openai-0.2.16-py3-none-any.whl.metadata (3.3 kB)
+#12 239.6 Collecting langchain<0.4,>=0.2 (from -r REQUIREMENTS.txt (line 50))
+#12 239.6   Downloading langchain-0.3.30-py3-none-any.whl.metadata (6.4 kB)
+#12 239.8 Collecting langchain-community<0.4,>=0.2 (from -r REQUIREMENTS.txt (line 51))
+#12 239.8   Downloading langchain_community-0.3.31-py3-none-any.whl.metadata (3.0 kB)
+#12 240.0 Collecting chromadb<2.0,>=1.0 (from -r REQUIREMENTS.txt (line 54))
+#12 240.0   Downloading chromadb-1.5.9-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.0 kB)
+#12 240.1 Collecting qdrant-client<2.0,>=1.9 (from -r REQUIREMENTS.txt (line 55))
+#12 240.1   Downloading qdrant_client-1.18.0-py3-none-any.whl.metadata (11 kB)
+#12 240.5 Collecting weaviate-client<5.0,>=4.6 (from -r REQUIREMENTS.txt (line 56))
+#12 240.5   Downloading weaviate_client-4.21.3-py3-none-any.whl.metadata (3.5 kB)
+#12 240.6 Collecting opensearch-py<3.0,>=2.6 (from -r REQUIREMENTS.txt (line 57))
+#12 240.6   Downloading opensearch_py-2.8.0-py3-none-any.whl.metadata (6.9 kB)
+#12 240.8 Collecting psycopg<4.0,>=3.2 (from psycopg[binary]<4.0,>=3.2->-r REQUIREMENTS.txt (line 58))
+#12 240.8   Downloading psycopg-3.3.4-py3-none-any.whl.metadata (4.3 kB)
+#12 240.9 Collecting pgvector<0.3,>=0.2.5 (from -r REQUIREMENTS.txt (line 59))
+#12 240.9   Downloading pgvector-0.2.5-py2.py3-none-any.whl.metadata (9.9 kB)
+#12 241.0 Collecting pypandoc<2.0,>=1.13 (from -r REQUIREMENTS.txt (line 62))
+#12 241.0   Downloading pypandoc-1.17-py3-none-any.whl.metadata (18 kB)
+#12 241.1 Collecting pdfminer.six>=20231228 (from -r REQUIREMENTS.txt (line 63))
+#12 241.2   Downloading pdfminer_six-20260107-py3-none-any.whl.metadata (4.3 kB)
+#12 241.3 Collecting python-docx<2.0,>=1.1 (from -r REQUIREMENTS.txt (line 64))
+#12 241.3   Downloading python_docx-1.2.0-py3-none-any.whl.metadata (2.0 kB)
+#12 241.4 Collecting openpyxl<4.0,>=3.1 (from -r REQUIREMENTS.txt (line 65))
+#12 241.4   Downloading openpyxl-3.1.5-py2.py3-none-any.whl.metadata (2.5 kB)
+#12 241.5 Collecting beautifulsoup4<5.0,>=4.12 (from -r REQUIREMENTS.txt (line 66))
+#12 241.5   Downloading beautifulsoup4-4.14.3-py3-none-any.whl.metadata (3.8 kB)
+#12 242.1 Collecting lxml==5.2.2 (from -r REQUIREMENTS.txt (line 67))
+#12 242.1   Downloading lxml-5.2.2.tar.gz (3.7 MB)
+#12 242.2      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.7/3.7 MB 33.8 MB/s eta 0:00:00
+#12 242.7   Installing build dependencies: started
+#12 247.6   Installing build dependencies: finished with status 'done'
+#12 247.6   Getting requirements to build wheel: started
+#12 248.2   Getting requirements to build wheel: finished with status 'done'
+#12 248.2   Preparing metadata (pyproject.toml): started
+#12 248.8   Preparing metadata (pyproject.toml): finished with status 'done'
+#12 248.9 Collecting markdown-it-py<4.0,>=3.0 (from -r REQUIREMENTS.txt (line 68))
+#12 248.9   Downloading markdown_it_py-3.0.0-py3-none-any.whl.metadata (6.9 kB)
+#12 249.1 Collecting chardet<6.0,>=5.2 (from -r REQUIREMENTS.txt (line 69))
+#12 249.1   Downloading chardet-5.2.0-py3-none-any.whl.metadata (3.4 kB)
+#12 249.2 Collecting python-magic<1.0,>=0.4.27 (from -r REQUIREMENTS.txt (line 70))
+#12 249.2   Downloading python_magic-0.4.27-py2.py3-none-any.whl.metadata (5.8 kB)
+#12 250.4 Collecting boto3<2.0,>=1.34 (from -r REQUIREMENTS.txt (line 73))
+#12 250.4   Downloading boto3-1.43.22-py3-none-any.whl.metadata (6.6 kB)
+#12 250.6 Collecting webdavclient3<4.0,>=3.14 (from -r REQUIREMENTS.txt (line 74))
+#12 250.6   Downloading webdavclient3-3.14.7-py3-none-any.whl.metadata (10 kB)
+#12 250.9 Collecting google-api-python-client<3.0,>=2.140 (from -r REQUIREMENTS.txt (line 75))
+#12 250.9   Downloading google_api_python_client-2.197.0-py3-none-any.whl.metadata (7.0 kB)
+#12 251.1 Collecting google-auth<3.0,>=2.33 (from -r REQUIREMENTS.txt (line 76))
+#12 251.1   Downloading google_auth-2.53.0-py3-none-any.whl.metadata (5.5 kB)
+#12 251.3 Collecting google-auth-oauthlib<2.0,>=1.2 (from -r REQUIREMENTS.txt (line 77))
+#12 251.3   Downloading google_auth_oauthlib-1.4.0-py3-none-any.whl.metadata (2.6 kB)
+#12 251.4 Collecting requests<3.0,>=2.32 (from -r REQUIREMENTS.txt (line 78))
+#12 251.4   Downloading requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+#12 253.0 Collecting aiohttp<4.0,>=3.9 (from -r REQUIREMENTS.txt (line 79))
+#12 253.0   Downloading aiohttp-3.14.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (8.3 kB)
+#12 253.3 Collecting xxhash<4.0,>=3.4 (from -r REQUIREMENTS.txt (line 82))
+#12 253.3   Downloading xxhash-3.7.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (13 kB)
+#12 253.5 Collecting pytest<9.0,>=8.2 (from -r REQUIREMENTS.txt (line 85))
+#12 253.5   Downloading pytest-8.4.2-py3-none-any.whl.metadata (7.7 kB)
+#12 253.7 Collecting pytest-cov<6.0,>=5.0 (from -r REQUIREMENTS.txt (line 86))
+#12 253.7   Downloading pytest_cov-5.0.0-py3-none-any.whl.metadata (27 kB)
+#12 254.9 Collecting ruff<1.0,>=0.5 (from -r REQUIREMENTS.txt (line 87))
+#12 254.9   Downloading ruff-0.15.15-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (26 kB)
+#12 255.3 Collecting mypy<2.0,>=1.10 (from -r REQUIREMENTS.txt (line 88))
+#12 255.3   Downloading mypy-1.20.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+#12 255.3 Requirement already satisfied: annotated-types>=0.6.0 in /usr/local/lib/python3.12/site-packages (from pydantic<3.0,>=2.7->-r REQUIREMENTS.txt (line 2)) (0.7.0)
+#12 255.3 Requirement already satisfied: pydantic-core==2.46.4 in /usr/local/lib/python3.12/site-packages (from pydantic<3.0,>=2.7->-r REQUIREMENTS.txt (line 2)) (2.46.4)
+#12 255.3 Requirement already satisfied: typing-inspection>=0.4.2 in /usr/local/lib/python3.12/site-packages (from pydantic<3.0,>=2.7->-r REQUIREMENTS.txt (line 2)) (0.4.2)
+#12 255.3 Requirement already satisfied: starlette>=0.46.0 in /usr/local/lib/python3.12/site-packages (from fastapi<1.0,>=0.112->-r REQUIREMENTS.txt (line 10)) (1.2.1)
+#12 255.3 Requirement already satisfied: annotated-doc>=0.0.2 in /usr/local/lib/python3.12/site-packages (from fastapi<1.0,>=0.112->-r REQUIREMENTS.txt (line 10)) (0.0.4)
+#12 255.5 Collecting click>=7.0 (from uvicorn<1.0,>=0.30->uvicorn[standard]<1.0,>=0.30->-r REQUIREMENTS.txt (line 11))
+#12 255.5   Downloading click-8.4.1-py3-none-any.whl.metadata (2.6 kB)
+#12 255.5 Requirement already satisfied: h11>=0.8 in /usr/local/lib/python3.12/site-packages (from uvicorn<1.0,>=0.30->uvicorn[standard]<1.0,>=0.30->-r REQUIREMENTS.txt (line 11)) (0.16.0)
+#12 255.5 Requirement already satisfied: anyio in /usr/local/lib/python3.12/site-packages (from httpx<1.0,>=0.27->-r REQUIREMENTS.txt (line 12)) (4.13.0)
+#12 255.5 Requirement already satisfied: certifi in /usr/local/lib/python3.12/site-packages (from httpx<1.0,>=0.27->-r REQUIREMENTS.txt (line 12)) (2026.5.20)
+#12 255.5 Requirement already satisfied: httpcore==1.* in /usr/local/lib/python3.12/site-packages (from httpx<1.0,>=0.27->-r REQUIREMENTS.txt (line 12)) (1.0.9)
+#12 255.5 Requirement already satisfied: idna in /usr/local/lib/python3.12/site-packages (from httpx<1.0,>=0.27->-r REQUIREMENTS.txt (line 12)) (3.17)
+#12 255.6 Collecting ecdsa!=0.15 (from python-jose<4.0,>=3.3->python-jose[cryptography]<4.0,>=3.3->-r REQUIREMENTS.txt (line 18))
+#12 255.6   Downloading ecdsa-0.19.2-py2.py3-none-any.whl.metadata (29 kB)
+#12 255.7 Collecting rsa!=4.1.1,!=4.4,<5.0,>=4.0 (from python-jose<4.0,>=3.3->python-jose[cryptography]<4.0,>=3.3->-r REQUIREMENTS.txt (line 18))
+#12 255.7   Downloading rsa-4.9.1-py3-none-any.whl.metadata (5.6 kB)
+#12 255.9 Collecting pyasn1>=0.5.0 (from python-jose<4.0,>=3.3->python-jose[cryptography]<4.0,>=3.3->-r REQUIREMENTS.txt (line 18))
+#12 255.9   Downloading pyasn1-0.6.3-py3-none-any.whl.metadata (8.4 kB)
+#12 256.0 Collecting simpleeval>=0.9.11 (from casbin<2.0,>=1.35->-r REQUIREMENTS.txt (line 20))
+#12 256.0   Downloading simpleeval-1.0.7-py3-none-any.whl.metadata (20 kB)
+#12 256.0 Requirement already satisfied: cryptography in /usr/local/lib/python3.12/site-packages (from authlib<2.0,>=1.3->-r REQUIREMENTS.txt (line 21)) (48.0.0)
+#12 256.1 Collecting joserfc>=1.6.0 (from authlib<2.0,>=1.3->-r REQUIREMENTS.txt (line 21))
+#12 256.1   Downloading joserfc-1.7.0-py3-none-any.whl.metadata (3.1 kB)
+#12 256.3 Collecting isodate>=0.6.1 (from python3-saml<2.0,>=1.16->-r REQUIREMENTS.txt (line 23))
+#12 256.3   Downloading isodate-0.7.2-py3-none-any.whl.metadata (11 kB)
+#12 256.4 Collecting pygments<3.0.0,>=2.13.0 (from rich<14.0,>=13.7->-r REQUIREMENTS.txt (line 28))
+#12 256.5   Downloading pygments-2.20.0-py3-none-any.whl.metadata (2.5 kB)
+#12 256.5 Requirement already satisfied: greenlet>=1 in /usr/local/lib/python3.12/site-packages (from SQLAlchemy<3.0,>=2.0.30->-r REQUIREMENTS.txt (line 31)) (3.5.1)
+#12 256.5 Requirement already satisfied: Mako in /usr/local/lib/python3.12/site-packages (from alembic<2.0,>=1.13->-r REQUIREMENTS.txt (line 32)) (1.3.12)
+#12 256.5 Requirement already satisfied: PyJWT>=2.9.0 in /usr/local/lib/python3.12/site-packages (from redis<6.0,>=5.0->-r REQUIREMENTS.txt (line 39)) (2.13.0)
+#12 256.7 Collecting dataclasses-json (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 256.7   Downloading dataclasses_json-0.6.7-py3-none-any.whl.metadata (25 kB)
+#12 256.8 Collecting deprecated>=1.2.9.3 (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 256.8   Downloading deprecated-1.3.1-py2.py3-none-any.whl.metadata (5.9 kB)
+#12 257.0 Collecting dirtyjson<2.0.0,>=1.0.8 (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 257.0   Downloading dirtyjson-1.0.8-py3-none-any.whl.metadata (11 kB)
+#12 257.1 Collecting filetype<2.0.0,>=1.2.0 (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 257.1   Downloading filetype-1.2.0-py2.py3-none-any.whl.metadata (6.5 kB)
+#12 257.4 Collecting fsspec>=2023.5.0 (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 257.4   Downloading fsspec-2026.4.0-py3-none-any.whl.metadata (10 kB)
+#12 257.5 Collecting nest-asyncio<2.0.0,>=1.5.8 (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 257.5   Downloading nest_asyncio-1.6.0-py3-none-any.whl.metadata (2.8 kB)
+#12 257.7 Collecting networkx>=3.0 (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 257.7   Downloading networkx-3.6.1-py3-none-any.whl.metadata (6.8 kB)
+#12 257.8 Collecting nltk>3.8.1 (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 257.8   Downloading nltk-3.9.4-py3-none-any.whl.metadata (3.2 kB)
+#12 258.5 Collecting numpy<2.0.0 (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 258.5   Downloading numpy-1.26.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (61 kB)
+#12 259.0 Collecting pillow>=9.0.0 (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 259.0   Downloading pillow-12.2.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (8.8 kB)
+#12 259.4 Collecting tiktoken>=0.3.3 (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 259.4   Downloading tiktoken-0.13.0-cp312-cp312-manylinux_2_28_x86_64.whl.metadata (6.7 kB)
+#12 259.6 Collecting tqdm<5.0.0,>=4.66.1 (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 259.6   Downloading tqdm-4.67.3-py3-none-any.whl.metadata (57 kB)
+#12 259.7 Collecting typing-inspect>=0.8.0 (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 259.7   Downloading typing_inspect-0.9.0-py3-none-any.whl.metadata (1.5 kB)
+#12 260.4 Collecting wrapt (from llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 260.4   Downloading wrapt-2.2.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (7.4 kB)
+#12 260.8 Collecting pandas (from llama-index-readers-file<0.3,>=0.2->-r REQUIREMENTS.txt (line 43))
+#12 260.8   Downloading pandas-3.0.3-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (79 kB)
+#12 261.0 Collecting pypdf<5.0.0,>=4.0.1 (from llama-index-readers-file<0.3,>=0.2->-r REQUIREMENTS.txt (line 43))
+#12 261.0   Downloading pypdf-4.3.1-py3-none-any.whl.metadata (7.4 kB)
+#12 261.2 Collecting striprtf<0.0.27,>=0.0.26 (from llama-index-readers-file<0.3,>=0.2->-r REQUIREMENTS.txt (line 43))
+#12 261.3   Downloading striprtf-0.0.26-py3-none-any.whl.metadata (2.1 kB)
+#12 261.6 Collecting openai>=1.1.0 (from llama-index-embeddings-openai<0.3,>=0.2->-r REQUIREMENTS.txt (line 44))
+#12 261.6   Downloading openai-2.41.0-py3-none-any.whl.metadata (32 kB)
+#12 261.8   Downloading openai-1.109.1-py3-none-any.whl.metadata (29 kB)
+#12 262.2 Collecting langchain-core<1.0.0,>=0.3.85 (from langchain<0.4,>=0.2->-r REQUIREMENTS.txt (line 50))
+#12 262.2   Downloading langchain_core-0.3.86-py3-none-any.whl.metadata (3.2 kB)
+#12 262.3 Collecting langchain-text-splitters<1.0.0,>=0.3.9 (from langchain<0.4,>=0.2->-r REQUIREMENTS.txt (line 50))
+#12 262.3   Downloading langchain_text_splitters-0.3.11-py3-none-any.whl.metadata (1.8 kB)
+#12 262.7 Collecting langsmith<1.0.0,>=0.1.17 (from langchain<0.4,>=0.2->-r REQUIREMENTS.txt (line 50))
+#12 262.7   Downloading langsmith-0.8.9-py3-none-any.whl.metadata (15 kB)
+#12 263.3 Collecting httpx-sse<1.0.0,>=0.4.0 (from langchain-community<0.4,>=0.2->-r REQUIREMENTS.txt (line 51))
+#12 263.3   Downloading httpx_sse-0.4.3-py3-none-any.whl.metadata (9.7 kB)
+#12 263.5 Collecting build>=1.0.3 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 263.5   Downloading build-1.5.0-py3-none-any.whl.metadata (5.7 kB)
+#12 263.8 Collecting pybase64>=1.4.1 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 263.8   Downloading pybase64-1.4.3-cp312-cp312-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl.metadata (8.7 kB)
+#12 264.1 Collecting onnxruntime>=1.14.1 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 264.1   Downloading onnxruntime-1.26.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (5.3 kB)
+#12 264.3 Collecting opentelemetry-api>=1.2.0 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 264.3   Downloading opentelemetry_api-1.42.1-py3-none-any.whl.metadata (1.4 kB)
+#12 264.4 Collecting opentelemetry-exporter-otlp-proto-grpc>=1.2.0 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 264.4   Downloading opentelemetry_exporter_otlp_proto_grpc-1.42.1-py3-none-any.whl.metadata (2.6 kB)
+#12 264.5 Collecting opentelemetry-sdk>=1.2.0 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 264.6   Downloading opentelemetry_sdk-1.42.1-py3-none-any.whl.metadata (1.7 kB)
+#12 265.0 Collecting tokenizers>=0.13.2 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 265.0   Downloading tokenizers-0.23.1-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (9.8 kB)
+#12 265.2 Collecting pypika>=0.48.9 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 265.2   Downloading pypika-0.51.1-py2.py3-none-any.whl.metadata (51 kB)
+#12 265.4 Collecting overrides>=7.3.1 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 265.4   Downloading overrides-7.7.0-py3-none-any.whl.metadata (5.8 kB)
+#12 265.5 Collecting importlib-resources (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 265.5   Downloading importlib_resources-7.1.0-py3-none-any.whl.metadata (4.0 kB)
+#12 267.0 Collecting grpcio>=1.58.0 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 267.0   Downloading grpcio-1.81.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (3.7 kB)
+#12 267.2 Collecting bcrypt>=4.0.1 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 267.2   Downloading bcrypt-5.0.0-cp39-abi3-manylinux_2_34_x86_64.whl.metadata (10 kB)
+#12 267.4 Collecting typer>=0.9.0 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 267.4   Downloading typer-0.26.7-py3-none-any.whl.metadata (16 kB)
+#12 267.5 Collecting kubernetes>=28.1.0 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 267.5   Downloading kubernetes-36.0.2-py2.py3-none-any.whl.metadata (1.8 kB)
+#12 267.8 Collecting mmh3>=4.0.1 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 267.8   Downloading mmh3-5.2.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (14 kB)
+#12 268.7 Collecting orjson>=3.9.12 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 268.7   Downloading orjson-3.11.9-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (41 kB)
+#12 268.9 Collecting jsonschema>=4.19.0 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 268.9   Downloading jsonschema-4.26.0-py3-none-any.whl.metadata (7.6 kB)
+#12 269.1 Collecting portalocker<4.0,>=2.7.0 (from qdrant-client<2.0,>=1.9->-r REQUIREMENTS.txt (line 55))
+#12 269.1   Downloading portalocker-3.2.0-py3-none-any.whl.metadata (8.7 kB)
+#12 269.7 Collecting protobuf>=3.20.0 (from qdrant-client<2.0,>=1.9->-r REQUIREMENTS.txt (line 55))
+#12 269.7   Downloading protobuf-7.35.0-cp310-abi3-manylinux2014_x86_64.whl.metadata (595 bytes)
+#12 269.8 Collecting urllib3<3,>=1.26.14 (from qdrant-client<2.0,>=1.9->-r REQUIREMENTS.txt (line 55))
+#12 269.8   Downloading urllib3-2.7.0-py3-none-any.whl.metadata (6.9 kB)
+#12 269.9 Collecting validators<1.0.0,>=0.34.0 (from weaviate-client<5.0,>=4.6->-r REQUIREMENTS.txt (line 56))
+#12 269.9   Downloading validators-0.35.0-py3-none-any.whl.metadata (3.9 kB)
+#12 270.0 Collecting grpcio>=1.58.0 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 270.0   Downloading grpcio-1.78.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (3.8 kB)
+#12 270.1 Collecting protobuf>=3.20.0 (from qdrant-client<2.0,>=1.9->-r REQUIREMENTS.txt (line 55))
+#12 270.1   Downloading protobuf-6.33.6-cp39-abi3-manylinux2014_x86_64.whl.metadata (593 bytes)
+#12 270.2 Collecting packaging>=21.0 (from weaviate-client<5.0,>=4.6->-r REQUIREMENTS.txt (line 56))
+#12 270.2   Downloading packaging-26.2-py3-none-any.whl.metadata (3.5 kB)
+#12 270.4 Collecting python-dateutil (from opensearch-py<3.0,>=2.6->-r REQUIREMENTS.txt (line 57))
+#12 270.4   Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+#12 270.5 Collecting Events (from opensearch-py<3.0,>=2.6->-r REQUIREMENTS.txt (line 57))
+#12 270.5   Downloading Events-0.5-py3-none-any.whl.metadata (3.9 kB)
+#12 270.9 Collecting charset-normalizer>=2.0.0 (from pdfminer.six>=20231228->-r REQUIREMENTS.txt (line 63))
+#12 270.9   Downloading charset_normalizer-3.4.7-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (40 kB)
+#12 271.0 Collecting et-xmlfile (from openpyxl<4.0,>=3.1->-r REQUIREMENTS.txt (line 65))
+#12 271.0   Downloading et_xmlfile-2.0.0-py3-none-any.whl.metadata (2.7 kB)
+#12 271.2 Collecting soupsieve>=1.6.1 (from beautifulsoup4<5.0,>=4.12->-r REQUIREMENTS.txt (line 66))
+#12 271.2   Downloading soupsieve-2.8.4-py3-none-any.whl.metadata (4.6 kB)
+#12 271.3 Collecting mdurl~=0.1 (from markdown-it-py<4.0,>=3.0->-r REQUIREMENTS.txt (line 68))
+#12 271.3   Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+#12 272.6 Collecting botocore<1.44.0,>=1.43.22 (from boto3<2.0,>=1.34->-r REQUIREMENTS.txt (line 73))
+#12 272.6   Downloading botocore-1.43.22-py3-none-any.whl.metadata (5.6 kB)
+#12 272.8 Collecting jmespath<2.0.0,>=0.7.1 (from boto3<2.0,>=1.34->-r REQUIREMENTS.txt (line 73))
+#12 272.8   Downloading jmespath-1.1.0-py3-none-any.whl.metadata (7.6 kB)
+#12 272.9 Collecting s3transfer<0.19.0,>=0.18.0 (from boto3<2.0,>=1.34->-r REQUIREMENTS.txt (line 73))
+#12 272.9   Downloading s3transfer-0.18.0-py3-none-any.whl.metadata (1.7 kB)
+#12 273.0 Collecting httplib2<1.0.0,>=0.19.0 (from google-api-python-client<3.0,>=2.140->-r REQUIREMENTS.txt (line 75))
+#12 273.0   Downloading httplib2-0.31.2-py3-none-any.whl.metadata (2.2 kB)
+#12 273.2 Collecting google-auth-httplib2<1.0.0,>=0.2.0 (from google-api-python-client<3.0,>=2.140->-r REQUIREMENTS.txt (line 75))
+#12 273.2   Downloading google_auth_httplib2-0.4.0-py3-none-any.whl.metadata (3.0 kB)
+#12 273.5 Collecting google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0,>=1.31.5 (from google-api-python-client<3.0,>=2.140->-r REQUIREMENTS.txt (line 75))
+#12 273.5   Downloading google_api_core-2.31.0-py3-none-any.whl.metadata (3.2 kB)
+#12 273.6 Collecting uritemplate<5,>=3.0.1 (from google-api-python-client<3.0,>=2.140->-r REQUIREMENTS.txt (line 75))
+#12 273.6   Downloading uritemplate-4.2.0-py3-none-any.whl.metadata (2.6 kB)
+#12 273.7 Collecting pyasn1-modules>=0.2.1 (from google-auth<3.0,>=2.33->-r REQUIREMENTS.txt (line 76))
+#12 273.7   Downloading pyasn1_modules-0.4.2-py3-none-any.whl.metadata (3.5 kB)
+#12 274.0 Collecting requests-oauthlib>=0.7.0 (from google-auth-oauthlib<2.0,>=1.2->-r REQUIREMENTS.txt (line 77))
+#12 274.0   Downloading requests_oauthlib-2.0.0-py2.py3-none-any.whl.metadata (11 kB)
+#12 274.2 Collecting aiohappyeyeballs>=2.5.0 (from aiohttp<4.0,>=3.9->-r REQUIREMENTS.txt (line 79))
+#12 274.2   Downloading aiohappyeyeballs-2.6.2-py3-none-any.whl.metadata (5.9 kB)
+#12 274.3 Collecting aiosignal>=1.4.0 (from aiohttp<4.0,>=3.9->-r REQUIREMENTS.txt (line 79))
+#12 274.3   Downloading aiosignal-1.4.0-py3-none-any.whl.metadata (3.7 kB)
+#12 274.5 Collecting attrs>=17.3.0 (from aiohttp<4.0,>=3.9->-r REQUIREMENTS.txt (line 79))
+#12 274.5   Downloading attrs-26.1.0-py3-none-any.whl.metadata (8.8 kB)
+#12 274.8 Collecting frozenlist>=1.1.1 (from aiohttp<4.0,>=3.9->-r REQUIREMENTS.txt (line 79))
+#12 274.8   Downloading frozenlist-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (20 kB)
+#12 275.5 Collecting multidict<7.0,>=4.5 (from aiohttp<4.0,>=3.9->-r REQUIREMENTS.txt (line 79))
+#12 275.5   Downloading multidict-6.7.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (5.3 kB)
+#12 275.7 Collecting propcache>=0.2.0 (from aiohttp<4.0,>=3.9->-r REQUIREMENTS.txt (line 79))
+#12 275.7   Downloading propcache-0.5.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (16 kB)
+#12 276.7 Collecting yarl<2.0,>=1.17.0 (from aiohttp<4.0,>=3.9->-r REQUIREMENTS.txt (line 79))
+#12 276.7   Downloading yarl-1.24.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (94 kB)
+#12 276.9 Collecting iniconfig>=1 (from pytest<9.0,>=8.2->-r REQUIREMENTS.txt (line 85))
+#12 276.9   Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+#12 277.0 Collecting pluggy<2,>=1.5 (from pytest<9.0,>=8.2->-r REQUIREMENTS.txt (line 85))
+#12 277.0   Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+#12 278.1 Collecting coverage>=5.2.1 (from coverage[toml]>=5.2.1->pytest-cov<6.0,>=5.0->-r REQUIREMENTS.txt (line 86))
+#12 278.1   Downloading coverage-7.14.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (8.6 kB)
+#12 278.2 Collecting mypy_extensions>=1.0.0 (from mypy<2.0,>=1.10->-r REQUIREMENTS.txt (line 88))
+#12 278.3   Downloading mypy_extensions-1.1.0-py3-none-any.whl.metadata (1.1 kB)
+#12 278.4 Collecting pathspec>=1.0.0 (from mypy<2.0,>=1.10->-r REQUIREMENTS.txt (line 88))
+#12 278.4   Downloading pathspec-1.1.1-py3-none-any.whl.metadata (14 kB)
+#12 278.7 Collecting librt>=0.8.0 (from mypy<2.0,>=1.10->-r REQUIREMENTS.txt (line 88))
+#12 278.7   Downloading librt-0.11.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (1.3 kB)
+#12 279.5 Collecting psycopg-binary==3.3.4 (from psycopg[binary]<4.0,>=3.2->-r REQUIREMENTS.txt (line 58))
+#12 279.5   Downloading psycopg_binary-3.3.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.7 kB)
+#12 279.7 Collecting httptools>=0.8.0 (from uvicorn[standard]<1.0,>=0.30->-r REQUIREMENTS.txt (line 11))
+#12 279.7   Downloading httptools-0.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
+#12 279.9 Collecting uvloop>=0.15.1 (from uvicorn[standard]<1.0,>=0.30->-r REQUIREMENTS.txt (line 11))
+#12 279.9   Downloading uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (4.9 kB)
+#12 280.2 Collecting watchfiles>=0.20 (from uvicorn[standard]<1.0,>=0.30->-r REQUIREMENTS.txt (line 11))
+#12 280.2   Downloading watchfiles-1.2.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+#12 280.4 Collecting pyproject_hooks (from build>=1.0.3->chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 280.4   Downloading pyproject_hooks-1.2.0-py3-none-any.whl.metadata (1.3 kB)
+#12 280.5 Requirement already satisfied: cffi>=2.0.0 in /usr/local/lib/python3.12/site-packages (from cryptography->authlib<2.0,>=1.3->-r REQUIREMENTS.txt (line 21)) (2.0.0)
+#12 280.7 Collecting marshmallow<4.0.0,>=3.18.0 (from dataclasses-json->llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 280.7   Downloading marshmallow-3.26.2-py3-none-any.whl.metadata (7.3 kB)
+#12 280.8 Collecting six>=1.9.0 (from ecdsa!=0.15->python-jose<4.0,>=3.3->python-jose[cryptography]<4.0,>=3.3->-r REQUIREMENTS.txt (line 18))
+#12 280.9   Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+#12 281.0 Collecting googleapis-common-protos<2.0.0,>=1.63.2 (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0,>=1.31.5->google-api-python-client<3.0,>=2.140->-r REQUIREMENTS.txt (line 75))
+#12 281.0   Downloading googleapis_common_protos-1.75.0-py3-none-any.whl.metadata (8.6 kB)
+#12 281.2 Collecting proto-plus<2.0.0,>=1.24.0 (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0,>=1.31.5->google-api-python-client<3.0,>=2.140->-r REQUIREMENTS.txt (line 75))
+#12 281.2   Downloading proto_plus-1.28.0-py3-none-any.whl.metadata (2.2 kB)
+#12 281.6 Collecting pyparsing<4,>=3.1 (from httplib2<1.0.0,>=0.19.0->google-api-python-client<3.0,>=2.140->-r REQUIREMENTS.txt (line 75))
+#12 281.6   Downloading pyparsing-3.3.2-py3-none-any.whl.metadata (5.8 kB)
+#12 281.7 Collecting h2<5,>=3 (from httpx[http2]>=0.20.0->qdrant-client<2.0,>=1.9->-r REQUIREMENTS.txt (line 55))
+#12 281.7   Downloading h2-4.3.0-py3-none-any.whl.metadata (5.1 kB)
+#12 281.9 Collecting jsonschema-specifications>=2023.03.6 (from jsonschema>=4.19.0->chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 281.9   Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl.metadata (2.9 kB)
+#12 282.1 Collecting referencing>=0.28.4 (from jsonschema>=4.19.0->chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 282.1   Downloading referencing-0.37.0-py3-none-any.whl.metadata (2.8 kB)
+#12 282.9 Collecting rpds-py>=0.25.0 (from jsonschema>=4.19.0->chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 282.9   Downloading rpds_py-2026.5.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.1 kB)
+#12 283.1 Collecting websocket-client!=0.40.0,!=0.41.*,!=0.42.*,>=0.32.0 (from kubernetes>=28.1.0->chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 283.1   Downloading websocket_client-1.9.0-py3-none-any.whl.metadata (8.3 kB)
+#12 283.3 Collecting durationpy>=0.7 (from kubernetes>=28.1.0->chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 283.3   Downloading durationpy-0.10-py3-none-any.whl.metadata (340 bytes)
+#12 283.7 Collecting jsonpatch<2.0.0,>=1.33.0 (from langchain-core<1.0.0,>=0.3.85->langchain<0.4,>=0.2->-r REQUIREMENTS.txt (line 50))
+#12 283.7   Downloading jsonpatch-1.33-py2.py3-none-any.whl.metadata (3.0 kB)
+#12 283.7 Collecting packaging>=21.0 (from weaviate-client<5.0,>=4.6->-r REQUIREMENTS.txt (line 56))
+#12 283.7   Downloading packaging-25.0-py3-none-any.whl.metadata (3.3 kB)
+#12 284.0 Collecting uuid-utils<1.0,>=0.12.0 (from langchain-core<1.0.0,>=0.3.85->langchain<0.4,>=0.2->-r REQUIREMENTS.txt (line 50))
+#12 284.0   Downloading uuid_utils-0.16.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.4 kB)
+#12 284.2 Collecting requests-toolbelt>=1.0.0 (from langsmith<1.0.0,>=0.1.17->langchain<0.4,>=0.2->-r REQUIREMENTS.txt (line 50))
+#12 284.2   Downloading requests_toolbelt-1.0.0-py2.py3-none-any.whl.metadata (14 kB)
+#12 284.2 INFO: pip is looking at multiple versions of langsmith to determine which version is compatible with other requirements. This could take a while.
+#12 284.2 Collecting langsmith<1.0.0,>=0.1.17 (from langchain<0.4,>=0.2->-r REQUIREMENTS.txt (line 50))
+#12 284.2   Downloading langsmith-0.8.8-py3-none-any.whl.metadata (15 kB)
+#12 284.3   Downloading langsmith-0.8.7-py3-none-any.whl.metadata (15 kB)
+#12 284.3   Downloading langsmith-0.8.6-py3-none-any.whl.metadata (15 kB)
+#12 284.3   Downloading langsmith-0.8.5-py3-none-any.whl.metadata (15 kB)
+#12 284.6 Collecting zstandard>=0.23.0 (from langsmith<1.0.0,>=0.1.17->langchain<0.4,>=0.2->-r REQUIREMENTS.txt (line 50))
+#12 284.6   Downloading zstandard-0.25.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (3.3 kB)
+#12 284.8 Collecting joblib (from nltk>3.8.1->llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 284.8   Downloading joblib-1.5.3-py3-none-any.whl.metadata (5.5 kB)
+#12 286.1 Collecting regex>=2021.8.3 (from nltk>3.8.1->llama-index-core<0.12,>=0.11->-r REQUIREMENTS.txt (line 42))
+#12 286.1   Downloading regex-2026.5.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (40 kB)
+#12 286.3 Collecting flatbuffers (from onnxruntime>=1.14.1->chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 286.3   Downloading flatbuffers-25.12.19-py2.py3-none-any.whl.metadata (1.0 kB)
+#12 286.4 Collecting distro<2,>=1.7.0 (from openai>=1.1.0->llama-index-embeddings-openai<0.3,>=0.2->-r REQUIREMENTS.txt (line 44))
+#12 286.4   Downloading distro-1.9.0-py3-none-any.whl.metadata (6.8 kB)
+#12 286.7 Collecting jiter<1,>=0.4.0 (from openai>=1.1.0->llama-index-embeddings-openai<0.3,>=0.2->-r REQUIREMENTS.txt (line 44))
+#12 286.7   Downloading jiter-0.15.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.2 kB)
+#12 286.9 Collecting sniffio (from openai>=1.1.0->llama-index-embeddings-openai<0.3,>=0.2->-r REQUIREMENTS.txt (line 44))
+#12 286.9   Downloading sniffio-1.3.1-py3-none-any.whl.metadata (3.9 kB)
+#12 287.1 Collecting opentelemetry-exporter-otlp-proto-common==1.42.1 (from opentelemetry-exporter-otlp-proto-grpc>=1.2.0->chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 287.1   Downloading opentelemetry_exporter_otlp_proto_common-1.42.1-py3-none-any.whl.metadata (1.8 kB)
+#12 287.3 Collecting opentelemetry-proto==1.42.1 (from opentelemetry-exporter-otlp-proto-grpc>=1.2.0->chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 287.3   Downloading opentelemetry_proto-1.42.1-py3-none-any.whl.metadata (2.3 kB)
+#12 287.5 Collecting opentelemetry-semantic-conventions==0.63b1 (from opentelemetry-sdk>=1.2.0->chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 287.6   Downloading opentelemetry_semantic_conventions-0.63b1-py3-none-any.whl.metadata (2.4 kB)
+#12 287.8 Collecting oauthlib>=3.0.0 (from requests-oauthlib>=0.7.0->google-auth-oauthlib<2.0,>=1.2->-r REQUIREMENTS.txt (line 77))
+#12 287.8   Downloading oauthlib-3.3.1-py3-none-any.whl.metadata (7.9 kB)
+#12 288.6 Collecting huggingface-hub<2.0,>=0.16.4 (from tokenizers>=0.13.2->chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 288.6   Downloading huggingface_hub-1.17.0-py3-none-any.whl.metadata (14 kB)
+#12 288.8 Collecting shellingham>=1.3.0 (from typer>=0.9.0->chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 288.8   Downloading shellingham-1.5.4-py2.py3-none-any.whl.metadata (3.5 kB)
+#12 288.9 Requirement already satisfied: MarkupSafe>=0.9.2 in /usr/local/lib/python3.12/site-packages (from Mako->alembic<2.0,>=1.13->-r REQUIREMENTS.txt (line 32)) (3.0.3)
+#12 289.0 Requirement already satisfied: pycparser in /usr/local/lib/python3.12/site-packages (from cffi>=2.0.0->cryptography->authlib<2.0,>=1.3->-r REQUIREMENTS.txt (line 21)) (3.0)
+#12 289.2 Collecting hyperframe<7,>=6.1 (from h2<5,>=3->httpx[http2]>=0.20.0->qdrant-client<2.0,>=1.9->-r REQUIREMENTS.txt (line 55))
+#12 289.2   Downloading hyperframe-6.1.0-py3-none-any.whl.metadata (4.3 kB)
+#12 289.3 Collecting hpack<5,>=4.1 (from h2<5,>=3->httpx[http2]>=0.20.0->qdrant-client<2.0,>=1.9->-r REQUIREMENTS.txt (line 55))
+#12 289.3   Downloading hpack-4.1.0-py3-none-any.whl.metadata (4.6 kB)
+#12 289.5 Collecting hf-xet<2.0.0,>=1.4.3 (from huggingface-hub<2.0,>=0.16.4->tokenizers>=0.13.2->chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 289.5   Downloading hf_xet-1.5.0-cp37-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (4.9 kB)
+#12 289.6 Collecting typer>=0.9.0 (from chromadb<2.0,>=1.0->-r REQUIREMENTS.txt (line 54))
+#12 289.6   Downloading typer-0.25.1-py3-none-any.whl.metadata (15 kB)
+#12 289.8 Collecting jsonpointer>=1.9 (from jsonpatch<2.0.0,>=1.33.0->langchain-core<1.0.0,>=0.3.85->langchain<0.4,>=0.2->-r REQUIREMENTS.txt (line 50))
+#12 289.8   Downloading jsonpointer-3.1.1-py3-none-any.whl.metadata (2.4 kB)
+#12 290.1 Downloading pydantic_settings-2.14.1-py3-none-any.whl (60 kB)
+#12 290.1 Downloading python_dotenv-1.2.2-py3-none-any.whl (22 kB)
+#12 290.1 Downloading ruamel_yaml-0.19.1-py3-none-any.whl (118 kB)
+#12 290.2 Downloading uvicorn-0.49.0-py3-none-any.whl (71 kB)
+#12 290.2 Downloading python_multipart-0.0.30-py3-none-any.whl (29 kB)
+#12 290.2 Downloading sse_starlette-2.4.1-py3-none-any.whl (10 kB)
+#12 290.2 Downloading websockets-12.0-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (131 kB)
+#12 290.2 Downloading python_jose-3.5.0-py2.py3-none-any.whl (34 kB)
+#12 290.2 Downloading passlib-1.7.4-py2.py3-none-any.whl (525 kB)
+#12 290.2    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 525.6/525.6 kB 32.8 MB/s eta 0:00:00
+#12 290.2 Downloading casbin-1.43.0-py3-none-any.whl (475 kB)
+#12 290.2 Downloading authlib-1.7.2-py2.py3-none-any.whl (259 kB)
+#12 290.2 Downloading ldap3-2.9.1-py2.py3-none-any.whl (432 kB)
+#12 290.2 Downloading python3_saml-1.16.0-py3-none-any.whl (76 kB)
+#12 290.3 Downloading structlog-24.4.0-py3-none-any.whl (67 kB)
+#12 290.3 Downloading rich-13.9.4-py3-none-any.whl (242 kB)
+#12 290.3 Downloading asyncpg-0.31.0-cp312-cp312-manylinux_2_28_x86_64.whl (3.5 MB)
+#12 290.3    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.5/3.5 MB 90.8 MB/s eta 0:00:00
+#12 290.3 Downloading aiosqlite-0.22.1-py3-none-any.whl (17 kB)
+#12 290.3 Downloading filelock-3.29.1-py3-none-any.whl (40 kB)
+#12 290.4 Downloading tenacity-8.5.0-py3-none-any.whl (28 kB)
+#12 290.4 Downloading redis-5.3.1-py3-none-any.whl (272 kB)
+#12 290.4 Downloading llama_index_core-0.11.23-py3-none-any.whl (1.6 MB)
+#12 290.4    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 86.1 MB/s eta 0:00:00
+#12 290.4 Downloading llama_index_readers_file-0.2.2-py3-none-any.whl (38 kB)
+#12 290.4 Downloading llama_index_embeddings_openai-0.2.5-py3-none-any.whl (6.1 kB)
+#12 290.4 Downloading llama_index_llms_openai-0.2.16-py3-none-any.whl (13 kB)
+#12 290.4 Downloading langchain-0.3.30-py3-none-any.whl (1.0 MB)
+#12 290.4    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.0/1.0 MB 84.1 MB/s eta 0:00:00
+#12 290.5 Downloading langchain_community-0.3.31-py3-none-any.whl (2.5 MB)
+#12 290.6    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.5/2.5 MB 54.2 MB/s eta 0:00:00
+#12 290.6 Downloading chromadb-1.5.9-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (23.3 MB)
+#12 291.1    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 23.3/23.3 MB 41.7 MB/s eta 0:00:00
+#12 291.2 Downloading qdrant_client-1.18.0-py3-none-any.whl (398 kB)
+#12 291.2 Downloading weaviate_client-4.21.3-py3-none-any.whl (643 kB)
+#12 291.2    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 643.2/643.2 kB 87.6 MB/s eta 0:00:00
+#12 291.2 Downloading opensearch_py-2.8.0-py3-none-any.whl (353 kB)
+#12 291.2 Downloading psycopg-3.3.4-py3-none-any.whl (213 kB)
+#12 291.2 Downloading pgvector-0.2.5-py2.py3-none-any.whl (9.6 kB)
+#12 291.2 Downloading pypandoc-1.17-py3-none-any.whl (23 kB)
+#12 291.2 Downloading pdfminer_six-20260107-py3-none-any.whl (6.6 MB)
+#12 291.3    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.6/6.6 MB 69.4 MB/s eta 0:00:00
+#12 291.3 Downloading python_docx-1.2.0-py3-none-any.whl (252 kB)
+#12 291.3 Downloading openpyxl-3.1.5-py2.py3-none-any.whl (250 kB)
+#12 291.3 Downloading beautifulsoup4-4.14.3-py3-none-any.whl (107 kB)
+#12 291.4 Downloading markdown_it_py-3.0.0-py3-none-any.whl (87 kB)
+#12 291.4 Downloading chardet-5.2.0-py3-none-any.whl (199 kB)
+#12 291.4 Downloading python_magic-0.4.27-py2.py3-none-any.whl (13 kB)
+#12 291.4 Downloading boto3-1.43.22-py3-none-any.whl (140 kB)
+#12 291.4 Downloading webdavclient3-3.14.7-py3-none-any.whl (22 kB)
+#12 291.4 Downloading google_api_python_client-2.197.0-py3-none-any.whl (15.3 MB)
+#12 292.1    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 15.3/15.3 MB 22.7 MB/s eta 0:00:00
+#12 292.1 Downloading google_auth-2.53.0-py3-none-any.whl (246 kB)
+#12 292.1 Downloading google_auth_oauthlib-1.4.0-py3-none-any.whl (19 kB)
+#12 292.1 Downloading requests-2.34.2-py3-none-any.whl (73 kB)
+#12 292.1 Downloading aiohttp-3.14.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (1.8 MB)
+#12 292.1    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 74.7 MB/s eta 0:00:00
+#12 292.1 Downloading xxhash-3.7.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (193 kB)
+#12 292.1 Downloading pytest-8.4.2-py3-none-any.whl (365 kB)
+#12 292.1 Downloading pytest_cov-5.0.0-py3-none-any.whl (21 kB)
+#12 292.2 Downloading ruff-0.15.15-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (11.4 MB)
+#12 292.3    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 11.4/11.4 MB 83.3 MB/s eta 0:00:00
+#12 292.3 Downloading mypy-1.20.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (14.7 MB)
+#12 292.8    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.7/14.7 MB 32.0 MB/s eta 0:00:00
+#12 292.8 Downloading psycopg_binary-3.3.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (5.2 MB)
+#12 292.9    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.2/5.2 MB 37.6 MB/s eta 0:00:00
+#12 292.9 Downloading aiohappyeyeballs-2.6.2-py3-none-any.whl (15 kB)
+#12 292.9 Downloading aiosignal-1.4.0-py3-none-any.whl (7.5 kB)
+#12 292.9 Downloading attrs-26.1.0-py3-none-any.whl (67 kB)
+#12 292.9 Downloading bcrypt-5.0.0-cp39-abi3-manylinux_2_34_x86_64.whl (278 kB)
+#12 293.0 Downloading botocore-1.43.22-py3-none-any.whl (15.1 MB)
+#12 293.2    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 15.1/15.1 MB 73.0 MB/s eta 0:00:00
+#12 293.2 Downloading build-1.5.0-py3-none-any.whl (26 kB)
+#12 293.2 Downloading charset_normalizer-3.4.7-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (216 kB)
+#12 293.2 Downloading click-8.4.1-py3-none-any.whl (116 kB)
+#12 293.2 Downloading coverage-7.14.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (254 kB)
+#12 293.2 Downloading dataclasses_json-0.6.7-py3-none-any.whl (28 kB)
+#12 293.2 Downloading deprecated-1.3.1-py2.py3-none-any.whl (11 kB)
+#12 293.2 Downloading dirtyjson-1.0.8-py3-none-any.whl (25 kB)
+#12 293.2 Downloading ecdsa-0.19.2-py2.py3-none-any.whl (150 kB)
+#12 293.2 Downloading filetype-1.2.0-py2.py3-none-any.whl (19 kB)
+#12 293.2 Downloading frozenlist-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (242 kB)
+#12 293.2 Downloading fsspec-2026.4.0-py3-none-any.whl (203 kB)
+#12 293.2 Downloading google_api_core-2.31.0-py3-none-any.whl (173 kB)
+#12 293.3 Downloading google_auth_httplib2-0.4.0-py3-none-any.whl (9.5 kB)
+#12 293.3 Downloading grpcio-1.78.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (6.7 MB)
+#12 293.4    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.7/6.7 MB 68.4 MB/s eta 0:00:00
+#12 293.4 Downloading httplib2-0.31.2-py3-none-any.whl (91 kB)
+#12 293.4 Downloading httptools-0.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (523 kB)
+#12 293.4 Downloading httpx_sse-0.4.3-py3-none-any.whl (9.0 kB)
+#12 293.4 Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+#12 293.4 Downloading isodate-0.7.2-py3-none-any.whl (22 kB)
+#12 293.4 Downloading jmespath-1.1.0-py3-none-any.whl (20 kB)
+#12 293.4 Downloading joserfc-1.7.0-py3-none-any.whl (70 kB)
+#12 293.4 Downloading jsonschema-4.26.0-py3-none-any.whl (90 kB)
+#12 293.4 Downloading kubernetes-36.0.2-py2.py3-none-any.whl (4.6 MB)
+#12 293.5    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.6/4.6 MB 73.6 MB/s eta 0:00:00
+#12 293.5 Downloading langchain_core-0.3.86-py3-none-any.whl (461 kB)
+#12 293.5 Downloading langchain_text_splitters-0.3.11-py3-none-any.whl (33 kB)
+#12 293.5 Downloading langsmith-0.8.5-py3-none-any.whl (399 kB)
+#12 293.6 Downloading librt-0.11.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (513 kB)
+#12 293.6 Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+#12 293.6 Downloading mmh3-5.2.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (103 kB)
+#12 293.6 Downloading multidict-6.7.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (256 kB)
+#12 293.6 Downloading mypy_extensions-1.1.0-py3-none-any.whl (5.0 kB)
+#12 293.6 Downloading nest_asyncio-1.6.0-py3-none-any.whl (5.2 kB)
+#12 293.6 Downloading networkx-3.6.1-py3-none-any.whl (2.1 MB)
+#12 293.6    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 92.3 MB/s eta 0:00:00
+#12 293.6 Downloading nltk-3.9.4-py3-none-any.whl (1.6 MB)
+#12 293.7    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 77.8 MB/s eta 0:00:00
+#12 293.7 Downloading numpy-1.26.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (18.0 MB)
+#12 293.9    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 18.0/18.0 MB 86.2 MB/s eta 0:00:00
+#12 293.9 Downloading onnxruntime-1.26.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (18.2 MB)
+#12 294.5    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 18.2/18.2 MB 32.5 MB/s eta 0:00:00
+#12 294.5 Downloading openai-1.109.1-py3-none-any.whl (948 kB)
+#12 294.5    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 948.6/948.6 kB 93.1 MB/s eta 0:00:00
+#12 294.5 Downloading opentelemetry_api-1.42.1-py3-none-any.whl (61 kB)
+#12 294.5 Downloading opentelemetry_exporter_otlp_proto_grpc-1.42.1-py3-none-any.whl (19 kB)
+#12 294.5 Downloading opentelemetry_exporter_otlp_proto_common-1.42.1-py3-none-any.whl (17 kB)
+#12 294.5 Downloading opentelemetry_proto-1.42.1-py3-none-any.whl (71 kB)
+#12 294.5 Downloading opentelemetry_sdk-1.42.1-py3-none-any.whl (170 kB)
+#12 294.5 Downloading opentelemetry_semantic_conventions-0.63b1-py3-none-any.whl (203 kB)
+#12 294.5 Downloading orjson-3.11.9-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (134 kB)
+#12 294.5 Downloading overrides-7.7.0-py3-none-any.whl (17 kB)
+#12 294.5 Downloading packaging-25.0-py3-none-any.whl (66 kB)
+#12 294.5 Downloading pathspec-1.1.1-py3-none-any.whl (57 kB)
+#12 294.6 Downloading pillow-12.2.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (7.1 MB)
+#12 294.6    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.1/7.1 MB 89.8 MB/s eta 0:00:00
+#12 294.6 Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+#12 294.7 Downloading portalocker-3.2.0-py3-none-any.whl (22 kB)
+#12 294.7 Downloading propcache-0.5.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (61 kB)
+#12 294.7 Downloading protobuf-6.33.6-cp39-abi3-manylinux2014_x86_64.whl (323 kB)
+#12 294.7 Downloading pyasn1-0.6.3-py3-none-any.whl (83 kB)
+#12 294.7 Downloading pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+#12 294.7 Downloading pybase64-1.4.3-cp312-cp312-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl (71 kB)
+#12 294.7 Downloading pygments-2.20.0-py3-none-any.whl (1.2 MB)
+#12 294.7    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 89.7 MB/s eta 0:00:00
+#12 294.7 Downloading pypdf-4.3.1-py3-none-any.whl (295 kB)
+#12 294.7 Downloading pypika-0.51.1-py2.py3-none-any.whl (60 kB)
+#12 294.7 Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+#12 294.7 Downloading requests_oauthlib-2.0.0-py2.py3-none-any.whl (24 kB)
+#12 294.8 Downloading rsa-4.9.1-py3-none-any.whl (34 kB)
+#12 294.8 Downloading s3transfer-0.18.0-py3-none-any.whl (88 kB)
+#12 294.8 Downloading simpleeval-1.0.7-py3-none-any.whl (18 kB)
+#12 294.8 Downloading soupsieve-2.8.4-py3-none-any.whl (37 kB)
+#12 294.8 Downloading striprtf-0.0.26-py3-none-any.whl (6.9 kB)
+#12 294.8 Downloading tiktoken-0.13.0-cp312-cp312-manylinux_2_28_x86_64.whl (1.1 MB)
+#12 294.8    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 82.4 MB/s eta 0:00:00
+#12 294.8 Downloading tokenizers-0.23.1-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.3 MB)
+#12 294.8    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 91.8 MB/s eta 0:00:00
+#12 294.9 Downloading tqdm-4.67.3-py3-none-any.whl (78 kB)
+#12 294.9 Downloading typing_inspect-0.9.0-py3-none-any.whl (8.8 kB)
+#12 294.9 Downloading uritemplate-4.2.0-py3-none-any.whl (11 kB)
+#12 294.9 Downloading urllib3-2.7.0-py3-none-any.whl (131 kB)
+#12 294.9 Downloading uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (4.4 MB)
+#12 294.9    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.4/4.4 MB 90.5 MB/s eta 0:00:00
+#12 294.9 Downloading validators-0.35.0-py3-none-any.whl (44 kB)
+#12 295.0 Downloading watchfiles-1.2.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (456 kB)
+#12 295.0 Downloading wrapt-2.2.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (169 kB)
+#12 295.0 Downloading yarl-1.24.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (105 kB)
+#12 295.0 Downloading et_xmlfile-2.0.0-py3-none-any.whl (18 kB)
+#12 295.0 Downloading Events-0.5-py3-none-any.whl (6.8 kB)
+#12 295.0 Downloading importlib_resources-7.1.0-py3-none-any.whl (37 kB)
+#12 295.0 Downloading pandas-3.0.3-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (10.9 MB)
+#12 295.1    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.9/10.9 MB 83.7 MB/s eta 0:00:00
+#12 295.2 Downloading distro-1.9.0-py3-none-any.whl (20 kB)
+#12 295.2 Downloading durationpy-0.10-py3-none-any.whl (3.9 kB)
+#12 295.2 Downloading googleapis_common_protos-1.75.0-py3-none-any.whl (300 kB)
+#12 295.2 Downloading h2-4.3.0-py3-none-any.whl (61 kB)
+#12 295.2 Downloading huggingface_hub-1.17.0-py3-none-any.whl (671 kB)
+#12 295.2    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 671.5/671.5 kB 174.5 MB/s eta 0:00:00
+#12 295.2 Downloading typer-0.25.1-py3-none-any.whl (58 kB)
+#12 295.2 Downloading jiter-0.15.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (346 kB)
+#12 295.2 Downloading jsonpatch-1.33-py2.py3-none-any.whl (12 kB)
+#12 295.2 Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl (18 kB)
+#12 295.2 Downloading marshmallow-3.26.2-py3-none-any.whl (50 kB)
+#12 295.2 Downloading oauthlib-3.3.1-py3-none-any.whl (160 kB)
+#12 295.2 Downloading proto_plus-1.28.0-py3-none-any.whl (50 kB)
+#12 295.2 Downloading pyparsing-3.3.2-py3-none-any.whl (122 kB)
+#12 295.3 Downloading referencing-0.37.0-py3-none-any.whl (26 kB)
+#12 295.3 Downloading regex-2026.5.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (801 kB)
+#12 295.3    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 801.2/801.2 kB 79.5 MB/s eta 0:00:00
+#12 295.3 Downloading requests_toolbelt-1.0.0-py2.py3-none-any.whl (54 kB)
+#12 295.3 Downloading rpds_py-2026.5.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (376 kB)
+#12 295.3 Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+#12 295.3 Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+#12 295.3 Downloading uuid_utils-0.16.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (325 kB)
+#12 295.3 Downloading websocket_client-1.9.0-py3-none-any.whl (82 kB)
+#12 295.3 Downloading zstandard-0.25.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (5.5 MB)
+#12 295.4    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.5/5.5 MB 57.1 MB/s eta 0:00:00
+#12 295.4 Downloading flatbuffers-25.12.19-py2.py3-none-any.whl (26 kB)
+#12 295.4 Downloading joblib-1.5.3-py3-none-any.whl (309 kB)
+#12 295.4 Downloading pyproject_hooks-1.2.0-py3-none-any.whl (10 kB)
+#12 295.5 Downloading sniffio-1.3.1-py3-none-any.whl (10 kB)
+#12 295.5 Downloading hf_xet-1.5.0-cp37-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.5 MB)
+#12 295.5    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.5/4.5 MB 86.4 MB/s eta 0:00:00
+#12 295.5 Downloading hpack-4.1.0-py3-none-any.whl (34 kB)
+#12 295.6 Downloading hyperframe-6.1.0-py3-none-any.whl (13 kB)
+#12 295.6 Downloading jsonpointer-3.1.1-py3-none-any.whl (7.7 kB)
+#12 296.7 Building wheels for collected packages: lxml, xmlsec
+#12 296.7   Building wheel for lxml (pyproject.toml): started
+#12 462.3   Building wheel for lxml (pyproject.toml): still running...
+#12 525.5   Building wheel for lxml (pyproject.toml): still running...
+#12 536.8   Building wheel for lxml (pyproject.toml): finished with status 'done'
+#12 536.8   Created wheel for lxml: filename=lxml-5.2.2-cp312-cp312-linux_x86_64.whl size=9059986 sha256=bc2f7038ddb81d28feb45219ab2739ead323847fa7ed93cf5e2f870665d3baa6
+#12 536.8   Stored in directory: /tmp/pip-ephem-wheel-cache-l5qk0p9y/wheels/27/f3/a0/adb4bbcfc97f541c155dcab669b42193b16e91773c957b36d4
+#12 536.8   Building wheel for xmlsec (pyproject.toml): started
+#12 541.5   Building wheel for xmlsec (pyproject.toml): finished with status 'done'
+#12 541.5   Created wheel for xmlsec: filename=xmlsec-1.3.17-cp312-cp312-linux_x86_64.whl size=166275 sha256=fda24ff19eb9eb9faf233b6d4be63927cc1d19b60e7164461fce86e5b4424ae3
+#12 541.5   Stored in directory: /tmp/pip-ephem-wheel-cache-l5qk0p9y/wheels/c3/ee/f3/c15a7cb212ed70cc8359a4d3aec695940053df2011f8df3939
+#12 541.5 Successfully built lxml xmlsec
+#12 542.3 Installing collected packages: striprtf, pypika, passlib, flatbuffers, filetype, Events, durationpy, dirtyjson, zstandard, xxhash, wrapt, websockets, websocket-client, validators, uvloop, uuid-utils, urllib3, uritemplate, tqdm, tenacity, structlog, soupsieve, sniffio, six, simpleeval, shellingham, ruff, ruamel.yaml, rpds-py, regex, redis, python-multipart, python-magic, python-dotenv, pyproject_hooks, pypdf, pyparsing, pypandoc, pygments, pybase64, pyasn1, psycopg-binary, psycopg, protobuf, propcache, portalocker, pluggy, pillow, pathspec, packaging, overrides, orjson, opentelemetry-api, oauthlib, numpy, networkx, nest-asyncio, mypy_extensions, multidict, mmh3, mdurl, lxml, librt, jsonpointer, joblib, jmespath, jiter, isodate, iniconfig, importlib-resources, hyperframe, httpx-sse, httptools, hpack, hf-xet, grpcio, fsspec, frozenlist, filelock, et-xmlfile, distro, coverage, click, charset-normalizer, chardet, bcrypt, attrs, asyncpg, aiosqlite, aiohappyeyeballs, yarl, xmlsec, watchfiles, uvicorn, typing-inspect, sse-starlette, rsa, requests, referencing, python-docx, python-dateutil, pytest, pyasn1-modules, proto-plus, pgvector, opentelemetry-semantic-conventions, opentelemetry-proto, openpyxl, onnxruntime, nltk, mypy, marshmallow, markdown-it-py, ldap3, jsonpatch, httplib2, h2, googleapis-common-protos, ecdsa, deprecated, casbin, build, beautifulsoup4, aiosignal, webdavclient3, tiktoken, rich, requests-toolbelt, requests-oauthlib, python3-saml, python-jose, pytest-cov, pydantic-settings, pdfminer.six, pandas, opentelemetry-sdk, opentelemetry-exporter-otlp-proto-common, opensearch-py, openai, jsonschema-specifications, joserfc, google-auth, dataclasses-json, botocore, aiohttp, typer, s3transfer, qdrant-client, opentelemetry-exporter-otlp-proto-grpc, llama-index-core, langsmith, kubernetes, jsonschema, google-auth-oauthlib, google-auth-httplib2, google-api-core, authlib, weaviate-client, llama-index-readers-file, llama-index-llms-openai, llama-index-embeddings-openai, langchain-core, huggingface-hub, google-api-python-client, boto3, tokenizers, langchain-text-splitters, langchain, chromadb, langchain-community
+#12 544.9   Attempting uninstall: redis
+#12 544.9     Found existing installation: redis 8.0.0
+#12 545.0     Uninstalling redis-8.0.0:
+#12 545.1       Successfully uninstalled redis-8.0.0
+#12 545.6   Attempting uninstall: pypdf
+#12 545.6     Found existing installation: pypdf 6.12.2
+#12 545.6     Uninstalling pypdf-6.12.2:
+#12 545.7       Successfully uninstalled pypdf-6.12.2
+#12 596.2 Successfully installed Events-0.5 aiohappyeyeballs-2.6.2 aiohttp-3.14.0 aiosignal-1.4.0 aiosqlite-0.22.1 asyncpg-0.31.0 attrs-26.1.0 authlib-1.7.2 bcrypt-5.0.0 beautifulsoup4-4.14.3 boto3-1.43.22 botocore-1.43.22 build-1.5.0 casbin-1.43.0 chardet-5.2.0 charset-normalizer-3.4.7 chromadb-1.5.9 click-8.4.1 coverage-7.14.1 dataclasses-json-0.6.7 deprecated-1.3.1 dirtyjson-1.0.8 distro-1.9.0 durationpy-0.10 ecdsa-0.19.2 et-xmlfile-2.0.0 filelock-3.29.1 filetype-1.2.0 flatbuffers-25.12.19 frozenlist-1.8.0 fsspec-2026.4.0 google-api-core-2.31.0 google-api-python-client-2.197.0 google-auth-2.53.0 google-auth-httplib2-0.4.0 google-auth-oauthlib-1.4.0 googleapis-common-protos-1.75.0 grpcio-1.78.0 h2-4.3.0 hf-xet-1.5.0 hpack-4.1.0 httplib2-0.31.2 httptools-0.8.0 httpx-sse-0.4.3 huggingface-hub-1.17.0 hyperframe-6.1.0 importlib-resources-7.1.0 iniconfig-2.3.0 isodate-0.7.2 jiter-0.15.0 jmespath-1.1.0 joblib-1.5.3 joserfc-1.7.0 jsonpatch-1.33 jsonpointer-3.1.1 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 kubernetes-36.0.2 langchain-0.3.30 langchain-community-0.3.31 langchain-core-0.3.86 langchain-text-splitters-0.3.11 langsmith-0.8.5 ldap3-2.9.1 librt-0.11.0 llama-index-core-0.11.23 llama-index-embeddings-openai-0.2.5 llama-index-llms-openai-0.2.16 llama-index-readers-file-0.2.2 lxml-5.2.2 markdown-it-py-3.0.0 marshmallow-3.26.2 mdurl-0.1.2 mmh3-5.2.1 multidict-6.7.1 mypy-1.20.2 mypy_extensions-1.1.0 nest-asyncio-1.6.0 networkx-3.6.1 nltk-3.9.4 numpy-1.26.4 oauthlib-3.3.1 onnxruntime-1.26.0 openai-1.109.1 openpyxl-3.1.5 opensearch-py-2.8.0 opentelemetry-api-1.42.1 opentelemetry-exporter-otlp-proto-common-1.42.1 opentelemetry-exporter-otlp-proto-grpc-1.42.1 opentelemetry-proto-1.42.1 opentelemetry-sdk-1.42.1 opentelemetry-semantic-conventions-0.63b1 orjson-3.11.9 overrides-7.7.0 packaging-25.0 pandas-3.0.3 passlib-1.7.4 pathspec-1.1.1 pdfminer.six-20260107 pgvector-0.2.5 pillow-12.2.0 pluggy-1.6.0 portalocker-3.2.0 propcache-0.5.2 proto-plus-1.28.0 protobuf-6.33.6 psycopg-3.3.4 psycopg-binary-3.3.4 pyasn1-0.6.3 pyasn1-modules-0.4.2 pybase64-1.4.3 pydantic-settings-2.14.1 pygments-2.20.0 pypandoc-1.17 pyparsing-3.3.2 pypdf-4.3.1 pypika-0.51.1 pyproject_hooks-1.2.0 pytest-8.4.2 pytest-cov-5.0.0 python-dateutil-2.9.0.post0 python-docx-1.2.0 python-dotenv-1.2.2 python-jose-3.5.0 python-magic-0.4.27 python-multipart-0.0.30 python3-saml-1.16.0 qdrant-client-1.18.0 redis-5.3.1 referencing-0.37.0 regex-2026.5.9 requests-2.34.2 requests-oauthlib-2.0.0 requests-toolbelt-1.0.0 rich-13.9.4 rpds-py-2026.5.1 rsa-4.9.1 ruamel.yaml-0.19.1 ruff-0.15.15 s3transfer-0.18.0 shellingham-1.5.4 simpleeval-1.0.7 six-1.17.0 sniffio-1.3.1 soupsieve-2.8.4 sse-starlette-2.4.1 striprtf-0.0.26 structlog-24.4.0 tenacity-8.5.0 tiktoken-0.13.0 tokenizers-0.23.1 tqdm-4.67.3 typer-0.25.1 typing-inspect-0.9.0 uritemplate-4.2.0 urllib3-2.7.0 uuid-utils-0.16.0 uvicorn-0.49.0 uvloop-0.22.1 validators-0.35.0 watchfiles-1.2.0 weaviate-client-4.21.3 webdavclient3-3.14.7 websocket-client-1.9.0 websockets-12.0 wrapt-2.2.1 xmlsec-1.3.17 xxhash-3.7.0 yarl-1.24.2 zstandard-0.25.0
+#12 596.2 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#12 596.5 
+#12 596.5 [notice] A new release of pip is available: 25.0.1 -> 26.1.2
+#12 596.5 [notice] To update, run: pip install --upgrade pip
+#12 DONE 599.2s
+
+#13 [builder  9/10] COPY ui/ ./ui/
+#13 DONE 0.1s
+
+#14 [builder 10/10] RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf     pip install --no-cache-dir       --no-deps       --trusted-host pypi.cloud-dog.net       --trusted-host pypi.org       --trusted-host files.pythonhosted.org       .
+#14 0.770 Looking in indexes: https://pypi.org/simple, https://admin:****@pypi.cloud-dog.net/simple/
+#14 0.770 Processing /app
+#14 0.778   Installing build dependencies: started
+#14 3.307   Installing build dependencies: finished with status 'done'
+#14 3.309   Getting requirements to build wheel: started
+#14 3.457   Getting requirements to build wheel: finished with status 'done'
+#14 3.458   Preparing metadata (pyproject.toml): started
+#14 3.740   Preparing metadata (pyproject.toml): finished with status 'done'
+#14 3.755 Building wheels for collected packages: index-retriever-mcp-server
+#14 3.757   Building wheel for index-retriever-mcp-server (pyproject.toml): started
+#14 3.818   Building wheel for index-retriever-mcp-server (pyproject.toml): finished with status 'done'
+#14 3.820   Created wheel for index-retriever-mcp-server: filename=index_retriever_mcp_server-0.1.3rc1-py3-none-any.whl size=159542 sha256=25d70ea14a6d5d0d4f92992baca6b790dc775b0935acc81748bb6d2755b43037
+#14 3.820   Stored in directory: /tmp/pip-ephem-wheel-cache-rb_4cied/wheels/54/1b/b7/aa63e25c8f14f4f2ae7b04e6097bdecb770e455c5c1ee0a600
+#14 3.824 Successfully built index-retriever-mcp-server
+#14 3.825 Installing collected packages: index-retriever-mcp-server
+#14 4.084 Successfully installed index-retriever-mcp-server-0.1.3rc1
+#14 4.085 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#14 4.332 
+#14 4.332 [notice] A new release of pip is available: 25.0.1 -> 26.1.2
+#14 4.332 [notice] To update, run: pip install --upgrade pip
+#14 DONE 4.5s
+
+#15 [stage-1  3/14] RUN apt-get update && apt-get install -y --no-install-recommends     curl iproute2 netcat-openbsd procps net-tools socat     libxml2     libxmlsec1     libxmlsec1-openssl     libxslt1.1     && rm -rf /var/lib/apt/lists/*
+#15 CACHED
+
+#16 [stage-1  4/14] WORKDIR /app
+#16 CACHED
+
+#17 [stage-1  5/14] COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+#17 DONE 11.8s
+
+#18 [stage-1  6/14] COPY --from=builder /usr/local/bin /usr/local/bin
+#18 DONE 0.2s
+
+#19 [stage-1  7/14] COPY REQUIREMENTS.txt pyproject.toml README.md ./
+#19 DONE 0.1s
+
+#20 [stage-1  8/14] COPY src/ ./src/
+#20 DONE 0.1s
+
+#21 [stage-1  9/14] COPY ui/ ./ui/
+#21 DONE 0.1s
+
+#22 [stage-1 10/14] COPY database/ ./database/
+#22 DONE 0.0s
+
+#23 [stage-1 11/14] COPY defaults.yaml server_control.sh docker-entrypoint.sh healthcheck.sh ./
+#23 DONE 0.1s
+
+#24 [stage-1 12/14] COPY config/ ./config/
+#24 DONE 0.1s
+
+#25 [stage-1 13/14] RUN mkdir -p /app/logs /app/data /app/.pids /app/certs &&     chmod +x /app/docker-entrypoint.sh /app/healthcheck.sh /app/server_control.sh
+#25 DONE 0.1s
+
+#26 [stage-1 14/14] RUN useradd --system --create-home --uid 10001 appuser &&     chown -R appuser:appuser /app
+#26 0.193 useradd warning: appuser's uid 10001 is greater than SYS_UID_MAX 999
+#26 DONE 0.4s
+
+#27 exporting to image
+#27 exporting layers
+#27 exporting layers 13.1s done
+#27 writing image sha256:d922899338ac98a3e1c8c3fcff25077687bef4ebe96466f42cdf5a0432bfbc79 0.1s done
+#27 naming to docker.io/cloud-dog/index-retriever-mcp-server:latest
+#27 naming to docker.io/cloud-dog/index-retriever-mcp-server:latest 0.0s done
+#27 DONE 13.3s
+Build OK: cloud-dog/index-retriever-mcp-server:latest
+Tagged: registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server:latest

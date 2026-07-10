@@ -1,0 +1,3 @@
+path	repo	status	suspected_owner_lane	why_external_to_this_lane
+(none)	index-retriever-mcp-server	clean	-	scoped-clean-proof.txt shows no untracked or modified files outside lane scope on the service worktree
+(none)	cloud-dog-ai-ui-monorepo	clean	-	scoped-clean-proof.txt shows the UI worktree only carries lane-owned changes under apps/index-retriever/

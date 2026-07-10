@@ -1,0 +1,28 @@
+{
+  "lane": "W28E-614",
+  "target_service": "index-retriever",
+  "estate_browser_smoke_spec": "apps/index-retriever/tests/e2e/w28e-614/w28e-614-estate-smoke.spec.ts",
+  "junit": "working/W28E-614-XC-WEBUI-ROLLOUT/playwright/w28e-614-r2.junit.xml",
+  "noise_filter_documented_in_spec": [
+    "favicon|runtime-config|chunk-",
+    "CORS policy|Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: the server responded with a status of (401|403|404|405)"
+  ],
+  "fatal_thresholds": {
+    "console_errors_after_filter": 0,
+    "network_failures_status_ge_500": 0,
+    "network_failures_status_eq_0": 0
+  },
+  "result_per_service": {
+    "chat-client":         {"fatal_console_errors": 0, "network_failures_5xx": 0, "pass_fail": "PASS"},
+    "db-mcp":              {"fatal_console_errors": 0, "network_failures_5xx": 0, "pass_fail": "PASS"},
+    "expert-agent":        {"fatal_console_errors": 0, "network_failures_5xx": 0, "pass_fail": "PASS"},
+    "file-mcp":            {"fatal_console_errors": 0, "network_failures_5xx": 0, "pass_fail": "PASS"},
+    "git-mcp":             {"fatal_console_errors": 0, "network_failures_5xx": 0, "pass_fail": "PASS"},
+    "imap-mcp":            {"fatal_console_errors": 0, "network_failures_5xx": 0, "pass_fail": "PASS"},
+    "index-retriever":     {"fatal_console_errors": 0, "network_failures_5xx": 0, "pass_fail": "PASS"},
+    "notification-agent":  {"fatal_console_errors": 0, "network_failures_5xx": 0, "pass_fail": "PASS"},
+    "sql-agent":           {"fatal_console_errors": 0, "network_failures_5xx": 0, "pass_fail": "PASS"}
+  },
+  "overall_pass_fail": "PASS"
+}

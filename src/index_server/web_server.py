@@ -647,6 +647,8 @@ def build_web_app() -> object:
                 "environment": _build["environment"],
                 # legacy field name any VersionInfo consumer may already read
                 "commit": _build["source_commit"],
+                "application": "index-retriever-mcp-server",
+                "surface": "web",
             }
         )
 
@@ -738,6 +740,7 @@ def build_web_app() -> object:
     @app.get("/idam/groups")
     @app.get("/idam/api-keys")
     @app.get("/idam/rbac")
+    @app.get("/diagnostics-audit")  # W28E-614 XC-005: Audit & Log SPA route.
     async def admin_spa_routes() -> Response:
         # req: FR-018
         # PDS-009: /admin/roles MUST serve the SPA index shell for a browser HTML
