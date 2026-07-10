@@ -22,13 +22,32 @@ existing ingest + vector-backend path.
 
 from __future__ import annotations
 
-from index_tools.spreadsheet.config_map import build_spreadsheet_config
-from index_tools.spreadsheet.indexer import (
-    SUPPORTED_SPREADSHEET_EXTENSIONS,
-    SpreadsheetIndexer,
-    SpreadsheetIndexResult,
-    is_spreadsheet,
-)
+from pathlib import Path
+from typing import Any
+
+SUPPORTED_SPREADSHEET_EXTENSIONS = ("xlsx", "xlsm", "ods")
+
+
+def is_spreadsheet(filename: str) -> bool:
+    """Return whether *filename* has a supported spreadsheet extension."""
+
+    suffix = Path(filename).suffix.lower().lstrip(".")
+    return suffix in SUPPORTED_SPREADSHEET_EXTENSIONS
+
+
+def __getattr__(name: str) -> Any:
+    if name == "build_spreadsheet_config":
+        from index_tools.spreadsheet.config_map import build_spreadsheet_config
+
+        return build_spreadsheet_config
+    if name in {"SpreadsheetIndexer", "SpreadsheetIndexResult"}:
+        from index_tools.spreadsheet.indexer import SpreadsheetIndexer, SpreadsheetIndexResult
+
+        return {
+            "SpreadsheetIndexer": SpreadsheetIndexer,
+            "SpreadsheetIndexResult": SpreadsheetIndexResult,
+        }[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [
     "SUPPORTED_SPREADSHEET_EXTENSIONS",

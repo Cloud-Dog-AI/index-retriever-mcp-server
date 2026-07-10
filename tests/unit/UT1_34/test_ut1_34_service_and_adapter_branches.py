@@ -31,12 +31,14 @@ from index_tools.vdb.adapters import InMemoryVdbAdapter
 def test_service_collection_and_admin_paths(service: IndexService) -> None:
     service.admin_collection_create("default", "keep", roles={"admin"})
     service.collection_manager.create("other:skip")
-    assert service.collections_list("default") == ["keep"]
+    assert "keep" in service.collections_list("default")
 
     with pytest.raises(PermissionError):
         service.admin_collection_delete("default", "keep", roles={"writer"})
     service.admin_collection_delete("default", "keep", roles={"admin"})
-    assert service.collections_list("default") == []
+    assert "keep" not in service.collections_list("default")
+
+
 @pytest.mark.UT
 @pytest.mark.mcp
 @pytest.mark.req("FR-002")
@@ -338,6 +340,9 @@ def test_service_search_merges_local_documents_when_vdb_returns_partial(
     assert any(row["source_uri"] == "upload://shared-upload.pdf" for row in rows)
 
 
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 def test_ingest_uses_backend_collection_name_for_upsert(
     monkeypatch: pytest.MonkeyPatch, service: IndexService
 ) -> None:

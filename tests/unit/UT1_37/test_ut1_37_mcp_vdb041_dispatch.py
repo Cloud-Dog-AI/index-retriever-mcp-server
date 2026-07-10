@@ -118,11 +118,6 @@ class _ToolService:
     def reindex_run(self, profile: str, collection: str) -> dict[str, int]:
         self.calls.append(("reindex_run", {"profile": profile, "collection": collection}))
         return {"documents": 3}
-@pytest.mark.UT
-@pytest.mark.mcp
-@pytest.mark.req("FR-013") # W28E-1805A semantic binding
-
-
 class _SearchBackendErrorService(_ToolService):
     def search(
         self,
@@ -147,6 +142,9 @@ class _SearchBackendErrorService(_ToolService):
         raise KeyError("Adapter not registered: chroma")
 
 
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-013")  # W28E-1805A semantic binding
 def test_required_roles_for_new_wrapper_tools() -> None:
     assert mcp_server._required_permission_for_tool("parsers_list") == "collection.read"
     assert mcp_server._required_permission_for_tool("parser_test") == "source.configure"
@@ -265,7 +263,7 @@ def test_execute_tool_dispatches_vdb_wrapper_calls() -> None:
         registry=registry,  # type: ignore[arg-type]
         identity_roles={"admin"},
     )
-    assert reindex == {"documents": 3, "status": "ok"}
+    assert reindex == {"documents": 3, "queued": False, "status": "ok"}
 
     names = [name for name, _payload in service.calls]
     assert names == [
@@ -304,6 +302,9 @@ def test_execute_tool_search_backend_keyerror_returns_backend_error() -> None:
     assert [name for name, _payload in service.calls] == ["search"]
 
 
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-013")  # W28E-1805A semantic binding
 def test_execute_tool_search_explain_returns_plan_and_scoring_metadata() -> None:
     # Covers: FR-P002
     service = _ToolService()

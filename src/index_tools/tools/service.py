@@ -1263,7 +1263,13 @@ class IndexService:
         provider_id = self._profile_provider(profile)
         backend_name = self._backend_collection_name(profile, collection, provider_id=provider_id)
         record = self.collections.get(self._collection_key(profile, collection))
-        existing = self._run_async(self.vdb.get_collection(backend_name, provider_id=provider_id))
+        get_collection = getattr(self.vdb, "get_collection", None)
+        create_collection = getattr(self.vdb, "create_collection", None)
+        if not callable(get_collection) or not callable(create_collection):
+            if record is not None:
+                record.metadata.setdefault("backend_binding_pending", True)
+            return backend_name
+        existing = self._run_async(get_collection(backend_name, provider_id=provider_id))
         if (
             existing is not None
             and _cfg_val("index.test_run_prefix", "").strip()
@@ -1275,7 +1281,7 @@ class IndexService:
             existing = None
         if existing is None:
             self._run_async(
-                self.vdb.create_collection(
+                create_collection(
                     CollectionSpec(
                         name=backend_name,
                         embedding_dim=self._embedding_dimension(),
