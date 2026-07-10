@@ -30,6 +30,7 @@ from cloud_dog_api_kit import (  # type: ignore
     create_health_router,
     register_mcp_contract,
 )
+from cloud_dog_api_kit.mcp import SYNC_CLASS_PROGRESS  # type: ignore
 import cloud_dog_idam  # type: ignore
 from cloud_dog_logging import get_audit_logger  # PS-40 tool audit
 from cloud_dog_logging.audit_schema import Actor, Target
@@ -411,6 +412,101 @@ def _normalise_job_payload(job: Any) -> dict[str, Any]:
         if callable(getattr(timestamp, "isoformat", None)):
             payload[timestamp_key] = timestamp.isoformat()
     return payload
+
+
+_TERMINAL_JOB_STATUSES = {
+    "succeeded",
+    "failed",
+    "cancelled",
+    "timeout",
+    "dead_lettered",
+    "ttl_expired",
+    "archived",
+}
+
+
+def _wait_for_job(service: IndexService, job_id: str, *, timeout_seconds: int = 50) -> Any:
+    """Wait for a queued job without using the service's long queue default."""
+    queue = getattr(service, "queue", None)
+    wait = getattr(queue, "wait", None)
+    if callable(wait):
+        try:
+            return wait(str(job_id), timeout_seconds=timeout_seconds)
+        except TypeError:
+            return wait(str(job_id))
+    return service.job_wait(str(job_id))
+
+
+def _stock_job_result(job: Any, *, job_id: str, timeout: bool = False, blocking_tool: str = "") -> dict[str, Any]:
+    """Build the PS-95 stock-client result/error envelope for an ingest job."""
+    payload = _normalise_job_payload(job)
+    status = str(payload.get("status") or "unknown")
+    if timeout or status not in _TERMINAL_JOB_STATUSES:
+        return {
+            "ok": False,
+            "job_id": str(job_id),
+            "status": status,
+            "poll_tool": "job_get",
+            "blocking_tool": blocking_tool,
+            "error": {
+                "code": -32000,
+                "message": "Tool exceeded sync budget (50s). Job is still running.",
+                "data": {"job_id": str(job_id), "status": status, "poll_tool": "job_get"},
+            },
+            "job": payload,
+        }
+    if status in {"failed", "cancelled", "timeout", "dead_lettered", "ttl_expired"}:
+        return {
+            "ok": False,
+            "job_id": str(job_id),
+            "status": status,
+            "poll_tool": "job_get",
+            "blocking_tool": blocking_tool,
+            "error": {
+                "code": -32001,
+                "message": f"Ingest job ended with status {status}.",
+                "data": {"job_id": str(job_id), "status": status},
+            },
+            "job": payload,
+        }
+    return {
+        "ok": True,
+        "job_id": str(job_id),
+        "status": status,
+        "poll_tool": "job_get",
+        "blocking_tool": blocking_tool,
+        "job": payload,
+    }
+
+
+def _ingest_file_job_id(service: IndexService, arguments: dict[str, Any]) -> str:
+    """Submit file ingestion through existing upload/reference paths."""
+    metadata = arguments.get("metadata") if isinstance(arguments.get("metadata"), dict) else None
+    content = arguments.get("content")
+    if content is not None and str(content) != "":
+        upload_result = service.ingest_upload(
+            profile=str(arguments["profile"]),
+            collection=str(arguments["collection"]),
+            filename=str(arguments.get("filename") or "mcp-upload.txt"),
+            content=str(content).encode("utf-8"),
+            actor=str(arguments.get("actor", "mcp")),
+            metadata=metadata,
+        )
+        job_id = upload_result.get("job_id") if isinstance(upload_result, dict) else getattr(upload_result, "job_id", None)
+        if not job_id:
+            raise RuntimeError("ingest_upload did not return a job_id")
+        return str(job_id)
+
+    reference_path = str(arguments.get("path") or arguments.get("uri") or "").strip()
+    if not reference_path:
+        raise ValueError("ingest_file_async requires content, path, or uri")
+    reference_result = service.ingest_reference(
+        profile=str(arguments["profile"]),
+        collection=str(arguments["collection"]),
+        path=reference_path,
+        actor=str(arguments.get("actor", "mcp")),
+    )
+    return str(getattr(reference_result, "job_id", reference_result))
 
 
 def _job_actor_id(job: Any) -> str:
@@ -873,7 +969,7 @@ def execute_tool(
                 )
             )
         return {"job_id": job_ids[0], "job_ids": job_ids, "status": "queued", "count": len(job_ids)}
-    if tool_name == "ingest_text":
+    if tool_name in {"ingest_text", "ingest_text_long"}:
         _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         ingest_result = _call_with_supported_kwargs(
             service.ingest_text,
@@ -890,7 +986,23 @@ def execute_tool(
             request_user_agent=arguments.get("_request_user_agent") or None,
         )
         job_id = getattr(ingest_result, "job_id", ingest_result)
-        return {"job_id": str(job_id), "status": "queued"}
+        job = _wait_for_job(service, str(job_id), timeout_seconds=50)
+        return _stock_job_result(job, job_id=str(job_id))
+    if tool_name == "ingest_file_async":
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
+        job_id = _ingest_file_job_id(service, arguments)
+        return {
+            "ok": True,
+            "job_id": str(job_id),
+            "status": "submitted",
+            "poll_tool": "job_get",
+            "blocking_tool": "ingest_file_async_blocking",
+        }
+    if tool_name == "ingest_file_async_blocking":
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
+        job_id = _ingest_file_job_id(service, arguments)
+        job = _wait_for_job(service, str(job_id), timeout_seconds=50)
+        return _stock_job_result(job, job_id=str(job_id), blocking_tool="ingest_file_async_blocking")
     if tool_name == "ingest_reference":
         _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         reference_path = str(arguments.get("path") or arguments.get("uri") or "").strip()
@@ -1430,6 +1542,7 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
             description=tool.get("description", ""),
             input_schema=tool.get("input_schema", {}),
             output_schema=tool.get("output_schema", {}),
+            sync_class=SYNC_CLASS_PROGRESS if name == "ingest_text_long" else "sync-default",
         )
 
     register_mcp_contract(

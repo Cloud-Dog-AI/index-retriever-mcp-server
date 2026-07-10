@@ -24,15 +24,16 @@ def test_ut_40_tool_registry_contract_fields() -> None:
     registry = build_default_tool_registry()
     tools = registry.list_tools()
     assert tools
-    # 95 = 90 (W28E-603 baseline) + 2 shared IDAM admin tools landed by W28A-876
-    # + hdro_extract + W28M-1603D structure_template_delete
-    # + W28E-1805B structure_template_match. Source is canonical.
-    assert len(tools) == 95
+    # 98 = current 95-tool mainline catalogue + 3 W28D-322 stock-client ingest tools.
+    assert len(tools) == 98
 
     names = [str(tool["name"]) for tool in tools]
     assert len(names) == len(set(names))
     assert names[0] == "profiles_list"
     assert "ingest_health" in names
+    assert "ingest_text_long" in names
+    assert "ingest_file_async" in names
+    assert "ingest_file_async_blocking" in names
     # W28E-603 document-structure family (Phase 1)
     for structure_tool in (
         "structure_health",

@@ -39,7 +39,7 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
       "cloud-dog-config==0.3.4" \
       cloud-dog-logging \
       "cloud-dog-cache>=0.2.0" \
-      cloud-dog-api-kit==0.13.0 \
+      cloud-dog-api-kit==0.13.1 \
       "cloud-dog-idam==0.5.3" \
       cloud-dog-db \
       cloud-dog-jobs==0.4.1 \

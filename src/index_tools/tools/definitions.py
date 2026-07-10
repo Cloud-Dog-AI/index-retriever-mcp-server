@@ -57,6 +57,22 @@ class IngestTextInput(BaseModel):
     collection: str
     text: str
     source: str = "inline"
+    actor: str = "mcp"
+    idempotency_key: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class IngestFileInput(BaseModel):
+    """IngestFileInput definition."""
+
+    profile: str
+    collection: str
+    path: str = ""
+    uri: str = ""
+    filename: str = ""
+    content: str = ""
+    actor: str = "mcp"
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class IngestOutput(BaseModel):
@@ -64,6 +80,11 @@ class IngestOutput(BaseModel):
 
     job_id: str
     status: str
+    ok: bool = True
+    poll_tool: str = "job_get"
+    blocking_tool: str = ""
+    job: dict[str, Any] = Field(default_factory=dict)
+    error: dict[str, Any] = Field(default_factory=dict)
 
 
 class IngestReferenceInput(BaseModel):
