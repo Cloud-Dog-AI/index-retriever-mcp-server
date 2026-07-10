@@ -4635,10 +4635,12 @@ class IndexService:
         )
 
     def parsers_list(self, parser_services: dict[str, dict[str, Any]] | None = None) -> list[dict[str, Any]]:
-        """List parser providers exposed by cloud_dog_vdb."""
+        """List parser providers exposed by cloud_dog_vdb (config-driven defaults, W28M-1626)."""
         if build_parser_registry is None:
             return []
-        registry = build_parser_registry(parser_services)
+        from index_tools.parser_services import merge_parser_services
+
+        registry = build_parser_registry(merge_parser_services(parser_services))
         output: list[dict[str, Any]] = []
         for provider_id in registry.list_ids():
             provider = registry.get(provider_id)
@@ -4670,7 +4672,9 @@ class IndexService:
                 message="Parser registry is unavailable",
                 detail="cloud_dog_vdb parser registry import failed",
             )
-        registry = build_parser_registry(parser_services)
+        from index_tools.parser_services import merge_parser_services
+
+        registry = build_parser_registry(merge_parser_services(parser_services))
         provider = registry.get(provider_id)
         if provider is None:
             raise ValueError(f"Unknown parser provider: {provider_id}")

@@ -1482,8 +1482,25 @@ def execute_tool(
         return service.structure.list_pages(str(arguments["structure_document_id"]))
     if tool_name == "structure_sections_list":
         return service.structure.list_sections(str(arguments["structure_document_id"]))
-    # -- W28E-603 Phase 2: extraction --
+    # -- W28E-603 Phase 2: extraction (W28M-1626: file/bytes path for real MinerU parsing) --
     if tool_name == "structure_extract":
+        source_b64 = arguments.get("source_bytes_b64") or arguments.get("file_bytes_b64")
+        if source_b64:
+            import base64
+
+            data = base64.b64decode(str(source_b64))
+            return service.structure.extract_file(
+                data,
+                filename=str(arguments.get("source_filename") or arguments.get("filename") or "document"),
+                mime_type=str(arguments.get("mime_type", "application/octet-stream")),
+                profile=str(arguments.get("profile", "default")),
+                collection=str(arguments.get("collection", "default")),
+                provider=str(arguments.get("provider", "internal")),
+                parser_services=arguments.get("parser_services"),
+                options=arguments.get("options"),
+                actor=str(arguments.get("actor", "mcp")),
+                roles=set(identity_roles or set()),
+            )
         return service.structure.extract_text(
             str(arguments.get("text", "")),
             profile=str(arguments.get("profile", "default")),

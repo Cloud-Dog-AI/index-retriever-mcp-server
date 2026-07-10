@@ -472,9 +472,18 @@ def _parse_via_vdb(data: bytes, *, filename: str, mime_type: str, provider: str,
     """Parse bytes through the existing cloud_dog_vdb parser registry for a named provider."""
     import asyncio
 
-    from cloud_dog_vdb.ingestion.parsers import build_parser_registry  # type: ignore
+    try:
+        # cloud_dog_vdb >= 0.5 exposes build_parser_registry from the pipeline module.
+        from cloud_dog_vdb.ingestion.pipeline import build_parser_registry  # type: ignore
+    except ImportError:  # pragma: no cover - older cloud_dog_vdb layout
+        from cloud_dog_vdb.ingestion.parsers import build_parser_registry  # type: ignore
 
-    registry = build_parser_registry(parser_services or {})
+    from index_tools.parser_services import merge_parser_services
+
+    # Merge caller-supplied parser_services over the config-driven defaults so a
+    # ``provider="mineru"`` request resolves its endpoint from cloud_dog_config
+    # (W28M-1626) rather than requiring every caller to hardcode the URL.
+    registry = build_parser_registry(merge_parser_services(parser_services))
     parser = registry.get(provider)
     if parser is None:
         raise ValueError(f"parser provider not available: {provider}")

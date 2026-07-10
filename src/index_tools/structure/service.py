@@ -297,6 +297,22 @@ class StructureService:
             source_filename=source_filename, provider=provider, actor=actor, roles=roles,
         )
 
+    def extract_file(self, data: bytes, *, filename: str, mime_type: str = "application/octet-stream",
+                     profile: str, collection: str, provider: str = "internal",
+                     parser_services: dict[str, Any] | None = None, options: dict[str, Any] | None = None,
+                     actor: str = "service", roles: set[str] | None = None) -> dict[str, Any]:
+        """Extract canonical structure from document *bytes* and persist it (design brief §25 #3, W28M-1626).
+
+        ``provider="mineru"`` (and marker/docling) delegate to the ``cloud_dog_vdb`` parser
+        registry; the MinerU endpoint is resolved from ``cloud_dog_config`` when ``parser_services``
+        is not supplied, so a real PDF is parsed to a canonical structure (pages/sections/tables)
+        without any caller hardcoding an endpoint. ``provider="internal"`` decodes bytes as text.
+        """
+        return self.extractor.extract_bytes(
+            data, filename=filename, mime_type=mime_type, profile=profile, collection=collection,
+            provider=provider, parser_services=parser_services, options=options, actor=actor, roles=roles,
+        )
+
     def link_to_vdb_records(self, structure_document_id: str, *, vdb_record_ids: list[str] | None = None,
                             chunk_ids: list[str] | None = None, source_document_id: str | None = None,
                             actor: str = "service", roles: set[str] | None = None) -> dict[str, Any]:

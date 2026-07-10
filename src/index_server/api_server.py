@@ -2894,10 +2894,31 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     # -- W28E-603 Phase 2: extraction --
     def structure_extract(payload: dict[str, Any], request: Request) -> dict[str, Any]:
-        """Extract canonical structure from text/file via a parser provider and persist it."""
+        """Extract canonical structure from text/file via a parser provider and persist it.
+
+        W28M-1626: a base64 ``source_bytes_b64`` payload routes through the file/bytes path
+        (``provider="mineru"`` etc.), with the MinerU endpoint resolved from config.
+        """
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "collection.write")
         try:
+            source_b64 = payload.get("source_bytes_b64") or payload.get("file_bytes_b64")
+            if source_b64:
+                import base64
+
+                data = base64.b64decode(str(source_b64))
+                return active_service.structure.extract_file(
+                    data,
+                    filename=str(payload.get("source_filename") or payload.get("filename") or "document"),
+                    mime_type=str(payload.get("mime_type", "application/octet-stream")),
+                    profile=str(payload.get("profile", "default")),
+                    collection=str(payload.get("collection", "default")),
+                    provider=str(payload.get("provider", "internal")),
+                    parser_services=payload.get("parser_services"),
+                    options=payload.get("options"),
+                    actor=identity.user_id,
+                    roles=identity.roles,
+                )
             return active_service.structure.extract_text(
                 str(payload.get("text", "")),
                 profile=str(payload.get("profile", "default")),
