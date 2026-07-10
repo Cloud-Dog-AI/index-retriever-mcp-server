@@ -1,0 +1,13 @@
+W28A-734 remote proof (canonical GitLab origin: git.cloud-dog.net)
+
+EVIDENCE_TAG: W28A-734-evidence
+FINAL_PROOF_TAG: W28A-734-final-proof
+
+Branch: w28a-734-idam-webui-index-retriever
+Service commit (src): 22446fe ; UI commit (src): 1dfa247
+
+Verification commands (live run authoritative):
+  git rev-parse HEAD
+  git ls-remote origin refs/heads/w28a-734-idam-webui-index-retriever
+  git ls-remote origin refs/tags/W28A-734-evidence
+  git ls-remote origin refs/tags/W28A-734-final-proof

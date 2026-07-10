@@ -61,7 +61,7 @@ _SPA_ADMIN_PATHS = {
     "admin/groups",
     "admin/api-keys",
     "admin/rbac",
-    # PS-71 canonical IDAM WebUI routes. /admin/* remains the legacy alias set.
+    # PS-71 canonical IDAM WebUI routes (71-idam-webui.md). /admin/* retained as legacy aliases.
     "idam",
     "idam/users",
     "idam/groups",
