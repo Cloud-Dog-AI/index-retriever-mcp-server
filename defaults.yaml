@@ -177,10 +177,10 @@ index:
     seed_path: ""
     seed_disabled: false
   demo_profiles:
-    # W28E-1878 (IR-23): demo/test profiles (Transparent Borders / NATO / Ukraine /
-    # multilang) are NOT shipped in defaults.yaml. A clean production install lists
-    # only the 'default' profile. They load ONLY when enabled below is truthy — an
-    # opt-in for demo/dev/preprod environments that run the demo suite. Override with
+    # W28E-1878 (IR-23): demo/reference profiles are NOT shipped in defaults.yaml;
+    # they live in the opt-in config/demo-profiles.yaml. A clean production install
+    # lists only the 'default' profile. They load ONLY when enabled below is truthy —
+    # an opt-in for demo/dev/preprod environments. Override with
     # CLOUD_DOG__INDEX__DEMO_PROFILES__ENABLED / __PATH. (RULES §1.4.1: config, not env.)
     enabled: false
     # Location of the optional demo-profiles.yaml. Empty falls back to the container
