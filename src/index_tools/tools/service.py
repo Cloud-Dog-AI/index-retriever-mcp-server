@@ -917,10 +917,10 @@ class IndexService:
         # Env-var overrides for the top-level index.* settings must NOT erase
         # YAML-defined profiles.
         self._ingest_profiles_mapping(_nested_mapping(self._runtime_tree, "profiles"))
-        # W28E-1878 (IR-23): demo/test profiles are opt-in and NOT shipped in
+        # W28E-1878 (IR-23): demo/reference profiles are opt-in and NOT shipped in
         # defaults.yaml (index.demo_profiles.enabled). A clean production install
         # lists only 'default'; demo/dev/preprod environments opt in to load the
-        # Transparent Borders / NATO / Ukraine / multilang demo suite.
+        # opt-in profile suite from config/demo-profiles.yaml.
         self._ingest_profiles_mapping(_load_demo_profiles())
         self.collections: dict[str, CollectionRecord] = {}
         self.collection_roles: dict[str, set[str]] = {}
