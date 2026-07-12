@@ -1,5 +1,12 @@
-"""W28D-443: Verify Transparent Borders named profiles load durably from defaults.yaml."""
-import os
+"""W28D-443 / W28E-1878 (IR-23): Transparent Borders named profiles load durably
+from the opt-in demo-profiles.yaml.
+
+W28E-1878 IR-23 moved the demo/test profiles out of the shipped defaults.yaml into
+config/demo-profiles.yaml, gated by index.demo_profiles.enabled. These tests assert
+that when a demo/dev/preprod environment opts in
+(CLOUD_DOG__INDEX__DEMO_PROFILES__ENABLED=true), the Transparent Borders profiles
+still load durably across restarts (unchanged demo behaviour for opted-in envs).
+"""
 import pytest
 
 
@@ -15,11 +22,17 @@ TB_PROFILES = [
 
 
 @pytest.fixture(autouse=True)
-def _set_env():
-    os.environ.setdefault("CLOUD_DOG__INDEX__VDB__PROVIDER", "chroma")
-    os.environ.setdefault("CLOUD_DOG__INDEX__EMBEDDING__MODEL", "nomic-embed-text")
-    os.environ.setdefault("CLOUD_DOG__INDEX__AUTH__ADMIN_API_KEY", "test-admin-key")
-    os.environ.setdefault("CLOUD_DOG__INDEX__AUTH__API_KEYS", "test-admin-key")
+def _set_env(monkeypatch):
+    monkeypatch.setenv("CLOUD_DOG__INDEX__VDB__PROVIDER", "chroma")
+    monkeypatch.setenv("CLOUD_DOG__INDEX__EMBEDDING__MODEL", "nomic-embed-text")
+    monkeypatch.setenv("CLOUD_DOG__INDEX__AUTH__ADMIN_API_KEY", "test-admin-key")
+    monkeypatch.setenv("CLOUD_DOG__INDEX__AUTH__API_KEYS", "test-admin-key")
+    # W28E-1878 IR-23: opt in to the demo profile suite for these durability tests.
+    monkeypatch.setenv("CLOUD_DOG__INDEX__DEMO_PROFILES__ENABLED", "true")
+    import index_tools.tools.service as svc_mod
+    svc_mod._RUNTIME_TREE_CACHE = None
+    yield
+    svc_mod._RUNTIME_TREE_CACHE = None
 @pytest.mark.UT
 @pytest.mark.mcp
 @pytest.mark.req("FR-002")

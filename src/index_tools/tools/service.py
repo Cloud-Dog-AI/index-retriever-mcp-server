@@ -531,6 +531,73 @@ def _load_runtime_tree() -> dict[str, Any]:
     return _RUNTIME_TREE_CACHE
 
 
+# W28E-1878 (IR-23): demo/test profiles are NOT shipped in defaults.yaml. They
+# live in an opt-in config/demo-profiles.yaml and load only when
+# index.demo_profiles.enabled is truthy (env CLOUD_DOG__INDEX__DEMO_PROFILES__ENABLED=true).
+# A clean production install therefore lists only the 'default' profile.
+_DEMO_PROFILES_ENABLED_KEY = "index.demo_profiles.enabled"
+_DEMO_PROFILES_PATH_KEY = "index.demo_profiles.path"
+_DEMO_PROFILES_TRUTHY = {"1", "true", "yes", "on"}
+
+
+def _demo_profiles_enabled() -> bool:
+    """True when demo/test profiles are explicitly opted in via config.
+
+    Read from the resolved runtime tree (``_lookup_runtime_tree``) rather than a
+    bare ``get_config`` so the ``CLOUD_DOG__INDEX__DEMO_PROFILES__ENABLED`` env
+    override is honoured deterministically regardless of config init order.
+    """
+    return str(_lookup_runtime_tree(_DEMO_PROFILES_ENABLED_KEY)).strip().lower() in _DEMO_PROFILES_TRUTHY
+
+
+def _resolve_demo_profiles_path() -> str | None:
+    """Resolve the active demo-profiles file path, or None when unavailable.
+
+    Config-only resolution (RULES §1.4.1): explicit ``index.demo_profiles.path``
+    first, then the container default ``/app/config/demo-profiles.yaml``, then the
+    repo-relative ``<repo>/config/demo-profiles.yaml`` (local/dev).
+    """
+    explicit = str(_lookup_runtime_tree(_DEMO_PROFILES_PATH_KEY) or "").strip()
+    if explicit:
+        return explicit if Path(explicit).is_file() else None
+    container_default = "/app/config/demo-profiles.yaml"
+    if Path(container_default).is_file():
+        return container_default
+    # src/index_tools/tools/service.py -> <repo>/config/demo-profiles.yaml
+    repo_default = Path(__file__).resolve().parents[3] / "config" / "demo-profiles.yaml"
+    if repo_default.is_file():
+        return str(repo_default)
+    return None
+
+
+def _load_demo_profiles() -> dict[str, Any]:
+    """Return the resolved demo profiles mapping when opted in, else ``{}``.
+
+    The demo file is compiled through ``cloud_dog_config.load_config`` so its
+    ``${VAR:default}`` expressions resolve exactly like defaults.yaml (e.g. the
+    preprod ``EMBED_BASE_URL`` / ``CLOUD_DOG__INDEX__VDB__PROVIDER`` overrides).
+    Opt-in is intentional: absence, a disabled flag, or a parse error never breaks
+    startup — it simply yields no demo profiles.
+    """
+    if load_config is None or not _demo_profiles_enabled():
+        return {}
+    path = _resolve_demo_profiles_path()
+    if not path:
+        return {}
+    try:
+        compiled = load_config(
+            env_files=runtime_env_files(),
+            defaults_yaml=path,
+            unresolved_policy="empty",
+            **secret_backend_kwarg(False),
+        )
+        tree = _as_plain_data(compiled.data)
+    except Exception:
+        return {}
+    profiles = _nested_mapping(tree, "profiles")
+    return profiles if isinstance(profiles, dict) else {}
+
+
 def _lookup_runtime_tree(path: str) -> Any:
     """Resolve a dotted path from the cached runtime tree."""
     current: Any = _load_runtime_tree()
@@ -846,24 +913,15 @@ class IndexService:
             }
         }
         # W28A-295: load additional profiles from config (defaults.yaml + env merge).
-        # The runtime tree profiles section may define profiles beyond 'default' (e.g.
-        # multilang with bge-m3). Env-var overrides for the top-level index.* settings
-        # must NOT erase YAML-defined profiles.
-        yaml_profiles = _nested_mapping(self._runtime_tree, "profiles")
-        for pname, pcfg in yaml_profiles.items():
-            if pname == "default" or not isinstance(pcfg, dict):
-                continue
-            if not pcfg.get("enabled", True):
-                continue
-            vdb_cfg = _nested_mapping(pcfg, "vdb")
-            embed_cfg = _nested_mapping(pcfg, "embeddings")
-            self.profiles[pname] = {
-                "enabled": True,
-                "backend": str(vdb_cfg.get("type", self._default_backend)).strip().lower(),
-                "roles": {"reader", "writer", "maintainer", "admin"},
-                "embeddings": embed_cfg,
-                "vdb": vdb_cfg,
-            }
+        # The runtime tree profiles section may define profiles beyond 'default'.
+        # Env-var overrides for the top-level index.* settings must NOT erase
+        # YAML-defined profiles.
+        self._ingest_profiles_mapping(_nested_mapping(self._runtime_tree, "profiles"))
+        # W28E-1878 (IR-23): demo/test profiles are opt-in and NOT shipped in
+        # defaults.yaml (index.demo_profiles.enabled). A clean production install
+        # lists only 'default'; demo/dev/preprod environments opt in to load the
+        # Transparent Borders / NATO / Ukraine / multilang demo suite.
+        self._ingest_profiles_mapping(_load_demo_profiles())
         self.collections: dict[str, CollectionRecord] = {}
         self.collection_roles: dict[str, set[str]] = {}
         self.source_configs: dict[str, SourceConfigRecord] = {}
@@ -902,6 +960,30 @@ class IndexService:
             maybe_apply_bootstrap_seed(self)
         # W28A-323: warm-up embedder models at startup.
         self._warm_embedders()
+
+    def _ingest_profiles_mapping(self, yaml_profiles: dict[str, Any]) -> None:
+        """Merge a resolved profiles mapping into ``self.profiles``.
+
+        Shared by the shipped defaults.yaml profiles and the opt-in
+        demo-profiles.yaml set (W28E-1878 IR-23). The ``default`` profile is
+        never overwritten; disabled and non-mapping entries are skipped.
+        """
+        if not isinstance(yaml_profiles, dict):
+            return
+        for pname, pcfg in yaml_profiles.items():
+            if pname == "default" or not isinstance(pcfg, dict):
+                continue
+            if not pcfg.get("enabled", True):
+                continue
+            vdb_cfg = _nested_mapping(pcfg, "vdb")
+            embed_cfg = _nested_mapping(pcfg, "embeddings")
+            self.profiles[pname] = {
+                "enabled": True,
+                "backend": str(vdb_cfg.get("type", self._default_backend)).strip().lower(),
+                "roles": {"reader", "writer", "maintainer", "admin"},
+                "embeddings": embed_cfg,
+                "vdb": vdb_cfg,
+            }
 
     def _run_async(self, coro: Any) -> Any:
         try:

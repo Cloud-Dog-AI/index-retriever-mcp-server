@@ -1,0 +1,314 @@
+# Index-Retriever demo/reference profiles — W28E-1878 (IR-23).
+#
+# These demo/test profiles were moved OUT of the shipped defaults.yaml so that a
+# clean production install ships ZERO demo profiles (profiles_list == ['default']).
+# They load ONLY when index.demo_profiles.enabled is truthy
+# (env CLOUD_DOG__INDEX__DEMO_PROFILES__ENABLED=true) — opt-in for demo/dev/preprod
+# environments that run the Transparent Borders / NATO / Ukraine demo suite.
+# The file is compiled through cloud_dog_config, so its config expressions
+# resolve exactly as in defaults.yaml (embed/vdb endpoints come from the preprod
+# env). See src/index_tools/tools/service.py (_load_demo_profiles) and docs.
+profiles:
+  multilang:
+    enabled: true
+    vdb:
+      type: "chroma"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH:./data/chroma}"
+        collection: "multilang"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_MULTILANG_BASE_URL:${EMBED_BASE_URL:http://localhost:11434}}"
+        api_key: "${EMBED_API_KEY || ''}"
+        model: "bge-m3:567m"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT:./uploads}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0
+
+  nato-doctrine:
+    enabled: true
+    vdb:
+      type: "${CLOUD_DOG__INDEX__VDB__PROVIDER:chroma}"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH:./data/chroma}"
+        collection: "nato-doctrine"
+      qdrant:
+        url: "${QDRANT_URL:http://localhost:6333}"
+        api_key: "${CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY || ''}"
+        collection: "nato-doctrine"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
+        api_key: "${EMBED_API_KEY || ''}"
+        model: "nomic-embed-text"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT:./uploads}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0
+
+  ukraine-researcher:
+    enabled: true
+    vdb:
+      type: "${CLOUD_DOG__INDEX__VDB__PROVIDER:chroma}"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH:./data/chroma}"
+        collection: "ukraine-researcher"
+      qdrant:
+        url: "${QDRANT_URL:http://localhost:6333}"
+        api_key: "${CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY || ''}"
+        collection: "ukraine-researcher"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
+        api_key: "${EMBED_API_KEY || ''}"
+        model: "nomic-embed-text"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT:./uploads}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0
+
+  transparent-borders-research:
+    enabled: true
+    vdb:
+      type: "${CLOUD_DOG__INDEX__VDB__PROVIDER:chroma}"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH:./data/chroma}"
+        collection: "transparent-borders-research"
+      qdrant:
+        url: "${QDRANT_URL:http://localhost:6333}"
+        api_key: "${CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY || ''}"
+        collection: "transparent-borders-research"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
+        api_key: "${EMBED_API_KEY || ''}"
+        model: "nomic-embed-text"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT:./uploads}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0
+
+  transparent-borders-report-generation:
+    enabled: true
+    vdb:
+      type: "${CLOUD_DOG__INDEX__VDB__PROVIDER:chroma}"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH:./data/chroma}"
+        collection: "transparent-borders-report-generation"
+      qdrant:
+        url: "${QDRANT_URL:http://localhost:6333}"
+        api_key: "${CLOUD_DOG__INDEX__VDB__QDRANT_API_KEY || ''}"
+        collection: "transparent-borders-report-generation"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
+        api_key: "${EMBED_API_KEY || ''}"
+        model: "nomic-embed-text"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT:./uploads}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0
+
+  demo27-transparent-borders:
+    enabled: true
+    vdb:
+      type: "chroma"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH:./data/chroma}"
+        collection: "demo27-transparent-borders"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
+        api_key: "${EMBED_API_KEY || ''}"
+        model: "nomic-embed-text"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT:./uploads}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0
+
+  transparent-borders-report-generation-country-reports:
+    enabled: true
+    vdb:
+      type: "chroma"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH:./data/chroma}"
+        collection: "transparent-borders-report-generation-country-reports"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
+        api_key: "${EMBED_API_KEY || ''}"
+        model: "nomic-embed-text"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT:./uploads}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0
+
+  transparent-borders-report-generation-knowledge:
+    enabled: true
+    vdb:
+      type: "chroma"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH:./data/chroma}"
+        collection: "transparent-borders-report-generation-knowledge"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
+        api_key: "${EMBED_API_KEY || ''}"
+        model: "nomic-embed-text"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT:./uploads}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0
+
+  transparent-borders-report-generation-web-support:
+    enabled: true
+    vdb:
+      type: "chroma"
+      chroma:
+        mode: "local"
+        path: "${CHROMA_PATH:./data/chroma}"
+        collection: "transparent-borders-report-generation-web-support"
+    embeddings:
+      provider: "openai_compat"
+      openai_compat:
+        base_url: "${EMBED_BASE_URL:http://localhost:11434}"
+        api_key: "${EMBED_API_KEY || ''}"
+        model: "nomic-embed-text"
+        timeout_seconds: 60
+    ingestion:
+      allowed_sources: ["upload", "text", "filesystem", "s3", "webdav", "gdrive"]
+      filesystem:
+        roots: ["${INGEST_ROOT:./uploads}"]
+        deny_globs: ["**/.git/**", "**/node_modules/**"]
+      max_file_mb: 50
+      dedupe:
+        mode: "hash"
+        policy: "skip"
+    chunking:
+      strategy: "token"
+      chunk_size: 800
+      chunk_overlap: 100
+    search:
+      top_k_default: 10
+      score_threshold: 0.0

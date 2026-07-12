@@ -1,5 +1,17 @@
 # Context Summary
 
+## W28E-1878 — IR-23 demo-profile gating (2026-07-11)
+- Demo/test profiles (multilang, NATO, Ukraine, Transparent Borders x6) were moved
+  out of the shipped `defaults.yaml` into the opt-in `config/demo-profiles.yaml`.
+- New gate `index.demo_profiles.{enabled,path}` (env `CLOUD_DOG__INDEX__DEMO_PROFILES__ENABLED`);
+  default OFF. A clean install now lists only the `default` profile
+  (`profiles_list == ['default']`); demo/dev/preprod opt in to load the demo suite.
+- Loader refactored in `src/index_tools/tools/service.py` (`_ingest_profiles_mapping` +
+  `_load_demo_profiles`, resolved through `cloud_dog_config` so `${...}` expressions
+  resolve). Tests: `tests/unit/test_w28e1878_demo_profiles_gate.py`, updated
+  `test_w28a295_multiprofile_load.py` and `test_w28d443_tb_profile_durability.py`.
+- See README "Storage profiles" for operator opt-in.
+
 ## Current State
 - Project: `index-retriever-mcp-server`
 - Working directory: `/opt/iac/Development/cloud-dog-ai/index-retriever-mcp-server`

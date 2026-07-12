@@ -40,6 +40,24 @@ pip install -e ".[dev]" --index-url "${PYPI_URL:-https://pypi.org/simple/}"
 
 Runtime configuration is loaded from the env file passed to `server_control.sh`, then from shell environment variables, then from `defaults.yaml`.
 
+### Storage profiles
+
+A clean install ships exactly one storage profile, `default`. Additional
+demo/reference profiles (Transparent Borders, NATO, Ukraine, multilang) are **not**
+shipped in `defaults.yaml`; they live in the opt-in `config/demo-profiles.yaml` and
+load only when demo profiles are explicitly enabled:
+
+```bash
+# Opt in to the demo/reference profile suite (demo/dev/preprod environments only).
+CLOUD_DOG__INDEX__DEMO_PROFILES__ENABLED=true
+# Optional: point at a specific demo-profiles file
+# (defaults to /app/config/demo-profiles.yaml in the container).
+CLOUD_DOG__INDEX__DEMO_PROFILES__PATH=/app/config/demo-profiles.yaml
+```
+
+With the flag unset (the shipped default), `profiles_list` returns only `default` —
+no demo/test profile data is shipped in the production artifact.
+
 ## Documentation
 
 - [BUILD.md](BUILD.md)
