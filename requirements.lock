@@ -10,7 +10,7 @@
 # credentials. The active package index is supplied at install time by the
 # caller (the `pip_conf` BuildKit secret in Dockerfile.public, or --index-url),
 # per PS-97 §3.3 single-index. The platform packages and these exact versions
-# are present on the internal index (pypi.cloud-dog.net); when they are also
+# are present on the release-selected index; when they are also
 # published to the public boundary index the same pins resolve unchanged.
 #
 # Install exactly these (no resolver):
@@ -22,11 +22,11 @@
 #
 # ── Cloud-Dog platform packages (resolved versions, verified in built image) ──
 cloud-dog-config==0.3.2
-cloud-dog-logging==0.4.0
+cloud-dog-logging==0.4.1
 cloud-dog-api-kit==0.13.0
 cloud-dog-idam==0.5.2
-cloud-dog-db==0.3.0
-cloud-dog-jobs==0.4.1
+cloud-dog-db==0.3.2
+cloud-dog-jobs==0.4.2
 cloud-dog-storage==0.1.8
 cloud-dog-llm==0.3.1
 cloud-dog-vdb==0.5.5

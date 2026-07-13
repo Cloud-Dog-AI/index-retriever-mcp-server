@@ -20,13 +20,6 @@
 
 set -euo pipefail
 
-if [[ -f "/opt/iac/Development/cloud-dog-ai/env-vault" ]]; then
-  set -a
-  # shellcheck disable=SC1091
-  source /opt/iac/Development/cloud-dog-ai/env-vault
-  set +a
-fi
-
 required_vars=(VAULT_ADDR VAULT_TOKEN VAULT_MOUNT_POINT VAULT_CONFIG_PATH)
 for var in "${required_vars[@]}"; do
   if [[ -z "${!var:-}" ]]; then

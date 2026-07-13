@@ -111,7 +111,7 @@ echo "=========================================="
 # ── PyPI Configuration ───────────────────────────────────────────
 # Variant-specific default index (PS-97 §3.3 single-index; never --extra-index-url):
 #   public -> pypi.org (override PYPI_URL for any other boundary index)
-#   dev    -> internal PyPI, overrideable with INTERNAL_PYPI_URL/PYPI_URL
+#   dev    -> caller-supplied approved index via INTERNAL_PYPI_URL/PYPI_URL
 if [[ -n "${PYPI_URL:-}" ]]; then
   : # honour caller override
 elif [[ "${VARIANT}" == "public" ]]; then
@@ -119,26 +119,16 @@ elif [[ "${VARIANT}" == "public" ]]; then
 elif [[ -n "${INTERNAL_PYPI_URL:-}" ]]; then
   PYPI_URL="${INTERNAL_PYPI_URL}"
 else
-  PYPI_URL="https://pypi.cloud-dog.net/simple/"
+  echo "ERROR: --variant dev requires PYPI_URL or INTERNAL_PYPI_URL" >&2
+  exit 2
 fi
 PYPI_USERNAME="${PYPI_USERNAME:-}"
 PYPI_PASSWORD="${PYPI_PASSWORD:-}"
 PYPI_HOST="$(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${PYPI_URL}').hostname or 'pypi.org')")"
 
-if [[ "${VARIANT}" == "dev" && "${PYPI_HOST}" == "pypi.cloud-dog.net" ]]; then
-  if [[ -z "${PYPI_USERNAME}" || -z "${PYPI_PASSWORD}" ]]; then
-    echo "ERROR: --variant dev requires PYPI_USERNAME and PYPI_PASSWORD for pypi.cloud-dog.net" >&2
-    exit 2
-  fi
-fi
-
-if [[ -n "${PYPI_USERNAME}" ]] && [[ -n "${PYPI_PASSWORD}" ]]; then
-  cat > "${PIP_CONF}" << EOF
-[global]
-index-url = https://${PYPI_USERNAME}:${PYPI_PASSWORD}@${PYPI_URL#https://}
-trusted-host = ${PYPI_HOST}
-EOF
-  echo "pip.conf generated with authenticated single-index access (host=${PYPI_HOST})."
+if [[ -n "${PYPI_USERNAME}" ]] || [[ -n "${PYPI_PASSWORD}" ]]; then
+  echo "ERROR: use an external pip auth helper; credentials must not be embedded in index URLs" >&2
+  exit 2
 else
   cat > "${PIP_CONF}" << EOF
 [global]
