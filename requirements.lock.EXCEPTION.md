@@ -29,7 +29,7 @@ cloud-dog-api-kit==0.13.0
 cloud-dog-idam==0.4.0
 cloud-dog-db==0.3.0
 cloud-dog-jobs==0.4.1
-cloud-dog-storage==0.1.6
+cloud-dog-storage==0.1.8
 cloud-dog-llm==0.3.0
 cloud-dog-vdb==0.5.5
 ```
