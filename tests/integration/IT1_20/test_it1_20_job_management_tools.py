@@ -203,3 +203,64 @@ def test_job_management_tools_contract(service: IndexService) -> None:
     assert isinstance(queue_status.get("queue_depth"), int)
     assert isinstance(queue_status.get("active_jobs"), int)
     assert isinstance(queue_status.get("worker_count"), int)
+
+
+# W28E-1882: the Jobs WebUI list must be able to fetch a lean summary (no heavy
+# per-job payload) so a large job history serialises/renders without stalling,
+# while the default contract keeps the payload for A2A/automation callers.
+_JOB_SUMMARY_COLUMNS = ("job_id", "status", "job_type", "created_at", "user_id")
+
+
+@pytest.mark.IT
+@pytest.mark.mcp
+@pytest.mark.req("FR-007")
+def test_job_list_lean_summary_omits_payload(service: IndexService) -> None:
+    # Covers: FR-07 (Jobs list summary projection)
+    client = TestClient(build_api_app(service=service))
+
+    _ = _call_tool(
+        client,
+        "admin_collection_create",
+        {"profile": "default", "collection": "it1_20_jobs_lean"},
+        "valid-admin-token",
+    )
+    queued = _call_tool(
+        client,
+        "ingest_text",
+        {
+            "profile": "default",
+            "collection": "it1_20_jobs_lean",
+            "text": "job list lean summary payload body that would bloat the list",
+            "source": "file://it1_20/jobs-lean.txt",
+        },
+        "valid-admin-token",
+    )
+    job_id = str(queued["job_id"])
+
+    # Default list keeps the full payload (backward compatible).
+    default_listed = _call_tool(client, "job_list", {"limit": 2000}, "valid-admin-token")
+    default_row = next(
+        item for item in default_listed["jobs"] if str(item.get("job_id", "")) == job_id
+    )
+    assert "payload" in default_row
+
+    # Lean list omits the payload but retains every summary column the table renders.
+    for lean_arg in (False, "false"):
+        lean_listed = _call_tool(
+            client,
+            "job_list",
+            {"limit": 2000, "include_payload": lean_arg},
+            "valid-admin-token",
+        )
+        lean_row = next(
+            item for item in lean_listed["jobs"] if str(item.get("job_id", "")) == job_id
+        )
+        assert "payload" not in lean_row, f"payload leaked with include_payload={lean_arg!r}"
+        for column in _JOB_SUMMARY_COLUMNS:
+            assert lean_row.get(column), f"lean row missing summary column {column!r}"
+        # Owner attribution (used by the RBAC/actor column) survives payload removal.
+        assert _job_actor(lean_row) != ""
+
+    # The full record remains reachable for the detail dialog via job_get.
+    detail = _call_tool(client, "job_get", {"job_id": job_id}, "valid-admin-token")
+    assert isinstance(detail.get("job"), dict)

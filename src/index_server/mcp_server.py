@@ -363,6 +363,28 @@ def _call_with_supported_kwargs(fn: Callable[..., Any], **kwargs: Any) -> Any:
     return fn(**supported)
 
 
+def _coerce_bool(value: Any, *, default: bool = True) -> bool:
+    """Coerce a tool argument to a bool, tolerating JSON strings.
+
+    Front-ends and A2A callers may send the flag as a native bool or as the
+    string ``"true"``/``"false"``; treat the common falsey spellings as False
+    and fall back to ``default`` when the value is absent/None.
+    """
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        token = value.strip().lower()
+        if token in {"false", "0", "no", "off", ""}:
+            return False
+        if token in {"true", "1", "yes", "on"}:
+            return True
+    return default
+
+
 def _normalise_job_payload(job: Any) -> dict[str, Any]:
     """Convert runtime job records to JSON-safe payload."""
     if job is None:
@@ -1338,12 +1360,23 @@ def execute_tool(
     if tool_name == "job_list":
         status_filter = str(arguments.get("status", "")).strip().lower()
         limit = int(arguments.get("limit", 50))
+        # The heavy per-job ``payload`` (full ingest text, results, thinking) can
+        # reach hundreds of KB per row; a full list of it serialises to tens of MB.
+        # List/table consumers (WebUI Jobs page) only need the top-level summary
+        # columns (id/type/status/timestamps/actor/retry/result_ref/duration) and
+        # re-fetch the full record via ``job_get`` when a row is opened. Allow such
+        # callers to opt out of the payload while keeping it on by default so the
+        # existing contract (A2A / automation) is preserved.
+        include_payload = _coerce_bool(arguments.get("include_payload", True))
         try:
             jobs_raw = service.job_list(limit=limit)
         except TypeError:
             jobs_raw = service.job_list()
         visible_jobs = _filter_jobs_for_identity(list(jobs_raw), active_auth, active_identity, actor_id)
         jobs = [_normalise_job_payload(job) for job in visible_jobs]
+        if not include_payload:
+            for job in jobs:
+                job.pop("payload", None)
         if status_filter:
             jobs = [job for job in jobs if str(job.get("status", "")).strip().lower() == status_filter]
         return {"jobs": jobs, "count": len(jobs)}
