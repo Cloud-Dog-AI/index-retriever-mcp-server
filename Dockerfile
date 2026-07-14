@@ -43,7 +43,7 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
       "cloud-dog-api-kit[change-stream-db]>=0.14.0" \
       "cloud-dog-idam==0.5.4" \
       cloud-dog-db \
-      cloud-dog-jobs==0.4.1 \
+      cloud-dog-jobs==0.4.2 \
       cloud-dog-storage==0.1.8 \
       cloud-dog-llm==0.4.1 \
       "cloud-dog-vdb>=0.5.5"

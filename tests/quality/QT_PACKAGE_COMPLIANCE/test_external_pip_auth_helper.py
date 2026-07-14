@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -60,3 +61,14 @@ def test_external_netrc_is_wired_only_as_a_buildkit_secret(
     for dockerfile_name in ("Dockerfile", "Dockerfile.public"):
         dockerfile = (PROJECT_ROOT / dockerfile_name).read_text(encoding="utf-8")
         assert "id=pip_netrc,target=/root/.netrc,required=false" in dockerfile
+
+
+def test_dev_image_jobs_pin_matches_project_runtime_contract() -> None:
+    project = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    dockerfile = (PROJECT_ROOT / "Dockerfile").read_text(encoding="utf-8")
+    project_pin = re.search(r'"cloud_dog_jobs==([^\"]+)"', project)
+    image_pin = re.search(r"cloud-dog-jobs==([^\s\\]+)", dockerfile)
+
+    assert project_pin is not None
+    assert image_pin is not None
+    assert image_pin.group(1) == project_pin.group(1)
