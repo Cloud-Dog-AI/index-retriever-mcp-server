@@ -26,6 +26,9 @@ def _run_dry_build(project_root: Path, env: dict[str, str]) -> subprocess.Comple
     )
 
 
+@pytest.mark.QT
+@pytest.mark.internal
+@pytest.mark.req("NF-001")
 def test_private_dev_build_requires_external_netrc_helper() -> None:
     env = os.environ.copy()
     for name in ("PIP_NETRC_FILE", "PYPI_USERNAME", "PYPI_PASSWORD"):

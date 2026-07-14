@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""W28E-1870-A: REAL ingest/delete/collection change-event proof (CSTREAM-012).
+"""W28E-1870-A: REAL ingest/delete/collection change-event proof (FR-019).
 
 These tests exercise the actual ``IndexService`` mutation paths (not a synthetic
 test-event) and assert the change lands in a matching watch's journal — the "real
-stream/event proof" PS-102 CSTREAM-012 requires to close implementation, as
+stream/event proof" PS-102 FR-019 requires to close implementation, as
 distinct from health-only proof.
 """
 
@@ -44,7 +44,9 @@ def _drain_batch(service: IndexService, wid: str, tenant: str, tries: int = 20):
     return service.watch_service.get_batch(wid, tenant_id=tenant)
 
 
-@pytest.mark.req("CSTREAM-IR-001")
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-019")
 def test_real_ingest_emits_ingested_change_event(service: IndexService) -> None:
     profile = "default"
     collection = "cw_ingest"
@@ -73,7 +75,7 @@ def test_real_ingest_emits_ingested_change_event(service: IndexService) -> None:
     assert ev["criteria_match"]["collection"] == collection
 
 
-@pytest.mark.req("CSTREAM-IR-001")
+@pytest.mark.req("FR-019")
 def test_real_collection_create_and_delete_emit_change_events(service: IndexService) -> None:
     profile = "default"
     collection = "cw_collection"
@@ -92,7 +94,7 @@ def test_real_collection_create_and_delete_emit_change_events(service: IndexServ
     assert "created" in versions and "deleted" in versions
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_criteria_scoping_excludes_nonmatching_collection(service: IndexService) -> None:
     profile = "default"
     watched = "cw_only"

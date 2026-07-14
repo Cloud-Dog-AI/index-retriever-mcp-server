@@ -3,10 +3,11 @@ template-id: T-SCM
 template-version: 1.0
 applies-to: tests/SCOPE-MAP.md
 project: index-retriever-mcp-server
-doc-last-updated: 2026-06-23T00:00:00Z
+doc-last-updated: 2026-07-14T17:38:04Z
+doc-git-commit: 3f4802369ad66d37b4c125033bc02dbc8c18b555
 doc-git-branch: coordinator/20260622-agent-converge/index-retriever-main-merge
 doc-age-policy: 30d
-doc-conformance-stamp: 2026-06-23T00:00:00Z
+doc-conformance-stamp: 2026-07-14T17:38:04Z
 ---
 
 # index-retriever-mcp-server - Test scope map
@@ -27,6 +28,7 @@ doc-conformance-stamp: 2026-06-23T00:00:00Z
 | `src/index_tools/vdb/**` | `T-UT-UT1-24`, `T-CT-CT1-1`, `T-CT-CT1-3`, `T-IT-IT2-1`, `T-IT-IT2-6`, `T-AT-AT2-1` |
 | `src/index_tools/db/**` | `T-UT-UT1-40`, `T-UT-UT1-45`, `T-ST-ST1-14`, `T-AT-AT2-6-DATABASEE2E` |
 | `src/index_tools/sources/**` | `T-UT-UT-W28D440E5`, `T-IT-IT-W28D440E5` |
+| `src/index_tools/change_stream/**`, index watch API/MCP/A2A registration | `UT_W28E1870A_ChangeStream` (`FR-019`, `FR-020`, `FR-002`, `NF-002`, `CS-014`) |
 | `docs/**/*.md` | `T-QT-QT-TRACEABILITY`, `T-QT-QT-RULES-COMPLIANCE` |
 | `tests/**/*.py` | `T-QT-QT-TRACEABILITY`, `T-QT-QT-MIGRATION-COMPLETENESS`, `T-QT-QT-RULES-COMPLIANCE` |
 | `ui/dist/**` | `T-AT-AT-WEBUI-AUTHDASHBOARD`, `T-AT-AT-WEBUI-COLLECTIONCRUD`, `T-AT-AT-WEBUI-SECURITYADMIN` |

@@ -78,6 +78,9 @@ def _resave(data: bytes) -> bytes:
     return buffer.getvalue()
 
 
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-002")
 def test_is_spreadsheet_routing():
     assert is_spreadsheet("report.xlsx")
     assert is_spreadsheet("macro.XLSM")

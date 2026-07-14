@@ -14,8 +14,8 @@
 
 """W28E-1870-A change-watch surface tests: MCP tool registry/dispatch + A2A card.
 
-Exercises CSTREAM-001 (surface parity) at the registry + dispatch level without a
-live server, and CSTREAM-002 (nonblocking) by proving batch retrieval returns
+Exercises FR-019 (surface parity) at the registry + dispatch level without a
+live server, and FR-020 (nonblocking) by proving batch retrieval returns
 promptly with an empty batch when no events are pending.
 """
 
@@ -45,7 +45,8 @@ _WATCH_TOOLS = {
 
 
 @pytest.mark.mcp
-@pytest.mark.req("CSTREAM-001")
+@pytest.mark.UT
+@pytest.mark.req("FR-019")
 def test_all_watch_mcp_tools_are_registered():
     reg = build_default_tool_registry()
     names = {t["name"] for t in reg.list_tools()}
@@ -53,7 +54,7 @@ def test_all_watch_mcp_tools_are_registered():
 
 
 @pytest.mark.mcp
-@pytest.mark.req("CSTREAM-009")
+@pytest.mark.req("CS-014")
 def test_watch_tool_permissions_split_read_and_write():
     from index_server.mcp_server import _required_permission_for_tool
 
@@ -66,7 +67,7 @@ def test_watch_tool_permissions_split_read_and_write():
 
 
 @pytest.mark.a2a
-@pytest.mark.req("CSTREAM-001")
+@pytest.mark.req("FR-019")
 def test_a2a_agent_card_advertises_watch_skills():
     from index_server.a2a_server import AGENT_CARD
 
@@ -76,9 +77,9 @@ def test_a2a_agent_card_advertises_watch_skills():
 
 
 @pytest.mark.a2a
-@pytest.mark.req("CSTREAM-001")
+@pytest.mark.req("FR-019")
 def test_edge_a2a_card_advertises_watch_skills(service):
-    """CSTREAM-001 surface parity on the LIVE edge card served by api_server.
+    """FR-019 surface parity on the LIVE edge card served by api_server.
 
     The standalone a2a_server.AGENT_CARD is NOT the card served at the Traefik
     edge — that card is built from api_server's own skills list via
@@ -97,9 +98,9 @@ def test_edge_a2a_card_advertises_watch_skills(service):
 
 
 @pytest.mark.a2a
-@pytest.mark.req("CSTREAM-001")
+@pytest.mark.req("FR-019")
 def test_edge_a2a_task_router_executes_watch_skill(service):
-    """CSTREAM-001 — the A2A task router maps + executes a watch skill.
+    """FR-019 — the A2A task router maps + executes a watch skill.
 
     A missing tool_map entry would surface as 404 'Unknown A2A skill'; an
     unauthenticated call must be rejected before dispatch.
@@ -132,7 +133,7 @@ def test_edge_a2a_task_router_executes_watch_skill(service):
 
 
 @pytest.mark.internal
-@pytest.mark.req("CSTREAM-002")
+@pytest.mark.req("FR-020")
 def test_get_batch_is_nonblocking_when_no_events_pending():
     ws = WatchService()
     wid = ws.create_watch(profile_id="p", tenant_id="t", actor="a", criteria={})["watch_id"]
@@ -146,7 +147,7 @@ def test_get_batch_is_nonblocking_when_no_events_pending():
 
 
 @pytest.mark.internal
-@pytest.mark.req("CSTREAM-004")
+@pytest.mark.req("FR-019")
 def test_error_model_codes_are_stable():
     from cloud_dog_api_kit.change_stream.errors import ERROR_CODES
 

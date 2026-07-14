@@ -58,6 +58,9 @@ def _resolver() -> OutboundServiceResolver:
     return OutboundServiceResolver(lambda key: values.get(key))
 
 
+@pytest.mark.UT
+@pytest.mark.mcp
+@pytest.mark.req("FR-002")
 def test_parse_enrich_spec_and_resolve_arguments() -> None:
     step = parse_enrich_spec("search-mcp.enrich(query=$doc.title, depth=quick)")
 

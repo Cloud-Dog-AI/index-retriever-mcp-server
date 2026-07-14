@@ -3,11 +3,11 @@ template-id: T-REQ
 template-version: 1.1
 applies-to: docs/REQUIREMENTS.md
 project: index-retriever-mcp-server
-doc-last-updated: 2026-06-23T00:00:00Z
-doc-git-commit: affbc31376cc03680e72616e4c1db2eefb5d7507
+doc-last-updated: 2026-07-14T17:38:04Z
+doc-git-commit: 3f4802369ad66d37b4c125033bc02dbc8c18b555
 doc-git-branch: coordinator/20260622-agent-converge/index-retriever-main-merge
 doc-age-policy: indefinite
-doc-conformance-stamp: 2026-06-23T00:00:00Z
+doc-conformance-stamp: 2026-07-14T17:38:04Z
 req-trace-version: 1.0
 req-id-prefixes-used: [SV, BO, BR, FR, UC, CS, NF, R, F]
 surface-coverage: [api, mcp, a2a, webui]
@@ -148,6 +148,8 @@ Primary goals:
 | `FR-016` | Keep the complete MCP tool inventory documented and matching runtime registration exactly, including 95 unique tools and management operations. | `mcp`, `api` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-007` | `T-UT-040`, `T-SMOKE-TOOLS` |
 | `FR-017` | Preserve WebUI/API parity, controlled operation handling, middleware, and handler-path coverage for operator workflows. | `api`, `mcp`, `webui`, `internal` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-005`, `UC-006`, `UC-007` | `T-UT-035`, `T-AT-WEBUI-CRUD` |
 | `FR-018` | Bind the WebUI IDAM/admin route contract, including `/idam/users` and `/admin/users` URL-canonical behavior, to security-admin test design. | `webui`, `api` | `must` | `affbc31` | `affbc31 2026-06-23` | `UC-007` | `T-AT-WEBUI-SECURITY` |
+| `FR-019` | Provide index change-watch lifecycle, criteria validation, typed index events, and parity across API, MCP, and A2A surfaces. | `api`, `mcp`, `a2a`, `internal` | `must` | `ccfb566` | `2dd688b 2026-07-10` | `UC-001`, `UC-005` | `UT_W28E1870A_ChangeStream` |
+| `FR-020` | Provide nonblocking batches, cursor acknowledgement/recovery, bounded backpressure, and durable journal retention/restart behavior for index watches. | `api`, `mcp`, `internal` | `must` | `ccfb566` | `ccfb566 2026-07-10` | `UC-001` | `UT_W28E1870A_ChangeStream` |
 
 ### FR-01 Interfaces: MCP A2A + HTTP API + Admin WebUI (PS-00 P1, PS-20)
 - The system SHALL expose an MCP-compatible A2A tool interface.
@@ -845,6 +847,7 @@ Mandatory schema per PS-REQ-TEST-TRACE v1.0 §3.4. Every project covers anon-den
 | `CS-011` | API request misses a required parameter and receives structured validation. | `api` | `*` | `422` | `T-UT-031` |
 | `CS-012` | MCP request misses a required parameter and receives structured validation. | `mcp` | `*` | `422` | `T-UT-042` |
 | `CS-013` | A2A request misses a required parameter and receives structured validation. | `a2a` | `*` | `422` | `T-UT-042` |
+| `CS-014` | Anonymous, read-only, or cross-tenant caller reaches or mutates an index watch outside its authority. | `api`, `mcp`, `a2a`, `internal` | `anon`, `read-only`, cross-tenant | `401` / `403` / non-disclosing `404` | `test_anonymous_watch_access_is_rejected`, `test_cross_tenant_isolation_is_hard_failure`, `test_reader_cannot_create_or_delete_watch` |
 
 
 ## 10. Traceability Notes

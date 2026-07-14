@@ -3,11 +3,11 @@ template-id: T-TST
 template-version: 1.1
 applies-to: docs/TESTS.md
 project: index-retriever-mcp-server
-doc-last-updated: 2026-06-23T00:00:00Z
-doc-git-commit: affbc31376cc03680e72616e4c1db2eefb5d7507
+doc-last-updated: 2026-07-14T17:38:04Z
+doc-git-commit: 3f4802369ad66d37b4c125033bc02dbc8c18b555
 doc-git-branch: coordinator/20260622-agent-converge/index-retriever-main-merge
 doc-age-policy: 90d
-doc-conformance-stamp: 2026-06-23T00:00:00Z
+doc-conformance-stamp: 2026-07-14T17:38:04Z
 req-trace-version: 1.0
 total-tests: 397
 coverage-percent: 100
@@ -32,7 +32,7 @@ The W28E-1882 candidate evidence commit
 exact command transcript or corrected `W28E-1882-*-R2` immutable tags. It is
 therefore **NOT IMPORTED - provenance gap**, and none of those runs is added to
 generated status/history. `docs/TEST-STATUS.md` and `docs/TEST-HISTORY.md` were
-intentionally left unchanged to avoid false W28R-3016 or W28E-1882 history.
+corrected to mark the candidates **NOT IMPORTED** while retaining adverse truth.
 
 ## 1. Tiers
 

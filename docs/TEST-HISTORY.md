@@ -9,12 +9,12 @@ template-last-updated: 2026-06-12
 template-owner: platform-standards
 
 project: index-retriever-mcp-server
-doc-last-updated: 2026-06-25T08:00:14Z
-doc-git-commit: W28E-1805C-closeout
+doc-last-updated: 2026-07-14T17:38:04Z
+doc-git-commit: 3f4802369ad66d37b4c125033bc02dbc8c18b555
 doc-git-branch: main
 doc-source-shas: []
 doc-age-policy: indefinite
-doc-conformance-stamp: 2026-06-12T12:00:00Z
+doc-conformance-stamp: 2026-07-14T17:38:04Z
 ---
 
 # index-retriever-mcp-server — TEST-HISTORY
@@ -22,6 +22,14 @@ doc-conformance-stamp: 2026-06-12T12:00:00Z
 > **Template version:** T-TSH v1.0 — appended to by `scripts/update-test-state.py`. Roll-archive to `archive/test-history/<YYYY-MM>.md` when >500 lines.
 
 ## Runs (most recent first)
+
+### 2026-07-14T17:38:04Z - W28E-1863 / W28E-1882 / W28R-3016 candidate review
+- Runtime: N/A (no evidence-qualified run imported); CPython 3.12, CPython 3.13, and Node/Playwright reviewed separately.
+- Environment: NOT RECORDED with every mandatory provenance field.
+- Command: NOT RECORDED as a literal foreground invocation in immutable evidence.
+- Evidence: `docs/TEST-CANDIDATE-DISPOSITIONS-2026-07-08-14.md`.
+- Totals: NOT IMPORTED; legacy 421-pass/5-skip and browser pass/failure/skip summaries remain candidate truth only.
+- Disposition: documentation review, not a test run; W28R-3016 was undispatched.
 
 ### 2026-06-25T08:50:39+01:00
 - Commit: `W28E-1805C-closeout` (main)

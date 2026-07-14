@@ -14,9 +14,9 @@
 
 """W28E-1870-A unit tests for the ``WatchService`` VDB change-watch adapter.
 
-Covers CSTREAM-IR-001/002 (VDB watch + criteria), CSTREAM-005 (cursor/ack/recover),
-CSTREAM-006 (backpressure), CSTREAM-007 (durable journal), CSTREAM-009 (tenancy),
-CSTREAM-010 (audit rows), and CSTREAM-004 (redaction) at the adapter layer.
+Covers FR-019/002 (VDB watch + criteria), FR-020 (cursor/ack/recover),
+FR-020 (backpressure), FR-020 (durable journal), CS-014 (tenancy),
+FR-002 (audit rows), and NF-002 (redaction) at the adapter layer.
 """
 
 from __future__ import annotations
@@ -47,7 +47,9 @@ def _svc(engine=None, audit=None):
     return WatchService(engine=engine, audit_sink=sink)
 
 
-@pytest.mark.req("CSTREAM-IR-001")
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-019")
 def test_create_list_status_pause_resume_delete_lifecycle():
     ws = _svc()
     w = ws.create_watch(profile_id="p", tenant_id="t", actor="alice", criteria={"collection": "docs"})
@@ -60,7 +62,7 @@ def test_create_list_status_pause_resume_delete_lifecycle():
     assert ws.list_watches(tenant_id="t") == []
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_observe_change_emits_only_to_matching_live_watches():
     ws = _svc()
     match_w = ws.create_watch(profile_id="p", tenant_id="t", actor="a",
@@ -76,7 +78,7 @@ def test_observe_change_emits_only_to_matching_live_watches():
     assert len(ws.get_batch(other_w, tenant_id="t")["events"]) == 0
 
 
-@pytest.mark.req("CSTREAM-IR-001")
+@pytest.mark.req("FR-019")
 def test_paused_watch_does_not_receive_events():
     ws = _svc()
     wid = ws.create_watch(profile_id="p", tenant_id="t", actor="a", criteria={})["watch_id"]
@@ -86,7 +88,7 @@ def test_paused_watch_does_not_receive_events():
     assert ws.get_status(wid, tenant_id="t")["journal_depth"] == 0
 
 
-@pytest.mark.req("CSTREAM-009")
+@pytest.mark.req("CS-014")
 def test_cross_tenant_isolation_is_hard_failure():
     ws = _svc()
     wid = ws.create_watch(profile_id="p", tenant_id="tenant-a", actor="a", criteria={})["watch_id"]
@@ -101,7 +103,7 @@ def test_cross_tenant_isolation_is_hard_failure():
     assert ws.list_watches(tenant_id="tenant-b") == []
 
 
-@pytest.mark.req("CSTREAM-005")
+@pytest.mark.req("FR-020")
 def test_cursor_batch_ack_recover_flow():
     ws = _svc()
     wid = ws.create_watch(profile_id="p", tenant_id="t", actor="a", criteria={}, max_batch=2)["watch_id"]
@@ -116,7 +118,7 @@ def test_cursor_batch_ack_recover_flow():
     assert resume["resume_cursor"]
 
 
-@pytest.mark.req("CSTREAM-006")
+@pytest.mark.req("FR-020")
 def test_backpressure_throttles_unacked_batches():
     ws = _svc()
     wid = ws.create_watch(profile_id="p", tenant_id="t", actor="a",
@@ -128,7 +130,7 @@ def test_backpressure_throttles_unacked_batches():
         ws.get_batch(wid, tenant_id="t", since_cursor=None)
 
 
-@pytest.mark.req("CSTREAM-007")
+@pytest.mark.req("FR-020")
 def test_durable_sql_journal_persists_across_service_instances():
     # a shared file-backed sqlite engine simulates restart durability
     import os
@@ -150,7 +152,7 @@ def test_durable_sql_journal_persists_across_service_instances():
         os.unlink(path)
 
 
-@pytest.mark.req("CSTREAM-010")
+@pytest.mark.req("FR-002")
 def test_audit_rows_emitted_for_lifecycle_and_emission():
     audit = _CaptureAudit()
     ws = _svc(audit=audit)
@@ -163,7 +165,7 @@ def test_audit_rows_emitted_for_lifecycle_and_emission():
     assert "change_watch.batch_delivery" in actions
 
 
-@pytest.mark.req("CSTREAM-004")
+@pytest.mark.req("NF-002")
 def test_secret_bearing_metadata_is_redacted_in_batches():
     ws = _svc()
     wid = ws.create_watch(profile_id="p", tenant_id="t", actor="a", criteria={})["watch_id"]
@@ -177,7 +179,7 @@ def test_secret_bearing_metadata_is_redacted_in_batches():
     assert "Bearer xyz" not in dumped
 
 
-@pytest.mark.req("CSTREAM-IR-001")
+@pytest.mark.req("FR-019")
 def test_test_event_injects_synthetic_without_backend_mutation():
     ws = _svc()
     wid = ws.create_watch(profile_id="p", tenant_id="t", actor="a", criteria={})["watch_id"]
@@ -188,7 +190,7 @@ def test_test_event_injects_synthetic_without_backend_mutation():
     assert b["events"][0]["action"] == "created"
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_create_rejects_invalid_criteria_before_watch_starts():
     ws = _svc()
     with pytest.raises(InvalidCriteria):
@@ -197,7 +199,7 @@ def test_create_rejects_invalid_criteria_before_watch_starts():
     assert ws.list_watches(tenant_id="t") == []
 
 
-@pytest.mark.req("CSTREAM-004")
+@pytest.mark.req("NF-002")
 def test_envelope_carries_typed_index_metadata_and_criteria_match():
     ws = _svc()
     wid = ws.create_watch(profile_id="prof", tenant_id="t", actor="a",

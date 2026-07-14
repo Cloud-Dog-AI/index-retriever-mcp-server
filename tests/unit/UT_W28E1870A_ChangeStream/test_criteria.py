@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""W28E-1870-A unit tests for the VDB change-watch criteria matcher (CSTREAM-IR-002)."""
+"""W28E-1870-A unit tests for the VDB change-watch criteria matcher (FR-019)."""
 
 from __future__ import annotations
 
@@ -30,26 +30,28 @@ def _cand(**kw):
     return ChangeCandidate(**base)
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-019")
 def test_empty_criteria_matches_all():
     m = match({}, _cand())
     assert m == {"all": True}
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_collection_criterion_exact_and_list():
     assert match({"collection": "docs"}, _cand(collection="docs")) is not None
     assert match({"collection": "docs"}, _cand(collection="other")) is None
     assert match({"collection": ["a", "docs"]}, _cand(collection="docs")) is not None
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_action_criterion():
     assert match({"action": ["ingested", "deleted"]}, _cand(action="deleted")) is not None
     assert match({"action": "ingested"}, _cand(action="deleted")) is None
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_source_uri_glob_and_regex():
     c = _cand(source_uri="https://a.example.com/reports/q1.pdf")
     assert match({"source_uri": "*://*.example.com/reports/*"}, c) is not None
@@ -57,7 +59,7 @@ def test_source_uri_glob_and_regex():
     assert match({"source_uri": "*://other.net/*"}, c) is None
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_source_domain_criterion():
     c = _cand(source_uri="https://user:pw@docs.example.com:8443/a")
     assert match({"source_domain": "docs.example.com"}, c) is not None
@@ -65,7 +67,7 @@ def test_source_domain_criterion():
     assert match({"source_domain": "example.com"}, c) is None
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_title_and_language_and_text():
     c = _cand(title="Quarterly Report", language="en", text="revenue grew 12% year over year")
     assert match({"title": "Quarterly*"}, c) is not None
@@ -75,7 +77,7 @@ def test_title_and_language_and_text():
     assert match({"text": "*missing phrase*"}, c) is None
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_metadata_keys_and_values():
     c = _cand(metadata={"doc_id": "d1", "embedding_model": "nomic", "lifecycle_state": "active"})
     assert match({"metadata_keys": ["doc_id", "embedding_model"]}, c) is not None
@@ -85,7 +87,7 @@ def test_metadata_keys_and_values():
     assert match({"metadata": {"embedding_model": "re:^nomic"}}, c) is not None
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_combined_criteria_all_must_match():
     c = _cand(collection="docs", action="ingested", language="en", title="Report")
     ok = match({"collection": "docs", "action": "ingested", "language": "en"}, c)
@@ -94,7 +96,7 @@ def test_combined_criteria_all_must_match():
     assert match({"collection": "docs", "language": "fr"}, c) is None
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_criteria_match_provenance_is_recorded():
     c = _cand(collection="docs", action="ingested", source_uri="https://x.io/a")
     m = match({"collection": "docs", "action": "ingested", "source_domain": "x.io"}, c)
@@ -103,19 +105,19 @@ def test_criteria_match_provenance_is_recorded():
     assert m["source_domain"] == "x.io"
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_validate_rejects_unknown_field():
     with pytest.raises(InvalidCriteria):
         validate_criteria({"bogus": 1})
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_validate_rejects_unknown_action_verb():
     with pytest.raises(InvalidCriteria):
         validate_criteria({"action": "exploded"})
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_validate_rejects_bad_regex():
     with pytest.raises(InvalidCriteria):
         validate_criteria({"title": "re:([unclosed"})

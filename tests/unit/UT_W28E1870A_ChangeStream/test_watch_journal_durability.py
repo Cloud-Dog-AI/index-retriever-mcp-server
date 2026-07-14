@@ -14,7 +14,7 @@
 
 """W28E-1870-A: durable change-watch journal via the REAL ``cloud_dog_db`` engine.
 
-Proves CSTREAM-007 (journal survives restart within retention) end-to-end through
+Proves FR-020 (journal survives restart within retention) end-to-end through
 ``WatchService`` backed by a real ``cloud_dog_db`` SQLAlchemy engine (SQLite file),
 not just an isolated in-memory sqlite. Uses the shared engine directly so no live
 VDB / embedding backend is required.
@@ -30,7 +30,9 @@ from index_tools.change_stream import WatchService
 pytestmark = [pytest.mark.UT, pytest.mark.internal]
 
 
-@pytest.mark.req("CSTREAM-007")
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-020")
 def test_durable_journal_survives_restart_via_shared_db_engine(tmp_path):
     db_file = tmp_path / "watch-journal.db"
     url = f"sqlite:///{db_file}"
@@ -54,11 +56,11 @@ def test_durable_journal_survives_restart_via_shared_db_engine(tmp_path):
     assert batch["next_cursor"]
 
 
-@pytest.mark.req("CSTREAM-007")
+@pytest.mark.req("FR-020")
 def test_journal_ttl_and_size_bounds_are_enforced(tmp_path):
     url = f"sqlite:///{tmp_path / 'bounded.db'}"
     ws = WatchService(engine=create_engine(url))
-    # bound the journal to 3 rows; the oldest are trimmed (drop-oldest, CSTREAM-006)
+    # bound the journal to 3 rows; the oldest are trimmed (drop-oldest, FR-020)
     ws.create_watch(profile_id="p", tenant_id="t", actor="a", criteria={},
                     watch_id="w-bounded", journal_max=3)
     for i in range(6):

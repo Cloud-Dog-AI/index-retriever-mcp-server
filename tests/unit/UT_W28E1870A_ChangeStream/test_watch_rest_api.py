@@ -16,7 +16,7 @@
 
 Drives the real FastAPI app built by ``build_api_app`` over the in-process
 ``service`` fixture, proving watch lifecycle + batch retrieval + RBAC/anon on the
-API surface (CSTREAM-001/005/009). Auth tokens come from the env-UT contract
+API surface (FR-019/005/009). Auth tokens come from the env-UT contract
 (``valid-reader-token:reader``, ``valid-writer-token:writer``, ``valid-admin-token:admin``).
 """
 
@@ -39,13 +39,15 @@ def client(service: IndexService) -> TestClient:
     return TestClient(build_api_app(service=service))
 
 
-@pytest.mark.req("CSTREAM-009")
+@pytest.mark.UT
+@pytest.mark.api
+@pytest.mark.req("CS-014")
 def test_anonymous_watch_access_is_rejected(client: TestClient) -> None:
     assert client.get("/v1/watches").status_code == 401
     assert client.post("/v1/watches", json={"profile": "default"}).status_code == 401
 
 
-@pytest.mark.req("CSTREAM-001")
+@pytest.mark.req("FR-019")
 def test_full_watch_lifecycle_over_rest(client: TestClient) -> None:
     # create (writer)
     r = client.post(
@@ -101,14 +103,14 @@ def test_full_watch_lifecycle_over_rest(client: TestClient) -> None:
     assert d.json()["deleted"] is True
 
 
-@pytest.mark.req("CSTREAM-009")
+@pytest.mark.req("CS-014")
 def test_reader_cannot_create_or_delete_watch(client: TestClient) -> None:
     # reader lacks collection.write -> create denied
     r = client.post("/v1/watches", json={"profile": "default"}, headers=_READER)
     assert r.status_code == 403, r.text
 
 
-@pytest.mark.req("CSTREAM-IR-002")
+@pytest.mark.req("FR-019")
 def test_create_with_invalid_criteria_returns_400(client: TestClient) -> None:
     r = client.post(
         "/v1/watches",
@@ -118,7 +120,7 @@ def test_create_with_invalid_criteria_returns_400(client: TestClient) -> None:
     assert r.status_code == 400, r.text
 
 
-@pytest.mark.req("CSTREAM-005")
+@pytest.mark.req("FR-020")
 def test_unknown_watch_returns_404(client: TestClient) -> None:
     r = client.get("/v1/watches/does-not-exist/status?profile=default", headers=_READER)
     assert r.status_code == 404, r.text
