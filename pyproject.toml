@@ -19,11 +19,11 @@ dependencies = [
     # W28E-1870-A: change-stream foundation (PS-102). ``change-stream-db`` extra
     # pulls the SqlJournal deps (already satisfied by cloud_dog_db + SQLAlchemy below).
     "cloud_dog_api_kit[change-stream-db]>=0.14.0",
-    "cloud_dog_idam==0.5.3",
+    "cloud_dog_idam==0.5.4",
     "cloud_dog_jobs==0.4.2",
     "cloud_dog_db>=0.3.2",
     "cloud_dog_storage==0.1.8",
-    "cloud_dog_llm==0.4.0",
+    "cloud_dog_llm==0.4.1",
     "cloud_dog_vdb>=0.5.5",
     # Core runtime
     "pydantic>=2.7,<3.0",
