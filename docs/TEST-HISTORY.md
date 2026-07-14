@@ -23,6 +23,15 @@ doc-conformance-stamp: 2026-07-14T17:38:04Z
 
 ## Runs (most recent first)
 
+### 2026-07-14T10:00:14.382Z — W28E-1882
+- Commit: `2dd688bb4bb7b4504d752168736cfc575495c1ec` (main)
+- Runtime: N/A (Node/Playwright)
+- Environment: `deployed preprod; approved runtime/Vault credentials; service E2E_BASE_URL`
+- Command: `bash /opt/iac/Development/cloud-dog-ai/tmp/W28E-1882/run-index-retriever.sh FINAL`
+- Evidence: `W28E-1882-FINAL-PROOF-R2:working/evidence/W28E-1882/current/raw/index-retriever/index-retriever.FINAL.junit.xml`
+- Totals: 88 / P 88 / F 0 / E 0 / S 0
+- Delta: new-fails 0 | newly-green 0
+
 ### 2026-07-14T17:38:04Z - W28E-1863 / W28E-1882 / W28R-3016 candidate review
 - Runtime: N/A (no evidence-qualified run imported); CPython 3.12, CPython 3.13, and Node/Playwright reviewed separately.
 - Environment: NOT RECORDED with every mandatory provenance field.

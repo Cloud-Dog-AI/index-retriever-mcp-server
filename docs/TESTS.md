@@ -286,3 +286,13 @@ gate runs a real browser AFTER the final deployed digest is live.
   pageerror + blank `#root` + 5xx is asserted with zero tolerance).
 - **Evidence output location:** `working/preprod-deploy-smoke/` (gitignored test
   output: JUnit `preprod-deploy-smoke.junit.xml`, HTML report, traces, screenshots).
+
+## W28E-1882 deployed WebUI final
+
+- **Run timestamp (UTC):** `2026-07-14T10:00:14.382Z`
+- **Tested source:** `2dd688bb4bb7b4504d752168736cfc575495c1ec` (`main`)
+- **Runtime:** N/A (Node/Playwright)
+- **Environment:** deployed preprod with approved runtime/Vault credentials
+- **Command:** `bash /opt/iac/Development/cloud-dog-ai/tmp/W28E-1882/run-index-retriever.sh FINAL`
+- **Result:** PASS — 88 tests, 0 failures, 0 errors, 0 skipped
+- **Evidence:** `W28E-1882-FINAL-PROOF-R2:working/evidence/W28E-1882/current/raw/index-retriever/index-retriever.FINAL.junit.xml`

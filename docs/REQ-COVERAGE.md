@@ -2,25 +2,25 @@
 template-id: T-RCM
 template-version: 1.0
 applies-to: docs/REQ-COVERAGE.md
-project: index-retriever-mcp-server
-doc-last-updated: 2026-07-14T17:40:38.802483+00:00
-doc-git-commit: 3f4802369ad66d37b4c125033bc02dbc8c18b555
-doc-git-branch: codex/index-retriever-mcp-server-traceability-20260714
+project: index-retriever
+doc-last-updated: 2026-07-14T23:50:39.466259+00:00
+doc-git-commit: bbee207155496dabee4057958f125246cca786c7
+doc-git-branch: HEAD
 doc-age-policy: 30d
-doc-conformance-stamp: 2026-07-14T17:40:38.802483+00:00
+doc-conformance-stamp: 2026-07-14T23:50:39.466259+00:00
 generated-by: scripts/generate-req-coverage.py
 ---
 
-# index-retriever-mcp-server — REQ-COVERAGE
+# index-retriever — REQ-COVERAGE
 
 > **Template version:** T-RCM v1.0 — script-generated, do not hand-edit.
-> Re-generate via: `scripts/generate-req-coverage.py index-retriever-mcp-server`
+> Re-generate via: `scripts/generate-req-coverage.py index-retriever`
 
 ## 1. Latest generation
 
-- **Generated at:** 2026-07-14T17:40:38.802483+00:00
-- **Source REQ commit:** fdce519
-- **Source TEST commit:** 3f48023
+- **Generated at:** 2026-07-14T23:50:39.466259+00:00
+- **Source REQ commit:** 94f4e8c
+- **Source TEST commit:** 94f4e8c
 
 ## 2. Coverage summary
 
