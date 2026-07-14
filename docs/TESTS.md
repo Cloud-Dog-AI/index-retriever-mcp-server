@@ -15,6 +15,25 @@ coverage-percent: 100
 
 # Tests - index-retriever-mcp-server
 
+## 2026-07-14 Group B test-state backfill
+
+`W28R-3016` was not registered or dispatched. It has no test run to import and is
+recorded in `TESTS.md` only.
+
+| Lane | Runtime | Result | Immutable authority |
+|---|---|---|---|
+| `W28R-3016` | CPython 3.12 | **NOT RUN** - undispatched lane | `3b84431910af9d3436eb3d1a01f2f5b19097dc49:working/instructions/W28R-3016-INDEX-RETRIEVER-MCP-SERVER-SUPPLY-CHAIN-RESIDUAL-REMEDIATION-2026-07-11.md` |
+| `W28R-3016` | CPython 3.13 | **NOT RUN** - undispatched lane | same authority as above |
+| `W28R-3016` | N/A (Node/Playwright) | **NOT RUN** - undispatched lane | same authority as above |
+
+The W28E-1882 candidate evidence commit
+`84a9aa8725166695733ec8be7ebe4a4434c911f9` retains browser JUnits, including an
+88/88 final pass and earlier failure/skip runs. It does not retain the required
+exact command transcript or corrected `W28E-1882-*-R2` immutable tags. It is
+therefore **NOT IMPORTED - provenance gap**, and none of those runs is added to
+generated status/history. `docs/TEST-STATUS.md` and `docs/TEST-HISTORY.md` were
+intentionally left unchanged to avoid false W28R-3016 or W28E-1882 history.
+
 ## 1. Tiers
 
 | Tier | Present | Test functions | Evidence posture |
