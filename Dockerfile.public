@@ -48,6 +48,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY REQUIREMENTS.txt pyproject.toml README.md ./
 COPY src/ ./src/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
+    --mount=type=secret,id=pip_netrc,target=/root/.netrc,required=false \
     pip install --no-cache-dir \
       "cloud-dog-config==0.3.4" \
       cloud-dog-logging \
@@ -60,9 +61,11 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
       "cloud-dog-llm==0.4.1" \
       "cloud-dog-vdb>=0.5.5"
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
+    --mount=type=secret,id=pip_netrc,target=/root/.netrc,required=false \
     pip install --no-cache-dir -r REQUIREMENTS.txt
 COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
+    --mount=type=secret,id=pip_netrc,target=/root/.netrc,required=false \
     pip install --no-cache-dir --no-deps .
 
 # ── Final ────────────────────────────────────────────────────────

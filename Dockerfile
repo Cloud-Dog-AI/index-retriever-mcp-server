@@ -30,6 +30,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install platform packages from the approved package boundary. Read the
 # BuildKit pip secret inside this RUN so credentials never become build args.
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
+    --mount=type=secret,id=pip_netrc,target=/root/.netrc,required=false \
     set -e; \
     INDEX_URL="$(sed -n 's/^[[:space:]]*index-url[[:space:]]*=[[:space:]]*//p' /etc/pip.conf | head -n1)" && \
     if [ -z "${INDEX_URL}" ]; then echo "ERROR: no index-url in pip.conf secret" >&2; exit 3; fi && \
@@ -50,6 +51,7 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
 COPY REQUIREMENTS.txt pyproject.toml README.md ./
 COPY src/ ./src/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
+    --mount=type=secret,id=pip_netrc,target=/root/.netrc,required=false \
     set -e; \
     INDEX_URL="$(sed -n 's/^[[:space:]]*index-url[[:space:]]*=[[:space:]]*//p' /etc/pip.conf | head -n1)" && \
     if [ -z "${INDEX_URL}" ]; then echo "ERROR: no index-url in pip.conf secret" >&2; exit 3; fi && \
@@ -60,6 +62,7 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
 COPY docs/ ./docs/
 COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
+    --mount=type=secret,id=pip_netrc,target=/root/.netrc,required=false \
     set -e; \
     INDEX_URL="$(sed -n 's/^[[:space:]]*index-url[[:space:]]*=[[:space:]]*//p' /etc/pip.conf | head -n1)" && \
     if [ -z "${INDEX_URL}" ]; then echo "ERROR: no index-url in pip.conf secret" >&2; exit 3; fi && \

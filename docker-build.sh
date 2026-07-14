@@ -77,6 +77,8 @@ CUSTOM_CA_CERT="${CUSTOM_CA_CERT:-${INTERNAL_CA_CERT:-}}"
 GENERIC_CA_CERT="custom-ca.crt"
 CERT_ARG=""
 PIP_CONF=".pip.conf.build"
+PIP_NETRC_FILE="${PIP_NETRC_FILE:-}"
+PIP_NETRC_SECRET_ARGS=()
 
 # ── Publication tag isolation (W28A-831) ──────────────────────────
 # PUBLICATION_TAG_SUFFIX appends an isolation suffix (e.g. boundary-test,
@@ -139,6 +141,17 @@ EOF
 fi
 chmod 600 "${PIP_CONF}"
 
+if [[ -n "${PIP_NETRC_FILE}" ]]; then
+  if [[ ! -r "${PIP_NETRC_FILE}" ]]; then
+    echo "ERROR: PIP_NETRC_FILE must name a readable external auth helper" >&2
+    exit 2
+  fi
+  PIP_NETRC_SECRET_ARGS=(--secret "id=pip_netrc,src=${PIP_NETRC_FILE}")
+elif [[ "${VARIANT}" == "dev" && "${PYPI_HOST}" == "pypi.cloud-dog.net" ]]; then
+  echo "ERROR: the approved private index requires an external PIP_NETRC_FILE auth helper" >&2
+  exit 2
+fi
+
 # ── CA Certificate (dev/internal builds only) ────────────────────
 if [[ "${VARIANT}" == "dev" && -f "${CUSTOM_CA_CERT}" ]]; then
   cp "${CUSTOM_CA_CERT}" "./${GENERIC_CA_CERT}"
@@ -161,7 +174,7 @@ fi
 
 # ── W28C-1719 publish-before-pin guard + build-provenance revision label (fail-closed) ──
 _PBP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-"${_PBP_DIR}/scripts/publish-before-pin-guard.sh" "${_PBP_DIR}" || exit $?
+NETRC="${PIP_NETRC_FILE}" "${_PBP_DIR}/scripts/publish-before-pin-guard.sh" "${_PBP_DIR}" || exit $?
 _PBP_REV="$(git -C "${_PBP_DIR}" rev-parse HEAD 2>/dev/null || echo unknown)"
 # W28E-1863 fix-wave-c (WSC-014): propagate build identity to the image so the
 # Dockerfile can stamp OCI labels + runtime ENV for _build_identity(). SOURCE_COMMIT
@@ -177,6 +190,7 @@ DOCKER_BUILDKIT=1 docker buildx build \
   --load \
   -f "${DOCKERFILE}" \
   --secret id=pip_conf,src="${PIP_CONF}" \
+  "${PIP_NETRC_SECRET_ARGS[@]}" \
   ${CERT_ARG} \
   --build-arg HTTP_PROXY="${HTTP_PROXY:-}" \
   --build-arg HTTPS_PROXY="${HTTPS_PROXY:-}" \
