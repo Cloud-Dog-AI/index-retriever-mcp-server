@@ -107,11 +107,11 @@ def allowlist() -> dict[str, object]:
             # _normalise_api_host, shifting the api/mcp/a2a base-URL builders down.
             # The allowlisted CONTENT (the same loopback + config-derived http:// base
             # URLs) is unchanged — only the line offsets moved.)
-            "src/index_server/web_server.py:144",
-            "src/index_server/web_server.py:145",
-            "src/index_server/web_server.py:182",
-            "src/index_server/web_server.py:343",
-            "src/index_server/web_server.py:344",
+            "src/index_server/web_server.py:146",
+            "src/index_server/web_server.py:147",
+            "src/index_server/web_server.py:184",
+            "src/index_server/web_server.py:345",
+            "src/index_server/web_server.py:346",
             # hdro.py: HDRO_CANONICAL_BASE_URL is the documented non-secret
             # canonical UNDP HDRO public-API host. It is deliberately pinned
             # (not config-overridable) because it seeds the anti-SSRF host
