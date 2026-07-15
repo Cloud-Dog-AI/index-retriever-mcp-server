@@ -23,6 +23,24 @@ doc-conformance-stamp: 2026-07-15T20:46:47.881889Z
 
 ## Runs (most recent first)
 
+### 2026-07-15T22:36:27.353420+00:00 — W28R-3016
+- Commit: `f014476b8e810c83bf61e8dc957269e38dc2baaa` (w28r-3016-index-retriever)
+- Runtime: CPython 3.13.14
+- Environment: `tests/env-ST + Vault-provided W28E603_MATRIX_POSTGRESQL_URL + W28E603_MATRIX_MYSQL_URL`
+- Command: `.venv/bin/python -m pytest tests/system --env tests/env-ST -q`
+- Evidence: `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/tests/st-all-backends-zero-skip-junit.xml`
+- Totals: 28 / P 28 / F 0 / E 0 / S 0
+- Delta: new-fails 0 | newly-green 0
+
+### 2026-07-15T22:36:27.245415+00:00 — W28R-3016
+- Commit: `f014476b8e810c83bf61e8dc957269e38dc2baaa` (w28r-3016-index-retriever)
+- Runtime: CPython 3.13.14
+- Environment: `tests/env-QT`
+- Command: `.venv/bin/python -m pytest tests/quality --env tests/env-QT -q`
+- Evidence: `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/tests/qt-mysql-contract-final-junit.xml`
+- Totals: 52 / P 52 / F 0 / E 0 / S 0
+- Delta: new-fails 0 | newly-green 0
+
 ### 2026-07-15T21:22:47.820302Z — W28R-3016
 - Commit: `b74087f738679b3f1fef1744ceaadd44351e1d93` (w28r-3016-index-retriever)
 - Runtime: CPython 3.13.14
