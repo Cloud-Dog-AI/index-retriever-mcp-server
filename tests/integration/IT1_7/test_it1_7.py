@@ -13,16 +13,17 @@
 # limitations under the License.
 
 import json
+import time
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from index_server.api_server import build_api_app
 from tests.http_paths import api_tools_path
 from tests.live_runtime import LiveIndexRuntime
-import pytest
 
 
 def _post_json(url: str, payload: dict[str, object], headers: dict[str, str]) -> tuple[int, dict[str, object]]:
@@ -95,8 +96,20 @@ def test_mcp_tool_execution(
         },
         writer_headers,
     )
-    assert ingested.get("status") == "queued"
-    assert ingested.get("job_id")
+    assert str(ingested.get("status", "")).lower() in {"queued", "running", "succeeded"}
+    job_id = str(ingested.get("job_id", ""))
+    assert job_id
+
+    deadline = time.monotonic() + 30
+    job_status = str(ingested.get("status", "")).lower()
+    while job_status in {"queued", "running"} and time.monotonic() < deadline:
+        job_detail = call_tool("job_get", {"job_id": job_id}, writer_headers)
+        job = job_detail.get("job")
+        assert isinstance(job, dict)
+        job_status = str(job.get("status", "")).lower()
+        if job_status in {"queued", "running"}:
+            time.sleep(0.1)
+    assert job_status == "succeeded"
 
     search = call_tool(
         "search",
