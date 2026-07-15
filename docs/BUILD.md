@@ -10,7 +10,7 @@ template-owner: platform-standards
 
 project: index-retriever-mcp-server
 doc-last-updated: 2026-07-15
-doc-git-commit: W28R-3016-pending-main
+doc-git-commit: ba37248cbf0b2d21e87a6e02dd28af3fdb6d214b
 doc-git-branch: w28r-3016-index-retriever
 doc-source-shas: [Dockerfile, docker-build.sh, requirements.lock, pyproject.toml]
 doc-age-policy: 90d
