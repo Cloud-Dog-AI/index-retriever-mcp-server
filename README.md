@@ -1,3 +1,9 @@
+---
+template-id: T-RME
+template-version: 1.0
+applies-to: README.md
+---
+
 # Index Retriever MCP Server
 
 `index-retriever-mcp-server` exposes document ingestion, retrieval, parser, Web UI, MCP, and A2A-compatible endpoints.

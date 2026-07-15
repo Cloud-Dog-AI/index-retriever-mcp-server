@@ -1,3 +1,9 @@
+---
+template-id: T-BLD
+template-version: 1.0
+applies-to: BUILD.md
+---
+
 # Build Instructions
 
 ## Project

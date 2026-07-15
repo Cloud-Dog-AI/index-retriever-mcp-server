@@ -1,3 +1,9 @@
+---
+template-id: T-AGL
+template-version: 1.0
+applies-to: AGENT-LESSONS.md
+---
+
 # Agent Lessons — index-retriever-mcp-server
 
 ## Central Programme Lesson Authority
