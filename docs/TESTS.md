@@ -3,11 +3,11 @@ template-id: T-TST
 template-version: 1.1
 applies-to: docs/TESTS.md
 project: index-retriever-mcp-server
-doc-last-updated: 2026-07-14T17:38:04Z
-doc-git-commit: 3f4802369ad66d37b4c125033bc02dbc8c18b555
-doc-git-branch: coordinator/20260622-agent-converge/index-retriever-main-merge
+doc-last-updated: 2026-07-15T20:46:47Z
+doc-git-commit: ba37248cbf0b2d21e87a6e02dd28af3fdb6d214b
+doc-git-branch: w28r-3016-index-retriever
 doc-age-policy: 90d
-doc-conformance-stamp: 2026-07-14T17:38:04Z
+doc-conformance-stamp: 2026-07-15T20:46:47Z
 req-trace-version: 1.0
 total-tests: 397
 coverage-percent: 100
@@ -15,16 +15,47 @@ coverage-percent: 100
 
 # Tests - index-retriever-mcp-server
 
-## 2026-07-14 Group B test-state backfill
+## 2026-07-15 W28R-3016 retained qualification
 
-`W28R-3016` was not registered or dispatched. It has no test run to import and is
-recorded in `TESTS.md` only.
+`W28R-3016` executed the current service tree under CPython 3.13.14 and the
+current Index Retriever WebUI under Node 22.22.0/pnpm 11.7.0. The service tree
+was committed as `ba37248cbf0b2d21e87a6e02dd28af3fdb6d214b`; the WebUI tree was
+merged as `c26566ccf3fe04e5d23cbc565b12901b1863209a`. CPython 3.12 was not used
+for a full suite: the source-controlled runtime-contract gate rejects Python
+earlier than 3.13, and that guard is not represented as 3.12 runtime parity.
 
-| Lane | Runtime | Result | Immutable authority |
-|---|---|---|---|
-| `W28R-3016` | CPython 3.12 | **NOT RUN** - undispatched lane | `3b84431910af9d3436eb3d1a01f2f5b19097dc49:working/instructions/W28R-3016-INDEX-RETRIEVER-MCP-SERVER-SUPPLY-CHAIN-RESIDUAL-REMEDIATION-2026-07-11.md` |
-| `W28R-3016` | CPython 3.13 | **NOT RUN** - undispatched lane | same authority as above |
-| `W28R-3016` | N/A (Node/Playwright) | **NOT RUN** - undispatched lane | same authority as above |
+| Lane | Runtime | Environment/config | Result | Immutable evidence |
+|---|---|---|---|---|
+| `W28R-3016` | CPython 3.12 | N/A | **NOT RUN** - Python 3.13 is the project runtime contract | `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/tests/python-final-premerge-version.log` |
+| `W28R-3016` | CPython 3.13.14 | `tests/env-QT` | QT final: **52 passed, 0 failed/errors/skipped** | `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/tests/qt-post-ui-vendor-final.xml` |
+| `W28R-3016` | CPython 3.13.14 | `tests/env-UT` | UT: **316 passed, 0 failed/errors/skipped**; branch coverage **72%** | `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/tests/coverage-unit-junit.xml` |
+| `W28R-3016` | CPython 3.13.14 | `tests/env-ST` | ST: **26 passed, 2 optional SQL-driver skips, 0 failed/errors**; real PostgreSQL target **1 passed** | `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/tests/st-junit.xml` |
+| `W28R-3016` | CPython 3.13.14 | `tests/env-IT` plus authorized Vault-derived local overlay | IT final: **64 passed, 3 optional unavailable-parser skips, 0 failed/errors** | `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/tests/it-final-authorized-junit.xml` |
+| `W28R-3016` | CPython 3.13.14 | `tests/env-AT` plus authorized Vault-derived local overlay | AT final: **26 passed, 0 failed/errors/skipped** | `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/tests/at-final-authorized-junit.xml` |
+| `W28R-3016` | N/A (Node/Playwright) | real local API/WebUI/MCP/A2A; API-key auth; one worker; zero retries | **76 passed, 0 failed/errors/skipped** | `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/ui/playwright-api-key-final-green.xml` |
+| `W28R-3016` | N/A (Node/Playwright) | real local API/WebUI/MCP/A2A; cookie auth; one worker; zero retries | **12 passed, 0 failed/errors/skipped** | `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/ui/playwright-cookie-preprod-final-green.xml` |
+
+Exact retained foreground commands:
+
+```bash
+.venv/bin/python -m pytest tests/quality --env tests/env-QT -q
+.venv/bin/python -m pytest tests/unit --env tests/env-UT -q
+.venv/bin/python -m pytest tests/system --env tests/env-ST -q
+.venv/bin/python -m pytest tests/integration --env tests/env-IT -q
+.venv/bin/python -m pytest tests/application --env tests/env-AT -q
+.venv/bin/python -m pytest tests/unit --env tests/env-UT --cov=src --cov-branch
+pnpm exec playwright test --config playwright.config.ts <non-preprod-specs> --workers=1 --retries=0 --reporter=line,junit
+pnpm exec playwright test --config playwright.config.ts tests/e2e/preprod-deploy-smoke.spec.ts --workers=1 --retries=0 --reporter=line,junit
+```
+
+Adverse truth is retained rather than overwritten: the first full AT attempt
+had 2 failures, the first fully configured IT attempt had 4 failures,
+20 errors and 11 skips, the definitive API-key browser attempt had 67 passes and
+9 failures, and the first post-vendoring QT attempt had 51 passes and 1 failure.
+The generated history imports those JUnits and their corrected reruns in original
+timestamp order. The targeted MySQL system probe also retained its missing-driver
+failure; no external/public package lookup or install was permitted to convert
+that optional profile into a false pass.
 
 The W28E-1882 candidate evidence commit
 `84a9aa8725166695733ec8be7ebe4a4434c911f9` retains browser JUnits, including an

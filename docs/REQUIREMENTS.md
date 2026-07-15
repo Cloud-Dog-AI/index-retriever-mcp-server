@@ -3,11 +3,11 @@ template-id: T-REQ
 template-version: 1.1
 applies-to: docs/REQUIREMENTS.md
 project: index-retriever-mcp-server
-doc-last-updated: 2026-07-14T17:38:04Z
-doc-git-commit: 3f4802369ad66d37b4c125033bc02dbc8c18b555
-doc-git-branch: coordinator/20260622-agent-converge/index-retriever-main-merge
+doc-last-updated: 2026-07-15T20:46:47Z
+doc-git-commit: ba37248cbf0b2d21e87a6e02dd28af3fdb6d214b
+doc-git-branch: w28r-3016-index-retriever
 doc-age-policy: indefinite
-doc-conformance-stamp: 2026-07-14T17:38:04Z
+doc-conformance-stamp: 2026-07-15T20:46:47Z
 req-trace-version: 1.0
 req-id-prefixes-used: [SV, BO, BR, FR, UC, CS, NF, R, F]
 surface-coverage: [api, mcp, a2a, webui]
@@ -18,6 +18,11 @@ surface-coverage: [api, mcp, a2a, webui]
 ## Provenance
 - Canonical requirements for index-retriever-mcp-server. Reconciled to runtime by W28A-749 (IDAM Thread-b).
 - Source basis: `defaults.yaml`, the API/Web/MCP/A2A servers, and the runtime tool registry (95 tools — `src/index_tools/tools/registry.py`, enforced by `UT1_40`).
+- W28R-3016 refreshed `docs/TESTS.md`, generated `docs/TEST-STATUS.md`, append-only
+  `docs/TEST-HISTORY.md`, and generated `docs/REQ-COVERAGE.md` from retained
+  CPython 3.13.14 and Node/Playwright JUnits. Existing `Last-verified` cells below
+  were not bulk-advanced from suite totals; only exact test-to-requirement evidence
+  may advance an individual requirement.
 
 **Version:** 1.1  
 **Date:** 2026-02-28  
@@ -33,7 +38,7 @@ surface-coverage: [api, mcp, a2a, webui]
 - an **HTTP API** (canonical interface; WebUI uses it),
 - an **Admin WebUI** for operations (profiles/collections/users/jobs/logs/tests).
 
-It is a **wrapper around LlamaIndex** (and optionally LangChain), providing a consistent operational envelope:
+It is a **wrapper around LlamaIndex**, providing a consistent operational envelope:
 - ingestion and conversion of common document types (Pandoc pipeline, optional DeepDoc/MinerU external),
 - embedding via **external embedding providers** (OpenAI-compatible, Ollama-compatible, and other providers),
 - pluggable vector backends (Chroma local/remote, Qdrant, OpenSearch, Weaviate, PGVector),
