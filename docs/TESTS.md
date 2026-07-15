@@ -53,9 +53,10 @@ had 2 failures, the first fully configured IT attempt had 4 failures,
 20 errors and 11 skips, the definitive API-key browser attempt had 67 passes and
 9 failures, and the first post-vendoring QT attempt had 51 passes and 1 failure.
 The generated history imports those JUnits and their corrected reruns in original
-timestamp order. The targeted MySQL system probe also retained its missing-driver
-failure; no external/public package lookup or install was permitted to convert
-that optional profile into a false pass.
+timestamp order. The targeted MySQL system probe also retained its initial
+missing-driver failure and its corrected rerun after the frozen internal PyMySQL
+release was added to the runtime contract. No external/public package lookup or
+install was used.
 
 The W28E-1882 candidate evidence commit
 `84a9aa8725166695733ec8be7ebe4a4434c911f9` retains browser JUnits, including an

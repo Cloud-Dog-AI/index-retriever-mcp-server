@@ -116,6 +116,7 @@ pydantic==2.13.4
 pydantic_core==2.46.4
 Pygments==2.20.0
 PyJWT==2.13.0
+PyMySQL==1.2.0
 PyOTP==2.10.0
 pypandoc==1.17
 pyparsing==3.3.2
