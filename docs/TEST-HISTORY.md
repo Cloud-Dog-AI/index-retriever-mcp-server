@@ -23,6 +23,51 @@ doc-conformance-stamp: 2026-07-15T20:46:47.881889Z
 
 ## Runs (most recent first)
 
+### 2026-07-15T21:22:47.820302Z — W28R-3016
+- Commit: `b74087f738679b3f1fef1744ceaadd44351e1d93` (w28r-3016-index-retriever)
+- Runtime: CPython 3.13.14
+- Environment: `tests/env-IT-local-docker + authorized Vault-derived environment`
+- Command: `.venv/bin/python -m pytest tests/integration/IT1_7/test_it1_7.py::test_mcp_tool_execution --env tests/env-IT-local-docker -q`
+- Evidence: `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/local-docker/it1-7-final-formatted-green.xml`
+- Totals: 1 / P 1 / F 0 / E 0 / S 0
+- Delta: new-fails 0 | newly-green 0
+
+### 2026-07-15T21:21:01.315484Z — W28R-3016
+- Commit: `b74087f738679b3f1fef1744ceaadd44351e1d93` (w28r-3016-index-retriever)
+- Runtime: CPython 3.13.14
+- Environment: `tests/env-IT-local-docker + authorized Vault-derived environment`
+- Command: `.venv/bin/python -m pytest tests/integration --env tests/env-IT-local-docker -q`
+- Evidence: `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/local-docker/it-final-image-green.xml`
+- Totals: 67 / P 64 / F 0 / E 0 / S 3
+- Delta: new-fails 0 | newly-green 0
+
+### 2026-07-15T21:14:21.512417Z — W28R-3016
+- Commit: `b74087f738679b3f1fef1744ceaadd44351e1d93` (w28r-3016-index-retriever)
+- Runtime: CPython 3.13.14
+- Environment: `tests/env-IT-local-docker + authorized Vault-derived environment`
+- Command: `.venv/bin/python -m pytest tests/integration/IT1_7/test_it1_7.py::test_mcp_tool_execution --env tests/env-IT-local-docker -q`
+- Evidence: `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/local-docker/it1-7-final-image-green.xml`
+- Totals: 1 / P 1 / F 0 / E 0 / S 0
+- Delta: new-fails 0 | newly-green 0
+
+### 2026-07-15T21:14:03.536280Z — W28R-3016
+- Commit: `b74087f738679b3f1fef1744ceaadd44351e1d93` (w28r-3016-index-retriever)
+- Runtime: CPython 3.13.14
+- Environment: `tests/env-IT-local-docker; VAULT_TOKEN absent at preflight`
+- Command: `.venv/bin/python -m pytest tests/integration/IT1_7/test_it1_7.py::test_mcp_tool_execution --env tests/env-IT-local-docker -q`
+- Evidence: `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/local-docker/it1-7-final-image-rerun.xml`
+- Totals: 1 / P 0 / F 0 / E 1 / S 0
+- Delta: new-fails 1 | newly-green 1
+
+### 2026-07-15T21:11:51.155265Z — W28R-3016
+- Commit: `decbbc652101ba7cd2bda96a27cce3673b8ecab8` (w28r-3016-index-retriever)
+- Runtime: CPython 3.13.14
+- Environment: `tests/env-IT-local-docker + authorized Vault-derived environment`
+- Command: `.venv/bin/python -m pytest tests/integration --env tests/env-IT-local-docker -q`
+- Evidence: `W28R-3016-EVIDENCE:working/evidence/W28R-3016/current/raw/local-docker/it-final-image.xml`
+- Totals: 67 / P 63 / F 1 / E 0 / S 3
+- Delta: new-fails 1 | newly-green 0
+
 ### 2026-07-15T20:46:47.881889Z — W28R-3016
 - Commit: `ba37248cbf0b2d21e87a6e02dd28af3fdb6d214b` (w28r-3016-index-retriever)
 - Runtime: CPython 3.13.14
