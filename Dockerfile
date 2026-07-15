@@ -37,16 +37,16 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     PIP_NO_INPUT=1 PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
       --index-url "${INDEX_URL}" \
       --trusted-host pypi.cloud-dog.net \
-      "cloud-dog-config==0.3.4" \
+      "cloud-dog-config==0.3.5" \
       cloud-dog-logging==0.4.1 \
-      "cloud-dog-cache==0.2.1" \
+      "cloud-dog-cache==0.2.3" \
       "cloud-dog-api-kit[change-stream-db]==0.14.1" \
       "cloud-dog-idam==0.5.4" \
       cloud-dog-db==0.3.3 \
       cloud-dog-jobs==0.4.4 \
       cloud-dog-storage==0.1.8 \
       cloud-dog-llm==0.4.1 \
-      "cloud-dog-vdb==0.5.5"
+      "cloud-dog-vdb==0.5.6"
 
 COPY REQUIREMENTS.txt pyproject.toml README.md ./
 COPY src/ ./src/

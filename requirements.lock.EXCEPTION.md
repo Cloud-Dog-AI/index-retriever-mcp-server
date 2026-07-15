@@ -31,7 +31,7 @@ cloud-dog-db==0.3.0
 cloud-dog-jobs==0.4.1
 cloud-dog-storage==0.1.8
 cloud-dog-llm==0.3.0
-cloud-dog-vdb==0.5.5
+cloud-dog-vdb==0.5.6
 ```
 
 Build evidence: `working/evidence/W28A-861-R3-index-retriever/build-main-local.log`
