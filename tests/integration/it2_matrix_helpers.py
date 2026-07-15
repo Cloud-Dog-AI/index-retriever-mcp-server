@@ -80,10 +80,12 @@ def _parse_gradio_markdown(payload: Any) -> str:
     data = payload.get("data")
     if not isinstance(data, list):
         return ""
-    if len(data) > 1 and isinstance(data[1], str) and data[1].strip():
-        return data[1]
-    if data and isinstance(data[0], str) and data[0].strip():
-        return data[0]
+    # Current MinerU GUI returns status, file, rendered markdown, raw markdown,
+    # content JSON, and preview. Prefer the raw/rendered markdown fields while
+    # retaining compatibility with the older two-field response.
+    for index in (3, 2, 1, 0):
+        if len(data) > index and isinstance(data[index], str) and data[index].strip():
+            return data[index]
     return ""
 
 
@@ -158,12 +160,19 @@ def _parse_mineru_via_requests_sync(
                 str(parse_options.get("parse_method", "")).strip().lower() == "ocr",
                 _coerce_bool(parse_options.get("formula_enable"), True),
                 _coerce_bool(parse_options.get("table_enable"), True),
-                str(parse_options.get("lang_list", "en (English)")) or "en (English)",
+                _coerce_bool(parse_options.get("image_analysis"), False),
+                str(parse_options.get("effort", "medium")) or "medium",
+                str(
+                    parse_options.get(
+                        "lang_list",
+                        "ch (Chinese, English, Japanese, Chinese Traditional, Latin)",
+                    )
+                ),
                 str(parse_options.get("parse_backend", parse_options.get("backend", "pipeline"))) or "pipeline",
                 str(parse_options.get("server_url", "http://localhost:30000")) or "http://localhost:30000",
             ]
         }
-        run_url = f"{candidate_base}/gradio_api/run/to_markdown"
+        run_url = f"{candidate_base}/gradio_api/run/convert_to_markdown_stream"
         try:
             run_resp = requests.post(run_url, headers=headers, json=run_payload, timeout=(10.0, timeout))
         except Exception as exc:
@@ -279,7 +288,14 @@ def _parse_mineru_via_curl_sync(
                     str(parse_options.get("parse_method", "")).strip().lower() == "ocr",
                     _coerce_bool(parse_options.get("formula_enable"), True),
                     _coerce_bool(parse_options.get("table_enable"), True),
-                    str(parse_options.get("lang_list", "en (English)")) or "en (English)",
+                    _coerce_bool(parse_options.get("image_analysis"), False),
+                    str(parse_options.get("effort", "medium")) or "medium",
+                    str(
+                        parse_options.get(
+                            "lang_list",
+                            "ch (Chinese, English, Japanese, Chinese Traditional, Latin)",
+                        )
+                    ),
                     str(parse_options.get("parse_backend", parse_options.get("backend", "pipeline"))) or "pipeline",
                     str(parse_options.get("server_url", "http://localhost:30000")) or "http://localhost:30000",
                 ]
@@ -295,7 +311,7 @@ def _parse_mineru_via_curl_sync(
                 "Content-Type: application/json",
                 "-d",
                 json.dumps(run_payload),
-                f"{candidate_base}/gradio_api/run/to_markdown",
+                f"{candidate_base}/gradio_api/run/convert_to_markdown_stream",
             ]
             try:
                 run_code, run_body = _curl_post_capture(args=run_args, timeout_seconds=timeout)
@@ -373,11 +389,14 @@ async def parse_pdf_with_provider(
             except Exception as exc:
                 last_error = exc
                 message = f"{type(exc).__name__}: {exc}".lower()
-                transient = "readerror" in message or "connecttimeout" in message or "timed out" in message
-                if transient and attempt + 1 < attempts:
+                recoverable = any(
+                    marker in message
+                    for marker in ("readerror", "connecttimeout", "timed out", "route not found", "gradio run failed")
+                )
+                if recoverable and attempt + 1 < attempts and "route not found" not in message:
                     await asyncio.sleep(min(5.0, float(attempt + 1)))
                     continue
-                if transient:
+                if recoverable:
                     fallback = await asyncio.to_thread(
                         _parse_mineru_via_requests_sync,
                         base_url=str(getattr(provider, "base_url", "")),

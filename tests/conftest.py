@@ -88,9 +88,6 @@ def _resolve_env_value(raw_value: str) -> str:
     match = _VAULT_REF_PATTERN.match(value)
     if match is None:
         return value
-    client = _vault_client()
-    if client is None:
-        return value
     try:
         from tests.live_runtime import load_vault_dev_config  # noqa: WPS433
 
@@ -109,6 +106,9 @@ def _resolve_env_value(raw_value: str) -> str:
                     return resolved_text
     except Exception:
         pass
+    client = _vault_client()
+    if client is None:
+        return value
     resolved = resolve_vault_identifier(match.group(1), vault=client)
     if isinstance(resolved, (str, int, float, bool)):
         resolved_text = str(resolved).strip()

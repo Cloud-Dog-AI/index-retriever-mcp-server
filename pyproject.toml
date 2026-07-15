@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "index-retriever-mcp-server"
 version = "0.1.3RC1"
 description = "API-first MCP server for vector database indexing, searching, and retrieval for agentic flows."
-requires-python = ">=3.12"
+requires-python = ">=3.13,<3.14"
 license = { text = "Apache-2.0" }
 authors = [
   { name = "Cloud-Dog, Viewdeck Engineering Limited" }
@@ -14,17 +14,17 @@ authors = [
 dependencies = [
     # Platform packages (from internal PyPI)
     "cloud_dog_config==0.3.4",
-    "cloud_dog_logging>=0.4.1",
-    "cloud_dog_cache>=0.2.0",
+    "cloud_dog_logging==0.4.1",
+    "cloud_dog_cache==0.2.1",
     # W28E-1870-A: change-stream foundation (PS-102). ``change-stream-db`` extra
     # pulls the SqlJournal deps (already satisfied by cloud_dog_db + SQLAlchemy below).
-    "cloud_dog_api_kit[change-stream-db]>=0.14.0",
+    "cloud_dog_api_kit[change-stream-db]==0.14.1",
     "cloud_dog_idam==0.5.4",
-    "cloud_dog_jobs==0.4.2",
-    "cloud_dog_db>=0.3.2",
+    "cloud_dog_jobs==0.4.4",
+    "cloud_dog_db==0.3.3",
     "cloud_dog_storage==0.1.8",
     "cloud_dog_llm==0.4.1",
-    "cloud_dog_vdb>=0.5.5",
+    "cloud_dog_vdb==0.5.5",
     # Core runtime
     "pydantic>=2.7,<3.0",
     "pydantic-settings>=2.2,<3.0",
@@ -48,7 +48,7 @@ dependencies = [
     # Content ingestion / conversion
     "chardet>=5.2,<6.0",
     "beautifulsoup4>=4.12,<5.0",
-    "lxml==5.2.2",
+    "lxml>=6.1.0,<7.0",
     "xmlsec>=1.3.14,<1.4",
     "markdown-it-py>=3.0,<4.0",
     # Hashing
@@ -66,10 +66,6 @@ llamaindex = [
     "llama-index-readers-file>=0.2,<0.3",
     "llama-index-embeddings-openai>=0.2,<0.3",
     "llama-index-embeddings-huggingface>=0.2,<0.3",
-]
-langchain = [
-    "langchain>=0.2,<0.4",
-    "langchain-community>=0.2,<0.4",
 ]
 connectors = [
     "boto3>=1.34,<2.0",
@@ -91,13 +87,13 @@ dev = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py312"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B", "SIM"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 strict = true
 warn_return_any = true
 warn_unused_configs = true

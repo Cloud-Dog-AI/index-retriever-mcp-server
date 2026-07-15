@@ -24,7 +24,7 @@ base-path namespace is `CLOUD_DOG__INDEX_RETRIEVER__API_SERVER__BASE_PATH`.
 
 ## 2. Assumptions
 
-- **Linux / macOS:** bash, Docker 24+ with BuildKit, Python 3.12+, `curl`.
+- **Linux / macOS:** bash, Docker 24+ with BuildKit, CPython 3.13.14, `curl`.
 - **Windows:** use WSL2 or Git Bash for the shell snippets; Docker Desktop with
   the WSL2 backend. PowerShell-native steps are not provided — run the bash
   blocks inside a Linux shell.
@@ -38,7 +38,8 @@ base-path namespace is `CLOUD_DOG__INDEX_RETRIEVER__API_SERVER__BASE_PATH`.
 ## 3. Path A — Docker build (recommended)
 
 ```bash
-# 1. Build the public image (default variant=public, index defaults to pypi.org).
+# 1. Build the public image (default variant=public; index is always explicit).
+PYPI_URL=https://pypi.org/simple/ \
 PUBLICATION_TAG_SUFFIX=pub-test ./docker-build.sh latest --variant public
 #    -> builds cloud-dog/index-retriever-mcp-server:latest-pub-test
 
@@ -51,7 +52,7 @@ the build without baking it into image layers. To target a different index:
 
 ```bash
 PYPI_URL=https://your-index.example.com/simple/ \
-PYPI_USERNAME=<optional> PYPI_PASSWORD=<optional> \
+PIP_NETRC_FILE=/path/to/mode-0600-pip.netrc \
 PUBLICATION_TAG_SUFFIX=pub-test ./docker-build.sh latest --variant public
 ```
 
@@ -79,10 +80,9 @@ curl -fsS http://127.0.0.1:8074/health
 ./server_control.sh --env ./.env.local stop all
 ```
 
-Note: `lxml` and `xmlsec` are pinned and source-built. On a bare host install
-the XML toolchain first (Debian/Ubuntu: `libxml2-dev libxmlsec1-dev
-libxmlsec1-openssl libxslt1-dev pkg-config zlib1g-dev`). The Docker path already
-installs these.
+`lxml` and `xmlsec` are exact entries in `requirements.lock`. The chosen single
+index must supply CPython 3.13-compatible wheels; the build does not install an
+unfrozen OS compiler toolchain as a fallback.
 
 ## 5. Reproducibility
 

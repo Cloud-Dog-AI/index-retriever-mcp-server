@@ -79,7 +79,17 @@ case "${1:-all}" in
   test)
     /app/server_control.sh ${ENV_ARGS[@]+"${ENV_ARGS[@]}"} start api
     sleep 5
-    if curl -fs "http://127.0.0.1:$(api_port)/health" >/dev/null; then
+    if "${PYTHON_BIN}" - "$(api_port)" <<'PY'
+from __future__ import annotations
+
+import sys
+import urllib.request
+
+with urllib.request.urlopen(f"http://127.0.0.1:{int(sys.argv[1])}/health", timeout=5) as response:
+    response.read()
+    raise SystemExit(0 if response.status == 200 else 1)
+PY
+    then
       echo "HEALTH CHECK PASSED"
       /app/server_control.sh ${ENV_ARGS[@]+"${ENV_ARGS[@]}"} stop all
       exit 0

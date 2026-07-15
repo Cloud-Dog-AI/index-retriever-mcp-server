@@ -192,7 +192,7 @@ def test_mcp_role_mapping_and_execute_paths(service, monkeypatch: pytest.MonkeyP
             {"profile": "default", "collection": "mcp_cov", "text": "payload"},
             identity_roles={"admin"},
         )["status"]
-        == "queued"
+        == "succeeded"
     )
     assert "results" in mcp_server.execute_tool(
         service,
@@ -220,12 +220,10 @@ def test_mcp_role_mapping_and_execute_paths(service, monkeypatch: pytest.MonkeyP
 def test_mcp_health_and_main_module_paths(monkeypatch: pytest.MonkeyPatch, service) -> None:
     mcp_port = os.environ.get("CLOUD_DOG__MCP_SERVER__PORT", "8076")
     app = mcp_server.build_mcp_app(service=service)
-    local_health = next(
-        route.endpoint
-        for route in app.router.routes
-        if getattr(route, "path", "") == "/health"
-    )
-    health_payload = asyncio.run(local_health())
+    with TestClient(app) as client:
+        health_response = client.get("/health")
+    assert health_response.status_code == 200
+    health_payload = health_response.json()
     assert health_payload["status"] == "ok"
     assert health_payload["application"] == "index-retriever-mcp-server"
 

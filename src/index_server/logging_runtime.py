@@ -27,6 +27,7 @@ _KNOWN_SURFACES = frozenset({"api_server", "web_server", "mcp_server", "a2a_serv
 
 class _FallbackConfig:
     def get(self, _path: str, default: Any = None) -> Any:
+        """Return the caller default when platform config cannot be loaded."""
         return default
 
 

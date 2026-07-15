@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import asyncio
 import importlib.util
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -24,16 +23,12 @@ import pytest
 from cloud_dog_vdb import CollectionSpec, Record, SearchRequest, get_vdb_client
 
 from index_tools.pipeline.metadata import build_metadata
-from tests.w23a_helpers import backend_available, runtime_backend_store
+from tests.w23a_helpers import PLATFORM_VDB_ROOT, backend_available, runtime_backend_store
 
 
 def _load_metadata_parity_helper():
     helper_path = (
-        Path(__file__).resolve().parents[4]
-        / "cloud-dog-ai-platform-standards"
-        / "packages"
-        / "backend"
-        / "platform-vdb"
+        PLATFORM_VDB_ROOT
         / "tests"
         / "integration"
         / "_metadata_parity.py"

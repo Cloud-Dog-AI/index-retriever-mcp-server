@@ -235,9 +235,35 @@ stop_server() {
     rm -f "${pid_file}"
   fi
 
+  list_module_pids() {
+    if command -v pgrep >/dev/null 2>&1; then
+      pgrep -f " -m ${module}( |$)" || true
+      return
+    fi
+    "${PYTHON_BIN}" - "${module}" <<'PY'
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
+
+module = sys.argv[1]
+for entry in Path("/proc").iterdir():
+    if not entry.name.isdigit() or int(entry.name) == os.getpid():
+        continue
+    try:
+        argv = (entry / "cmdline").read_bytes().split(b"\0")
+    except (FileNotFoundError, PermissionError, ProcessLookupError):
+        continue
+    arguments = [part.decode(errors="replace") for part in argv if part]
+    if any(arguments[index:index + 2] == ["-m", module] for index in range(len(arguments) - 1)):
+        print(entry.name)
+PY
+  }
+
   while read -r orphan_pid; do
     terminate_pid "${orphan_pid}"
-  done < <(pgrep -f " -m ${module}( |$)" || true)
+  done < <(list_module_pids)
 
   echo "${name}: stopped"
 }

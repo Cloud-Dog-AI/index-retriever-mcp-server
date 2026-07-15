@@ -20,7 +20,7 @@ import os
 import pytest
 
 from tests.integration.it2_matrix_helpers import parse_pdf_with_provider
-from tests.w23a_helpers import parser_available, parser_skip_reason
+from tests.w23a_helpers import corpus_file, parser_available, parser_skip_reason
 
 pytestmark = pytest.mark.skipif(
     not parser_available("mineru"),
@@ -36,7 +36,14 @@ def _mineru_timeout_seconds() -> float:
 
 
 def test_it2_9_mineru_parser_pdf_ir_output() -> None:
-    out = asyncio.run(asyncio.wait_for(parse_pdf_with_provider("mineru"), timeout=_mineru_timeout_seconds()))
+    # Use the smallest accepted real corpus PDF so the shared MinerU worker can
+    # complete within its documented low-VRAM envelope.
+    out = asyncio.run(
+        asyncio.wait_for(
+            parse_pdf_with_provider("mineru", source_path=corpus_file("fw9.pdf")),
+            timeout=_mineru_timeout_seconds(),
+        )
+    )
     assert out["provider_id"] == "mineru"
     assert out["text_chars"] > 0
     assert out["source_uri"].startswith("file://")

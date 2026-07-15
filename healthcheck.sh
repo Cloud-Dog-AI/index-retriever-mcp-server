@@ -24,4 +24,13 @@ from index_server.runtime_config import resolve_server_binding
 print(resolve_server_binding("api_server").port)
 PY
 )"
-curl -fsS "http://127.0.0.1:${API_PORT}/health" >/dev/null
+"${PYTHON_BIN}" - "${API_PORT}" <<'PY'
+from __future__ import annotations
+
+import sys
+import urllib.request
+
+with urllib.request.urlopen(f"http://127.0.0.1:{int(sys.argv[1])}/health", timeout=5) as response:
+    response.read()
+    raise SystemExit(0 if response.status == 200 else 1)
+PY

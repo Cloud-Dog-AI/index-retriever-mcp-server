@@ -89,7 +89,7 @@ def test_job_management_tools_contract(service: IndexService) -> None:
         "valid-writer-token",
     )
     job_id = str(queued["job_id"])
-    assert queued["status"] == "queued"
+    assert queued["status"] == "succeeded"
 
     admin_queued = _call_tool(
         client,

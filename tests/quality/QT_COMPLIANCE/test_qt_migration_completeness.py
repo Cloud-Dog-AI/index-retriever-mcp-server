@@ -90,6 +90,9 @@ def test_os_environ_usage_is_confined_to_runtime_boundaries(
         "src/index_server/main.py",
         "src/index_server/mcp_server.py",
         "src/index_tools/db/runtime.py",
+        # Canonical configuration boundary: read-only VAULT_* bootstrap values
+        # are consumed here when the optional hvac transport is unavailable.
+        "src/index_tools/config/loader.py",
         "src/index_tools/tools/service.py",
         # RULES §1.4.1 BOOTSTRAP-CREDENTIAL CARVE-OUT: bootstrap.py's
         # EnvTokenResolver reads the admin-key SECRET from an operator-named env

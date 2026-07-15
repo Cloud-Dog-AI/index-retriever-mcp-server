@@ -48,11 +48,11 @@ corrected to mark the candidates **NOT IMPORTED** while retaining adverse truth.
 Standard commands:
 
 ```bash
-python3 -m pytest tests/quality --env tests/env-QT -q
-python3 -m pytest tests/unit --env tests/env-UT -q
-python3 -m pytest tests/system --env tests/env-ST -q
-python3 -m pytest tests/integration --env tests/env-IT -q
-python3 -m pytest tests/application --env tests/env-AT -q
+.venv/bin/python -m pytest tests/quality --env tests/env-QT -q
+.venv/bin/python -m pytest tests/unit --env tests/env-UT -q
+.venv/bin/python -m pytest tests/system --env tests/env-ST -q
+.venv/bin/python -m pytest tests/integration --env tests/env-IT -q
+.venv/bin/python -m pytest tests/application --env tests/env-AT -q
 ```
 
 ## 2. Coverage map

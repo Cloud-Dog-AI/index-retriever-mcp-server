@@ -1,5 +1,6 @@
 # Unit test environment
 TEST_ENV_TIER=UT
+CLOUD_DOG__INDEX__BOOTSTRAP__SEED_DISABLED=true
 INGEST_ROOT=data/index-retriever-ut
 CHROMA_PATH=data/index-retriever-ut/chroma
 DB_URL=sqlite+aiosqlite:///data/index-retriever-ut.db

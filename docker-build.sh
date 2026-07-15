@@ -54,13 +54,27 @@ done
 set -- "${POSITIONAL[@]+"${POSITIONAL[@]}"}"
 
 case "${VARIANT}" in
-  dev)    DOCKERFILE="Dockerfile" ;;
-  public) DOCKERFILE="Dockerfile.public" ;;
+  dev)
+    DOCKERFILE="Dockerfile"
+    # The internal Dockerfile owns the release-selected base reference.  Read
+    # it from that publication-excluded file so this public build helper does
+    # not expose an internal registry hostname or duplicate a mutable pin.
+    DEFAULT_PYTHON_BASE_IMAGE="$(sed -n 's/^ARG PYTHON_BASE_IMAGE=//p' "${DOCKERFILE}" | head -n1)"
+    ;;
+  public)
+    DOCKERFILE="Dockerfile.public"
+    DEFAULT_PYTHON_BASE_IMAGE="python:3.13-slim"
+    ;;
   *)
     echo "ERROR: --variant must be 'dev' or 'public' (got: ${VARIANT})" >&2
     exit 2
     ;;
 esac
+
+if [[ -z "${DEFAULT_PYTHON_BASE_IMAGE}" ]]; then
+  echo "ERROR: ${DOCKERFILE} must declare ARG PYTHON_BASE_IMAGE=<image>" >&2
+  exit 2
+fi
 
 if [[ ! -f "${DOCKERFILE}" ]]; then
   echo "ERROR: ${DOCKERFILE} not found (variant=${VARIANT})" >&2
@@ -101,6 +115,11 @@ else
   EFFECTIVE_TAG="${VERSION}"
 fi
 
+BUILD_IMAGE="${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
+if [[ "${VARIANT}" == "dev" && -n "${REGISTRY}" && -z "${PUBLICATION_TAG_SUFFIX}" ]]; then
+  BUILD_IMAGE="${REGISTRY}/${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
+fi
+
 cleanup() {
   rm -f "${PIP_CONF}" "./${GENERIC_CA_CERT}"
 }
@@ -112,21 +131,20 @@ echo "=========================================="
 
 # ── PyPI Configuration ───────────────────────────────────────────
 # Variant-specific default index (PS-97 §3.3 single-index; never --extra-index-url):
-#   public -> pypi.org (override PYPI_URL for any other boundary index)
-#   dev    -> caller-supplied approved index via INTERNAL_PYPI_URL/PYPI_URL
+#   public/dev -> caller-supplied release-selected index via PYPI_URL
 if [[ -n "${PYPI_URL:-}" ]]; then
   : # honour caller override
-elif [[ "${VARIANT}" == "public" ]]; then
-  PYPI_URL="https://pypi.org/simple/"
-elif [[ -n "${INTERNAL_PYPI_URL:-}" ]]; then
-  PYPI_URL="${INTERNAL_PYPI_URL}"
 else
-  echo "ERROR: --variant dev requires PYPI_URL or INTERNAL_PYPI_URL" >&2
+  echo "ERROR: PYPI_URL must name the release-selected package boundary" >&2
   exit 2
 fi
 PYPI_USERNAME="${PYPI_USERNAME:-}"
 PYPI_PASSWORD="${PYPI_PASSWORD:-}"
-PYPI_HOST="$(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${PYPI_URL}').hostname or 'pypi.org')")"
+PYPI_HOST="$(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${PYPI_URL}').hostname or '')")"
+if [[ -z "${PYPI_HOST}" ]]; then
+  echo "ERROR: PYPI_URL must contain a hostname" >&2
+  exit 2
+fi
 
 if [[ -n "${PYPI_USERNAME}" ]] || [[ -n "${PYPI_PASSWORD}" ]]; then
   echo "ERROR: use an external pip auth helper; credentials must not be embedded in index URLs" >&2
@@ -147,8 +165,8 @@ if [[ -n "${PIP_NETRC_FILE}" ]]; then
     exit 2
   fi
   PIP_NETRC_SECRET_ARGS=(--secret "id=pip_netrc,src=${PIP_NETRC_FILE}")
-elif [[ "${VARIANT}" == "dev" && "${PYPI_HOST}" == "pypi.cloud-dog.net" ]]; then
-  echo "ERROR: the approved private index requires an external PIP_NETRC_FILE auth helper" >&2
+elif [[ "${VARIANT}" == "dev" || "${PIP_AUTH_REQUIRED:-0}" == "1" ]]; then
+  echo "ERROR: --variant dev requires an external PIP_NETRC_FILE auth helper" >&2
   exit 2
 fi
 
@@ -161,7 +179,7 @@ fi
 # ── Build ────────────────────────────────────────────────────────
 if [[ -n "${PUBLICATION_DRY_RUN:-}" ]]; then
   echo "DRY-RUN: variant=${VARIANT} dockerfile=${DOCKERFILE} index=${PYPI_URL}"
-  echo "DRY-RUN: build tag = ${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
+  echo "DRY-RUN: build tag = ${BUILD_IMAGE}"
   if [[ "${VARIANT}" == "dev" && -n "${REGISTRY}" && -z "${PUBLICATION_TAG_SUFFIX}" ]]; then
     echo "DRY-RUN: registry tag = ${REGISTRY}/${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
   elif [[ -n "${PUBLICATION_TAG_SUFFIX}" ]]; then
@@ -201,17 +219,16 @@ DOCKER_BUILDKIT=1 docker buildx build \
   --build-arg SOURCE_COMMIT="${SOURCE_COMMIT}" \
   --build-arg SOURCE_BRANCH="${SOURCE_BRANCH}" \
   --build-arg BUILD_DATE="${BUILD_DATE}" \
-  -t "${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}" \
+  --build-arg PYTHON_BASE_IMAGE="${PYTHON_BASE_IMAGE:-${DEFAULT_PYTHON_BASE_IMAGE}}" \
+  -t "${BUILD_IMAGE}" \
   . 2>&1 | tee docker-build.log
 
 BUILD_STATUS=${PIPESTATUS[0]}
 
 if [[ ${BUILD_STATUS} -eq 0 ]]; then
-  echo "Build OK: ${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG} (variant=${VARIANT})"
+  echo "Build OK: ${BUILD_IMAGE} (variant=${VARIANT})"
   if [[ "${VARIANT}" == "dev" && -n "${REGISTRY}" && -z "${PUBLICATION_TAG_SUFFIX}" ]]; then
-    docker tag "${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}" \
-      "${REGISTRY}/${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
-    echo "Tagged: ${REGISTRY}/${FOLDER}/${CONTAINER}:${EFFECTIVE_TAG}"
+    echo "Tagged directly for the internal registry: ${BUILD_IMAGE}"
   elif [[ -n "${PUBLICATION_TAG_SUFFIX}" ]]; then
     echo "Publication test image (suffix=${PUBLICATION_TAG_SUFFIX}); internal registry tag skipped (W28A-831 isolation)."
   else

@@ -220,14 +220,51 @@ PY
 
 prepare_pip_conf_file() {
   local pip_conf="${STATE_DIR}/pip.conf.compose"
-  local pypi_url="${PYPI_URL:-https://pypi.cloud-dog.net/simple/}"
+  local pypi_url="${PYPI_URL:-}"
+  local pypi_host
+
+  if [[ -z "$pypi_url" ]]; then
+    echo "CRITICAL ERROR: PYPI_URL must name the release-selected package boundary" >&2
+    exit 2
+  fi
+  pypi_host="$(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${pypi_url}').hostname or '')")"
+  if [[ -z "$pypi_host" ]]; then
+    echo "CRITICAL ERROR: PYPI_URL must contain a hostname" >&2
+    exit 2
+  fi
+
+  umask 077
+  {
+    printf '[global]\n'
+    printf 'index-url = %s\n' "$pypi_url"
+    printf 'trusted-host = %s\n' "$pypi_host"
+  } > "$pip_conf"
+  chmod 600 "$pip_conf"
+  printf '%s\n' "$pip_conf"
+}
+
+prepare_pip_netrc_file() {
+  local external_helper="${PIP_NETRC_FILE:-}"
+  local netrc_file="${STATE_DIR}/pip.netrc.compose"
+  local pypi_url="${PYPI_URL:-}"
+  local pypi_host
   local pypi_username="${PYPI_USERNAME:-}"
   local pypi_password="${PYPI_PASSWORD:-}"
 
-  if [[ -f "$pip_conf" ]]; then
-    printf '%s\n' "$pip_conf"
+  if [[ -n "$external_helper" ]]; then
+    if [[ ! -r "$external_helper" ]]; then
+      echo "CRITICAL ERROR: PIP_NETRC_FILE must name a readable external auth helper" >&2
+      exit 2
+    fi
+    printf '%s\n' "$external_helper"
     return 0
   fi
+
+  if [[ -z "$pypi_url" ]]; then
+    echo "CRITICAL ERROR: PYPI_URL must name the release-selected package boundary" >&2
+    exit 2
+  fi
+  pypi_host="$(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${pypi_url}').hostname or '')")"
 
   if [[ -z "$pypi_username" || -z "$pypi_password" ]]; then
     if [[ -f /opt/iac/Development/cloud-dog-ai/env-vault ]]; then
@@ -258,26 +295,19 @@ print(d.get('repository',{}).get('pypi',{}).get('password',''))
     fi
   fi
 
-  umask 077
-  if [[ -n "$pypi_username" && -n "$pypi_password" ]]; then
-    cat > "$pip_conf" <<EOF
-[global]
-extra-index-url = https://${pypi_username}:${pypi_password}@${pypi_url#https://}
-trusted-host = $(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${pypi_url}').hostname or 'pypi.cloud-dog.net')")
-               pypi.org
-               files.pythonhosted.org
-EOF
-  else
-    cat > "$pip_conf" <<EOF
-[global]
-extra-index-url = ${pypi_url}
-trusted-host = $(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${pypi_url}').hostname or 'pypi.cloud-dog.net')")
-               pypi.org
-               files.pythonhosted.org
-EOF
+  if [[ -z "$pypi_username" || -z "$pypi_password" ]]; then
+    echo "CRITICAL ERROR: private package boundary requires an external pip netrc helper" >&2
+    exit 2
   fi
-  chmod 600 "$pip_conf"
-  printf '%s\n' "$pip_conf"
+
+  umask 077
+  {
+    printf 'machine %s\n' "$pypi_host"
+    printf 'login %s\n' "$pypi_username"
+    printf 'password %s\n' "$pypi_password"
+  } > "$netrc_file"
+  chmod 600 "$netrc_file"
+  printf '%s\n' "$netrc_file"
 }
 
 load_state() {
@@ -313,10 +343,12 @@ compose_cmd() {
   local project_name="$3"
   local compose_env
   local pip_conf
+  local pip_netrc
   shift 3
   compose_env="$(prepare_compose_env_file "$runtime_env")"
   pip_conf="$(prepare_pip_conf_file)"
-  ENV_FILE="$compose_env" PIP_CONF_FILE="$pip_conf" docker compose -f "$compose_file" --project-name "$project_name" "${COMPOSE_PROFILE_ARGS[@]}" --env-file "$compose_env" "$@"
+  pip_netrc="$(prepare_pip_netrc_file)"
+  ENV_FILE="$compose_env" PIP_CONF_FILE="$pip_conf" PIP_NETRC_FILE="$pip_netrc" docker compose -f "$compose_file" --project-name "$project_name" "${COMPOSE_PROFILE_ARGS[@]}" --env-file "$compose_env" "$@"
 }
 
 split_services() {

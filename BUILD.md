@@ -4,23 +4,22 @@
 `index-retriever-mcp-server` - document indexing and retrieval service with parser and vector-backend plugins.
 
 ## Prerequisites
-- Python 3.12+
+- CPython 3.13.14
 - Docker with BuildKit support
 - pip
 
 ## Development Setup
 ```bash
-python3 -m venv .venv
+python3.13 -m venv .venv
 source .venv/bin/activate
-pip install --upgrade pip
-pip install -e ".[dev]"
+.venv/bin/python -m pip install -e ".[dev]"
 ```
 
 If your platform packages are served from a single package index, point
 `--index-url` at it (single-index install; do not mix multiple indexes):
 ```bash
-PYPI_URL="${PYPI_URL:-https://pypi.org/simple/}"
-pip install -e ".[dev]" --index-url "$PYPI_URL"
+: "${PYPI_URL:?set the release-selected single index}"
+PIP_INDEX_URL="$PYPI_URL" .venv/bin/python -m pip install -e ".[dev]"
 ```
 
 ## Local Configuration
@@ -64,20 +63,20 @@ python -m build
 
 ### Docker Container
 ```bash
-# Public variant (default): index defaults to https://pypi.org/simple/
-PUBLICATION_TAG_SUFFIX=pub-test ./docker-build.sh latest --variant public
+# The selected index is explicit; docker-build.sh has no external fallback.
+PYPI_URL="$PYPI_URL" PUBLICATION_TAG_SUFFIX=pub-test ./docker-build.sh latest --variant public
 ```
 
 Build with an explicit package index and (dev variant) CA settings:
 ```bash
-PYPI_URL=https://pypi.org/simple/ \
-PYPI_USERNAME=build-user \
-PYPI_PASSWORD=build-password \
+PYPI_URL="$PYPI_URL" \
+PIP_NETRC_FILE="$PIP_NETRC_FILE" \
 PUBLICATION_TAG_SUFFIX=pub-test ./docker-build.sh latest --variant public
 ```
 
-The `--variant dev` selector builds the internal `Dockerfile` and defaults its
-index/CA to the internal developer environment; it is not used for publication.
+The `--variant dev` selector builds the internal `Dockerfile`, requires the
+caller-selected index and external netrc helper, and uses the digest-pinned
+internal CPython 3.13.14 base. It is not used for publication.
 
 ## Docker Push
 ```bash

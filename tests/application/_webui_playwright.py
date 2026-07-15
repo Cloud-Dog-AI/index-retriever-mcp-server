@@ -13,7 +13,13 @@ from urllib.request import Request, urlopen
 import pytest
 from tests.http_paths import api_tools_path
 
-MONOREPO_ROOT = Path('/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-ui-monorepo')
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_DEFAULT_MONOREPO_ROOT = PROJECT_ROOT.parent / 'ui'
+if not (_DEFAULT_MONOREPO_ROOT / 'apps' / 'index-retriever').is_dir():
+    _DEFAULT_MONOREPO_ROOT = Path('/opt/iac/Development/cloud-dog-ai/cloud-dog-ai-ui-monorepo')
+MONOREPO_ROOT = Path(
+    os.environ.get('INDEX_RETRIEVER_UI_MONOREPO', str(_DEFAULT_MONOREPO_ROOT))
+).resolve()
 MONOREPO_APP = MONOREPO_ROOT / 'apps' / 'index-retriever'
 PLAYWRIGHT_BIN = MONOREPO_ROOT / 'node_modules' / '.bin' / 'playwright'
 PLAYWRIGHT_CONFIG = MONOREPO_APP / 'playwright.config.ts'
@@ -23,7 +29,6 @@ NODE_PATH = os.pathsep.join(
         str(MONOREPO_APP / 'node_modules'),
     ]
 )
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SERVER_CONTROL = PROJECT_ROOT / 'server_control.sh'
 _RUNTIME_BOOT_LOCK = Lock()
 _TEST_API_KEYS = 'test-api-key,valid-reader-token:reader,valid-writer-token:writer,valid-admin-token:admin'

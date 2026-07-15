@@ -67,7 +67,8 @@ Embedding-provider keys and VDB credentials always come from Vault (`dev.models`
 Installation:
 
 ```bash
-pip install -e ".[dev]" --index-url https://pypi.cloud-dog.net/simple/
+python3.13 -m venv .venv
+.venv/bin/python -m pip install -e ".[dev]" --index-url https://pypi.cloud-dog.net/simple/
 ```
 
 ### Library / server separation

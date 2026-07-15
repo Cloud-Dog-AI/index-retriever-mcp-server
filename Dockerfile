@@ -2,11 +2,13 @@
 # Multi-stage build: proxy/CA support, private PyPI auth via BuildKit secret, non-root runtime.
 
 # ── Builder ──────────────────────────────────────────────────────
-FROM python:3.12-slim AS builder
+ARG PYTHON_BASE_IMAGE=registry.cloud-dog.net:443/cloud-dog/python-runtime:3.13-slim-20260713@sha256:e23c4110eb0c8a2995635a97dee0fff83d5b729de611dfb1e31850c67b33ec60
+FROM ${PYTHON_BASE_IMAGE} AS builder
 
 ARG HTTP_PROXY HTTPS_PROXY NO_PROXY http_proxy https_proxy no_proxy
 ENV HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY} NO_PROXY=${NO_PROXY} \
-    http_proxy=${http_proxy} https_proxy=${https_proxy} no_proxy=${no_proxy}
+    http_proxy=${http_proxy} https_proxy=${https_proxy} no_proxy=${no_proxy} \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_ROOT_USER_ACTION=ignore
 
 ARG CUSTOM_CA_CERT
 RUN set -e; \
@@ -17,48 +19,21 @@ RUN set -e; \
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    libxml2-dev \
-    libxmlsec1-dev \
-    libxmlsec1-openssl \
-    libxslt1-dev \
-    pkg-config \
-    zlib1g-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install platform packages from the approved package boundary. Read the
-# BuildKit pip secret inside this RUN so credentials never become build args.
+# Install the frozen Python 3.13 runtime lock from the approved package boundary.
+# Read the BuildKit secrets inside this RUN so credentials never become build args.
+COPY requirements.lock pyproject.toml README.md ./
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     --mount=type=secret,id=pip_netrc,target=/root/.netrc,required=false \
     set -e; \
     INDEX_URL="$(sed -n 's/^[[:space:]]*index-url[[:space:]]*=[[:space:]]*//p' /etc/pip.conf | head -n1)" && \
     if [ -z "${INDEX_URL}" ]; then echo "ERROR: no index-url in pip.conf secret" >&2; exit 3; fi && \
-    PIP_NO_INPUT=1 PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
+    PIP_NO_INPUT=1 pip install --no-cache-dir --no-deps \
       --index-url "${INDEX_URL}" \
       --trusted-host pypi.cloud-dog.net \
-      "cloud-dog-config==0.3.4" \
-      cloud-dog-logging \
-      "cloud-dog-cache>=0.2.0" \
-      "cloud-dog-api-kit[change-stream-db]>=0.14.0" \
-      "cloud-dog-idam==0.5.4" \
-      cloud-dog-db \
-      cloud-dog-jobs==0.4.2 \
-      cloud-dog-storage==0.1.8 \
-      cloud-dog-llm==0.4.1 \
-      "cloud-dog-vdb>=0.5.5"
+      -r requirements.lock
 
-COPY REQUIREMENTS.txt pyproject.toml README.md ./
+COPY REQUIREMENTS.txt ./
 COPY src/ ./src/
-RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
-    --mount=type=secret,id=pip_netrc,target=/root/.netrc,required=false \
-    set -e; \
-    INDEX_URL="$(sed -n 's/^[[:space:]]*index-url[[:space:]]*=[[:space:]]*//p' /etc/pip.conf | head -n1)" && \
-    if [ -z "${INDEX_URL}" ]; then echo "ERROR: no index-url in pip.conf secret" >&2; exit 3; fi && \
-    PIP_NO_INPUT=1 PIP_NO_BINARY=lxml,xmlsec pip install --no-cache-dir \
-      --index-url "${INDEX_URL}" \
-      --trusted-host pypi.cloud-dog.net \
-      -r REQUIREMENTS.txt
 COPY docs/ ./docs/
 COPY ui/ ./ui/
 RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
@@ -68,17 +43,13 @@ RUN --mount=type=secret,id=pip_conf,target=/etc/pip.conf \
     if [ -z "${INDEX_URL}" ]; then echo "ERROR: no index-url in pip.conf secret" >&2; exit 3; fi && \
     PIP_NO_INPUT=1 pip install --no-cache-dir \
       --index-url "${INDEX_URL}" \
-      --trusted-host pypi.cloud-dog.net \
-      hatchling && \
-    PIP_NO_INPUT=1 pip install --no-cache-dir \
-      --index-url "${INDEX_URL}" \
       --no-build-isolation \
       --no-deps \
       --trusted-host pypi.cloud-dog.net \
       .
 
 # ── Final ────────────────────────────────────────────────────────
-FROM python:3.12-slim
+FROM ${PYTHON_BASE_IMAGE}
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 LABEL org.opencontainers.image.vendor="Cloud-Dog, Viewdeck Engineering Limited"
 
@@ -102,20 +73,12 @@ RUN set -e; \
       update-ca-certificates; \
     fi
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl iproute2 netcat-openbsd procps net-tools socat \
-    libxml2 \
-    libxmlsec1 \
-    libxmlsec1-openssl \
-    libxslt1.1 \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-COPY REQUIREMENTS.txt pyproject.toml README.md ./
+COPY REQUIREMENTS.txt requirements.lock pyproject.toml README.md ./
 COPY src/ ./src/
 COPY docs/ ./docs/
 COPY ui/ ./ui/

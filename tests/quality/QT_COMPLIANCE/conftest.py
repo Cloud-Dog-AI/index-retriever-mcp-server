@@ -107,20 +107,20 @@ def allowlist() -> dict[str, object]:
             # _normalise_api_host, shifting the api/mcp/a2a base-URL builders down.
             # The allowlisted CONTENT (the same loopback + config-derived http:// base
             # URLs) is unchanged — only the line offsets moved.)
-            "src/index_server/web_server.py:144",
-            "src/index_server/web_server.py:145",
-            "src/index_server/web_server.py:182",
-            "src/index_server/web_server.py:343",
-            "src/index_server/web_server.py:344",
+            "src/index_server/web_server.py:146",
+            "src/index_server/web_server.py:147",
+            "src/index_server/web_server.py:184",
+            "src/index_server/web_server.py:346",
+            "src/index_server/web_server.py:347",
             # hdro.py: HDRO_CANONICAL_BASE_URL is the documented non-secret
             # canonical UNDP HDRO public-API host. It is deliberately pinned
             # (not config-overridable) because it seeds the anti-SSRF host
             # allowlist HDRO_ALLOWED_HOSTS; the Vault `url` field is only
             # trusted when it names an HDRO host. Line 19 is the docstring,
-            # line 36 the constant. (W28E-1805B: bind the W28D-440E4 HDRO
+            # line 38 the constant. (W28E-1805B: bind the W28D-440E4 HDRO
             # source endpoint that pre-dated this allowlist.)
             "src/index_tools/sources/hdro.py:19",
-            "src/index_tools/sources/hdro.py:36",
+            "src/index_tools/sources/hdro.py:38",
         },
         "os_environ_config_adapter_files": set(),
         "unused_env_keys": set(),

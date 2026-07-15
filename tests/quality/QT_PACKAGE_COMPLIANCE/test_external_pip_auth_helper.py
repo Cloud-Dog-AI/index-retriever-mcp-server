@@ -10,7 +10,6 @@ from pathlib import Path
 
 import pytest
 
-
 pytestmark = [pytest.mark.QT, pytest.mark.internal, pytest.mark.req("NF-001")]
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
@@ -66,12 +65,14 @@ def test_external_netrc_is_wired_only_as_a_buildkit_secret(
         assert "id=pip_netrc,target=/root/.netrc,required=false" in dockerfile
 
 
-def test_dev_image_jobs_pin_matches_project_runtime_contract() -> None:
+def test_frozen_lock_jobs_pin_matches_project_runtime_contract() -> None:
     project = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
     dockerfile = (PROJECT_ROOT / "Dockerfile").read_text(encoding="utf-8")
+    lock = (PROJECT_ROOT / "requirements.lock").read_text(encoding="utf-8")
     project_pin = re.search(r'"cloud_dog_jobs==([^\"]+)"', project)
-    image_pin = re.search(r"cloud-dog-jobs==([^\s\\]+)", dockerfile)
+    lock_pin = re.search(r"^cloud-dog-jobs==([^\s]+)$", lock, re.MULTILINE)
 
     assert project_pin is not None
-    assert image_pin is not None
-    assert image_pin.group(1) == project_pin.group(1)
+    assert lock_pin is not None
+    assert lock_pin.group(1) == project_pin.group(1)
+    assert "-r requirements.lock" in dockerfile

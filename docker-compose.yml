@@ -26,6 +26,7 @@ services:
       network: host
       secrets:
         - pip_conf
+        - pip_netrc
     container_name: index-retriever-api
     command: api
     user: "0:0"
@@ -53,6 +54,7 @@ services:
       network: host
       secrets:
         - pip_conf
+        - pip_netrc
     container_name: index-retriever-mcp
     command: mcp
     user: "0:0"
@@ -76,6 +78,7 @@ services:
       network: host
       secrets:
         - pip_conf
+        - pip_netrc
     container_name: index-retriever-all
     command: all
     user: "0:0"
@@ -93,3 +96,5 @@ services:
 secrets:
   pip_conf:
     file: ${PIP_CONF_FILE:-.run/pip.conf.compose}
+  pip_netrc:
+    file: ${PIP_NETRC_FILE:-.run/pip.netrc.compose}

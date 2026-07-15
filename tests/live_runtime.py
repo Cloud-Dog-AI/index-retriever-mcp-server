@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import unquote, urlparse
+from urllib.request import Request, urlopen
 from uuid import uuid4
 
 from cloud_dog_config.vault.client import (  # type: ignore[import-untyped]
@@ -155,6 +156,29 @@ def _extract_dev_section(payload: dict[str, Any]) -> dict[str, Any]:
     raise RuntimeError("Vault config did not contain a dev section")
 
 
+def _read_vault_dev_config_http(
+    vault_addr: str,
+    vault_token: str,
+    mount: str,
+    config_path: str,
+) -> dict[str, Any]:
+    """Read the live KV-v2 document without requiring the optional hvac extra."""
+    endpoint = (
+        f"{vault_addr.rstrip('/')}/v1/{mount.strip('/')}/data/"
+        f"{config_path.strip('/') or 'config'}"
+    )
+    request = Request(endpoint, headers={"X-Vault-Token": vault_token}, method="GET")
+    with urlopen(request, timeout=15.0) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError("Vault payload is not a mapping")
+    outer = payload.get("data", {})
+    inner = outer.get("data", {}) if isinstance(outer, dict) else {}
+    if not isinstance(inner, dict):
+        raise RuntimeError("Vault KV-v2 payload is not a mapping")
+    return _extract_dev_section(inner)
+
+
 @lru_cache(maxsize=2)
 def load_vault_dev_config(required: bool = True) -> dict[str, Any]:
     """
@@ -192,10 +216,13 @@ def load_vault_dev_config(required: bool = True) -> dict[str, Any]:
         if not isinstance(payload, dict):
             raise RuntimeError("Vault payload is not a mapping")
         return _extract_dev_section(payload)
-    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, KeyError, RuntimeError, Exception):
-        if required:
-            raise
-        return {}
+    except Exception as client_error:
+        try:
+            return _read_vault_dev_config_http(vault_addr, vault_token, mount, config_path)
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, KeyError, RuntimeError) as http_error:
+            if required:
+                raise RuntimeError(f"Vault read failed through both supported transports: {http_error}") from client_error
+            return {}
 
 
 def _nested_dict(root: dict[str, Any], *keys: str) -> dict[str, Any]:
@@ -1314,6 +1341,10 @@ class LiveIndexRuntime:
 
     def job_get(self, job_id: str) -> Any:
         return self.job_queue.get(job_id)
+
+    def job_wait(self, job_id: str) -> Any:
+        """Expose the stock service wait contract for the synchronous live harness."""
+        return self.job_get(job_id)
 
     def job_list(self, limit: int = 50) -> list[Any]:
         return self.job_queue.list(limit=limit)

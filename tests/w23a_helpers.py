@@ -33,13 +33,18 @@ EMBEDDING_MODELS: tuple[str, ...] = ("bge-m3:567m", "nomic-embed-text", "granite
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 WORKING_DIR = PROJECT_ROOT / "working"
-PLATFORM_VDB_ROOT = (
-    PROJECT_ROOT.parent
-    / "cloud-dog-ai-platform-standards"
-    / "packages"
-    / "backend"
-    / "platform-vdb"
-)
+
+
+def _platform_vdb_root() -> Path:
+    """Locate the shared corpus from canonical or isolated delivery worktrees."""
+    for parent in (PROJECT_ROOT.parent, *PROJECT_ROOT.parents):
+        candidate = parent / "cloud-dog-ai-platform-standards" / "packages" / "backend" / "platform-vdb"
+        if candidate.is_dir():
+            return candidate
+    return PROJECT_ROOT.parent / "cloud-dog-ai-platform-standards" / "packages" / "backend" / "platform-vdb"
+
+
+PLATFORM_VDB_ROOT = _platform_vdb_root()
 PLATFORM_VDB_TEST_DATA = (
     PLATFORM_VDB_ROOT / "test-data"
 )

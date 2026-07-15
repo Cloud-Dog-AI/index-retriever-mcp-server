@@ -212,6 +212,7 @@ class _ProxyConfigBridge:
         return default
 
     def get(self, key: str, default: Any = None) -> Any:
+        """Resolve a proxy setting through the platform configuration bridge."""
         if key in {"web_server.api_base_url", "api_server.base_url"}:
             return self.api_base_url
         if key == "web_server.verify_tls":

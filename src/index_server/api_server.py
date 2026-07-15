@@ -1060,6 +1060,7 @@ class _ServiceBackedBroadcaster:
         self._service = service
 
     async def publish(self, event: _A2AConfigChangeEvent) -> _A2AConfigChangeEvent:
+        """Return the event unchanged for the read-only polling adapter."""
         # Not used by RESTPollAdapter; provided only to satisfy the
         # EventBroadcaster Protocol shape. Publishing would require
         # threading through the bespoke _emit_config_event pipeline
@@ -1068,6 +1069,7 @@ class _ServiceBackedBroadcaster:
         return event
 
     def subscribe(self):  # type: ignore[no-untyped-def]
+        """Return an empty subscription for the history-only adapter."""
         # Unused by RESTPollAdapter. Return an empty async iterator.
         async def _empty():
             if False:

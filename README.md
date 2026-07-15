@@ -7,13 +7,14 @@
 Prerequisites:
 
 - Docker 24 or newer with BuildKit enabled
-- Python 3.12 or newer if you run the package locally
+- CPython 3.13.14 if you run the package locally
 - A package index that serves the Cloud-Dog platform packages and their public
   dependencies (public PyPI for external builds; supply via `PYPI_URL`)
 
-Build the public publication image (default variant):
+Build the public publication image (default variant) with an explicit index:
 
 ```bash
+PYPI_URL=https://pypi.org/simple/ \
 PUBLICATION_TAG_SUFFIX=pub-test ./docker-build.sh latest
 ```
 
@@ -31,11 +32,12 @@ See [EXTERNAL-BUILD.md](EXTERNAL-BUILD.md) for the full self-contained external-
 ## Local Development
 
 ```bash
-python3 -m venv .venv
+python3.13 -m venv .venv
 . .venv/bin/activate
-pip install --upgrade pip
-# Point PYPI_URL at the index that serves the cloud-dog platform packages.
-pip install -e ".[dev]" --index-url "${PYPI_URL:-https://pypi.org/simple/}"
+# Point PYPI_URL at the release-selected index and provide credentials through
+# an external netrc helper; never embed them in the URL.
+PIP_INDEX_URL="${PYPI_URL:?set the release-selected index}" \
+  .venv/bin/python -m pip install -e ".[dev]"
 ```
 
 Runtime configuration is loaded from the env file passed to `server_control.sh`, then from shell environment variables, then from `defaults.yaml`.

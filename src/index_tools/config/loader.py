@@ -14,9 +14,12 @@
 
 from __future__ import annotations
 
+import json
+import os
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
+from urllib.request import Request, urlopen
 
 import cloud_dog_config  # type: ignore
 from cloud_dog_config import load_config, resolve_runtime_env_files  # type: ignore
@@ -67,6 +70,30 @@ def runtime_env_files(env_files: str | Path | Sequence[str | Path] | None = None
     if env_files is None:
         return resolve_runtime_env_files()
     return _normalise_env_files(env_files)
+
+
+def load_vault_dev_config_http() -> dict[str, Any]:
+    """Read the live KV-v2 dev document when the optional hvac extra is absent."""
+    vault_addr = os.getenv("VAULT_ADDR", "").strip()
+    vault_token = os.getenv("VAULT_TOKEN", "").strip()
+    mount = os.getenv("VAULT_MOUNT_POINT", "cloud_dog_ai").strip().strip("/")
+    config_path = os.getenv("VAULT_CONFIG_PATH", "config").strip().strip("/") or "config"
+    if not vault_addr or not vault_token:
+        raise RuntimeError("Vault credentials are unavailable")
+    endpoint = f"{vault_addr.rstrip('/')}/v1/{mount}/data/{config_path}"
+    request = Request(endpoint, headers={"X-Vault-Token": vault_token}, method="GET")
+    with urlopen(request, timeout=15.0) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    outer = payload.get("data", {}) if isinstance(payload, dict) else {}
+    inner = outer.get("data", {}) if isinstance(outer, dict) else {}
+    if not isinstance(inner, dict):
+        raise RuntimeError("Vault KV-v2 payload is not a mapping")
+    raw_config = inner.get("json", inner)
+    config = json.loads(raw_config) if isinstance(raw_config, str) else raw_config
+    dev = config.get("dev", {}) if isinstance(config, dict) else {}
+    if not isinstance(dev, dict):
+        raise RuntimeError("Vault config did not contain a dev section")
+    return dict(dev)
 
 
 def load_runtime_config(

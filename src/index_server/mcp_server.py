@@ -1672,10 +1672,23 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
 
     # Platform health via create_health_router().
     _health_paths = {"/health", "/ready", "/live", "/status"}
-    if hasattr(app, "router") and hasattr(app.router, "routes"):
-        app.router.routes = [
-            r for r in app.router.routes if getattr(r, "path", None) not in _health_paths
-        ]
+
+    def _remove_existing_health_routes(router: Any) -> None:
+        """Remove platform health routes across flat and nested FastAPI routers."""
+        routes = getattr(router, "routes", None)
+        if not isinstance(routes, list):
+            return
+        retained = []
+        for route in routes:
+            nested_router = getattr(route, "original_router", None)
+            if nested_router is not None:
+                _remove_existing_health_routes(nested_router)
+            if getattr(route, "path", None) not in _health_paths:
+                retained.append(route)
+        router.routes = retained
+
+    if hasattr(app, "router"):
+        _remove_existing_health_routes(app.router)
     include_router = getattr(app, "include_router", None)
     if callable(include_router):
         include_router(create_health_router(

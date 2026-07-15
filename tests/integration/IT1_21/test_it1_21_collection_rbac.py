@@ -71,7 +71,7 @@ def test_collection_level_rbac_enforced(service: IndexService) -> None:
         "valid-writer-token",
     )
     assert status == 200, body
-    assert body.get("status") == "queued"
+    assert body.get("status") == "succeeded"
 
     status, body = _call(
         client,
