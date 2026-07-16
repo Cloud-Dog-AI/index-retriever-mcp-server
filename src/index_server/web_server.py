@@ -31,7 +31,7 @@ from fastapi import HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from index_tools.config.loader import runtime_env_files, secret_backend_kwarg
+from index_tools.config.loader import runtime_env_files
 from index_server.runtime_config import resolve_server_binding
 
 _SPA_RESERVED_SEGMENTS = {
@@ -327,14 +327,14 @@ def build_web_app() -> object:
             env_files=runtime_env_files(),
             defaults_yaml="defaults.yaml",
             unresolved_policy="strict",
-            **secret_backend_kwarg(False),
+            vault_enabled=False,
         )
     except Exception:
         config = load_config(
             env_files=runtime_env_files(),
             defaults_yaml="defaults.yaml",
             unresolved_policy="empty",
-            **secret_backend_kwarg(False),
+            vault_enabled=False,
         )
     proxy_config = _ProxyConfigBridge(config)
     proxy = WebApiProxy.from_config(proxy_config)

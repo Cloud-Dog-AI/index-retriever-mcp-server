@@ -15,17 +15,18 @@
 from __future__ import annotations
 
 import json
+import time
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from index_server.api_server import build_api_app
 from index_server.mcp_server import build_mcp_app
 from tests.http_paths import api_tools_path, mcp_tools_path
 from tests.live_runtime import LiveIndexRuntime
-import pytest
 
 
 def _post_json(url: str, payload: dict[str, object], headers: dict[str, str]) -> tuple[int, dict[str, object]]:
@@ -99,8 +100,20 @@ def test_runtime_matrix_api_and_mcp_transport(
         },
         "valid-writer-token",
     )
-    assert queued.get("status") == "queued"
-    assert queued.get("job_id")
+    job_status = str(queued.get("status", "")).lower()
+    assert job_status in {"queued", "running", "succeeded"}
+    job_id = str(queued.get("job_id", ""))
+    assert job_id
+
+    deadline = time.monotonic() + 30
+    while job_status in {"queued", "running"} and time.monotonic() < deadline:
+        job_detail = api_tool("job_get", {"job_id": job_id}, "valid-writer-token")
+        job = job_detail.get("job")
+        assert isinstance(job, dict)
+        job_status = str(job.get("status", "")).lower()
+        if job_status in {"queued", "running"}:
+            time.sleep(0.1)
+    assert job_status == "succeeded"
 
     profiles = mcp_tool("profiles_list", {})
     assert "default" in profiles.get("profiles", [])

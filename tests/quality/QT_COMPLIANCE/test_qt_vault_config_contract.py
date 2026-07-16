@@ -26,7 +26,6 @@ from pathlib import Path
 
 import pytest
 
-
 pytestmark = [pytest.mark.QT, pytest.mark.internal, pytest.mark.req("NF-002")]
 
 
@@ -161,3 +160,31 @@ def test_env_files_avoid_obvious_literal_secret_values(env_files: list[Path]) ->
             if _looks_like_secret_literal(value):
                 violations.append(f"{env_path.as_posix()}::{key}={value}")
     assert not violations, "Literal secret-like values found in env files:\n" + "\n".join(violations)
+
+
+def test_vault_transport_is_owned_by_cloud_dog_config(project_root: Path) -> None:
+    """Service source must not implement a Vault HTTP client or resolver."""
+    loader = _read(project_root / "src" / "index_tools" / "config" / "loader.py")
+    src_text = "\n".join(_read(path) for path in sorted((project_root / "src").rglob("*.py")))
+
+    forbidden_loader_fragments = (
+        "urllib.request",
+        "load_vault_dev_config_http",
+        "X-Vault-Token",
+        "os.getenv(\"VAULT_",
+        "os.environ.get(\"VAULT_",
+    )
+    violations = [fragment for fragment in forbidden_loader_fragments if fragment in loader]
+    assert not violations, f"Bespoke Vault loader fragments detected: {violations}"
+    assert "X-Vault-Token" not in src_text, "Vault HTTP transport must remain inside cloud_dog_config"
+    live_runtime = _read(project_root / "tests" / "live_runtime.py")
+    assert "X-Vault-Token" not in live_runtime
+    assert "_read_vault_dev_config_http" not in live_runtime
+
+    pyproject = _read(project_root / "pyproject.toml")
+    assert '"hvac==2.4.0"' in pyproject, "Runtime must install the canonical Vault client"
+    for relative_path in ("requirements.lock", "requirements-docker.txt", "REQUIREMENTS.txt"):
+        dependency_file = _read(project_root / relative_path)
+        assert re.search(r"(?m)^hvac==2\.4\.0(?:\s|$)", dependency_file), (
+            f"{relative_path} must contain the frozen canonical Vault client"
+        )

@@ -14,6 +14,9 @@ authors = [
 dependencies = [
     # Platform packages (from internal PyPI)
     "cloud_dog_config==0.3.4",
+    # cloud_dog_config owns Vault transport; keep its canonical client present
+    # whenever this service resolves ${vault.*} expressions at runtime.
+    "hvac==2.4.0",
     "cloud_dog_logging==0.4.1",
     "cloud_dog_cache==0.2.1",
     # W28E-1870-A: change-stream foundation (PS-102). ``change-stream-db`` extra

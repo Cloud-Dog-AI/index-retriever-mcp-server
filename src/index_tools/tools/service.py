@@ -52,7 +52,7 @@ from index_tools.queue.engine import JobCancelledError, QueueEngine
 from index_tools.queue.models import JobRecord, JobStatus
 
 logger = get_logger(__name__)
-from index_tools.config.loader import runtime_env_files, secret_backend_kwarg
+from index_tools.config.loader import runtime_env_files
 
 try:
     from cloud_dog_config import load_config
@@ -514,7 +514,7 @@ def _load_runtime_tree() -> dict[str, Any]:
             env_files=runtime_env_files(),
             defaults_yaml="defaults.yaml",
             unresolved_policy="strict",
-            **secret_backend_kwarg(False),
+            vault_enabled=False,
         )
     except Exception:
         try:
@@ -522,7 +522,7 @@ def _load_runtime_tree() -> dict[str, Any]:
                 env_files=runtime_env_files(),
                 defaults_yaml="defaults.yaml",
                 unresolved_policy="empty",
-                **secret_backend_kwarg(False),
+                vault_enabled=False,
             )
         except Exception:
             _RUNTIME_TREE_CACHE = {}
@@ -589,7 +589,7 @@ def _load_demo_profiles() -> dict[str, Any]:
             env_files=runtime_env_files(),
             defaults_yaml=path,
             unresolved_policy="empty",
-            **secret_backend_kwarg(False),
+            vault_enabled=False,
         )
         tree = _as_plain_data(compiled.data)
     except Exception:

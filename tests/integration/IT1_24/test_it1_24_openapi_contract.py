@@ -19,15 +19,21 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
+import pytest
 from fastapi.testclient import TestClient
 
 from index_server.api_server import build_api_app
 from tests.http_paths import api_tools_path
 from tests.live_runtime import LiveIndexRuntime
-import pytest
 
 
-def _request_json(url: str, *, method: str = "GET", payload: dict[str, object] | None = None, headers: dict[str, str] | None = None) -> tuple[int, dict[str, object]]:
+def _request_json(
+    url: str,
+    *,
+    method: str = "GET",
+    payload: dict[str, object] | None = None,
+    headers: dict[str, str] | None = None,
+) -> tuple[int, dict[str, object]]:
     encoded = json.dumps(payload).encode("utf-8") if payload is not None else None
     request = Request(url, data=encoded, headers=headers or {}, method=method)
     try:
@@ -117,7 +123,7 @@ def test_openapi_and_tool_contract_include_canonical_metadata_fields(
     for field_name in ("parser_provider", "page", "table_id"):
         assert field_name in tables
 
-    docs_path = Path(__file__).resolve().parents[3] / "docs" / "API_DOCUMENTATION.md"
+    docs_path = Path(__file__).resolve().parents[3] / "docs" / "API-REFERENCE.md"
     docs_text = docs_path.read_text(encoding="utf-8")
     for required in (
         "| API server | 8074 |",

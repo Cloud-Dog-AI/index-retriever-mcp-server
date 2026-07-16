@@ -26,16 +26,14 @@ from functools import lru_cache
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
-from urllib.error import HTTPError, URLError
 from urllib.parse import unquote, urlparse
-from urllib.request import Request, urlopen
 from uuid import uuid4
 
 from cloud_dog_config.vault.client import (  # type: ignore[import-untyped]
     VaultClient,
     VaultConnectionConfig,
 )
-from cloud_dog_jobs import JobQueue, JobRequest, SQLQueueBackend
+from cloud_dog_jobs import JobQueue, JobRequest, JobStatus, SQLQueueBackend
 from cloud_dog_llm import get_llm_client
 from cloud_dog_vdb import CollectionSpec, Record, SearchRequest, get_vdb_client
 from cloud_dog_vdb.capabilities.planner import plan_search as vdb_plan_search
@@ -156,29 +154,6 @@ def _extract_dev_section(payload: dict[str, Any]) -> dict[str, Any]:
     raise RuntimeError("Vault config did not contain a dev section")
 
 
-def _read_vault_dev_config_http(
-    vault_addr: str,
-    vault_token: str,
-    mount: str,
-    config_path: str,
-) -> dict[str, Any]:
-    """Read the live KV-v2 document without requiring the optional hvac extra."""
-    endpoint = (
-        f"{vault_addr.rstrip('/')}/v1/{mount.strip('/')}/data/"
-        f"{config_path.strip('/') or 'config'}"
-    )
-    request = Request(endpoint, headers={"X-Vault-Token": vault_token}, method="GET")
-    with urlopen(request, timeout=15.0) as response:
-        payload = json.loads(response.read().decode("utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError("Vault payload is not a mapping")
-    outer = payload.get("data", {})
-    inner = outer.get("data", {}) if isinstance(outer, dict) else {}
-    if not isinstance(inner, dict):
-        raise RuntimeError("Vault KV-v2 payload is not a mapping")
-    return _extract_dev_section(inner)
-
-
 @lru_cache(maxsize=2)
 def load_vault_dev_config(required: bool = True) -> dict[str, Any]:
     """
@@ -217,12 +192,9 @@ def load_vault_dev_config(required: bool = True) -> dict[str, Any]:
             raise RuntimeError("Vault payload is not a mapping")
         return _extract_dev_section(payload)
     except Exception as client_error:
-        try:
-            return _read_vault_dev_config_http(vault_addr, vault_token, mount, config_path)
-        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, KeyError, RuntimeError) as http_error:
-            if required:
-                raise RuntimeError(f"Vault read failed through both supported transports: {http_error}") from client_error
-            return {}
+        if required:
+            raise RuntimeError(f"Vault read failed through cloud_dog_config: {client_error}") from client_error
+        return {}
 
 
 def _nested_dict(root: dict[str, Any], *keys: str) -> dict[str, Any]:
@@ -661,7 +633,8 @@ class LiveIndexRuntime:
             }
 
         self.vdb_client = get_vdb_client({"vector_stores": vector_stores})
-        self.job_queue = JobQueue(SQLQueueBackend(self._config.queue_db_url))
+        self._job_backend = SQLQueueBackend(self._config.queue_db_url)
+        self.job_queue = JobQueue(self._job_backend)
 
         self._collections: set[tuple[str, str]] = set()
         self._logical_collections: set[tuple[str, str, str]] = set()
@@ -685,12 +658,16 @@ class LiveIndexRuntime:
         try:
             vectors = self._run(
                 asyncio.wait_for(
-                    self.llm_client.embed(["dimension probe"], provider_id=self.embedding_provider, model=self.embedding_model),
+                    self.llm_client.embed(
+                        ["dimension probe"],
+                        provider_id=self.embedding_provider,
+                        model=self.embedding_model,
+                    ),
                     timeout=30.0,
                 )
             )
             self._embedding_dim = len(vectors[0]) if vectors else 768
-        except (asyncio.TimeoutError, Exception):
+        except (TimeoutError, Exception):
             self._embedding_dim = 768
         return self._embedding_dim
 
@@ -1184,6 +1161,8 @@ class LiveIndexRuntime:
                 provider_id=resolved_provider,
             )
         )
+        self._job_backend.store_result(job_id, {"record_id": record_id})
+        self._job_backend.update_status(job_id, JobStatus.SUCCEEDED.value)
         record = LiveRecord(
             job_id=job_id, record_id=record_id, provider_id=resolved_provider, collection_name=collection_name
         )

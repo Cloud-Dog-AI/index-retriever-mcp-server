@@ -75,6 +75,17 @@ Canonical API/surface reference. Consolidates the former `API-REFERENCE.md`, `AP
 
 Ports (native split-role): API 8074 / Web 8075 / MCP 8076 / A2A 8077.
 
+| Service | Port |
+|---|---:|
+| API server | 8074 |
+| Web server | 8075 |
+| MCP server | 8076 |
+| A2A server | 8077 |
+
+The generated `openapi.json` schemas and tool responses retain the canonical
+document provenance fields `parser_provider`, `ocr_engine`, `ocr_confidence`,
+`page`, and `table_id` across the HTTP, MCP, and A2A surfaces.
+
 ## Authentication & authorisation (FR-04, FR-05, FR-01B)
 - All tool/API calls require authentication except health endpoints (`cloud_dog_idam`; API keys via
   `X-API-Key` / `Authorization: Bearer`, plus JWT). Default unresolved role → `viewer`.

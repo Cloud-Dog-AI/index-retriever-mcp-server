@@ -1692,7 +1692,7 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
     include_router = getattr(app, "include_router", None)
     if callable(include_router):
         include_router(create_health_router(
-            application_name="index-retriever-mcp-server",
+            application_name="index-retriever-mcp-server-mcp",
             version="0.1.0",
         ))
 

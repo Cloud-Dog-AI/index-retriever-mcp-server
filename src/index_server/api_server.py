@@ -3103,9 +3103,22 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         return {"status": "ok" if result else "error", "detail": result}
 
     _health_paths = {"/health", "/ready", "/live", "/status"}
-    app.router.routes = [
-        r for r in app.router.routes if getattr(r, "path", None) not in _health_paths
-    ]
+
+    def _remove_existing_health_routes(router: Any) -> None:
+        """Remove platform health routes across flat and nested FastAPI routers."""
+        routes = getattr(router, "routes", None)
+        if not isinstance(routes, list):
+            return
+        retained = []
+        for route in routes:
+            nested_router = getattr(route, "original_router", None)
+            if nested_router is not None:
+                _remove_existing_health_routes(nested_router)
+            if getattr(route, "path", None) not in _health_paths:
+                retained.append(route)
+        router.routes = retained
+
+    _remove_existing_health_routes(app.router)
     _hr = create_health_router(
         application_name="index-retriever-mcp-server",
         version="0.1.0",

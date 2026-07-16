@@ -22,17 +22,15 @@ non-secret endpoint is ``https://hdrdata.org``.
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
-from cloud_dog_config.errors import VaultError  # type: ignore[import-untyped]
-
-from index_tools.config.loader import load_vault_dev_config_http, runtime_env_files, secret_backend_kwarg
+from index_tools.config.loader import runtime_env_files
 
 HDRO_SOURCE_FAMILY = "UNDP HDRO Data API 2.0"
 HDRO_CANONICAL_BASE_URL = "https://hdrdata.org"
@@ -181,16 +179,13 @@ def load_hdro_config(config_data: dict[str, Any] | None = None) -> HDROConfig:
     if config_data is None:
         from cloud_dog_config import load_config  # type: ignore
 
-        try:
-            compiled = load_config(
-                env_files=runtime_env_files(),
-                defaults_yaml=str(HDRO_DEFAULTS_YAML),
-                unresolved_policy="strict",
-                **secret_backend_kwarg(True),
-            )
-            config_data = dict(compiled.data)
-        except VaultError:
-            config_data = {"external": load_vault_dev_config_http().get("external", {})}
+        compiled = load_config(
+            env_files=runtime_env_files(),
+            defaults_yaml=str(HDRO_DEFAULTS_YAML),
+            unresolved_policy="strict",
+            vault_enabled=True,
+        )
+        config_data = dict(compiled.data)
 
     block = _extract_hdro_block(config_data)
     api_key = str(block.get("api-key") or block.get("api_key") or "").strip()

@@ -14,24 +14,14 @@
 
 from __future__ import annotations
 
-import json
-import os
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
-from urllib.request import Request, urlopen
 
 import cloud_dog_config  # type: ignore
 from cloud_dog_config import load_config, resolve_runtime_env_files  # type: ignore
 
 from index_tools.config.models import GlobalConfig
-
-_SECRET_BACKEND_FLAG = "".join(chr(code) for code in (118, 97, 117, 108, 116)) + "_enabled"
-
-
-def secret_backend_kwarg(enabled: bool = False) -> dict[str, bool]:
-    """Return the shared loader keyword for external secret resolution."""
-    return {_SECRET_BACKEND_FLAG: enabled}
 
 
 def merge_config_layers(
@@ -72,30 +62,6 @@ def runtime_env_files(env_files: str | Path | Sequence[str | Path] | None = None
     return _normalise_env_files(env_files)
 
 
-def load_vault_dev_config_http() -> dict[str, Any]:
-    """Read the live KV-v2 dev document when the optional hvac extra is absent."""
-    vault_addr = os.getenv("VAULT_ADDR", "").strip()
-    vault_token = os.getenv("VAULT_TOKEN", "").strip()
-    mount = os.getenv("VAULT_MOUNT_POINT", "cloud_dog_ai").strip().strip("/")
-    config_path = os.getenv("VAULT_CONFIG_PATH", "config").strip().strip("/") or "config"
-    if not vault_addr or not vault_token:
-        raise RuntimeError("Vault credentials are unavailable")
-    endpoint = f"{vault_addr.rstrip('/')}/v1/{mount}/data/{config_path}"
-    request = Request(endpoint, headers={"X-Vault-Token": vault_token}, method="GET")
-    with urlopen(request, timeout=15.0) as response:
-        payload = json.loads(response.read().decode("utf-8"))
-    outer = payload.get("data", {}) if isinstance(payload, dict) else {}
-    inner = outer.get("data", {}) if isinstance(outer, dict) else {}
-    if not isinstance(inner, dict):
-        raise RuntimeError("Vault KV-v2 payload is not a mapping")
-    raw_config = inner.get("json", inner)
-    config = json.loads(raw_config) if isinstance(raw_config, str) else raw_config
-    dev = config.get("dev", {}) if isinstance(config, dict) else {}
-    if not isinstance(dev, dict):
-        raise RuntimeError("Vault config did not contain a dev section")
-    return dict(dev)
-
-
 def load_runtime_config(
     *,
     env_files: str | Path | Sequence[str | Path] | None = None,
@@ -113,7 +79,7 @@ def load_runtime_config(
             config_yaml=str(config_yaml),
             defaults_yaml=str(defaults_yaml),
             unresolved_policy=unresolved_policy,
-            **secret_backend_kwarg(secret_backend_enabled),
+            vault_enabled=secret_backend_enabled,
         )
     except Exception:
         resolved = load_config(
@@ -121,7 +87,7 @@ def load_runtime_config(
             config_yaml=str(config_yaml),
             defaults_yaml=str(defaults_yaml),
             unresolved_policy="empty",
-            **secret_backend_kwarg(False),
+            vault_enabled=False,
         )
     return bind_model(resolved.data)
 

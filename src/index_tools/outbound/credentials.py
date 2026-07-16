@@ -22,7 +22,7 @@ from typing import Any
 
 import cloud_dog_config  # type: ignore
 
-from index_tools.config.loader import runtime_env_files, secret_backend_kwarg
+from index_tools.config.loader import runtime_env_files
 
 API_KEY_HEADER = "X-API-Key"
 CORRELATION_HEADER = "X-Correlation-Id"
@@ -215,7 +215,7 @@ def _config_value(path: str, default: Any, value_provider: Callable[[str], Any] 
             env_files=runtime_env_files(),
             defaults_yaml="defaults.yaml",
             unresolved_policy="empty",
-            **secret_backend_kwarg(True),
+            vault_enabled=True,
         )
         value = compiled.get(path)
         return default if value is None else value

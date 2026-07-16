@@ -120,7 +120,7 @@ def allowlist() -> dict[str, object]:
             # line 38 the constant. (W28E-1805B: bind the W28D-440E4 HDRO
             # source endpoint that pre-dated this allowlist.)
             "src/index_tools/sources/hdro.py:19",
-            "src/index_tools/sources/hdro.py:38",
+            "src/index_tools/sources/hdro.py:36",
         },
         "os_environ_config_adapter_files": set(),
         "unused_env_keys": set(),

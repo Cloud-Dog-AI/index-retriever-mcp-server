@@ -75,9 +75,8 @@ def test_load_runtime_config_delegates_to_canonical_loader(
     )
 
     assert result is expected
-    # The public param is `secret_backend_enabled` (W28A-861 zero-Vault-dependency
-    # rename); the loader maps it to the canonical load_config `vault_enabled` kwarg
-    # via secret_backend_kwarg(), so load_config still receives `vault_enabled`.
+    # The service-facing parameter maps directly to the canonical package API;
+    # there is no service-owned secret resolver or dynamic keyword indirection.
     assert captured == {
         "env_files": [
             "tests/env-UT-local-docker",

@@ -64,6 +64,7 @@ httplib2==0.32.0
 httptools==0.8.0
 httpx==0.28.1
 huggingface_hub==1.23.0
+hvac==2.4.0
 hyperframe==6.1.0
 idna==3.18
 importlib_resources==7.1.0

@@ -31,7 +31,7 @@ from cloud_dog_db import (
 )
 from cloud_dog_db.migrations.runner import MigrationConfig
 from filelock import FileLock
-from index_tools.config.loader import runtime_env_files, secret_backend_kwarg
+from index_tools.config.loader import runtime_env_files
 from sqlalchemy import Engine
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import OperationalError
@@ -101,7 +101,7 @@ def _env_value(*names: str) -> str | None:
         compiled = load_config(
             env_files=runtime_env_files(),
             unresolved_policy="strict",
-            **secret_backend_kwarg(False),
+            vault_enabled=False,
         )
     except Exception:
         compiled = None
