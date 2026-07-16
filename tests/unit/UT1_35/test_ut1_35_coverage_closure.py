@@ -225,7 +225,7 @@ def test_mcp_health_and_main_module_paths(monkeypatch: pytest.MonkeyPatch, servi
     assert health_response.status_code == 200
     health_payload = health_response.json()
     assert health_payload["status"] == "ok"
-    assert health_payload["application"] == "index-retriever-mcp-server"
+    assert health_payload["application"] == "index-retriever-mcp-server-mcp"
 
     captured: dict[str, object] = {}
     fake_uvicorn = SimpleNamespace(

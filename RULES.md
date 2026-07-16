@@ -1,3 +1,9 @@
+---
+template-id: T-RUL
+template-version: 1.0
+applies-to: RULES.md
+---
+
 # index-retriever-mcp-server — RULES.md
 
 ## Common Rules

@@ -1,3 +1,9 @@
+---
+template-id: T-EXB
+template-version: 1.0
+applies-to: EXTERNAL-BUILD.md
+---
+
 # External Build Guide — index-retriever-mcp-server
 
 This document is self-contained. An external builder can clone this repository

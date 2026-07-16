@@ -1286,6 +1286,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     @app.post("/auth/login")
     async def auth_login(request: Request) -> JSONResponse:
+        """Authenticate a configured local account and establish its signed session."""
         body = await request.json()
         username = str(body.get("username", "")).strip()
         password = str(body.get("password", "")).strip()
@@ -1306,6 +1307,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     @app.get("/auth/me")
     async def auth_me(request: Request) -> JSONResponse:
+        """Return the identity resolved from the session or request credentials."""
         sess = _get_session(request)
         if sess:
             return JSONResponse({"user": _user_payload(_session_identity(sess))})
