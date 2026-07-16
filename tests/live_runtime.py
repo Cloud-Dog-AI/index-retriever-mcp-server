@@ -1161,7 +1161,7 @@ class LiveIndexRuntime:
                 provider_id=resolved_provider,
             )
         )
-        self._job_backend.store_result(job_id, {"record_id": record_id})
+        self._job_backend.store_result(job_id, f"record://{record_id}")
         self._job_backend.update_status(job_id, JobStatus.SUCCEEDED.value)
         record = LiveRecord(
             job_id=job_id, record_id=record_id, provider_id=resolved_provider, collection_name=collection_name

@@ -123,6 +123,9 @@ def test_queue_engine_and_redis_bridge_paths(monkeypatch: pytest.MonkeyPatch, tm
     assert engine.get("j1").job_id == "j1"
     assert len(engine.list_jobs()) == 1
 
+    engine._backend.store_result("j1", {"record_id": "record-1"})
+    assert engine.get("j1").result_ref == '{"record_id":"record-1"}'
+
     run_job = engine.run("j1", lambda _: None)
     assert run_job.status is JobStatus.succeeded
 

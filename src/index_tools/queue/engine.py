@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
@@ -496,6 +497,17 @@ class QueueEngine:
                 return candidate
         return JobStatus.failed
 
+    @staticmethod
+    def _adapt_result_ref(value: Any) -> str | None:
+        """Normalise backend result references to the service string contract."""
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return value
+        if isinstance(value, (dict, list)):
+            return json.dumps(value, sort_keys=True, separators=(",", ":"))
+        return str(value)
+
     def _adapt_job(self, job: Any) -> JobRecord:
         row = self._sql_row(str(job.job_id))
         meta = dict(row.get("meta") or {}) if isinstance(row, dict) else {}
@@ -528,7 +540,7 @@ class QueueEngine:
             request_auth_identity=meta.get("request_auth_identity") or getattr(job, "request_auth_identity", None),
             request_user_agent=meta.get("request_user_agent") or getattr(job, "request_user_agent", None),
             last_error=meta.get("last_error") or getattr(job, "last_error", None),
-            result_ref=meta.get("result_ref") or getattr(job, "result_ref", None),
+            result_ref=self._adapt_result_ref(meta.get("result_ref") or getattr(job, "result_ref", None)),
             progress=dict(meta.get("progress") or getattr(job, "progress", {}) or {}),
         )
 
