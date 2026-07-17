@@ -2913,6 +2913,15 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
         W28M-1626: a base64 ``source_bytes_b64`` payload routes through the file/bytes path
         (``provider="mineru"`` etc.), with the MinerU endpoint resolved from config.
+
+        W28M-1635: ``async_job=true`` queues the extraction and returns a job id
+        immediately instead of blocking. A real parser run on a full report takes
+        minutes, while the platform request ceiling (``cloud_dog_api_kit``
+        ``TimeoutMiddleware``, 30s by default) bounds any synchronous call, so a large
+        document can only be extracted through the queue. The caller polls the returned
+        ``job_id``; the resulting ``structure_document_id`` is reported on job progress
+        and readable from the existing structure-document endpoints. The synchronous
+        path is unchanged for small/text extracts.
         """
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "collection.write")
@@ -2922,6 +2931,27 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                 import base64
 
                 data = base64.b64decode(str(source_b64))
+                if bool(payload.get("async_job") or payload.get("async")):
+                    job_id = active_service.extract_structure_async(
+                        data,
+                        filename=str(
+                            payload.get("source_filename") or payload.get("filename") or "document"
+                        ),
+                        mime_type=str(payload.get("mime_type", "application/octet-stream")),
+                        profile=str(payload.get("profile", "default")),
+                        collection=str(payload.get("collection", "default")),
+                        provider=str(payload.get("provider", "internal")),
+                        parser_services=payload.get("parser_services"),
+                        options=payload.get("options"),
+                        actor=identity.user_id,
+                        roles=identity.roles,
+                        idempotency_key=payload.get("idempotency_key"),
+                    )
+                    return {
+                        "job_id": str(job_id),
+                        "status": "queued",
+                        "poll_path": f"{api_base_path}/structure/extract/jobs/{job_id}",
+                    }
                 return active_service.structure.extract_file(
                     data,
                     filename=str(payload.get("source_filename") or payload.get("filename") or "document"),
@@ -2946,6 +2976,31 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    def structure_extract_job_get(job_id: str, request: Request) -> dict[str, Any]:
+        """Read the status of a queued structure extraction (W28M-1635).
+
+        Returns the job's terminal state plus the ``structure_document_id`` recorded on
+        job progress by the extraction handler, so a caller that submitted with
+        ``async_job=true`` can resolve the persisted structure document without a
+        long-lived request.
+        """
+        identity = _auth_or_raise(request, _headers_from_request(request))
+        _require_or_raise(request, identity, "collection.read")
+        try:
+            job = active_service.job_get(str(job_id))
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Unknown job: {job_id}") from exc
+        progress = dict(getattr(job, "progress", {}) or {})
+        return {
+            "job_id": str(getattr(job, "job_id", job_id)),
+            "status": str(getattr(getattr(job, "status", ""), "value", getattr(job, "status", ""))),
+            "structure_document_id": str(progress.get("structure_document_id") or ""),
+            "result_ref": str(getattr(job, "result_ref", "") or progress.get("result_ref") or ""),
+            "attempt": int(getattr(job, "attempt", 0) or 0),
+            "progress": progress,
+            "last_error": getattr(job, "last_error", None),
+        }
 
     def structure_link_vdb(structure_document_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         """Link a structure document to existing VDB record/chunk ids (§25 #6)."""
@@ -3581,6 +3636,7 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     app.get(f"{api_base_path}/structure/documents/{{structure_document_id}}/sections")(structure_documents_sections)
     # W28E-603 Phase 2: extraction
     app.post(f"{api_base_path}/structure/extract")(structure_extract)
+    app.get(f"{api_base_path}/structure/extract/jobs/{{job_id}}")(structure_extract_job_get)
     app.post(f"{api_base_path}/structure/documents/{{structure_document_id}}/vdb-links")(structure_link_vdb)
     # W28E-603 Phase 4: corpus
     app.post(f"{api_base_path}/structure/corpora")(structure_corpus_create)

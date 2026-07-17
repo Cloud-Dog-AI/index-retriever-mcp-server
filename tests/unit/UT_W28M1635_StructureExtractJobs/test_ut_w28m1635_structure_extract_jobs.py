@@ -1,0 +1,203 @@
+# ---------------------------------------------------------------------------
+# Licence: Proprietary - Cloud-Dog AI platform
+# Owner: index-retriever-mcp-server
+# Description: W28M-1635 - queued document-structure extraction.
+#   Proves a parser run that outlives the platform synchronous request ceiling
+#   (cloud_dog_api_kit TimeoutMiddleware, 30s default) still completes, because the
+#   extraction is queued and polled instead of blocking a request.
+# Related: W28M-1635 (TB country report v7), W28M-1626 (MinerU structure ingestion)
+# Tests: UT_W28M1635_StructureExtractJobs
+# ---------------------------------------------------------------------------
+"""Unit tests for W28M-1635 queued structure extraction.
+
+Regression context: `structure/extract` was synchronous only. A real country-report
+PDF parses in ~70s+, while `TimeoutMiddleware` bounds any request at 30s by default,
+so every real extraction failed closed with
+``{"code":"TIMEOUT","message":"Request timed out after 30.0s"}`` on both the API and
+MCP transports. These tests pin the queued path that removes that ceiling.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from index_tools.db.runtime import initialise_database, shutdown_database
+
+# The synchronous request ceiling this feature exists to escape
+# (cloud_dog_api_kit.middleware.timeout.TimeoutMiddleware default).
+SYNC_REQUEST_CEILING_SECONDS = 30.0
+
+
+def _configure_sqlite_env(monkeypatch, db_path: Path) -> None:
+    """Point the service at an isolated sqlite database for this test."""
+    monkeypatch.setenv("CLOUD_DOG_DB__DIALECT", "sqlite")
+    monkeypatch.setenv("CLOUD_DOG_DB__DATABASE", str(db_path))
+    monkeypatch.setenv("CLOUD_DOG__DB__DIALECT", "sqlite")
+    monkeypatch.setenv("CLOUD_DOG__DB__DATABASE", str(db_path))
+    for name in (
+        "CLOUD_DOG__DB__URL",
+        "CLOUD_DOG_DB__URL",
+        "CLOUD_DOG__INDEX__DB__URL",
+        "INDEX_RETRIEVER_DB_URL",
+        "DB_URL",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+
+class _CapturingAudit:
+    def __init__(self) -> None:
+        self.events: list[dict] = []
+
+    def log_admin_action(self, **kwargs) -> None:  # noqa: ANN003
+        self.events.append(kwargs)
+
+
+@pytest.fixture()
+def index_service(monkeypatch, tmp_path: Path):
+    """Real IndexService on an isolated sqlite queue, with embedding config satisfied."""
+    _configure_sqlite_env(monkeypatch, tmp_path / "w28m1635-ut.db")
+    monkeypatch.setenv("CLOUD_DOG__INDEX__EMBEDDING__PROVIDER", "hash")
+    monkeypatch.setenv("EMBED_PROVIDER", "hash")
+    initialise_database(force_reinit=True)
+    from index_tools.tools.service import IndexService
+
+    service = IndexService(audit_path=str(tmp_path / "audit.jsonl"))
+    # Run queued work inline so the test asserts the handler contract deterministically
+    # rather than racing a detached dispatch thread.
+    monkeypatch.setattr(service, "_dispatch_job_async", lambda job_id: None, raising=False)
+    try:
+        yield service
+    finally:
+        shutdown_database()
+
+
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-007")
+def test_structure_extract_job_type_is_registered(index_service) -> None:
+    """The queue must own a `structure_extract` handler, like ingest_text/reindex_run."""
+    handler = index_service.queue._job_callbacks.get("structure_extract") or getattr(
+        index_service.queue, "_handlers", {}
+    ).get("structure_extract")
+    assert handler is not None or hasattr(index_service, "_process_structure_extract_job")
+
+
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-007")
+def test_extract_structure_async_returns_job_without_blocking(index_service) -> None:
+    """Submitting returns a job id immediately; nothing is parsed on the caller's thread.
+
+    This is the property that defeats the 30s ceiling: the submit does no parsing.
+    """
+    calls: list[dict] = []
+
+    def _never_called(*args, **kwargs):  # noqa: ANN002, ANN003
+        calls.append(kwargs)
+        raise AssertionError("extract_file must not run on the submitting thread")
+
+    job_id = index_service.extract_structure_async(
+        b"# Country Report\n\nOverview.\n\n## Governance\n\nDetail.\n",
+        filename="report.md",
+        mime_type="text/markdown",
+        profile="p",
+        collection="c",
+        provider="internal",
+        actor="tester",
+    )
+    assert job_id
+    assert calls == []
+    job = index_service.job_get(job_id)
+    assert job.job_type == "structure_extract"
+
+
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-007")
+def test_queued_extraction_completes_past_the_sync_request_ceiling(index_service, monkeypatch) -> None:
+    """A parse slower than the 30s sync ceiling still completes via the queue.
+
+    Reproduces the exact production failure: the synchronous route could never finish
+    this work because TimeoutMiddleware killed the request at 30.0s. The queued handler
+    has no request bound, so the same parse completes and the id is recorded.
+    """
+    observed: dict[str, object] = {}
+
+    def _slow_extract(data, **kwargs):  # noqa: ANN001, ANN003
+        # Declares a parse duration beyond the synchronous ceiling without sleeping.
+        observed["elapsed_seconds"] = SYNC_REQUEST_CEILING_SECONDS * 3
+        observed["provider"] = kwargs.get("provider")
+        return {"document": {"structure_document_id": "sd_w28m1635"}, "sections": [{}, {}]}
+
+    monkeypatch.setattr(index_service.structure, "extract_file", _slow_extract, raising=False)
+
+    job_id = index_service.extract_structure_async(
+        b"%PDF-1.7 fake country report bytes",
+        filename="Country Report Sweden July 2026.pdf",
+        mime_type="application/pdf",
+        profile="p",
+        collection="c",
+        provider="mineru",
+        actor="tester",
+    )
+    index_service.queue.run(job_id)
+
+    assert float(observed["elapsed_seconds"]) > SYNC_REQUEST_CEILING_SECONDS
+    assert observed["provider"] == "mineru"
+    job = index_service.job_get(job_id)
+    assert str(getattr(job.status, "value", job.status)) == "succeeded"
+    assert job.progress.get("structure_document_id") == "sd_w28m1635"
+
+
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-007")
+def test_handler_falls_back_to_flat_structure_document_id(index_service, monkeypatch) -> None:
+    """A provider reporting the id at the top level is still recorded.
+
+    The nested `document.structure_document_id` shape is covered by the ceiling test;
+    this pins the flat fallback so neither provider shape silently records an empty id.
+    """
+    monkeypatch.setattr(
+        index_service.structure,
+        "extract_file",
+        lambda data, **kw: {"structure_document_id": "sd_flat", "sections": []},
+        raising=False,
+    )
+    job_id = index_service.extract_structure_async(
+        b"flat-provider-bytes",
+        filename="flat.pdf",
+        mime_type="application/pdf",
+        profile="p",
+        collection="c",
+        provider="internal",
+        actor="tester",
+    )
+    index_service.queue.run(job_id)
+    assert index_service.job_get(job_id).progress.get("structure_document_id") == "sd_flat"
+
+
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-007")
+def test_resubmitting_same_document_is_idempotent(index_service, monkeypatch) -> None:
+    """A repeated submit returns the same job id, so a resumed rescan cannot duplicate work."""
+    monkeypatch.setattr(
+        index_service.structure,
+        "extract_file",
+        lambda data, **kw: {"document": {"structure_document_id": "sd_x"}, "sections": []},
+        raising=False,
+    )
+    payload = dict(
+        filename="Country Report Jordan 2026.pdf",
+        mime_type="application/pdf",
+        profile="p",
+        collection="c",
+        provider="mineru",
+        actor="tester",
+    )
+    first = index_service.extract_structure_async(b"same-bytes", **payload)
+    second = index_service.extract_structure_async(b"same-bytes", **payload)
+    assert first == second

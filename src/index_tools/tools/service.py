@@ -945,6 +945,7 @@ class IndexService:
         self.queue.register_handler("ingest_text", self._process_ingest_text_job)
         self.queue.register_handler("retention_run", self._process_retention_job)
         self.queue.register_handler("reindex_run", self._process_reindex_job)
+        self.queue.register_handler("structure_extract", self._process_structure_extract_job)
         # W28A-F-RF-07-L3: durable admin state via bootstrap-seed. Each of the
         # four service processes (api_server, web_server, mcp_server, a2a_server)
         # constructs its own IndexService with empty in-memory admin stores.
@@ -1030,6 +1031,125 @@ class IndexService:
             existing = StructureService(audit_logger=self.audit_logger)
             self._structure_service = existing
         return existing
+
+    def extract_structure_async(
+        self,
+        data: bytes,
+        *,
+        filename: str,
+        mime_type: str,
+        profile: str,
+        collection: str,
+        provider: str = "internal",
+        parser_services: dict[str, Any] | None = None,
+        options: dict[str, Any] | None = None,
+        actor: str = "service",
+        roles: set[str] | None = None,
+        idempotency_key: str | None = None,
+    ) -> str:
+        """Queue a document-structure extraction and return its job id (W28M-1635).
+
+        Real parser providers (``mineru``/``marker``/``docling``) take minutes on a
+        full country report, while the platform request ceiling
+        (``cloud_dog_api_kit`` ``TimeoutMiddleware``, 30s by default) bounds any
+        synchronous call. Long work therefore runs as a queued job, matching this
+        service's existing ``ingest_text``/``reindex_run`` contract, so the caller
+        submits, receives a job id, and polls ``job_get``. The extraction itself is
+        unchanged: the handler calls the same ``structure.extract_file`` path.
+        """
+        import base64
+
+        # compute_content_hash() takes str (it calls .strip().encode()); this payload is
+        # raw document bytes, so hash the bytes directly for the idempotency key.
+        source_key = f"{normalise_source_uri(filename)}:{sha256(data).hexdigest()}"
+        computed_key = self.queue.generate_idempotency_key(profile, collection, source_key)
+        request_key = idempotency_key or computed_key
+        if request_key in self.idempotency:
+            return self.idempotency[request_key]
+
+        queued_job = self.queue.enqueue(
+            JobRecord(
+                job_id=str(uuid4()),
+                profile=profile,
+                collection=collection,
+                job_type="structure_extract",
+                idempotency_key=request_key,
+                server_id=self.queue.server_id,
+                correlation_id=get_correlation_id() or None,
+                user_id=actor,
+                request_source=filename,
+                request_auth_identity=actor,
+            ),
+            payload={
+                "profile": profile,
+                "collection": collection,
+                "source_bytes_b64": base64.b64encode(data).decode("ascii"),
+                "source_filename": filename,
+                "mime_type": mime_type,
+                "provider": provider,
+                "parser_services": parser_services or {},
+                "options": options or {},
+                "actor": actor,
+                "roles": sorted(roles) if roles else [],
+            },
+            actor=actor,
+        )
+        self._dispatch_job_async(queued_job.job_id)
+        self.idempotency[request_key] = queued_job.job_id
+        return queued_job.job_id
+
+    def _process_structure_extract_job(self, job: JobRecord) -> None:
+        """Run a queued document-structure extraction (W28M-1635).
+
+        Delegates to the same ``structure.extract_file`` path the synchronous route
+        uses, so parser behaviour is identical. ``extract_file`` already persists the
+        structure document, so the handler only records the resulting
+        ``structure_document_id`` on job progress and the caller reads the outcome from
+        the existing structure-document endpoints. No separate result store is
+        introduced. The queue engine owns the running/succeeded/failed lifecycle
+        (``_execute_backend_job``), so this handler must not transition the job itself.
+        """
+        import base64
+
+        payload = dict(job.payload)
+        data = base64.b64decode(str(payload.get("source_bytes_b64") or ""))
+        roles_value = payload.get("roles") or []
+        result = self.structure.extract_file(
+            data,
+            filename=str(payload.get("source_filename") or "document"),
+            mime_type=str(payload.get("mime_type") or "application/octet-stream"),
+            profile=str(payload["profile"]),
+            collection=str(payload["collection"]),
+            provider=str(payload.get("provider") or "internal"),
+            parser_services=payload.get("parser_services") or None,
+            options=payload.get("options") or None,
+            actor=str(payload.get("actor") or "service"),
+            roles=set(roles_value) if roles_value else None,
+        )
+        # extract_file returns the persisted bundle with the id nested under "document"
+        # (see UT_W28M1626_MineruStructure::test_extract_file_internal_persists_structure);
+        # the flat fallbacks cover any provider that reports it at the top level.
+        structure_document_id = ""
+        if isinstance(result, dict):
+            document = result.get("document")
+            if isinstance(document, dict):
+                structure_document_id = str(document.get("structure_document_id") or "")
+            if not structure_document_id:
+                structure_document_id = str(
+                    result.get("structure_document_id") or result.get("id") or ""
+                )
+        self.queue.record_progress(
+            job.job_id,
+            phase="extracted",
+            percentage=90,
+            message="structure extraction completed",
+            extra={
+                "structure_document_id": structure_document_id,
+                "result_ref": f"structure://{structure_document_id}" if structure_document_id else "",
+                "source_filename": str(payload.get("source_filename") or ""),
+                "provider": str(payload.get("provider") or "internal"),
+            },
+        )
 
     @property
     def watch_service(self) -> Any:

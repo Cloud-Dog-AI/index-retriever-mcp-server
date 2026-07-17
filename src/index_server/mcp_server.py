@@ -1522,6 +1522,32 @@ def execute_tool(
             import base64
 
             data = base64.b64decode(str(source_b64))
+            if bool(arguments.get("async_job") or arguments.get("async")):
+                # W28M-1635: a real parser run on a full report outlives the platform
+                # synchronous request ceiling (cloud_dog_api_kit TimeoutMiddleware, 30s
+                # by default), so queue it and hand back a job id to poll via job_get.
+                job_id = service.extract_structure_async(
+                    data,
+                    filename=str(
+                        arguments.get("source_filename") or arguments.get("filename") or "document"
+                    ),
+                    mime_type=str(arguments.get("mime_type", "application/octet-stream")),
+                    profile=str(arguments.get("profile", "default")),
+                    collection=str(arguments.get("collection", "default")),
+                    provider=str(arguments.get("provider", "internal")),
+                    parser_services=arguments.get("parser_services"),
+                    options=arguments.get("options"),
+                    actor=str(arguments.get("actor", "mcp")),
+                    roles=set(identity_roles or set()),
+                    idempotency_key=arguments.get("idempotency_key"),
+                )
+                return {
+                    "ok": True,
+                    "job_id": str(job_id),
+                    "status": "queued",
+                    "poll_tool": "job_get",
+                    "blocking_tool": "structure_extract",
+                }
             return service.structure.extract_file(
                 data,
                 filename=str(arguments.get("source_filename") or arguments.get("filename") or "document"),
