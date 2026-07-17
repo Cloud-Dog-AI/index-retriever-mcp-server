@@ -382,12 +382,51 @@ def normalise_ir_to_bundle(
         bundle.document.metadata["parser_quality"] = quality
     table_blocks = list(getattr(ir, "table_blocks", []) or [])
     for index, tb in enumerate(table_blocks):
+        # DocumentIR TableBlock carries headers/rows (it has no markdown/text
+        # attribute), so read those and derive cells, counts and normalised markdown.
+        # Reading a non-existent `markdown`/`text` attribute silently produced empty
+        # tables even when the parser recovered them (W28M-1635).
+        headers = [str(h) for h in (getattr(tb, "headers", None) or [])]
+        rows = [[str(cell) for cell in row] for row in (getattr(tb, "rows", None) or [])]
+        cells: list[dict[str, Any]] = []
+        for column_index, header in enumerate(headers):
+            cells.append(
+                {"row": 0, "column": column_index, "text": header, "is_header": True}
+            )
+        row_offset = 1 if headers else 0
+        for row_index, row in enumerate(rows):
+            for column_index, value in enumerate(row):
+                cells.append(
+                    {
+                        "row": row_index + row_offset,
+                        "column": column_index,
+                        "text": value,
+                        "is_header": False,
+                    }
+                )
+        markdown = str(getattr(tb, "markdown", "") or getattr(tb, "text", "") or "")
+        if not markdown and (headers or rows):
+            lines: list[str] = []
+            if headers:
+                lines.append("| " + " | ".join(headers) + " |")
+                lines.append("| " + " | ".join("---" for _ in headers) + " |")
+            lines.extend("| " + " | ".join(row) + " |" for row in rows)
+            markdown = "\n".join(lines)
         bundle.tables.append(
             StructureTable(
                 structure_document_id="",
-                normalised_markdown=str(getattr(tb, "markdown", getattr(tb, "text", "")) or ""),
+                normalised_markdown=markdown,
+                cells=cells,
+                row_count=len(rows) + row_offset,
+                column_count=max(
+                    [len(headers)] + [len(row) for row in rows] or [0]
+                ),
+                header_rows=row_offset,
                 extraction_method=provider_id,
-                metadata={"source_index": index},
+                metadata={
+                    "source_index": index,
+                    "locator": str(getattr(tb, "locator", "") or ""),
+                },
             )
         )
     now = datetime.now(timezone.utc).isoformat()  # noqa: UP017 — vdb-path run is synchronous (design brief §5.2)

@@ -276,3 +276,44 @@ def test_resubmitting_same_document_is_idempotent(index_service, monkeypatch) ->
     first = index_service.extract_structure_async(b"same-bytes", **payload)
     second = index_service.extract_structure_async(b"same-bytes", **payload)
     assert first == second
+
+
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-007")
+def test_ir_table_blocks_become_populated_structure_tables() -> None:
+    """A parser's TableBlock must survive into a StructureTable with real cells.
+
+    Regression: normalise_ir_to_bundle read `tb.markdown`/`tb.text`, which DocumentIR's
+    TableBlock does not define, so every recovered table was persisted as an empty
+    shell — 4 tables with 0 cells for a real report. Reading a non-existent attribute
+    failed silently, which is why only live inspection surfaced it.
+    """
+    from cloud_dog_vdb.ingestion.parse.ir import DocumentIR, TableBlock
+
+    from index_tools.structure.extract import normalise_ir_to_bundle
+
+    ir = DocumentIR(
+        source_uri="Country Report Morocco July 2026.pdf",
+        provider_id="mineru",
+        provider_version="api-0.1.0",
+        table_blocks=[
+            TableBlock(
+                headers=["Indicator", "Value"],
+                rows=[["Life expectancy", "74.3"], ["Infant mortality", "16.8"]],
+                locator="table[0]",
+            )
+        ],
+    )
+    bundle = normalise_ir_to_bundle(
+        ir, profile="p", collection="c", source_filename="Morocco.pdf", provider="mineru"
+    )
+    assert len(bundle.tables) == 1
+    table = bundle.tables[0]
+    assert table.row_count == 3, "header row + 2 data rows"
+    assert table.column_count == 2
+    assert table.header_rows == 1
+    assert len(table.cells) == 6, f"2 headers + 4 data cells, got {len(table.cells)}"
+    assert {"row": 0, "column": 0, "text": "Indicator", "is_header": True} in table.cells
+    assert {"row": 1, "column": 1, "text": "74.3", "is_header": False} in table.cells
+    assert "Life expectancy" in (table.normalised_markdown or "")
