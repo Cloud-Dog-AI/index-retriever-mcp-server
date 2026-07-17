@@ -281,6 +281,53 @@ def test_resubmitting_same_document_is_idempotent(index_service, monkeypatch) ->
 @pytest.mark.UT
 @pytest.mark.internal
 @pytest.mark.req("FR-007")
+def test_parser_upgrade_forces_reextraction(index_service, monkeypatch) -> None:
+    """Identical bytes must re-extract after a parser upgrade, not return the old job.
+
+    Regression: the idempotency key hashed only the document bytes, so once
+    cloud-dog-vdb gained MinerU table recovery, resubmitting the same PDF returned the
+    previous version's table-less job and nothing re-parsed. A whole corpus rescan
+    reported "succeeded" while silently yielding the old results.
+    """
+    monkeypatch.setattr(
+        index_service.structure,
+        "extract_file",
+        lambda data, **kw: {"document": {"structure_document_id": "sd_v"}, "sections": []},
+        raising=False,
+    )
+    payload = dict(
+        filename="Country Report India July 2026.pdf",
+        mime_type="application/pdf",
+        profile="p",
+        collection="c",
+        provider="mineru",
+        actor="tester",
+    )
+    monkeypatch.setattr(
+        type(index_service), "_parser_version", staticmethod(lambda provider: "cloud-dog-vdb==0.5.5")
+    )
+    before = index_service.extract_structure_async(b"identical-bytes", **payload)
+
+    monkeypatch.setattr(
+        type(index_service), "_parser_version", staticmethod(lambda provider: "cloud-dog-vdb==0.5.7")
+    )
+    after = index_service.extract_structure_async(b"identical-bytes", **payload)
+
+    assert before != after, "parser upgrade must not reuse the previous extraction"
+
+
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-007")
+def test_parser_version_is_part_of_the_key(index_service) -> None:
+    """The live parser version is reported, so the key can bind to it."""
+    assert index_service._parser_version("internal") == "internal"
+    assert index_service._parser_version("mineru").startswith("cloud-dog-vdb==")
+
+
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-007")
 def test_ir_table_blocks_become_populated_structure_tables() -> None:
     """A parser's TableBlock must survive into a StructureTable with real cells.
 

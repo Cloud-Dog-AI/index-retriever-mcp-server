@@ -1032,6 +1032,23 @@ class IndexService:
             self._structure_service = existing
         return existing
 
+    @staticmethod
+    def _parser_version(provider: str) -> str:
+        """Version of the library that will perform *provider*'s extraction.
+
+        Used in the structure-extract idempotency key so an extractor upgrade re-parses
+        rather than returning the previous version's cached result. ``internal`` decodes
+        bytes in-process, so it tracks this service rather than the parser library.
+        """
+        if provider == "internal":
+            return "internal"
+        try:
+            from importlib.metadata import version as _package_version
+
+            return f"cloud-dog-vdb=={_package_version('cloud-dog-vdb')}"
+        except Exception:  # noqa: BLE001 - version is advisory; never fail extraction
+            return "cloud-dog-vdb==unknown"
+
     def extract_structure_async(
         self,
         data: bytes,
@@ -1059,9 +1076,22 @@ class IndexService:
         """
         import base64
 
+        # The idempotency key must bind the *extraction*, not just the document, or a
+        # resubmit after a parser upgrade silently returns the previous version's
+        # result instead of re-extracting. Provider and parser version are therefore
+        # part of the key: identical bytes parsed by a newer extractor are a different
+        # extraction and must run. (Observed: after cloud-dog-vdb gained MinerU table
+        # recovery, a bytes-only key returned the older table-less jobs unchanged.)
         # compute_content_hash() takes str (it calls .strip().encode()); this payload is
-        # raw document bytes, so hash the bytes directly for the idempotency key.
-        source_key = f"{normalise_source_uri(filename)}:{sha256(data).hexdigest()}"
+        # raw document bytes, so hash the bytes directly.
+        source_key = ":".join(
+            (
+                normalise_source_uri(filename),
+                sha256(data).hexdigest(),
+                provider,
+                self._parser_version(provider),
+            )
+        )
         computed_key = self.queue.generate_idempotency_key(profile, collection, source_key)
         request_key = idempotency_key or computed_key
         if request_key in self.idempotency:
