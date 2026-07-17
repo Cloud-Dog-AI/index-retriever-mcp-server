@@ -19,6 +19,8 @@ MCP transports. These tests pin the queued path that removes that ceiling.
 
 from __future__ import annotations
 
+import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -66,7 +68,31 @@ def index_service(monkeypatch, tmp_path: Path):
     service = IndexService(audit_path=str(tmp_path / "audit.jsonl"))
     # Run queued work inline so the test asserts the handler contract deterministically
     # rather than racing a detached dispatch thread.
+    monkeypatch.setattr(service, "_dispatch_job_detached", lambda job_id: None, raising=False)
     monkeypatch.setattr(service, "_dispatch_job_async", lambda job_id: None, raising=False)
+    try:
+        yield service
+    finally:
+        shutdown_database()
+
+
+@pytest.fixture()
+def unstubbed_index_service(monkeypatch, tmp_path: Path):
+    """IndexService with the real dispatcher, to exercise actual thread detachment.
+
+    `index_service` stubs dispatch so handler contracts can be asserted deterministically;
+    that stubbing is exactly what hid the inline-blocking defect, so this fixture leaves
+    the dispatcher real. `_async_job_execution` is forced false to reproduce the deployed
+    condition where `_dispatch_job_async` would otherwise run the job inline.
+    """
+    _configure_sqlite_env(monkeypatch, tmp_path / "w28m1635-ut-detach.db")
+    monkeypatch.setenv("CLOUD_DOG__INDEX__EMBEDDING__PROVIDER", "hash")
+    monkeypatch.setenv("EMBED_PROVIDER", "hash")
+    initialise_database(force_reinit=True)
+    from index_tools.tools.service import IndexService
+
+    service = IndexService(audit_path=str(tmp_path / "audit-detach.jsonl"))
+    service._async_job_execution = False
     try:
         yield service
     finally:
@@ -177,6 +203,55 @@ def test_handler_falls_back_to_flat_structure_document_id(index_service, monkeyp
     )
     index_service.queue.run(job_id)
     assert index_service.job_get(job_id).progress.get("structure_document_id") == "sd_flat"
+
+
+@pytest.mark.UT
+@pytest.mark.internal
+@pytest.mark.req("FR-007")
+def test_submit_detaches_and_never_runs_inline(unstubbed_index_service, monkeypatch) -> None:
+    """The submit must return while the parse is still running, on a detached thread.
+
+    Regression: `_dispatch_job_async` runs a job inline whenever
+    `_async_job_execution` is false. Routing the submit through it blocked the caller
+    for the whole parse and re-tripped the very request ceiling the queue exists to
+    escape — the deployed API returned 504 even though the job later succeeded. This
+    test deliberately does NOT stub the dispatcher, which is how that escaped.
+    """
+    service = unstubbed_index_service
+    started = threading.Event()
+    release = threading.Event()
+
+    def _blocking_extract(data, **kwargs):  # noqa: ANN001, ANN003
+        started.set()
+        # Hold the parse open; a submit that waits for this has blocked the caller.
+        assert release.wait(timeout=30), "handler was never released"
+        return {"document": {"structure_document_id": "sd_detached"}, "sections": []}
+
+    monkeypatch.setattr(service.structure, "extract_file", _blocking_extract, raising=False)
+
+    submitted = time.monotonic()
+    job_id = service.extract_structure_async(
+        b"detach-me",
+        filename="Country Report Kenya July 2026.pdf",
+        mime_type="application/pdf",
+        profile="p",
+        collection="c",
+        provider="mineru",
+        actor="tester",
+    )
+    submit_seconds = time.monotonic() - submitted
+
+    # The submit returned while the parse is still in flight.
+    assert job_id
+    assert submit_seconds < 5.0, f"submit blocked for {submit_seconds:.1f}s"
+    assert started.wait(timeout=10), "extraction never started on a worker thread"
+    release.set()
+
+    for _ in range(100):
+        if str(getattr(service.job_get(job_id).status, "value", "")) == "succeeded":
+            break
+        time.sleep(0.1)
+    assert service.job_get(job_id).progress.get("structure_document_id") == "sd_detached"
 
 
 @pytest.mark.UT

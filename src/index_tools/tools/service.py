@@ -1094,7 +1094,9 @@ class IndexService:
             },
             actor=actor,
         )
-        self._dispatch_job_async(queued_job.job_id)
+        # Always detached: an inline run would block this submit for the whole parse
+        # and re-trip the request ceiling this path exists to escape.
+        self._dispatch_job_detached(queued_job.job_id)
         self.idempotency[request_key] = queued_job.job_id
         return queued_job.job_id
 
@@ -2200,6 +2202,39 @@ class IndexService:
         """Abort cooperative job execution when the queue state is cancelled."""
         if self.queue.get(job_id).status is JobStatus.cancelled:
             raise JobCancelledError(f"Job {job_id} was cancelled")
+
+    def _dispatch_job_detached(self, job_id: str) -> None:
+        """Always run *job_id* on a detached worker thread (W28M-1635).
+
+        ``_dispatch_job_async`` falls back to running the job inline when live
+        execution is off, which is fine for short work but would block the caller's
+        request for the whole parse — reintroducing the very request-ceiling timeout
+        the queued path exists to escape. Structure extraction is long by definition,
+        so it always detaches and the caller always gets its job id back promptly.
+        """
+        with self._job_threads_lock:
+            existing = self._job_threads.get(job_id)
+            if existing is not None and existing.is_alive():
+                return
+
+            def _runner() -> None:
+                try:
+                    self.queue.run(job_id=job_id)
+                except Exception:
+                    pass
+                finally:
+                    with self._job_threads_lock:
+                        current = self._job_threads.get(job_id)
+                        if current is threading.current_thread():
+                            self._job_threads.pop(job_id, None)
+
+            worker = threading.Thread(
+                target=_runner,
+                name=f"index-retriever-structure-{job_id[:8]}",
+                daemon=True,
+            )
+            self._job_threads[job_id] = worker
+            worker.start()
 
     def _dispatch_job_async(self, job_id: str) -> None:
         """Run a queued job in a detached worker thread when live execution is enabled."""
