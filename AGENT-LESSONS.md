@@ -50,3 +50,8 @@ authority here; resolve them from current configuration, manifests and source.
 ## Historical provenance
 
 The complete pre-refresh document is preserved at commit `94f4e8cb3de1b12d390fb8e7d6b138f243d88afb`, path `AGENT-LESSONS.md`, SHA-256 `43f00b63cb9aca99b5785fb354dcb847c7f54d6f68eac2723feede432475837d`. Its 60 addressable units, including 26 historical, mutable, duplicate or heading-only units omitted from the active body, are mapped individually in the central `lesson-unit-migration.tsv` ledger.
+
+## External evidence lesson
+
+New raw proof belongs in the allocated external run root, never project Git.
+Checksum and seal that external run; `latest` is a pointer, not final proof.

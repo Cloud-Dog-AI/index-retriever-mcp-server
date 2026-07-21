@@ -25,3 +25,10 @@ delivery controls apply; this file is an additive retrieval overlay.
   RBAC. Build and prove the paired UI and full selected profile lifecycle.
 
 Historical installations, ports, direct probes and incidents are retired to Git history.
+
+## External evidence
+
+For every newly dispatched or re-dispatched lane, follow platform
+`COMMON-EXTERNAL-EVIDENCE-ROOT-CONTRACT-2026-07-21.md`: write new raw proof only
+to the allocated non-Git run root beneath `/opt/iac/Development/cloud-dog-ai/tmp/evidence`.
+Git records identity references only; historical evidence remains untouched.
