@@ -6,6 +6,8 @@ Read [the platform RULES](../cloud-dog-ai-platform-standards/RULES.md) and
 `AGENT-LESSONS.md` in full before work. Central configuration, VDB, Gate 0 and
 delivery controls apply; this file is an additive retrieval overlay.
 
+**WebUI evidence (when applicable).** Browser-visible change or claim requires named real-service Playwright user-flow proof locally and again on final preprod `main`/`:latest`; `curl`, screenshots, DOM/unit checks, mocks and manual browsing are not substitutes. The platform rule governs the agent/auditor replay.
+
 ## Local rules
 
 - Preserve ingest, delete, search and retrieve lifecycle shaping across Web, API and
