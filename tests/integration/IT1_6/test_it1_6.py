@@ -47,7 +47,7 @@ def test_mcp_tool_catalogue(
 
     if runtime_mode == "local-server":
         client = TestClient(build_mcp_app(service=live_service))
-        response = client.get(mcp_tools_path())
+        response = client.get(mcp_tools_path(), headers={"X-API-Key": "test-api-key"})
         assert response.status_code == 200
         payload = response.json()
     else:

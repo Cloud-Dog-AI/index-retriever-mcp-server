@@ -525,15 +525,30 @@ def test_mcp_app_and_execute_tool_paths(service: IndexService) -> None:
     client = TestClient(app)
 
     assert client.get("/health").json()["status"] == "ok"
-    mcp_payload = client.get(mcp_tools_path()).json()
+    mcp_catalogue_anon = client.get(mcp_tools_path())
+    assert mcp_catalogue_anon.status_code == 401
+    mcp_catalogue_wrong_key = client.get(mcp_tools_path(), headers={"x-api-key": "wrong-key"})
+    assert mcp_catalogue_wrong_key.status_code == 401
+    mcp_payload = client.get(mcp_tools_path(), headers={"x-api-key": "test-api-key"}).json()
     assert mcp_payload["ok"] is True
     assert isinstance(mcp_payload["data"], list)
 
     # Optional compatibility alias: do not rely on legacy /tools for canonical contract.
-    tools_payload = client.get("/tools")
+    tools_payload = client.get("/tools", headers={"x-api-key": "test-api-key"})
     assert tools_payload.status_code in {200, 404}
     if tools_payload.status_code == 200:
         assert isinstance(tools_payload.json()["tools"], list)
+
+    jsonrpc_tools_list = {"jsonrpc": "2.0", "id": "ut-tools-list", "method": "tools/list"}
+    jsonrpc_anon = client.post("/mcp", json=jsonrpc_tools_list)
+    assert jsonrpc_anon.status_code == 401
+    assert jsonrpc_anon.json()["id"] == "ut-tools-list"
+    jsonrpc_wrong_key = client.post("/mcp", headers={"x-api-key": "wrong-key"}, json=jsonrpc_tools_list)
+    assert jsonrpc_wrong_key.status_code == 401
+    assert jsonrpc_wrong_key.json()["id"] == "ut-tools-list"
+    jsonrpc_authed = client.post("/mcp", headers={"x-api-key": "test-api-key"}, json=jsonrpc_tools_list)
+    assert jsonrpc_authed.status_code == 200, jsonrpc_authed.text
+    assert isinstance(jsonrpc_authed.json()["result"]["tools"], list)
 
     # POST canonical /mcp/tools/{tool_name} — auth required
     no_auth = client.post(mcp_tools_path("profiles_list"), json={})

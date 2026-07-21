@@ -89,8 +89,7 @@ def _maybe_disable_timeout_middleware(app: Any) -> Any:
     if not in_pytest and process_env.get("TEST_ENV_TIER", "").upper() not in {"UT", "ST"}:
         return app
     user_middleware = getattr(app, "user_middleware", None)
-    build_stack = getattr(app, "build_middleware_stack", None)
-    if not isinstance(user_middleware, list) or not callable(build_stack):
+    if not isinstance(user_middleware, list):
         return app
     filtered = [
         item for item in user_middleware if getattr(getattr(item, "cls", None), "__name__", "") != "TimeoutMiddleware"
@@ -98,7 +97,7 @@ def _maybe_disable_timeout_middleware(app: Any) -> Any:
     if len(filtered) == len(user_middleware):
         return app
     app.user_middleware = filtered
-    app.middleware_stack = build_stack()
+    app.middleware_stack = None
     return app
 
 
@@ -1695,6 +1694,99 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
             reason=reason,
             required_roles=required_roles,
         )
+
+    def _jsonrpc_tools_list_requested(payload: Any) -> bool:
+        if isinstance(payload, dict):
+            return payload.get("method") == "tools/list"
+        if isinstance(payload, list):
+            return any(isinstance(item, dict) and item.get("method") == "tools/list" for item in payload)
+        return False
+
+    def _jsonrpc_error_id(payload: Any) -> Any:
+        if isinstance(payload, dict):
+            return payload.get("id")
+        if isinstance(payload, list):
+            for item in payload:
+                if isinstance(item, dict):
+                    return item.get("id")
+        return None
+
+    async def _authorise_mcp_catalogue_request(request: Request, *, action: str) -> JSONResponse | None:
+        _sync_logging_correlation(request)
+        headers = {k.lower(): v for k, v in request.headers.items()}
+        try:
+            identity = auth.identity_from_headers(headers)
+        except PermissionError as exc:
+            _log_auth_event(
+                request,
+                actor="anonymous",
+                outcome="failure",
+                action=action,
+                auth_mechanism="api_key_or_jwt",
+                reason=str(exc),
+            )
+            return JSONResponse(
+                {
+                    "jsonrpc": "2.0",
+                    "id": None,
+                    "error": {
+                        "code": -32001,
+                        "message": str(exc) or "Authentication failed",
+                    },
+                },
+                status_code=401,
+            )
+        user_store = getattr(active_service, "users", None)
+        _disabled_user = user_store.get(identity.user_id) if user_store is not None else None
+        if _disabled_user is not None and not getattr(_disabled_user, "enabled", True):
+            _log_auth_event(
+                request,
+                actor=identity.user_id,
+                outcome="failure",
+                action=action,
+                roles=identity.roles,
+                auth_mechanism=identity.token_type,
+                reason="User account is disabled",
+            )
+            return JSONResponse(
+                {
+                    "jsonrpc": "2.0",
+                    "id": None,
+                    "error": {"code": -32001, "message": "User account is disabled"},
+                },
+                status_code=401,
+            )
+        _log_auth_event(
+            request,
+            actor=identity.user_id,
+            outcome="success",
+            action=action,
+            roles=identity.roles,
+            auth_mechanism=identity.token_type,
+        )
+        return None
+
+    middleware = getattr(app, "middleware", None)
+    if callable(middleware):
+        @middleware("http")
+        async def _mcp_catalogue_auth_guard(request: Request, call_next: Callable[[Request], Any]) -> Any:
+            path = request.url.path.rstrip("/") or "/"
+            if request.method.upper() == "GET" and path in {"/mcp/tools", "/tools"}:
+                denial = await _authorise_mcp_catalogue_request(request, action="authenticate_mcp_catalogue")
+                if denial is not None:
+                    return denial
+            elif request.method.upper() == "POST" and path == "/mcp":
+                try:
+                    payload = await request.json()
+                except Exception:
+                    payload = None
+                if _jsonrpc_tools_list_requested(payload):
+                    denial = await _authorise_mcp_catalogue_request(request, action="authenticate_mcp_tools_list")
+                    if denial is not None:
+                        denial_payload = dict(denial.body and json.loads(denial.body.decode("utf-8")) or {})
+                        denial_payload["id"] = _jsonrpc_error_id(payload)
+                        return JSONResponse(denial_payload, status_code=denial.status_code)
+            return await call_next(request)
 
     # Platform health via create_health_router().
     _health_paths = {"/health", "/ready", "/live", "/status"}
