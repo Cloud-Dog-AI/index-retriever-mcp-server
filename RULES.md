@@ -8,6 +8,8 @@ delivery controls apply; this file is an additive retrieval overlay.
 
 **WebUI evidence (when applicable).** Browser-visible change or claim requires named real-service Playwright user-flow proof locally and again on final preprod `main`/`:latest`; `curl`, screenshots, DOM/unit checks, mocks and manual browsing are not substitutes. The platform rule governs the agent/auditor replay.
 
+**Contested delivery (binding).** This repo and every lane it supports are shared space: recover/classify every dirty path, branch, worktree and collision with its owner; never use `BLOCKED` to abandon delivery. For any deployable change: develop/test locally → reconcile to `origin/main` → build final `:latest` → deploy only that `:latest` to PREPROD; never deploy a branch/SHA/old/local image or another environment.
+
 ## Local rules
 
 - Preserve ingest, delete, search and retrieve lifecycle shaping across Web, API and
