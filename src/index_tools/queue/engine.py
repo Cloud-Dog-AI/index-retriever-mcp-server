@@ -41,7 +41,7 @@ class JobTerminalStateError(RuntimeError):
         self.job_id = job_id
         self.status = status
         super().__init__(f"job {job_id} is in terminal state '{status}' and cannot be cancelled")
-from sqlalchemy import MetaData, create_engine, delete, select, update
+from sqlalchemy import MetaData, Table, create_engine, delete, select, text, update
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.schema import CreateTable
 
@@ -110,6 +110,21 @@ def _ensure_sqlite_queue_schema(database_url: str) -> None:
             Path(database_path).parent.mkdir(parents=True, exist_ok=True)
         metadata = MetaData()
         tables = [builder(metadata) for builder in builders]
+        from sqlalchemy import Column, String
+        from sqlalchemy.sql import func
+        from sqlalchemy.types import DateTime
+        _ = Table(
+            "idempotency_keys",
+            metadata,
+            Column("key", String(128), primary_key=True),
+            Column("job_id", String(64), nullable=False),
+            Column("profile", String(64)),
+            Column("collection", String(64)),
+            Column("source_key", String(512)),
+            Column("content_hash", String(128)),
+            Column("created_at", DateTime(timezone=True), server_default=func.now()),
+        )
+        tables.append(_)
         with engine.begin() as conn:
             for table in tables:
                 conn.execute(CreateTable(table, if_not_exists=True))
@@ -410,6 +425,50 @@ class QueueEngine:
         """Execute generate idempotency key."""
         digest = sha256(f"{profile}|{collection}|{source}".encode()).hexdigest()
         return digest
+
+    def _idempotency_db_path(self) -> str | None:
+        if not self._database_url or not _is_sqlite_database_url(self._database_url):
+            return None
+        return self._database_url[len(_SQLITE_PROTO):]
+
+    def store_idempotency_key(
+        self,
+        key: str,
+        job_id: str,
+        profile: str,
+        collection: str,
+        source_key: str,
+        content_hash: str = "",
+    ) -> None:
+        db_path = self._idempotency_db_path()
+        if not db_path or db_path == ":memory:":
+            return
+        try:
+            import sqlite3 as _sql3
+            conn = _sql3.connect(db_path)
+            conn.execute(
+                "INSERT OR IGNORE INTO idempotency_keys "
+                "(key, job_id, profile, collection, source_key, content_hash) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (key, job_id, profile, collection, source_key, content_hash),
+            )
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+    def lookup_idempotency_key(self, key: str) -> str | None:
+        db_path = self._idempotency_db_path()
+        if not db_path or db_path == ":memory:":
+            return None
+        try:
+            import sqlite3 as _sql3
+            conn = _sql3.connect(db_path)
+            row = conn.execute("SELECT job_id FROM idempotency_keys WHERE key = ?", (key,)).fetchone()
+            conn.close()
+            return str(row[0]) if row else None
+        except Exception:
+            return None
 
     def register_handler(self, job_type: str, handler: Callable[[JobRecord], None]) -> None:
         """Register a job handler for the queue backend."""

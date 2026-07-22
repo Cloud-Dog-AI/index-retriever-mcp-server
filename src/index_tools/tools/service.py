@@ -927,6 +927,8 @@ class IndexService:
         self.source_configs: dict[str, SourceConfigRecord] = {}
         self.documents: dict[str, DocumentRecord] = {}
         self.idempotency: dict[str, str] = {}
+        self._external_fetch_count: int = 0
+        self._reuse_tracker: dict[str, dict[str, Any]] = {}
         self.stream_sessions: dict[str, StreamSession] = {}
         self._stored_files: dict[str, dict[str, Any]] = {}  # W28C-427 IDX-SNAG-002 PS-78 file store
         self._job_handlers: dict[str, Any] = {}
@@ -3321,6 +3323,29 @@ class IndexService:
         request_key = idempotency_key or computed_key
         if request_key in self.idempotency:
             return self.idempotency[request_key]
+        db_job_id = self.queue.lookup_idempotency_key(request_key)
+        if db_job_id is not None:
+            self.idempotency[request_key] = db_job_id
+            return db_job_id
+
+        content_hash = compute_content_hash(text)
+        reuse_info = self._check_content_reuse(profile, collection, normalise_source_uri(source), content_hash)
+        if reuse_info is not None:
+            self.idempotency[request_key] = reuse_info["job_id"]
+            self.queue.store_idempotency_key(
+                request_key, reuse_info["job_id"], profile, collection, source_key, content_hash,
+            )
+            self._reuse_tracker[request_key] = {
+                "reuse": True,
+                "doc_id": reuse_info["doc_id"],
+                "record_id": reuse_info["record_id"],
+                "collection_id": collection,
+                "source_uri": normalise_source_uri(source),
+                "content_hash": content_hash,
+                "chunk_ids": reuse_info.get("chunk_ids", []),
+                "external_fetch_needed": False,
+            }
+            return reuse_info["job_id"]
 
         queued_job = self.queue.enqueue(
             JobRecord(
@@ -3353,7 +3378,49 @@ class IndexService:
         )
         self._dispatch_job_async(queued_job.job_id)
         self.idempotency[request_key] = queued_job.job_id
+        self.queue.store_idempotency_key(
+            request_key, queued_job.job_id, profile, collection, source_key, content_hash,
+        )
         return queued_job.job_id
+
+    def _check_content_reuse(
+        self,
+        profile: str,
+        collection: str,
+        source_uri: str,
+        content_hash: str,
+    ) -> dict[str, Any] | None:
+        for record in self.documents.values():
+            if (
+                record.profile == profile
+                and record.collection == collection
+                and str(record.metadata.get("source_uri", record.source)) == source_uri
+                and str(record.metadata.get("content_hash", "")) == content_hash
+                and str(record.metadata.get("lifecycle_state", "active")) == "active"
+                and record.metadata.get("is_latest") is not False
+            ):
+                reuse_job_id = str(self.idempotency.get(
+                    self.queue.generate_idempotency_key(
+                        profile, collection, f"{source_uri}:{content_hash}"
+                    ),
+                    str(record.record_id or record.doc_id),
+                ))
+                return {
+                    "doc_id": str(record.doc_id or ""),
+                    "record_id": str(record.record_id or record.doc_id or ""),
+                    "job_id": f"reuse-{reuse_job_id}",
+                    "chunk_ids": [
+                        str(mrec.record_id or mrec.doc_id)
+                        for mrec in self.documents.values()
+                        if (
+                            mrec.profile == profile
+                            and mrec.collection == collection
+                            and str(mrec.metadata.get("source_uri", mrec.source)) == source_uri
+                            and str(mrec.metadata.get("lifecycle_state", "active")) == "active"
+                        )
+                    ],
+                }
+        return None
 
     def ingest_reference(self, profile: str, collection: str, path: str, actor: str) -> str:
         """Execute ingest reference.
@@ -3366,6 +3433,8 @@ class IndexService:
         try:
             from index_tools.connectors.resolver import resolve_source, fetch_source
             plan = resolve_source(path)
+            if plan.source_type in {"http", "s3", "webdav", "ftp", "gdrive"}:
+                self._external_fetch_count += 1
             payload = fetch_source(plan)
         except (ValueError, NotImplementedError):
             # Fallback for plain local paths or unsupported schemes
@@ -3997,12 +4066,14 @@ class IndexService:
             "doc_id": canonical_doc_id,
             "record_id": canonical_record_id,
             "chunk_id": str(metadata.get("chunk_id") or canonical_record_id),
+            "collection_id": str(metadata.get("collection_id", "")),
             "text": text,
             "score": float(score),
             "source_uri": str(metadata.get("source_uri", "")),
             "content_hash": str(metadata.get("content_hash", "")),
             "lifecycle_state": str(metadata.get("lifecycle_state", "active")),
             "is_latest": metadata.get("is_latest"),
+            "reuse": bool(metadata.get("reuse", False)),
             "metadata": metadata,
         }
 
@@ -4263,6 +4334,16 @@ class IndexService:
             "is_latest": record.metadata.get("is_latest"),
             "metadata": record.metadata,
         }
+
+    def ingest_fetch_count(self) -> int:
+        """Return the current external fetch count for ingest operations."""
+        return self._external_fetch_count
+
+    def ingest_reuse_info(self, key: str | None = None) -> dict[str, Any]:
+        """Return reuse/cache tracking info for an idempotency key or all tracked keys."""
+        if key is not None:
+            return dict(self._reuse_tracker.get(key, {}))
+        return dict(self._reuse_tracker)
 
     def delete_by_id(self, profile: str, collection: str, doc_id: str) -> bool:
         """Execute delete by id."""
