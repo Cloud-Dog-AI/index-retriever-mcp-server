@@ -1,2 +1,0 @@
-Command: python3 -m py_compile src/index_tools/tools/definitions.py src/index_tools/tools/registry.py src/index_tools/tools/service.py src/index_server/mcp_server.py
-RESULT: PASS

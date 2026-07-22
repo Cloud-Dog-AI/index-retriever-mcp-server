@@ -1,5 +1,0 @@
-# scoped-clean-proof — W28A-749 (committed-clean state)
-$ git status --short --     # (no output = clean working tree)
-$ git diff --name-only --     # (no output = nothing unstaged)
-$ git diff --cached --name-only --     # (no output = nothing staged uncommitted)
-(all three empty = tree clean; HEAD == origin/main == origin/w28a-749-idam at the closeout child commit; W28A-749-FINAL-PROOF is the accepted ancestor tag)

@@ -1,7 +1,0 @@
-path	repo	reason	created_or_modified_by_lane	commit_hash
-apps/index-retriever/src/routes/App.tsx	cloud-dog-ai-ui-monorepo	/admin to /idam route conversion + legacy alias redirects	yes	1dfa247
-apps/index-retriever/src/views/SecurityAdminSections.tsx	cloud-dog-ai-ui-monorepo	PS-71 v2 columns/labels/buttons + reveal-once modal	yes	1dfa247
-apps/index-retriever/tests/e2e/w28a-734-idam-webui-conformance.spec.ts	cloud-dog-ai-ui-monorepo	PS-71 conformance Playwright (Steps 1-7)	yes	1dfa247
-apps/index-retriever/tests/e2e/w28a-734-idam-screenshots.spec.ts	cloud-dog-ai-ui-monorepo	evidence screenshots capture	yes	1dfa247
-src/index_server/web_server.py	index-retriever-mcp-server	/idam SPA routes + _SPA_ADMIN_PATHS	yes	22446fe
-src/index_tools/bootstrap.py	index-retriever-mcp-server	repo-relative bootstrap-seed fallback (IW1.6)	yes	22446fe

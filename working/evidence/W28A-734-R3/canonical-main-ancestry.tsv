@@ -1,2 +1,0 @@
-repo	canonical_branch	final_commit	remote_branch_commit	tag	tag_peels_to	ancestor_of_canonical	verification_command	pass_fail
-index-retriever-mcp-server	main	(= W28A-734-R3-FINAL-PROOF-20260609 peel)	origin/main	W28A-734-R3-FINAL-PROOF-20260609	lane evidence commit	YES	git merge-base --is-ancestor W28A-734-R3-FINAL-PROOF-20260609^{} origin/main	PASS

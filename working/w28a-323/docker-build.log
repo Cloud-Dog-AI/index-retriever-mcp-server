@@ -1,5 +1,0 @@
-#29 writing image sha256:07d451648719a4e65459d26cf6824a103642bdf593f8a64475d5d39725f43312 done
-#29 naming to docker.io/cloud-dog/index-retriever-mcp-server:latest 0.0s done
-#29 DONE 11.9s
-Build OK: cloud-dog/index-retriever-mcp-server:latest
-Tagged: registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server:latest

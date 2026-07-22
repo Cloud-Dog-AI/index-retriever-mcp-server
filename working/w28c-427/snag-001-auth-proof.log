@@ -1,9 +1,0 @@
-=== IDX-SNAG-001: Auth proof ===
---- Gary valid ---
-{"ok":true,"data":{"profiles":["default","multilang"]},"meta":{"request_id":"b7c2f09287ea43b8ab1148d886b4ab77","correlation_id":null,"version":"v1"}}
---- Colin valid ---
-{"ok":true,"data":{"profiles":["default","multilang"]},"meta":{"request_id":"060b5ddfee8145159b52509aae9c3e92","correlation_id":null,"version":"v1"}}
---- Unknown denied ---
-{"ok":false,"error":{"code":"UNAUTHENTICATED","message":"Authentication failed","details":null,"retryable":false},"meta":{"request_id":"f7d6f5af0f5148b48923a919e5dea670","correlation_id":null},"detail":"Authentication failed"}
---- No key denied ---
-{"ok":false,"error":{"code":"UNAUTHENTICATED","message":"Authentication failed","details":null,"retryable":false},"meta":{"request_id":"bcac0c1793334e14beb6c3cf0e9849ac","correlation_id":null},"detail":"Authentication failed"}

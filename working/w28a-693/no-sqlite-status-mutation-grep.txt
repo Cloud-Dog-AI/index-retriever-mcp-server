@@ -1,3 +1,0 @@
-NO SQLITE STATUS MUTATION GREP
-Command: grep -RIn "sqlite3\|UPDATE jobs\|SET status\|execSync\|UPDATE.*jobs" apps/index-retriever/tests/e2e/w28a-693-jobs-conformance.spec.ts src/index_tools/tools src/index_server
-NO_MATCHES

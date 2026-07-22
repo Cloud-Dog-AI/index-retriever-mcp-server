@@ -1,6 +1,0 @@
-W28A-734-R2 LOCAL DOCKER unauth-gate proof (image registry.cloud-dog.net:443/cloud-dog/index-retriever-mcp-server:latest id=a014fc0f0c09)
-probed inside container w28a734r2-smoke via web 8075 -> api 8074 (the real built artifact):
-UNAUTH /auth/me              -> 401 {"detail":"Authentication failed"}   (pre-fix: 200 admin)
-AUTHED /auth/me (admin key)  -> 200 real admin principal (authed path preserved)
-UNAUTH /api/v1/admin/users   -> 401
-UNAUTH /api/config           -> 401

@@ -1,9 +1,0 @@
-# Control env for local-docker-server.sh
-LOCAL_DOCKER_SOURCE_ENV=tests/env-IT-local-docker
-LOCAL_DOCKER_COMPOSE_FILE=docker-compose.yml
-LOCAL_DOCKER_PROJECT_NAME=index-retriever-local-docker
-LOCAL_DOCKER_COMPOSE_PROFILES=all-in-one
-LOCAL_DOCKER_SERVICES=all-in-one
-
-CLOUD_DOG__DB__DIALECT=sqlite
-CLOUD_DOG__DB__DATABASE=./data/index_retriever.db

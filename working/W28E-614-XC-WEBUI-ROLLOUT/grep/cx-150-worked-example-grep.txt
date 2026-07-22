@@ -1,9 +1,0 @@
-# CX-150 WorkedExamplePopup wiring
-Generated: 2026-06-04T08:53:13+01:00
-
-$ grep -rn 'WorkedExamplePopup' apps/index-retriever/src/
-/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/ApiDocsPage.tsx:22:  WorkedExamplePopup,
-/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/ApiDocsPage.tsx:42:  // CX-150: clicking the tool name opens the shared WorkedExamplePopup with
-/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/ApiDocsPage.tsx:104:  // CX-150: shared WorkedExamplePopup state.
-/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/ApiDocsPage.tsx:350:      {/* CX-150: shared WorkedExamplePopup — opens when an MCP tool name or A2A skill ID is clicked. */}
-/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/ApiDocsPage.tsx:351:      <WorkedExamplePopup

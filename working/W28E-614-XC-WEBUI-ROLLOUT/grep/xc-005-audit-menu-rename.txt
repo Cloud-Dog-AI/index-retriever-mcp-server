@@ -1,7 +1,0 @@
-# XC-005 'Audit & Log' label audit
-
-$ grep -rn "Audit & Log" apps/index-retriever/src/
-/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/routes/App.tsx:262:        { label: "Audit & Log", path: "/diagnostics-audit", icon: navIcon(ClipboardList) },
-
-## line count (instruction requires exactly 1):
-1

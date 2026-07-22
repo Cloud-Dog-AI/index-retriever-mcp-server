@@ -1,2 +1,0 @@
-Command: npx tsc --noEmit --pretty false -p apps/index-retriever/tsconfig.json
-RESULT: PASS

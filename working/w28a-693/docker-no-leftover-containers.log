@@ -1,2 +1,0 @@
-docker -H tcp://127.0.0.1:2375 ps -a --filter name=w28a-693-index-retriever --format {{.Names}} {{.Status}}
-NO_W28A_693_CONTAINERS

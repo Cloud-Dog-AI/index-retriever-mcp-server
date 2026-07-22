@@ -1,4 +1,0 @@
-Docker host-network run for final W28A-693 local Docker evidence
-image=cloud-dog/index-retriever-mcp-server:w28a-693-sendback
-network=host
-30249a1784fe28453ef9dbeddadca35f2d519dace2ede9ed2d8a35c1c95c9bd3

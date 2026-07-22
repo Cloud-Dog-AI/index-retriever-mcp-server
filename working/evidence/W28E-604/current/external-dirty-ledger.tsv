@@ -1,2 +1,0 @@
-path	repo	status	suspected_owner_lane	why_external_to_this_lane
-working/instructions/W28D-324-AJOBS-D9-ASYNC-BLOCKING-SIBLING-2026-05-19.md	cloud-dog-ai-platform-standards	reverted	W28D-324	line-ending rewrite of another lane's instruction that appeared in the isolated worktree; git checkout to origin/main; not in this lane changeset

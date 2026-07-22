@@ -1,5 +1,0 @@
-service	host	health	unauth_auth_me	pass_fail
-expertagent0	https://expertagent0.cloud-dog.net	200	200	PASS
-sqlagent0	https://sqlagent0.cloud-dog.net	200	401	PASS
-filemcpserver0	https://filemcpserver0.cloud-dog.net	200	401	PASS
-dbmcpserver0	https://dbmcpserver0.cloud-dog.net	200	401	PASS

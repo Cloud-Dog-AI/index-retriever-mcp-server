@@ -1,9 +1,0 @@
-W28A-101a trusted-host active-tree scan 2026-05-09T22:57:42+01:00
-./Dockerfile:35:      --trusted-host pypi.cloud-dog.net \
-./Dockerfile:36:      --trusted-host files.pythonhosted.org \
-./Dockerfile:52:      --trusted-host pypi.cloud-dog.net \
-./Dockerfile:53:      --trusted-host files.pythonhosted.org \
-./Dockerfile:58:      --trusted-host pypi.cloud-dog.net \
-./Dockerfile:59:      --trusted-host files.pythonhosted.org \
-./docker-build.sh:67:trusted-host = $(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${PYPI_URL}').hostname or 'gitea.cloud-dog.net')")
-./docker-build.sh:75:trusted-host = $(python3 -c "from urllib.parse import urlsplit; print(urlsplit('${PYPI_URL}').hostname or 'gitea.cloud-dog.net')")

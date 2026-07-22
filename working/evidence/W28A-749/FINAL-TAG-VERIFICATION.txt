@@ -1,9 +1,0 @@
-# FINAL-TAG-VERIFICATION — W28A-749
-EVIDENCE_TAG: W28A-749-EVIDENCE
-FINAL_PROOF_TAG: W28A-749-FINAL-PROOF
-Model: EVIDENCE_TAG = FINAL_PROOF_TAG = afb18a8983498e1998071771a085d9e3ebeb79d6. origin/main and origin/w28a-749-idam are allowed to be evidence-transcript/coordinator-correction child commits. FINAL_PROOF_TAG is ancestor-proven against origin/main HEAD.
-git ls-remote origin refs/heads/main
-git ls-remote origin refs/heads/w28a-749-idam
-git ls-remote origin refs/tags/W28A-749-EVIDENCE
-git ls-remote origin refs/tags/W28A-749-FINAL-PROOF
-sha256sum -c CHECKSUMS.sha256 -> OK

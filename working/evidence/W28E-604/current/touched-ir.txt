@@ -1,8 +1,0 @@
-A	database/migrations/cloud_dog_db/versions/20260604_0002_spreadsheet_control_plane.py
-A	src/index_tools/spreadsheet/__init__.py
-A	src/index_tools/spreadsheet/config_map.py
-A	src/index_tools/spreadsheet/indexer.py
-A	src/index_tools/spreadsheet/repository.py
-A	src/index_tools/spreadsheet/sql_models.py
-M	src/index_tools/tools/service.py
-A	tests/unit/UT1_70_Spreadsheet/test_ut1_70_spreadsheet_indexing.py

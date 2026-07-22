@@ -1,2 +1,0 @@
-path	repo	status	suspected_owner_lane	why_external_to_this_lane
-none	index-retriever-mcp-server	clean	none	worktree scoped to this lane only; no files external to W28E-603 are dirty

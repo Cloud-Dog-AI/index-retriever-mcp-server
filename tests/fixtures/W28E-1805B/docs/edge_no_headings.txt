@@ -1,7 +1,0 @@
-The tide came in slowly that afternoon, filling the channels one after another until the whole flat shone like a sheet of beaten metal. There were no signs to read out here, no markers, nothing but mud and water and the long grey line of the sea wall in the distance.
-
-A heron stood in the shallows and did not move. The gulls came and went. Somewhere a curlew called, and the sound carried a long way across the open ground because there was nothing to stop it.
-
-This passage has no headings at all. It is a single run of plain prose split into paragraphs by blank lines, with no markdown structure of any kind. It exists to test how the structure extractor handles a document that contains body text but no detectable section hierarchy.
-
-By evening the water had reached its full height and lay still. The light went out of the sky slowly, and the marsh, which had no names for any of its parts, kept on doing the quiet work it had always done.

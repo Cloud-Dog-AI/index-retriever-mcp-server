@@ -1,7 +1,0 @@
-...                                                                      [100%]
-==================================== PASSES ====================================
-=========================== short test summary info ============================
-PASSED tests/parser/PT1_1/test_pt1_1_backend_ingest_baseline.py::test_pt1_1_ingest_baseline_per_backend
-PASSED tests/parser/PT1_2/test_pt1_2_backend_search_latency.py::test_pt1_2_search_latency_baseline_per_backend
-PASSED tests/parser/PT1_3/test_pt1_3_parser_throughput_comparison.py::test_pt1_3_parser_throughput_comparison
-3 passed in 86.27s (0:01:26)

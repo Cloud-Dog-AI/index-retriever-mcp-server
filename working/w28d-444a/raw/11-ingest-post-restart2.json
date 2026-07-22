@@ -1,1 +1,0 @@
-{"jsonrpc":"2.0","id":13,"result":{"content":[{"type":"text","text":"{\"job_id\": \"adf33567-21cd-4272-bd29-a3155f1e7885\", \"status\": \"queued\"}"}],"isError":false,"structuredContent":{"job_id":"adf33567-21cd-4272-bd29-a3155f1e7885","status":"queued"}}}

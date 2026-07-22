@@ -1,8 +1,0 @@
-# CX-170 formatRelativeTime adoption
-
-$ grep -rn 'formatRelativeTime\|RelativeTime' apps/index-retriever/src/ | wc -l
-22
-
-$ grep -rn 'seconds ago\|toISOString' apps/index-retriever/src/
-/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/views/DashboardPage.tsx:58:    timestamp: entry.timestamp ?? new Date().toISOString(),
-/opt/iac/Development/cloud-dog-ai/.coord-worktrees/w28e-614-ui/apps/index-retriever/src/state/AppState.tsx:181:      timestamp: new Date().toISOString(),

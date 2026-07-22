@@ -1,8 +1,0 @@
-=== T-267-1: 4 parallel ingest_text (profile=default) ===
-Start: 2026-05-19T21:37:53+01:00
-P1 start=2026-05-19T21:37:53+01:00 elapsed=961ms response={"ok":true,"data":{"job_id":"c71e9566-092a-49b1-b54e-fb01f4eda2e0","status":"queued"},"meta":{"request_id":"65afa44c68f64e3e92730f1085a080e5","correlation_id":null,"version":"v1"}}
-P3 start=2026-05-19T21:37:53+01:00 elapsed=964ms response={"ok":true,"data":{"job_id":"70f85f1a-5428-47f8-88dc-abf97fa88c5e","status":"queued"},"meta":{"request_id":"cc06b4ada3d84b068b20cd896c58fd51","correlation_id":null,"version":"v1"}}
-P2 start=2026-05-19T21:37:53+01:00 elapsed=964ms response={"ok":true,"data":{"job_id":"d2552ad6-98c6-4952-879e-e18047cc72e7","status":"queued"},"meta":{"request_id":"f87db7a8053047778c6fad32b6aab568","correlation_id":null,"version":"v1"}}
-P4 start=2026-05-19T21:37:53+01:00 elapsed=965ms response={"ok":true,"data":{"job_id":"b21ed6e0-8b49-4dfd-b58e-ddbabfe2e03e","status":"queued"},"meta":{"request_id":"20093d1bb06345abb3c52386bdcd30a7","correlation_id":null,"version":"v1"}}
-End: 2026-05-19T21:37:54+01:00
-

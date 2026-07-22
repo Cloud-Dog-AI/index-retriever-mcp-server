@@ -1,5 +1,0 @@
-=== 06 Transparent Borders regression ===
-demo27-transparent-borders: PRESENT
-transparent-borders-report-generation-country-reports: PRESENT
-transparent-borders-report-generation-knowledge: PRESENT
-transparent-borders-report-generation-web-support: PRESENT

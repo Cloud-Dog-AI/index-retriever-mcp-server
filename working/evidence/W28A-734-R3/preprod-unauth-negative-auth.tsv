@@ -1,5 +1,0 @@
-service	host	surface	unauth_principal_status	unauth_data_status	webui_shows_login_gate	proxy_injects_key	unit_negative_test_path	raw_evidence_path	pass_fail
-index-retriever	https://indexretriever0.cloud-dog.net	/auth/me	401 {"detail":"Authentication failed"} (NOT-admin; no configured:/roles/permissions/*)	n/a	yes	no (web proxy does not inject service api-key on identity path; fixed W28A-734-R2)	index-retriever-mcp-server tests/unit/UT1_31/test_ut1_31_server_runtime_paths.py (landed W28A-734-R2)	preprod-webui-smoke/w28a734r3-negative-auth-trace.zip + screenshots/unauth-login-gate.png	PASS
-index-retriever	https://indexretriever0.cloud-dog.net	/api/v1/admin/users	401	401 (unauth denied)	yes	no	(as above)	preprod-webui-smoke/w28a734r3-negative-auth-trace.zip	PASS
-index-retriever	https://indexretriever0.cloud-dog.net	/api/config	401	401 (unauth denied)	yes	no	(as above)	preprod-webui-smoke/w28a734r3-negative-auth-trace.zip	PASS
-index-retriever	https://indexretriever0.cloud-dog.net	WebUI / (clean context)	login gate (Sign in form)	no admin nav (Users link count 0)	yes	no	(as above)	screenshots/unauth-login-gate.png + negative-auth trace	PASS

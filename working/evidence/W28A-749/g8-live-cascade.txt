@@ -1,8 +1,0 @@
-LIVE T3-IR-CASCADE on https://indexretriever0.cloud-dog.net/api/v1/tools (deployed 0.5.2):
-setup admin_api_key_create=200 admin_collection_create C=200 D=200 admin_group_create=200 admin_rbac_bind G->collection:default:w749-c=200
-STEP1 GROUPUSER(restricted, not in G) collection_get C = 403  (default-DENY baseline)
-STEP2 admin add GROUPUSER to G = 200
-STEP3 GROUPUSER collection_get C = 200 (binding) | collection_get D = 403 (scoped) | ingest_text C = 403 (graded)
-STEP4 admin remove GROUPUSER from G = 200
-STEP5 GROUPUSER collection_get C = 403 (revoked, live, no restart)
-RESULT: LIVE CASCADE PASS. Test entities cleaned up.

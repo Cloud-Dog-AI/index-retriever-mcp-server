@@ -1,6 +1,0 @@
-
-Running 1 test using 1 worker
-
-  ✓  1 [index-retriever] › tests/w28a-350-webui-conformance/webui-conformance.spec.ts:804:5 › W28A-350 WebUI conformance matrix (1.3m)
-
-  1 passed (1.5m)

@@ -1,4 +1,0 @@
-repo_or_path	dirty_files	in_lane_scope	note
-index-retriever-mcp-server (worktree .w28e603-ir-wt)	only W28E-603 Phase 1 paths (see touched-paths-manifest.tsv)	YES	Worktree is scoped-clean: every modified/untracked path belongs to this lane. See scoped-clean-proof.txt.
-external repos (platform-standards / monorepo / other services)	none	N/A	No files in any other repo were modified by this lane.
-agent memory (~/.claude/.../memory)	project_db_mcp_nosql_silent_violation.md (UPDATE 2026-06-04)	N/A (not a repo deliverable)	Corrected a stale memory (cloud_dog_db.nosql now exists). Not part of the index-retriever deliverable; disclosed for transparency.

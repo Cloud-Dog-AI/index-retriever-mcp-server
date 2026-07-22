@@ -1,3 +1,0 @@
-=== IDX-SNAG-003: A2A agent card ===
-{"name":"index-retriever","description":"Index retriever A2A server for vector database search and document ingestion","url":"","version":"1.0.0","capabilities":{"streaming":false,"pushNotifications":false},"skills":[{"id":"ingest_text","name":"Ingest Text","description":"Ingest text into the vector database"},{"id":"search","name":"Search","description":"Semantic search across indexed documents"},{"id":"retrieve","name":"Retrieve","description":"Retrieve documents by ID or metadata"}]}=== IDX-SNAG-003: A2A health ===
-{"detail":"Authentication failed"}

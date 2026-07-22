@@ -1,9 +1,0 @@
-W28A-734-R3 FINAL TAG VERIFICATION
-EVIDENCE_TAG: W28A-734-R3-evidence-20260609
-FINAL_PROOF_TAG: W28A-734-R3-FINAL-PROOF-20260609
-Commands (re-run live):
-  git rev-parse HEAD ; git ls-remote origin refs/heads/main
-  git ls-remote origin refs/tags/W28A-734-R3-FINAL-PROOF-20260609^{} ; git ls-remote origin refs/tags/W28A-734-R3-evidence-20260609^{}
-  git rev-parse W28A-734-R3-FINAL-PROOF-20260609^{} ; sha256sum -c CHECKSUMS.sha256
-  git status --short -- working/evidence/W28A-734-R3 ; git diff --name-only -- working/evidence/W28A-734-R3 ; git diff --cached --name-only -- working/evidence/W28A-734-R3
-W28A-734-R3-FINAL-PROOF-20260609 peels to the final lane commit on origin/main and is an ancestor of origin/main HEAD.

@@ -1,5 +1,0 @@
-enabled: True
-backend: qdrant
-vdb.type: qdrant
-qdrant.collection: nato-doctrine
-qdrant.api_key: [REDACTED]

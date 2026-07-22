@@ -1,9 +1,0 @@
-path	repo	reason	created_or_modified_by_lane	commit_hash
-src/index_server/web_server.py	index-retriever-mcp-server	P0 fix: never inject service api_key on caller-identity paths	yes	2d3b1ab
-tests/unit/UT1_31/test_ut1_31_server_runtime_paths.py	index-retriever-mcp-server	behavioural negative-auth test + predicate guard	yes	2d3b1ab
-tests/unit/UT1_39/test_ut1_39_runtime_config_loader_paths.py	index-retriever-mcp-server	reconcile stale vault_enabled->secret_backend_enabled (pre-existing main debt)	yes	2d3b1ab
-tests/unit/UT1_40/test_ut1_40_tool_registry.py	index-retriever-mcp-server	reconcile tool count 90->92 (pre-existing W28A-876 main debt)	yes	2d3b1ab
-tests/quality/QT_COMPLIANCE/conftest.py	index-retriever-mcp-server	RC-01 allowlist line-marker shift for new predicate	yes	2d3b1ab
-working/evidence/	index-retriever-mcp-server	lane evidence package	yes	HEAD
-tests/e2e/w28a734r2-negative-auth.spec.ts	cloud-dog-ai-ui-monorepo	clean-context login-gate regression spec	yes	monorepo-main
-tests/e2e/w28a734r2-idam-5page.spec.ts	cloud-dog-ai-ui-monorepo	5-page PS-71 render regression spec	yes	monorepo-main

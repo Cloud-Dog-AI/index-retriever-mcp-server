@@ -1,6 +1,0 @@
-indexretriever0 deployed identity (live):
-indexretriever0.app.vpc0.cloud-dog.net image=1179163c0480 Up 5 minutes (healthy)
-registry digest: sha256:02c322e26c62f18beb88625034dbcd5331087812495859b45b0ca2e6f513e3c9
-in-container cloud-dog-idam:
-Name: cloud-dog-idam
-Version: 0.5.2

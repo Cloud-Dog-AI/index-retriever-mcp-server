@@ -1,6 +1,0 @@
-W28E-603 Phase 1 — remote proof (GitLab canonical internal)
-remote: https://git.cloud-dog.net/cloud-dog-ai/index-retriever-mcp-server.git
-branch: w28e-603-phase1-structure
-tag (annotated): w28e-603-phase1-final
-deliverable commits: 60a3a70 (structure foundation), 465fe94 (RC-01/RC-09 quality fix), + final evidence commit
-AUDIT VERIFY: git ls-remote origin w28e-603-phase1-structure refs/tags/w28e-603-phase1-final

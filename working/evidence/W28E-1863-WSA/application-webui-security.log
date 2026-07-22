@@ -1,5 +1,0 @@
-.                                                                        [100%]
-==================================== PASSES ====================================
-=========================== short test summary info ============================
-PASSED tests/application/AT_WEBUI_SecurityAdmin/test_webui_security_admin.py::test_webui_security_admin
-1 passed in 32.99s
