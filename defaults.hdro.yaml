@@ -1,2 +1,0 @@
-external:
-  HDRO: "${vault.dev.external.HDRO.*}"
