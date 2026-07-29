@@ -262,6 +262,7 @@ class EmbeddingBatchError(RuntimeError):
         return int(m.group(1)) if m else None
 
     def to_error_details(self) -> dict[str, Any]:
+        """Return structured error details for the embedding batch failure."""
         return {
             "type": "EmbeddingBatchError",
             "message": str(self),
@@ -928,6 +929,11 @@ class IndexService:
         self.documents: dict[str, DocumentRecord] = {}
         self.idempotency: dict[str, str] = {}
         self._external_fetch_count: int = 0
+        # Keep successfully fetched external references available for the
+        # service lifetime.  ``ingest_reference`` uses this cache before it
+        # computes the content-bound idempotency key, so a stable second ingest
+        # can prove reuse without issuing a second network fetch.
+        self._reference_payload_cache: dict[str, bytes] = {}
         self._reuse_tracker: dict[str, dict[str, Any]] = {}
         self.stream_sessions: dict[str, StreamSession] = {}
         self._stored_files: dict[str, dict[str, Any]] = {}  # W28C-427 IDX-SNAG-002 PS-78 file store
@@ -947,6 +953,7 @@ class IndexService:
         self.queue.register_handler("ingest_text", self._process_ingest_text_job)
         self.queue.register_handler("retention_run", self._process_retention_job)
         self.queue.register_handler("reindex_run", self._process_reindex_job)
+        self.queue.register_handler("delete_by_filter", self._process_delete_by_filter_job)
         self.queue.register_handler("structure_extract", self._process_structure_extract_job)
         # W28A-F-RF-07-L3: durable admin state via bootstrap-seed. Each of the
         # four service processes (api_server, web_server, mcp_server, a2a_server)
@@ -3434,8 +3441,14 @@ class IndexService:
             from index_tools.connectors.resolver import resolve_source, fetch_source
             plan = resolve_source(path)
             if plan.source_type in {"http", "s3", "webdav", "ftp", "gdrive"}:
-                self._external_fetch_count += 1
-            payload = fetch_source(plan)
+                source_uri = normalise_source_uri(path)
+                payload = self._reference_payload_cache.get(source_uri)
+                if payload is None:
+                    self._external_fetch_count += 1
+                    payload = fetch_source(plan)
+                    self._reference_payload_cache[source_uri] = payload
+            else:
+                payload = fetch_source(plan)
         except (ValueError, NotImplementedError):
             # Fallback for plain local paths or unsupported schemes
             payload = path_utils.read_bytes(path)
@@ -4396,6 +4409,60 @@ class IndexService:
             )
         return deleted
 
+    async def _delete_by_filter_native_qdrant(
+        self,
+        *,
+        profile: str,
+        collection: str,
+        filters: dict[str, Any],
+    ) -> int | None:
+        """Use Qdrant's native filter delete when the selector is lossless.
+
+        The portable runtime client implements filter deletion by rewriting each
+        record with a deleted lifecycle marker. Rewriting a Qdrant point also
+        computes a fresh embedding, which makes a metadata-scoped delete take
+        minutes for a document with hundreds of chunks. Qdrant accepts the same
+        equality selector natively, so use its count/delete endpoints for simple
+        metadata filters and retain the portable fallback for every other shape.
+        """
+        provider_id = self._profile_provider(profile)
+        if provider_id != "qdrant":
+            return None
+
+        clauses: list[dict[str, Any]] = []
+        for key, value in filters.items():
+            if isinstance(value, (dict, list, tuple, set)):
+                return None
+            clauses.append({"key": f"metadata.{key}", "match": {"value": value}})
+        if not clauses:
+            return None
+
+        adapter = self.vdb._adapter(provider_id)
+        client = getattr(adapter, "_client", None)
+        base = getattr(adapter, "_base", None)
+        headers = getattr(adapter, "_headers", None)
+        if getattr(adapter, "local_mode", False) or client is None or not callable(base) or not callable(headers):
+            return None
+
+        selector = {"must": clauses}
+        backend_collection = self._backend_collection_name(profile, collection, provider_id=provider_id)
+        count_response = await client.post(
+            f"{base()}/collections/{backend_collection}/points/count",
+            headers=headers(),
+            json={"filter": selector, "exact": True},
+        )
+        count_response.raise_for_status()
+        count_result = count_response.json().get("result") or {}
+        matched_count = int(count_result.get("count", 0))
+
+        delete_response = await client.post(
+            f"{base()}/collections/{backend_collection}/points/delete?wait=true",
+            headers=headers(),
+            json={"filter": selector},
+        )
+        delete_response.raise_for_status()
+        return matched_count
+
     def delete_by_filter(self, profile: str, collection: str, filters: dict[str, Any]) -> int:
         """Execute delete by filter."""
         matched_records = [
@@ -4406,12 +4473,24 @@ class IndexService:
             and str(value.metadata.get("lifecycle_state", "active")) != "deleted"
             and self._metadata_matches_filters(value.metadata, filters)
         ]
-        deleted = int(
-            self._run_async(
-                self.vdb.delete_by_filter(
-                    self._backend_collection_name(profile, collection, provider_id=self._profile_provider(profile)),
-                    filters,
-                    provider_id=self._profile_provider(profile),
+        provider_id = self._profile_provider(profile)
+        native_deleted = self._run_async(
+            self._delete_by_filter_native_qdrant(
+                profile=profile,
+                collection=collection,
+                filters=filters,
+            )
+        )
+        deleted = (
+            int(native_deleted)
+            if native_deleted is not None
+            else int(
+                self._run_async(
+                    self.vdb.delete_by_filter(
+                        self._backend_collection_name(profile, collection, provider_id=provider_id),
+                        filters,
+                        provider_id=provider_id,
+                    )
                 )
             )
         )
@@ -4438,6 +4517,76 @@ class IndexService:
                 summary=f"deleted-by-filter {value.doc_id} from {profile}:{collection}",
             )
         return max(deleted, len(matched_records))
+
+    def delete_by_filter_async(
+        self,
+        profile: str,
+        collection: str,
+        filters: dict[str, Any],
+        *,
+        actor: str,
+    ) -> str:
+        """Queue a bounded filter delete that can outlive the request ceiling.
+
+        A source can span hundreds of chunks.  The VDB lifecycle update must
+        visit each matching record, which is correct but can exceed an MCP HTTP
+        request timeout.  This preserves the established deletion semantics in
+        a normal queue job so callers receive a durable job ID and poll it.
+        """
+        if not filters:
+            raise ValueError("delete_by_filter_async requires at least one metadata filter")
+        filter_json = json.dumps(filters, sort_keys=True, separators=(",", ":"), default=str)
+        source_key = f"delete_by_filter:{filter_json}"
+        request_key = self.queue.generate_idempotency_key(profile, collection, source_key)
+        if request_key in self.idempotency:
+            return self.idempotency[request_key]
+        existing_job_id = self.queue.lookup_idempotency_key(request_key)
+        if existing_job_id is not None:
+            self.idempotency[request_key] = existing_job_id
+            return existing_job_id
+        queued_job = self.queue.enqueue(
+            JobRecord(
+                job_id=str(uuid4()),
+                profile=profile,
+                collection=collection,
+                job_type="delete_by_filter",
+                idempotency_key=request_key,
+                server_id=self.queue.server_id,
+                correlation_id=get_correlation_id() or None,
+                user_id=actor,
+                request_auth_identity=actor,
+            ),
+            payload={"profile": profile, "collection": collection, "filters": filters, "actor": actor},
+            actor=actor,
+        )
+        self.idempotency[request_key] = queued_job.job_id
+        self.queue.store_idempotency_key(request_key, queued_job.job_id, profile, collection, source_key, "")
+        self._dispatch_job_detached(queued_job.job_id)
+        return queued_job.job_id
+
+    def _process_delete_by_filter_job(self, job: JobRecord) -> None:
+        """Run a long filter delete outside the synchronous MCP request path."""
+        payload = dict(job.payload)
+        profile = str(payload["profile"])
+        collection = str(payload["collection"])
+        filters = payload.get("filters") if isinstance(payload.get("filters"), dict) else {}
+        self._raise_if_job_cancelled(job.job_id)
+        self.queue.record_progress(
+            job.job_id,
+            phase="running",
+            percentage=20,
+            message="filter deletion started",
+            extra={"filters": filters},
+        )
+        deleted_count = self.delete_by_filter(profile, collection, filters)
+        self._raise_if_job_cancelled(job.job_id)
+        self.queue.record_progress(
+            job.job_id,
+            phase="completed",
+            percentage=100,
+            message=f"deleted {deleted_count} documents",
+            extra={"deleted": deleted_count, "filters": filters},
+        )
 
     def retention_run(self, profile: str, collection: str, older_than_days: int) -> int:
         """Execute retention run."""

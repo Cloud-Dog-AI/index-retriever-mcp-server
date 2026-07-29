@@ -371,6 +371,24 @@ class AuthMiddleware:
             token_type="jwt",
         )
 
+    def require_forwarded_role_match(
+        self,
+        identity: AuthResult,
+        headers: dict[str, str],
+    ) -> None:
+        """Treat a forwarded role set as a restriction, never an elevation."""
+        normalised = self._normalise_headers(headers)
+        raw_roles = normalised.get("x-cloud-dog-auth-roles", "").strip()
+        if not raw_roles:
+            return
+        forwarded_roles = {
+            _canonical_role(role)
+            for role in raw_roles.split(",")
+            if str(role).strip()
+        }
+        if not forwarded_roles or not identity.roles.intersection(forwarded_roles):
+            raise PermissionError("Authorisation failed: forwarded role is not applicable")
+
     def require_permission(self, identity: AuthResult, permission: str) -> None:
         """Authorise through cloud_dog_idam RBAC permission state."""
         # Covers: FR-05

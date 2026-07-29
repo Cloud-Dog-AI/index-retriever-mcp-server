@@ -87,6 +87,25 @@ class IngestOutput(BaseModel):
     error: dict[str, Any] = Field(default_factory=dict)
 
 
+class DeleteByFilterAsyncInput(BaseModel):
+    """Submit a narrowly scoped asynchronous VDB lifecycle deletion."""
+
+    profile: str
+    collection: str
+    filters: dict[str, Any] = Field(default_factory=dict)
+    actor: str = "mcp"
+
+
+class DeleteByFilterAsyncOutput(BaseModel):
+    """Queued deletion job contract."""
+
+    job_id: str
+    status: str
+    ok: bool = True
+    poll_tool: str = "job_get"
+    blocking_tool: str = "delete_by_filter"
+
+
 class IngestReferenceInput(BaseModel):
     """IngestReferenceInput definition."""
 

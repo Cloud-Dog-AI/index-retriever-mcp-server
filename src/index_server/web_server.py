@@ -566,11 +566,19 @@ def build_web_app() -> object:
         }
         authorization = None if ignore_caller_credentials else request.headers.get("authorization")
         x_api_key = None if ignore_caller_credentials else request.headers.get("x-api-key")
+        forwarded_roles = None if ignore_caller_credentials else request.headers.get(
+            "x-cloud-dog-auth-roles"
+        )
         if authorization:
             headers["Authorization"] = authorization
         if x_api_key:
             headers["X-API-Key"] = x_api_key
-        elif not authorization and allow_service_key:
+        if forwarded_roles:
+            # The MCP authority must see the caller's role restriction before
+            # catalogue enumeration or dispatch; dropping it here widened a
+            # restricted request back to the configured key's full role set.
+            headers["X-Cloud-Dog-Auth-Roles"] = forwarded_roles
+        if not x_api_key and not authorization and allow_service_key:
             # W28A-734-R2: borrow the service api_key only for an AUTHENTICATED
             # console session; never inject it for an unauthenticated caller.
             configured_key = str(proxy_config.get("api_server.api_key", "") or "")
@@ -586,6 +594,7 @@ def build_web_app() -> object:
         for incoming, outgoing in (
             ("authorization", "Authorization"),
             ("x-api-key", "X-API-Key"),
+            ("x-cloud-dog-auth-roles", "X-Cloud-Dog-Auth-Roles"),
             ("x-correlation-id", "X-Correlation-Id"),
             ("x-request-id", "X-Request-Id"),
         ):
@@ -678,11 +687,19 @@ def build_web_app() -> object:
         """List tools via MCP server."""
         jsonrpc_payload = {"jsonrpc": "2.0", "id": "web-tools-list", "method": "tools/list"}
         allow_service_key = await _service_key_allowed(request)
+        if not allow_service_key:
+            return JSONResponse(status_code=401, content={"detail": "Authentication required"})
         async with httpx.AsyncClient(base_url=mcp_base_url, verify=False, timeout=30) as client:
             resp = await client.post(
                 "/mcp",
                 json=jsonrpc_payload,
                 headers=_mcp_proxy_headers(request, allow_service_key=allow_service_key),
+            )
+        if resp.status_code >= 400:
+            return Response(
+                content=resp.content,
+                status_code=resp.status_code,
+                media_type=resp.headers.get("content-type", "application/json"),
             )
         try:
             rpc_result = resp.json()
@@ -692,10 +709,16 @@ def build_web_app() -> object:
             return Response(content=resp.content, status_code=resp.status_code, media_type="application/json")
 
     @app.get("/a2a/.well-known/agent.json")
-    async def a2a_agent_card() -> Response:
+    async def a2a_agent_card(request: Request) -> Response:
         """Proxy A2A agent card from the A2A server."""
+        allow_service_key = await _service_key_allowed(request)
+        if not allow_service_key:
+            return JSONResponse(status_code=401, content={"detail": "Authentication required"})
         async with httpx.AsyncClient(base_url=a2a_base_url, verify=False, timeout=15) as client:
-            resp = await client.get("/.well-known/agent.json")
+            resp = await client.get(
+                "/.well-known/agent.json",
+                headers=_a2a_proxy_headers(request, allow_service_key=allow_service_key),
+            )
         return Response(content=resp.content, status_code=resp.status_code, media_type="application/json")
 
     @app.api_route("/a2a/{path:path}", methods=["GET", "POST"])

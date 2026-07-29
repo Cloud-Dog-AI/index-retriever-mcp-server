@@ -61,7 +61,7 @@ _correlation_mod._service_instance_var = __import__("contextvars").ContextVar(
     "service_instance", default=_os_early.environ.get("HOSTNAME", "index-retriever-local"))
 del _os_early
 
-from fastapi import File, Form, HTTPException, Request, UploadFile
+from fastapi import Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
@@ -73,6 +73,7 @@ except ImportError:  # pragma: no cover - optional runtime dependency
 
 from index_server.admin_ui import admin_ui_script, admin_ui_styles, collections_page, profiles_page, security_page, structure_page
 from index_server.auth.middleware import AuthMiddleware, AuthResult, flat_roles_for
+from index_server.a2a_server import A2A_SKILLS
 from index_server.logging_runtime import init_platform_logging, shutdown_platform_logging
 from index_server.mcp_server import build_registry, execute_tool
 from index_server.runtime_config import resolve_server_binding
@@ -441,41 +442,7 @@ _DOCS_BY_ID = {document.document_id: document for document in _DOCS_DOCUMENTS}
 _DOCS_ACTIONS = {"docs.view", "docs.download", "docs.print", "docs.search", "docs.copy"}
 _DOCS_SECRET_KEY_PARTS = ("secret", "password", "token", "api_key", "apikey", "authorization", "cookie", "credential")
 
-_INDEX_A2A_SKILLS: tuple[dict[str, str], ...] = (
-    {"id": "index_list", "name": "Index List", "description": "List indexed collections for the selected profile"},
-    {"id": "bulk_index", "name": "Bulk Index", "description": "Queue one or more text documents for asynchronous indexing"},
-    {"id": "ingest_text", "name": "Ingest Text", "description": "Ingest text into a profiled collection with embedding and indexing"},
-    {"id": "ingest_upload", "name": "Ingest Upload", "description": "Upload a file for chunking, embedding, and indexing"},
-    {"id": "ingest_reference", "name": "Ingest Reference", "description": "Ingest content from a URI (HTTP, S3, FTP, filesystem, etc.)"},
-    {"id": "search", "name": "Search", "description": "Vector similarity search across indexed collections"},
-    {"id": "retrieve", "name": "Retrieve", "description": "Retrieve a specific document by ID"},
-    {"id": "collection_create", "name": "Create Collection", "description": "Create a new indexed collection within a profile"},
-    {"id": "collection_list", "name": "List Collections", "description": "List collections for a profile"},
-    {"id": "profiles_list", "name": "List Profiles", "description": "List configured storage profiles"},
-    {"id": "ingest_health", "name": "Ingest Health", "description": "Per-profile ingest pipeline health status"},
-    {"id": "backend_health_check", "name": "Backend Health", "description": "Vector database backend health check"},
-    {"id": "file_upload", "name": "File Upload", "description": "Upload a file to service storage (PS-78)"},
-    {"id": "file_list", "name": "File List", "description": "List stored service files (PS-78)"},
-    {"id": "file_get", "name": "File Metadata", "description": "Get stored service file metadata (PS-78)"},
-    {"id": "file_download", "name": "File Download", "description": "Download stored service file content (PS-78)"},
-    {"id": "file_delete", "name": "File Delete", "description": "Delete a stored service file (PS-78)"},
-    {"id": "source_config_create", "name": "Create Source Config", "description": "Create a connector source configuration"},
-    {"id": "source_config_list", "name": "List Source Configs", "description": "List connector source configurations"},
-    {"id": "source_config_get", "name": "Get Source Config", "description": "Read a connector source configuration"},
-    {"id": "source_config_update", "name": "Update Source Config", "description": "Update a connector source configuration"},
-    {"id": "source_config_delete", "name": "Delete Source Config", "description": "Delete a connector source configuration"},
-    # W28E-1870-A PS-102 change-streaming (CSTREAM-IR-001..010) — VDB change-watch skills.
-    {"id": "index_watch_create", "name": "Create VDB Change-Watch", "description": "Create a VDB profile/collection change-watch with criteria (PS-102 CSTREAM-IR-001/002)"},
-    {"id": "index_watch_list", "name": "List Change-Watches", "description": "List the caller's VDB change-watches for the current tenant/profile"},
-    {"id": "index_watch_status", "name": "Change-Watch Status", "description": "Return a change-watch status (state, journal depth, cursors, in-flight, throttle)"},
-    {"id": "index_watch_get_batch", "name": "Get Change Batch", "description": "Retrieve a bounded batch of VDB change events since a cursor with the next cursor (backpressure-aware)"},
-    {"id": "index_watch_ack", "name": "Ack Change Batch", "description": "Acknowledge change-watch progress up to a cursor, releasing an in-flight batch slot"},
-    {"id": "index_watch_recover", "name": "Recover Change-Watch", "description": "Re-enquire a safe resume cursor for a change-watch without a replay storm"},
-    {"id": "index_watch_pause", "name": "Pause Change-Watch", "description": "Pause a change-watch (retains cursor + journal within retention)"},
-    {"id": "index_watch_resume", "name": "Resume Change-Watch", "description": "Resume a paused change-watch"},
-    {"id": "index_watch_delete", "name": "Delete Change-Watch", "description": "Delete a change-watch and its journal"},
-    {"id": "index_watch_test_event", "name": "Inject Test Change Event", "description": "Inject a deterministic synthetic change event into a watch's journal (test-mode, no external mutation)"},
-)
+_INDEX_A2A_SKILLS = A2A_SKILLS
 
 
 def _read_docs_source(relative_path: str) -> str:
@@ -662,10 +629,13 @@ def _spa_not_built_response() -> HTMLResponse:
 
 
 def _maybe_disable_timeout_middleware(app: Any) -> Any:
-    """Avoid TestClient deadlocks from platform timeout middleware in local tiers."""
+    """Avoid platform request ceilings in explicit local test-tier runtimes."""
     process_env = os.environ
     in_pytest = process_env.get("PYTEST_CURRENT_TEST") is not None
-    if not in_pytest and process_env.get("TEST_ENV_TIER", "").upper() not in {"UT", "ST"}:
+    test_tier = process_env.get("TEST_ENV_TIER", "").upper()
+    env_files = process_env.get("CLOUD_DOG_ENV_FILES", "").upper()
+    explicit_test_env = any(token in env_files for token in ("ENV-AT", "ENV-IT", "ENV-ST", "ENV-UT"))
+    if not in_pytest and test_tier not in {"AT", "IT", "ST", "UT"} and not explicit_test_env:
         return app
     user_middleware = getattr(app, "user_middleware", None)
     build_stack = getattr(app, "build_middleware_stack", None)
@@ -1404,6 +1374,20 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         session = _get_session(request)
         if session is not None:
             identity = _session_identity(session)
+            try:
+                auth.require_forwarded_role_match(identity, headers)
+            except PermissionError as exc:
+                _log_auth_event(
+                    request,
+                    actor=identity.user_id,
+                    outcome="denied",
+                    action="authorise",
+                    roles=identity.roles,
+                    auth_mechanism="cookie",
+                    reason=str(exc),
+                    required_roles=headers.get("x-cloud-dog-auth-roles", ""),
+                )
+                raise HTTPException(status_code=403, detail=str(exc)) from exc
             _log_auth_event(
                 request,
                 actor=identity.user_id,
@@ -1425,6 +1409,20 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                 reason=str(exc),
             )
             raise HTTPException(status_code=401, detail=str(exc)) from exc
+        try:
+            auth.require_forwarded_role_match(identity, headers)
+        except PermissionError as exc:
+            _log_auth_event(
+                request,
+                actor=identity.user_id,
+                outcome="denied",
+                action="authorise",
+                roles=identity.roles,
+                auth_mechanism=identity.token_type,
+                reason=str(exc),
+                required_roles=headers.get("x-cloud-dog-auth-roles", ""),
+            )
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
         _log_auth_event(
             request,
             actor=identity.user_id,
@@ -1468,6 +1466,20 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
                 reason=str(exc),
             )
             raise HTTPException(status_code=401, detail=str(exc)) from exc
+        try:
+            auth.require_forwarded_role_match(identity, headers)
+        except PermissionError as exc:
+            _log_auth_event(
+                request,
+                actor=identity.user_id,
+                outcome="denied",
+                action="authorise",
+                roles=identity.roles,
+                auth_mechanism=identity.token_type,
+                reason=str(exc),
+                required_roles=headers.get("x-cloud-dog-auth-roles", ""),
+            )
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
         _log_auth_event(
             request,
             actor=identity.user_id,
@@ -1485,10 +1497,17 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
 
     @app.middleware("http")
     async def _admin_collections_auth_before_validation(request: Request, call_next):
-        if request.method == "POST" and request.url.path == "/admin/collections":
+        path = request.url.path.rstrip("/") or "/"
+        if request.method == "POST" and path == "/admin/collections":
             try:
                 identity = _auth_or_raise(request, _headers_from_request(request))
                 _require_or_raise(request, identity, "admin")
+            except HTTPException as exc:
+                return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+        if path == "/api/v1/tools" or path.startswith("/api/v1/tools/"):
+            try:
+                identity = _auth_or_raise(request, _headers_from_request(request))
+                _require_or_raise(request, identity, "collection.read")
             except HTTPException as exc:
                 return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
         return await call_next(request)
@@ -2065,7 +2084,9 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
     def admin_groups_get(group_id: str, request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
         _require_or_raise(request, identity, "collection.read")
-        return {"group": _idam_group_view(active_service.group_get(group_id))}
+        # The shared @cloud-dog/idam edit page consumes the detail record
+        # directly; collection/create endpoints retain their envelopes.
+        return _idam_group_view(active_service.group_get(group_id))
 
     def admin_groups_update(group_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
         identity = _auth_or_raise(request, _headers_from_request(request))
@@ -3337,53 +3358,9 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
             }
         )
 
-    # A2A agent card and task submission router
-    # W28C-427 IDX-SNAG-003: expanded A2A skills to cover admin, file, health, and source-config.
-    _a2a_skills = [
-        A2ASkill(id="index_list", name="Index List", description="List indexed collections for the selected profile"),
-        A2ASkill(id="bulk_index", name="Bulk Index", description="Queue one or more text documents for asynchronous indexing"),
-        A2ASkill(id="ingest_text", name="Ingest Text", description="Ingest text into a profiled collection with embedding and indexing"),
-        A2ASkill(id="ingest_upload", name="Ingest Upload", description="Upload a file for chunking, embedding, and indexing"),
-        A2ASkill(id="ingest_reference", name="Ingest Reference", description="Ingest content from a URI (HTTP, S3, FTP, filesystem, etc.)"),
-        A2ASkill(id="search", name="Search", description="Vector similarity search across indexed collections"),
-        A2ASkill(id="retrieve", name="Retrieve", description="Retrieve a specific document by ID"),
-        A2ASkill(id="collection_create", name="Create Collection", description="Create a new indexed collection within a profile"),
-        A2ASkill(id="collection_list", name="List Collections", description="List collections for a profile"),
-        A2ASkill(id="profiles_list", name="List Profiles", description="List configured storage profiles"),
-        A2ASkill(id="ingest_health", name="Ingest Health", description="Per-profile ingest pipeline health status"),
-        A2ASkill(id="backend_health_check", name="Backend Health", description="Vector database backend health check"),
-        A2ASkill(id="file_upload", name="File Upload", description="Upload a file to service storage (PS-78)"),
-        A2ASkill(id="file_list", name="File List", description="List stored service files (PS-78)"),
-        A2ASkill(id="file_get", name="File Metadata", description="Get stored service file metadata (PS-78)"),
-        A2ASkill(id="file_download", name="File Download", description="Download stored service file content (PS-78)"),
-        A2ASkill(id="file_delete", name="File Delete", description="Delete a stored service file (PS-78)"),
-        A2ASkill(id="source_config_create", name="Create Source Config", description="Create a connector source configuration"),
-        A2ASkill(id="source_config_list", name="List Source Configs", description="List connector source configurations"),
-        A2ASkill(id="source_config_get", name="Get Source Config", description="Read a connector source configuration"),
-        A2ASkill(id="source_config_update", name="Update Source Config", description="Update a connector source configuration"),
-        A2ASkill(id="source_config_delete", name="Delete Source Config", description="Delete a connector source configuration"),
-        A2ASkill(id="hdro_extract", name="UNDP HDRO Extract", description="Fetch HDI/GII data from the UNDP HDRO Data API 2.0"),
-        A2ASkill(id="structure_extract", name="Extract Document Structure", description="Extract canonical document structure from text or a file (W28E-603)"),
-        A2ASkill(id="structure_document_get", name="Get Document Structure", description="Retrieve a canonical structure document with its child objects (W28E-603)"),
-        A2ASkill(id="structure_outline_get", name="Get Document Outline", description="Retrieve the section-hierarchy outline of a structure document (W28E-603)"),
-        A2ASkill(id="structure_corpus_create", name="Create Structure Corpus", description="Create a named corpus of structure documents (W28E-603)"),
-        A2ASkill(id="structure_corpus_analyse", name="Analyse Structure Corpus", description="Derive section/style/layout/table patterns across a corpus (W28E-603)"),
-        A2ASkill(id="structure_corpus_patterns_get", name="Get Corpus Patterns", description="Retrieve derived structure patterns for a corpus (W28E-603)"),
-        A2ASkill(id="structure_template_generate", name="Generate Structure Template", description="Generate a structure/style template blueprint from corpus patterns (W28E-603)"),
-        A2ASkill(id="structure_template_export", name="Export Structure Template", description="Export a structure template as Markdown or JSON (W28E-603)"),
-        A2ASkill(id="structure_template_delete", name="Delete Structure Template", description="Delete a generated structure template through the supported lifecycle path (W28M-1603D)"),
-        # W28E-1870-A PS-102 change-streaming (CSTREAM-IR-001..010) — VDB change-watch skills advertised on the edge card.
-        A2ASkill(id="index_watch_create", name="Create VDB Change-Watch", description="Create a VDB profile/collection change-watch with criteria (PS-102 CSTREAM-IR-001/002)"),
-        A2ASkill(id="index_watch_list", name="List Change-Watches", description="List the caller's VDB change-watches for the current tenant/profile"),
-        A2ASkill(id="index_watch_status", name="Change-Watch Status", description="Return a change-watch status (state, journal depth, cursors, in-flight, throttle)"),
-        A2ASkill(id="index_watch_get_batch", name="Get Change Batch", description="Retrieve a bounded batch of VDB change events since a cursor with the next cursor (backpressure-aware)"),
-        A2ASkill(id="index_watch_ack", name="Ack Change Batch", description="Acknowledge change-watch progress up to a cursor, releasing an in-flight batch slot"),
-        A2ASkill(id="index_watch_recover", name="Recover Change-Watch", description="Re-enquire a safe resume cursor for a change-watch without a replay storm"),
-        A2ASkill(id="index_watch_pause", name="Pause Change-Watch", description="Pause a change-watch (retains cursor + journal within retention)"),
-        A2ASkill(id="index_watch_resume", name="Resume Change-Watch", description="Resume a paused change-watch"),
-        A2ASkill(id="index_watch_delete", name="Delete Change-Watch", description="Delete a change-watch and its journal"),
-        A2ASkill(id="index_watch_test_event", name="Inject Test Change Event", description="Inject a deterministic synthetic change event into a watch's journal (test-mode, no external mutation)"),
-    ]
+    # A2A agent card and task submission router. All advertised surfaces share
+    # the immutable service catalogue defined by the standalone A2A entrypoint.
+    _a2a_skills = [A2ASkill(**skill) for skill in A2A_SKILLS]
     app.post(f"{_CANONICAL_A2A_BASE_PATH}/tasks")(a2a_submit_task)
     app.post("/tasks")(a2a_submit_task)
     _a2a_card_router = create_a2a_card_router(
@@ -3391,7 +3368,15 @@ def build_api_app(service: IndexService | None = None, *, surface_name: str = "a
         description="Index retriever A2A server for vector database search and document ingestion",
         skills=_a2a_skills,
     )
-    app.include_router(_a2a_card_router)
+
+    def _require_a2a_card_auth(request: Request) -> None:
+        # No body access here: authentication must precede route/body parsing.
+        _a2a_auth_or_raise(request, _headers_from_request(request))
+
+    app.include_router(
+        _a2a_card_router,
+        dependencies=[Depends(_require_a2a_card_auth)],
+    )
 
     app.get("/admin/ui")(admin_ui_root)
     app.get("/admin/ui/profiles")(admin_ui_profiles)

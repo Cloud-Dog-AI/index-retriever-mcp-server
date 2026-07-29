@@ -21,6 +21,8 @@ from pydantic import BaseModel
 
 from index_tools.tools.definitions import (
     BackendHealthOutput,
+    DeleteByFilterAsyncInput,
+    DeleteByFilterAsyncOutput,
     EmbeddingHealthOutput,
     ExtractOnlyOutput,
     GenericToolInput,
@@ -172,6 +174,7 @@ def build_default_tool_registry() -> ToolRegistry:
         # -- Deletion & Lifecycle --
         ToolSpec(name="delete_by_id", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete a specific document from a collection by its ID."),
         ToolSpec(name="delete_by_filter", input_model=GenericToolInput, output_model=GenericToolOutput, description="Delete documents matching a metadata filter from a collection."),
+        ToolSpec(name="delete_by_filter_async", input_model=DeleteByFilterAsyncInput, output_model=DeleteByFilterAsyncOutput, description="Submit a filter deletion as a durable job. Use job_get to poll chunk-heavy deletions without an MCP request timeout."),
         ToolSpec(name="retention_run", input_model=GenericToolInput, output_model=GenericToolOutput, description="Execute retention policy to remove expired or stale documents."),
         ToolSpec(name="reindex_run", input_model=GenericToolInput, output_model=GenericToolOutput, description="Re-embed and re-index existing documents in a collection. Accepts async_mode (default false); when true returns {job_id, queued: true}."),
         ToolSpec(name="bulk_ingest", input_model=GenericToolInput, output_model=GenericToolOutput, description="Bulk-ingest a list of references (paths/uris) into a collection. Accepts async_mode (default true); when true returns {job_id, queued: true, items: [...]}; when false runs inline and returns aggregate results."),

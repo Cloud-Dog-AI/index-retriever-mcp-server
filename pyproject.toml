@@ -13,7 +13,7 @@ authors = [
 ]
 dependencies = [
     # Platform packages (from internal PyPI)
-    "cloud_dog_config==0.3.5",
+    "cloud_dog_config==0.3.6",
     # cloud_dog_config owns Vault transport; keep its canonical client present
     # whenever this service resolves ${vault.*} expressions at runtime.
     "hvac==2.4.0",
@@ -26,7 +26,7 @@ dependencies = [
     "cloud_dog_jobs==0.4.4",
     "cloud_dog_db==0.3.3",
     "cloud_dog_storage==0.1.8",
-    "cloud_dog_llm==0.4.1",
+    "cloud_dog_llm==0.4.4",
     "cloud_dog_vdb==0.5.8",
     # Core runtime
     "pydantic>=2.7,<3.0",
@@ -39,7 +39,6 @@ dependencies = [
     "uvicorn[standard]>=0.30,<1.0",
     "httpx>=0.27,<1.0",
     "python-multipart>=0.0.30,<1.0",
-    "sse-starlette>=2.1,<3.0",
     "websockets>=12.0,<13.0",
     # Storage (profiles/jobs/audit metadata)
     "SQLAlchemy>=2.0.30,<3.0",
@@ -61,16 +60,10 @@ dependencies = [
 
 [project.optional-dependencies]
 postgres = ["asyncpg>=0.29,<1.0"]
-redis = ["redis>=5.0,<6.0"]
+redis = ["redis>=8.0,<9.0"]
 pandoc = ["pypandoc>=1.13,<2.0"]
 pdf = ["pdfminer.six>=20231228"]
 office = ["python-docx>=1.1,<2.0", "openpyxl>=3.1,<4.0", "odfpy>=1.4,<2.0"]
-llamaindex = [
-    "llama-index-core>=0.11,<0.12",
-    "llama-index-readers-file>=0.2,<0.3",
-    "llama-index-embeddings-openai>=0.2,<0.3",
-    "llama-index-embeddings-huggingface>=0.2,<0.3",
-]
 connectors = [
     "boto3>=1.34,<2.0",
     "webdavclient3>=3.14,<4.0",
@@ -84,7 +77,7 @@ dev = [
     "pytest-cov>=5.0,<6.0",
     "pytest-asyncio>=0.23,<1.0",
     "playwright>=1.52,<2.0",
-    "Pillow>=10.4,<12.0",
+    "Pillow>=12.0,<13.0",
     "ruff>=0.5,<1.0",
     "mypy>=1.10,<2.0",
 ]

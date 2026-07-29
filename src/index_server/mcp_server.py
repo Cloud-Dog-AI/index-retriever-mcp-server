@@ -245,7 +245,7 @@ def _required_permission_for_tool(tool_name: str) -> str:
         return "collection.write"
     if tool_name == "w28a_693_lifecycle_job":
         return "collection.write"
-    if tool_name in {"delete_by_id", "delete_by_filter", "retention_run", "reindex_run"}:
+    if tool_name in {"delete_by_id", "delete_by_filter", "delete_by_filter_async", "retention_run", "reindex_run"}:
         return "collection.write"
     if tool_name in {"backend_health_check", "embedding_health_check", "ingest_health"}:
         return "collection.read"
@@ -1119,6 +1119,7 @@ def execute_tool(
         reference_path = str(arguments.get("path") or arguments.get("uri") or "").strip()
         if not reference_path:
             raise ValueError("ingest_reference requires path or uri")
+        fetch_count_before = service.ingest_fetch_count()
         ingest_result = service.ingest_reference(
             profile=str(arguments["profile"]),
             collection=str(arguments["collection"]),
@@ -1126,7 +1127,15 @@ def execute_tool(
             actor=str(arguments.get("actor", "mcp")),
         )
         job_id = getattr(ingest_result, "job_id", ingest_result)
-        return {"job_id": str(job_id), "status": "queued"}
+        fetch_count_after = service.ingest_fetch_count()
+        external_fetches = max(0, fetch_count_after - fetch_count_before)
+        return {
+            "job_id": str(job_id),
+            "status": "queued",
+            "external_fetches": external_fetches,
+            "external_fetch_count": fetch_count_after,
+            "reused_reference": external_fetches == 0,
+        }
     if tool_name == "parsers_list":
         return {"parsers": service.parsers_list(parser_services=arguments.get("parser_services"))}
     if tool_name == "parser_test":
@@ -1274,6 +1283,21 @@ def execute_tool(
             filters=arguments.get("filters") if isinstance(arguments.get("filters"), dict) else {},
         )
         return {"deleted": int(deleted), "status": "ok"}
+    if tool_name == "delete_by_filter_async":
+        _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
+        job_id = service.delete_by_filter_async(
+            profile=str(arguments["profile"]),
+            collection=str(arguments["collection"]),
+            filters=arguments.get("filters") if isinstance(arguments.get("filters"), dict) else {},
+            actor=str(arguments.get("actor", "mcp")),
+        )
+        return {
+            "ok": True,
+            "job_id": str(job_id),
+            "status": "submitted",
+            "poll_tool": "job_get",
+            "blocking_tool": "delete_by_filter",
+        }
     if tool_name == "retention_run":
         _enforce_collection_permission(active_auth, active_identity, "collection.write", service=service, profile=str(arguments.get('profile', '')), collection=str(arguments.get('collection', '')))
         deleted = service.retention_run(
@@ -1736,6 +1760,57 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
                 },
                 status_code=401,
             )
+        execution_roles = {
+            _canonical_role(role)
+            for role in identity.roles
+        }
+        if not execution_roles & {"admin", "user", "viewer"}:
+            message = "Authenticated principal has no MCP execution role"
+            _log_auth_event(
+                request,
+                actor=identity.user_id,
+                outcome="denied",
+                action=action,
+                roles=identity.roles,
+                auth_mechanism=identity.token_type,
+                reason=message,
+                required_roles="admin,user,viewer",
+            )
+            return JSONResponse(
+                {
+                    "jsonrpc": "2.0",
+                    "id": None,
+                    "error": {
+                        "code": -32003,
+                        "message": message,
+                    },
+                },
+                status_code=403,
+            )
+        try:
+            auth.require_forwarded_role_match(identity, headers)
+        except PermissionError as exc:
+            _log_auth_event(
+                request,
+                actor=identity.user_id,
+                outcome="denied",
+                action=action,
+                roles=identity.roles,
+                auth_mechanism=identity.token_type,
+                reason=str(exc),
+                required_roles=headers.get("x-cloud-dog-auth-roles", ""),
+            )
+            return JSONResponse(
+                {
+                    "jsonrpc": "2.0",
+                    "id": None,
+                    "error": {
+                        "code": -32003,
+                        "message": str(exc),
+                    },
+                },
+                status_code=403,
+            )
         user_store = getattr(active_service, "users", None)
         _disabled_user = user_store.get(identity.user_id) if user_store is not None else None
         if _disabled_user is not None and not getattr(_disabled_user, "enabled", True):
@@ -1771,21 +1846,20 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
         @middleware("http")
         async def _mcp_catalogue_auth_guard(request: Request, call_next: Callable[[Request], Any]) -> Any:
             path = request.url.path.rstrip("/") or "/"
-            if request.method.upper() == "GET" and path in {"/mcp/tools", "/tools"}:
+            method = request.method.upper()
+            guarded = (
+                (method == "GET" and path in {"/mcp", "/mcp/tools", "/tools"})
+                or method == "POST"
+                and (
+                    path == "/mcp"
+                    or path.startswith("/mcp/tools/")
+                    or path.startswith("/tools/")
+                )
+            )
+            if guarded:
                 denial = await _authorise_mcp_catalogue_request(request, action="authenticate_mcp_catalogue")
                 if denial is not None:
                     return denial
-            elif request.method.upper() == "POST" and path == "/mcp":
-                try:
-                    payload = await request.json()
-                except Exception:
-                    payload = None
-                if _jsonrpc_tools_list_requested(payload):
-                    denial = await _authorise_mcp_catalogue_request(request, action="authenticate_mcp_tools_list")
-                    if denial is not None:
-                        denial_payload = dict(denial.body and json.loads(denial.body.decode("utf-8")) or {})
-                        denial_payload["id"] = _jsonrpc_error_id(payload)
-                        return JSONResponse(denial_payload, status_code=denial.status_code)
             return await call_next(request)
 
     # Platform health via create_health_router().
@@ -1832,6 +1906,20 @@ def build_mcp_app(service: IndexService | None = None, registry: ToolRegistry | 
                     reason=str(exc),
                 )
                 raise UnauthenticatedError(message=str(exc)) from exc
+            try:
+                auth.require_forwarded_role_match(identity, headers)
+            except PermissionError as exc:
+                _log_auth_event(
+                    request,
+                    actor=identity.user_id,
+                    outcome="denied",
+                    action="authorise",
+                    roles=identity.roles,
+                    auth_mechanism=identity.token_type,
+                    reason=str(exc),
+                    required_roles=headers.get("x-cloud-dog-auth-roles", ""),
+                )
+                raise UnauthorisedError(message=str(exc)) from exc
             _disabled_user = active_service.users.get(identity.user_id)
             if _disabled_user is not None and not getattr(_disabled_user, 'enabled', True):
                 raise UnauthenticatedError(message="User account is disabled")

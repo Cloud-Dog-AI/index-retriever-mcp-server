@@ -192,6 +192,7 @@ class SpreadsheetMetadataRepository:
         message: str,
         details: dict[str, Any],
     ) -> None:
+        """Record a spreadsheet indexing error against a job."""
         self.session.add(
             SpreadsheetIndexError(
                 job_id=job.id,

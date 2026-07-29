@@ -121,7 +121,7 @@ if [[ "${VARIANT}" == "dev" && -n "${REGISTRY}" && -z "${PUBLICATION_TAG_SUFFIX}
 fi
 
 cleanup() {
-  rm -f "${PIP_CONF}" "./${GENERIC_CA_CERT}"
+  rm -f "${PIP_CONF}" "./${GENERIC_CA_CERT}" "${DERIVED_NETRC:-}"
 }
 trap cleanup EXIT
 
@@ -146,18 +146,32 @@ if [[ -z "${PYPI_HOST}" ]]; then
   exit 2
 fi
 
-if [[ -n "${PYPI_USERNAME}" ]] || [[ -n "${PYPI_PASSWORD}" ]]; then
-  echo "ERROR: use an external pip auth helper; credentials must not be embedded in index URLs" >&2
-  exit 2
-else
-  cat > "${PIP_CONF}" << EOF
+# The pip.conf secret is ALWAYS anonymous — the index URL never carries
+# credentials (PS-97 §3.3; no `user:pass@host` in any layer or build log).
+cat > "${PIP_CONF}" << EOF
 [global]
 index-url = ${PYPI_URL}
 trusted-host = ${PYPI_HOST}
 EOF
-  echo "pip.conf generated with anonymous single-index access (host=${PYPI_HOST})."
-fi
+echo "pip.conf generated with anonymous single-index access (host=${PYPI_HOST})."
 chmod 600 "${PIP_CONF}"
+
+# Credentials flow ONLY via a BuildKit netrc secret. Prefer an externally-supplied
+# PIP_NETRC_FILE; for parity with the estate build wrapper also accept
+# PYPI_USERNAME/PYPI_PASSWORD and DERIVE a private 0600 netrc from them (still a
+# secret mount — never embedded in a URL, layer, or the build log). W28A-868-R18.
+if [[ -z "${PIP_NETRC_FILE}" && ( -n "${PYPI_USERNAME}" || -n "${PYPI_PASSWORD}" ) ]]; then
+  if [[ -z "${PYPI_USERNAME}" || -z "${PYPI_PASSWORD}" ]]; then
+    echo "ERROR: PYPI_USERNAME and PYPI_PASSWORD must be provided together" >&2
+    exit 2
+  fi
+  PIP_NETRC_FILE="$(mktemp "${TMPDIR:-/tmp}/pip-netrc.XXXXXX")"
+  DERIVED_NETRC="${PIP_NETRC_FILE}"
+  ( umask 077; printf 'machine %s\n  login %s\n  password %s\n' \
+      "${PYPI_HOST}" "${PYPI_USERNAME}" "${PYPI_PASSWORD}" > "${PIP_NETRC_FILE}" )
+  chmod 600 "${PIP_NETRC_FILE}"
+  echo "pip netrc derived from PYPI_USERNAME/PYPI_PASSWORD (host=${PYPI_HOST}); credentials confined to a 0600 secret mount."
+fi
 
 if [[ -n "${PIP_NETRC_FILE}" ]]; then
   if [[ ! -r "${PIP_NETRC_FILE}" ]]; then
@@ -166,7 +180,7 @@ if [[ -n "${PIP_NETRC_FILE}" ]]; then
   fi
   PIP_NETRC_SECRET_ARGS=(--secret "id=pip_netrc,src=${PIP_NETRC_FILE}")
 elif [[ "${VARIANT}" == "dev" || "${PIP_AUTH_REQUIRED:-0}" == "1" ]]; then
-  echo "ERROR: --variant dev requires an external PIP_NETRC_FILE auth helper" >&2
+  echo "ERROR: --variant dev requires PIP_NETRC_FILE or PYPI_USERNAME/PYPI_PASSWORD" >&2
   exit 2
 fi
 

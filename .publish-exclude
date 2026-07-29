@@ -6,7 +6,7 @@
 # Internal ops / methods / design (PS-97 §1.1.2)
 AGENT-LESSONS.md
 RULES.md
-CONTEXT-SUMMARY.md
+archive/CONTEXT-SUMMARY-2026-07-12.md
 docs/PREPROD.md
 docs/DEPLOY-INTERNAL.md
 REQUIREMENTS.md
@@ -37,7 +37,7 @@ archive/
 # Internal ops / methods / IP docs (carry preprod/terraform/vault/internal-host references)
 RULES.md
 AGENT-LESSONS.md
-CONTEXT-SUMMARY.md
+archive/CONTEXT-SUMMARY-2026-07-12.md
 EXTERNAL-BUILD.md
 BUILD.md
 docs/DEPLOY.md
